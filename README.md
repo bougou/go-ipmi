@@ -5,29 +5,36 @@ go-ipmi is a pure golang native IPMI library. It DOES NOT wraps `ipmitool`.
 ## Usage
 
 ```go
-import github.com/bougou/go-ipmi
+import (
+	"fmt"
+	"github.com/bougou/go-ipmi"
+)
 
-host := "10.0.0.1"
-port := 623
-username := "root"
-password := "123456"
+func main() {
+	host := "10.0.0.1"
+	port := 623
+	username := "root"
+	password := "123456"
 
-client, err := ipmi.NewClient(host, port, username, password)
-if err != nil {
-  panic(err)
+	client, err := ipmi.NewClient(host, port, username, password)
+	if err != nil {
+		panic(err)
+	}
+
+	// Connect will create an authenticated session for you.
+	if err := client.Connect(); err != nil {
+		panic(err)
+	}
+
+	// Now you can executed other commands that need authentication.
+	selEntries, err := client.GetSELEntries(0)
+	if err != nil {
+		panic(err)
+	}
+	for _, sel := range selEntries {
+		fmt.Println(sel)
+	}
 }
-
-// Connect will create an authenticated session for you.
-if err := client.Connect(); err != nil {
-  panic(err)
-}
-
-// Now you can executed other commands that need authentication.
-res, err := client.SELList()
-if err != nil {
-  panic(err)
-}
-fmt.Println(res)
 ```
 
 ## commands / ipmitool

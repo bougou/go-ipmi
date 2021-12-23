@@ -123,9 +123,9 @@ var (
 	CommandPetAck                  = Command{ID: 0x17, NetFn: NetFnSensorEventRequest, Name: "PET Acknowledge"}
 
 	// Sensor Device Commands
-	CommandGetDeviceSdrInfo               = Command{ID: 0x20, NetFn: NetFnSensorEventRequest, Name: "Get Device SDR Info"}
-	CommandGetDeviceSdr                   = Command{ID: 0x21, NetFn: NetFnSensorEventRequest, Name: "Get Device SDR"}
-	CommandReserveDeviceSdrRepo           = Command{ID: 0x22, NetFn: NetFnSensorEventRequest, Name: "Reserve Device SDR Repository"}
+	CommandGetDeviceSDRInfo               = Command{ID: 0x20, NetFn: NetFnSensorEventRequest, Name: "Get Device SDR Info"}
+	CommandGetDeviceSDR                   = Command{ID: 0x21, NetFn: NetFnSensorEventRequest, Name: "Get Device SDR"}
+	CommandReserveDeviceSDRRepo           = Command{ID: 0x22, NetFn: NetFnSensorEventRequest, Name: "Reserve Device SDR Repository"}
 	CommandGetSensorReadingFactors        = Command{ID: 0x23, NetFn: NetFnSensorEventRequest, Name: "Get Sensor Reading Factors"}
 	CommandSetSensorHysteresis            = Command{ID: 0x24, NetFn: NetFnSensorEventRequest, Name: "Set Sensor Hysteresis"}
 	CommandGetSensorHysteresis            = Command{ID: 0x25, NetFn: NetFnSensorEventRequest, Name: "Get Sensor Hysteresis"}
@@ -148,16 +148,16 @@ var (
 	// SDR Device Commands
 	CommandGetSDRRepoInfo         = Command{ID: 0x20, NetFn: NetFnStorageRequest, Name: "Get SDR Repository Info"}
 	CommandGetSDRRepoAllocInfo    = Command{ID: 0x21, NetFn: NetFnStorageRequest, Name: "Get SDR Repository Allocation Info"}
-	CommandReserveSdrRepo         = Command{ID: 0x02, NetFn: NetFnStorageRequest, Name: "Reserve SDR Repository"}
+	CommandReserveSDRRepo         = Command{ID: 0x02, NetFn: NetFnStorageRequest, Name: "Reserve SDR Repository"}
 	CommandGetSDR                 = Command{ID: 0x23, NetFn: NetFnStorageRequest, Name: "Get SDR"}
-	CommandAddSdr                 = Command{ID: 0x24, NetFn: NetFnStorageRequest, Name: "Add SDR"}
-	CommandPartialAddSdr          = Command{ID: 0x25, NetFn: NetFnStorageRequest, Name: "Partial Add SDR"}
-	CommandDeleteSdr              = Command{ID: 0x26, NetFn: NetFnStorageRequest, Name: "Delete SDR"}
-	CommandClearSdrRepo           = Command{ID: 0x27, NetFn: NetFnStorageRequest, Name: "Clear SDR Repository"}
+	CommandAddSDR                 = Command{ID: 0x24, NetFn: NetFnStorageRequest, Name: "Add SDR"}
+	CommandPartialAddSDR          = Command{ID: 0x25, NetFn: NetFnStorageRequest, Name: "Partial Add SDR"}
+	CommandDeleteSDR              = Command{ID: 0x26, NetFn: NetFnStorageRequest, Name: "Delete SDR"}
+	CommandClearSDRRepo           = Command{ID: 0x27, NetFn: NetFnStorageRequest, Name: "Clear SDR Repository"}
 	CommandGetSDRRepoTime         = Command{ID: 0x28, NetFn: NetFnStorageRequest, Name: "Get SDR Repository Time"}
-	CommandSetSdrRepoTime         = Command{ID: 0x29, NetFn: NetFnStorageRequest, Name: "Set SDR Repository Time"}
-	CommandEnterSdrRepoUpateMode  = Command{ID: 0x2a, NetFn: NetFnStorageRequest, Name: "Enter SDR Repository Update Mode"}
-	CommandExitSdrRepoUpdateMode  = Command{ID: 0x2b, NetFn: NetFnStorageRequest, Name: "Exit SDR Repository Update Mode"}
+	CommandSetSDRRepoTime         = Command{ID: 0x29, NetFn: NetFnStorageRequest, Name: "Set SDR Repository Time"}
+	CommandEnterSDRRepoUpateMode  = Command{ID: 0x2a, NetFn: NetFnStorageRequest, Name: "Enter SDR Repository Update Mode"}
+	CommandExitSDRRepoUpdateMode  = Command{ID: 0x2b, NetFn: NetFnStorageRequest, Name: "Exit SDR Repository Update Mode"}
 	CommandRunInitializationAgent = Command{ID: 0x2c, NetFn: NetFnStorageRequest, Name: "Run Initialization Agent"}
 
 	// SEL Device Commands

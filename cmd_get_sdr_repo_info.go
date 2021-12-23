@@ -22,8 +22,8 @@ type GetSDRRepoInfoResponse struct {
 
 type SDROperationSupport struct {
 	Overflow                     bool
-	SupportModalSDRRepoUpdate    bool
-	SupportNonModalSDRRepoUpdate bool
+	SupportModalSDRRepoUpdate    bool // A modal SDR Repository is only updated when the controller is in an SDR Repository update mode.
+	SupportNonModalSDRRepoUpdate bool // A non-modal SDR Repository can be written to at any time
 	SupportDeleteSDR             bool
 	SupportParitialAddSDR        bool
 	SupportReserveSDRRepo        bool

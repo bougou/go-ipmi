@@ -45,10 +45,10 @@ func (res *GetSDRResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
 
-func (c *Client) GetSDR(startOfRecordID uint16) (response *GetSDRResponse, err error) {
+func (c *Client) GetSDR(recordID uint16) (response *GetSDRResponse, err error) {
 	request := &GetSDRRequest{
 		ReservationID: 0,
-		RecordID:      startOfRecordID,
+		RecordID:      recordID,
 		OffsetInfo:    0,
 		BytesToRead:   0xff,
 	}
