@@ -56,3 +56,33 @@ func (c *Client) GetSDR(recordID uint16) (response *GetSDRResponse, err error) {
 	err = c.Exchange(request, response)
 	return
 }
+
+// GetSDRs fetches the SDR records of the specified RecordType.
+// Pass 0 to fetch all SDR records.
+func (c *Client) GetSDRs(recordType SDRRecordType) ([]*SDR, error) {
+	var recordID uint16 = 0
+
+	var out = make([]*SDR, 0)
+	for {
+		res, err := c.GetSDR(recordID)
+		if err != nil {
+			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %s", recordID, err)
+		}
+		recordID = res.NextRecordID
+
+		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
+		if err != nil {
+			return nil, fmt.Errorf("ParseSDR for recordID (%#0x) failed, err: %s", recordID, err)
+		}
+		if recordType != 0 && sdr.RecordHeader.RecordType != recordType {
+			continue
+		}
+		out = append(out, sdr)
+
+		if recordID == 0xffff {
+			break
+		}
+	}
+
+	return out, nil
+}

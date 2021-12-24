@@ -37,14 +37,16 @@ func main() {
 }
 ```
 
-## commands / ipmitool
+## Functions Comparision with ipmitool
 
-> More commands are ongoing ...
+> More is ongoing ...
 >
-| Client Method       | ipmitool command   |
-| ------------------- | ------------------ |
-| GetSELInfo          | ipmitool sel info  |
-| GetSELAllocInfo     | -                  |
-| ClearSEL            | ipmitool sel clear |
-| GetSDRRepoInfo      | ipmitool sdr info  |
-| GetSDRRepoAllocInfo | -                  |
+| Client Method       | ipmitool cmdline        |
+| ------------------- | ----------------------- |
+| GetSELInfo          | ipmitool sel info       |
+| GetSELAllocInfo     | ipmitool sel info       |
+| ClearSEL            | ipmitool sel clear      |
+| GetSDRRepoInfo      | ipmitool sdr info       |
+| GetSDRRepoAllocInfo | ipmitool sdr info       |
+| GetSDR              | ipmitool sdr get        |
+| GetSDRs             | ipmitool sdr list/elist |

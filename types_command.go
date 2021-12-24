@@ -148,7 +148,7 @@ var (
 	// SDR Device Commands
 	CommandGetSDRRepoInfo         = Command{ID: 0x20, NetFn: NetFnStorageRequest, Name: "Get SDR Repository Info"}
 	CommandGetSDRRepoAllocInfo    = Command{ID: 0x21, NetFn: NetFnStorageRequest, Name: "Get SDR Repository Allocation Info"}
-	CommandReserveSDRRepo         = Command{ID: 0x02, NetFn: NetFnStorageRequest, Name: "Reserve SDR Repository"}
+	CommandReserveSDRRepo         = Command{ID: 0x22, NetFn: NetFnStorageRequest, Name: "Reserve SDR Repository"}
 	CommandGetSDR                 = Command{ID: 0x23, NetFn: NetFnStorageRequest, Name: "Get SDR"}
 	CommandAddSDR                 = Command{ID: 0x24, NetFn: NetFnStorageRequest, Name: "Add SDR"}
 	CommandPartialAddSDR          = Command{ID: 0x25, NetFn: NetFnStorageRequest, Name: "Partial Add SDR"}
