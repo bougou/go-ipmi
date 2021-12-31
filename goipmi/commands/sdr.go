@@ -42,6 +42,15 @@ func NewCmdSDRInfo() *cobra.Command {
 	return cmd
 }
 
+func parseStringToInt64(s string) (int64, error) {
+	if len(s) > 2 {
+		if s[0] == '0' {
+			return strconv.ParseInt(s, 0, 64)
+		}
+	}
+	return strconv.ParseInt(s, 10, 64)
+}
+
 func NewCmdSDRGet() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
@@ -50,23 +59,17 @@ func NewCmdSDRGet() *cobra.Command {
 			if len(args) < 1 {
 				CheckErr(errors.New("no Sensor ID supplied"))
 			}
-			id, err := strconv.ParseUint(args[0], 10, 16)
+			id, err := parseStringToInt64(args[0])
 			if err != nil {
 				CheckErr(fmt.Errorf("invalid Sensor ID passed, err: %s", err))
 			}
-			sensorID := uint16(id)
-			res, err := client.GetSDR(sensorID)
+			sensorID := uint8(id)
+			sdr, err := client.GetSDRBySensorID(sensorID)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSDR failed, err: %s", err))
 			}
-
-			client.DebugBytes("SDR Record Data", res.RecordData, 16)
-
-			sdr, err := ipmi.ParseSDR(res.RecordData, res.NextRecordID)
-			if err != nil {
-				CheckErr(fmt.Errorf("ParseSDR failed, err: %s", err))
-			}
 			client.Debug("SDR", sdr)
+			fmt.Println(sdr)
 		},
 	}
 
@@ -79,7 +82,6 @@ func NewCmdSDRList() *cobra.Command {
 		Short: "list",
 		Run: func(cmd *cobra.Command, args []string) {
 			var recordType ipmi.SDRRecordType = 0
-
 			if len(args) >= 1 {
 				switch args[0] {
 				case "all":
@@ -105,8 +107,14 @@ func NewCmdSDRList() *cobra.Command {
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSDRs failed, err: %s", err))
 			}
-			for _, sdr := range sdrs {
+			for k, sdr := range sdrs {
+				if k == 0 {
+					fmt.Println(sdr.StringHeader())
+				}
 				fmt.Println(sdr)
+				if k == len(sdrs)-1 {
+					fmt.Println(sdr.StringHeader())
+				}
 			}
 		},
 	}

@@ -37,13 +37,9 @@ func (res *GetSystemGUIDResponse) Format() string {
 	return fmt.Sprintf("%s", res)
 }
 
-func (c *Client) GetSystemGUID() (*GetSystemGUIDResponse, error) {
-	req := &GetSystemGUIDRequest{}
-	res := &GetSystemGUIDResponse{}
-
-	if err := c.Exchange(req, res); err != nil {
-		return nil, fmt.Errorf("client exchange failed, err: %s", err)
-	}
-	return res, nil
-
+func (c *Client) GetSystemGUID() (response *GetSystemGUIDResponse, err error) {
+	request := &GetSystemGUIDRequest{}
+	response = &GetSystemGUIDResponse{}
+	err = c.Exchange(request, response)
+	return
 }

@@ -93,19 +93,19 @@ var (
 	CommandGetSystemIntefaceCapabilities = Command{ID: 0x57, NetFn: NetFnAppRequest, Name: "Get System Interface Capabilities"}
 
 	// Chassis Device Commands
-	CommandGetChassisCapabilities     = Command{ID: 0x00, NetFn: NetFnChassisRequest, Name: "Get Chassis Capabilities"}
-	CommandGetChassisStatus           = Command{ID: 0x01, NetFn: NetFnChassisRequest, Name: "Get Chassis Status"}
-	CommandChassisControl             = Command{ID: 0x02, NetFn: NetFnChassisRequest, Name: "Chassis Control"}
-	CommandChassisReset               = Command{ID: 0x03, NetFn: NetFnChassisRequest, Name: "Chassis Reset"}
-	CommandChassisIdentify            = Command{ID: 0x04, NetFn: NetFnChassisRequest, Name: "Chassis Identify"}
-	CommandSetChassisCapabitilies     = Command{ID: 0x05, NetFn: NetFnChassisRequest, Name: "Set Chassis Capabilities"}
-	CommandSetPowerRestorePolicy      = Command{ID: 0x06, NetFn: NetFnChassisRequest, Name: "Set Power Restore Policy"}
-	CommandGetSystemRestartCause      = Command{ID: 0x07, NetFn: NetFnChassisRequest, Name: "Get System Restart Cause"}
-	CommandSetSystemBootOptions       = Command{ID: 0x08, NetFn: NetFnChassisRequest, Name: "Set System Boot Options"}
-	CommandGetSystemBootOptions       = Command{ID: 0x09, NetFn: NetFnChassisRequest, Name: "Get System Boot Options"}
-	CommandSetFrontPanelButtonEnables = Command{ID: 0x0a, NetFn: NetFnChassisRequest, Name: "Set Front Panel Button Enables"}
-	CommandSetPowerCycleInterval      = Command{ID: 0x0b, NetFn: NetFnChassisRequest, Name: "Set Power Cycle Interval"} // 0ch -0eh unassigned
-	CommandGetPohCounter              = Command{ID: 0x0f, NetFn: NetFnChassisRequest, Name: "Get POH Counter"}
+	CommandGetChassisCapabilities = Command{ID: 0x00, NetFn: NetFnChassisRequest, Name: "Get Chassis Capabilities"}
+	CommandGetChassisStatus       = Command{ID: 0x01, NetFn: NetFnChassisRequest, Name: "Get Chassis Status"}
+	CommandChassisControl         = Command{ID: 0x02, NetFn: NetFnChassisRequest, Name: "Chassis Control"}
+	CommandChassisReset           = Command{ID: 0x03, NetFn: NetFnChassisRequest, Name: "Chassis Reset"}
+	CommandChassisIdentify        = Command{ID: 0x04, NetFn: NetFnChassisRequest, Name: "Chassis Identify"}
+	CommandSetChassisCapabilities = Command{ID: 0x05, NetFn: NetFnChassisRequest, Name: "Set Chassis Capabilities"}
+	CommandSetPowerRestorePolicy  = Command{ID: 0x06, NetFn: NetFnChassisRequest, Name: "Set Power Restore Policy"}
+	CommandGetSystemRestartCause  = Command{ID: 0x07, NetFn: NetFnChassisRequest, Name: "Get System Restart Cause"}
+	CommandSetSystemBootOptions   = Command{ID: 0x08, NetFn: NetFnChassisRequest, Name: "Set System Boot Options"}
+	CommandGetSystemBootOptions   = Command{ID: 0x09, NetFn: NetFnChassisRequest, Name: "Get System Boot Options"}
+	CommandSetFrontPanelEnables   = Command{ID: 0x0a, NetFn: NetFnChassisRequest, Name: "Set Front Panel Button Enables"}
+	CommandSetPowerCycleInterval  = Command{ID: 0x0b, NetFn: NetFnChassisRequest, Name: "Set Power Cycle Interval"} // 0ch -0eh unassigned
+	CommandGetPOHCounter          = Command{ID: 0x0f, NetFn: NetFnChassisRequest, Name: "Get POH Counter"}
 
 	// Event Commands
 	CommandSetEventReceiver = Command{ID: 0x00, NetFn: NetFnSensorEventRequest, Name: "Set Event Receiver"}
@@ -129,8 +129,8 @@ var (
 	CommandGetSensorReadingFactors        = Command{ID: 0x23, NetFn: NetFnSensorEventRequest, Name: "Get Sensor Reading Factors"}
 	CommandSetSensorHysteresis            = Command{ID: 0x24, NetFn: NetFnSensorEventRequest, Name: "Set Sensor Hysteresis"}
 	CommandGetSensorHysteresis            = Command{ID: 0x25, NetFn: NetFnSensorEventRequest, Name: "Get Sensor Hysteresis"}
-	CommandSetSensorThreshold             = Command{ID: 0x26, NetFn: NetFnSensorEventRequest, Name: "Set Sensor Threshold"}
-	CommandGetSensorThreshold             = Command{ID: 0x27, NetFn: NetFnSensorEventRequest, Name: "Get Sensor Threshold"}
+	CommandSetSensorThresholds            = Command{ID: 0x26, NetFn: NetFnSensorEventRequest, Name: "Set Sensor Threshold"}
+	CommandGetSensorThresholds            = Command{ID: 0x27, NetFn: NetFnSensorEventRequest, Name: "Get Sensor Threshold"}
 	CommandSetSensorEventEnable           = Command{ID: 0x28, NetFn: NetFnSensorEventRequest, Name: "Set Sensor Event Enable"}
 	CommandGetSensorEventEnable           = Command{ID: 0x29, NetFn: NetFnSensorEventRequest, Name: "Get Sensor Event Enable"}
 	CommandRearmSensorEvents              = Command{ID: 0x2a, NetFn: NetFnSensorEventRequest, Name: "Re-arm Sensor Events"}
@@ -141,9 +141,9 @@ var (
 	CommandSetSensorReadingAndEventStatus = Command{ID: 0x30, NetFn: NetFnSensorEventRequest, Name: "Set Sensor Reading And Event Status"}
 
 	// FRU Device Commands
-	CommandGetFruInventoryAreaInfo = Command{ID: 0x10, NetFn: NetFnStorageRequest, Name: "Get FRU Inventory Area Info"}
-	CommandReadFruData             = Command{ID: 0x11, NetFn: NetFnStorageRequest, Name: "Read FRU Data"}
-	CommandWriteFruData            = Command{ID: 0x12, NetFn: NetFnStorageRequest, Name: "Write FRU Data"}
+	CommandGetFRUInventoryAreaInfo = Command{ID: 0x10, NetFn: NetFnStorageRequest, Name: "Get FRU Inventory Area Info"}
+	CommandReadFRUData             = Command{ID: 0x11, NetFn: NetFnStorageRequest, Name: "Read FRU Data"}
+	CommandWriteFRUData            = Command{ID: 0x12, NetFn: NetFnStorageRequest, Name: "Write FRU Data"}
 
 	// SDR Device Commands
 	CommandGetSDRRepoInfo         = Command{ID: 0x20, NetFn: NetFnStorageRequest, Name: "Get SDR Repository Info"}

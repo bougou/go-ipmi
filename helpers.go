@@ -95,6 +95,101 @@ func toBase64(b []byte) string {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
+func setBit7(b uint8) uint8 {
+	return b | 0x80
+}
+
+func setBit6(b uint8) uint8 {
+	return b | 0x40
+}
+
+func setBit5(b uint8) uint8 {
+	return b | 0x20
+}
+
+func setBit4(b uint8) uint8 {
+	return b | 0x10
+}
+
+func setBit3(b uint8) uint8 {
+	return b | 0x08
+}
+
+func setBit2(b uint8) uint8 {
+	return b | 0x04
+}
+
+func setBit1(b uint8) uint8 {
+	return b | 0x02
+}
+
+func setBit0(b uint8) uint8 {
+	return b | 0x01
+}
+
+func clearBit7(b uint8) uint8 {
+	return b & 0x7f
+}
+
+func clearBit6(b uint8) uint8 {
+	return b & 0xbf
+}
+
+func clearBit5(b uint8) uint8 {
+	return b & 0xdf
+}
+
+func clearBit4(b uint8) uint8 {
+	return b & 0xef
+}
+
+func clearBit3(b uint8) uint8 {
+	return b & 0xf7
+}
+
+func clearBit2(b uint8) uint8 {
+	return b & 0xfb
+}
+
+func clearBit1(b uint8) uint8 {
+	return b & 0xfd
+}
+
+func clearBit0(b uint8) uint8 {
+	return b & 0xfe
+}
+func isBit7Set(b uint8) bool {
+	return b&0x80 == 0x80
+}
+
+func isBit6Set(b uint8) bool {
+	return b&0x40 == 0x40
+}
+
+func isBit5Set(b uint8) bool {
+	return b&0x20 == 0x20
+}
+
+func isBit4Set(b uint8) bool {
+	return b&0x10 == 0x10
+}
+
+func isBit3Set(b uint8) bool {
+	return b&0x08 == 0x08
+}
+
+func isBit2Set(b uint8) bool {
+	return b&0x04 == 0x04
+}
+
+func isBit1Set(b uint8) bool {
+	return b&0x02 == 0x02
+}
+
+func isBit0Set(b uint8) bool {
+	return b&0x01 == 0x01
+}
+
 func unpackUint8(msg []byte, off int) (uint8, int, error) {
 	if off+1 > len(msg) {
 		return 0, len(msg), fmt.Errorf("overflow unpacking uint8")
@@ -327,4 +422,30 @@ func packUint64L(i uint64, msg []byte, off int) (int, error) {
 	binary.LittleEndian.PutUint64(msg[off:], i)
 	off += 8
 	return off, nil
+}
+
+type formatValue struct {
+	format string
+	value  interface{}
+}
+
+func fv(format string, value interface{}) formatValue {
+	return formatValue{
+		format: format,
+		value:  value,
+	}
+}
+
+func formatValuesTable(formatValues []formatValue) string {
+	var format string
+	var values []interface{}
+	for k, v := range formatValues {
+		if k == 0 {
+			format += v.format
+		} else {
+			format += " | " + v.format
+		}
+		values = append(values, v.value)
+	}
+	return fmt.Sprintf(format, values...)
 }

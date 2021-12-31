@@ -104,9 +104,9 @@ Get SEL Alloc Info supported : %v`,
 	)
 }
 
-func (c *Client) GetSELInfo() (*GetSELInfoResponse, error) {
-	req := &GetSELInfoRequest{}
-	res := &GetSELInfoResponse{}
-	err := c.Exchange(req, res)
-	return res, err
+func (c *Client) GetSELInfo() (response *GetSELInfoResponse, err error) {
+	request := &GetSELInfoRequest{}
+	response = &GetSELInfoResponse{}
+	err = c.Exchange(request, response)
+	return
 }

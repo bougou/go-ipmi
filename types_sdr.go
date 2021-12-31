@@ -36,17 +36,17 @@ const (
 // 43.6 SDR Type 0Ah:0Fh - Reserved Records
 // This range and all other unspecified SDR Type values are reserved.
 var sdrRecordTypeMap = map[SDRRecordType]string{
-	0x01: "Full Sensor Record",
-	0x02: "Compact Sensor Record",
-	0x03: "Event Only Record",
-	0x08: "Entity Association Record",
-	0x09: "Device-relative Entity Association Record",
-	0x10: "Generic Device Locator Record",
-	0x11: "FRU Device Locator Record",
-	0x12: "Management Controller Device Locator Record",
-	0x13: "Management Controller Confirmation Record",
-	0x14: "BMC Message Channel Info Record",
-	0xc0: "OEM Record",
+	0x01: "Full",
+	0x02: "Compact",
+	0x03: "Event",
+	0x08: "Entity Assoc",
+	0x09: "Device Entity Assoc",
+	0x10: "Generic Device Loc",
+	0x11: "FRU Device Loc",
+	0x12: "MC Device Loc", // MC: Management Controller
+	0x13: "MC Confirmation",
+	0x14: "BMC Msg Channel Info",
+	0xc0: "OEM",
 }
 
 func (sdrRecordType SDRRecordType) String() string {
@@ -102,41 +102,140 @@ type SDR struct {
 	Reserved                    *SDRReserved
 }
 
+func (sdr *SDR) SensorNumber() uint8 {
+	recordType := sdr.RecordHeader.RecordType
+	switch recordType {
+	case SDRRecordTypeFullSensor:
+		return sdr.Full.SensorNumber
+	case SDRRecordTypeCompactSensor:
+		return sdr.Compact.SensorNumber
+	case SDRRecordTypeEventOnly:
+		return sdr.EventOnly.SensorNumber
+	case SDRRecordTypeEntityAssociation:
+		return 0
+	case SDRRecordTypeDeviceRelativeEntityAssociation:
+		return 0
+	case SDRRecordTypeGenericLocator:
+		return 0
+	case SDRRecordTypeFRUDeviceLocator:
+		return 0
+	case SDRRecordTypeManagementControllerDeviceLocator:
+		return 0
+	case SDRRecordTypeManagementControllerConfirmation:
+		return 0
+	case SDRRecordTypeOEM:
+		return 0
+	default:
+		return 0
+	}
+}
+
+func (sdr *SDR) SensorName() string {
+	recordType := sdr.RecordHeader.RecordType
+	switch recordType {
+	case SDRRecordTypeFullSensor:
+		return string(sdr.Full.IDStringBytes)
+	case SDRRecordTypeCompactSensor:
+		return string(sdr.Compact.IDStringBytes)
+	case SDRRecordTypeEventOnly:
+		return string(sdr.EventOnly.IDStringBytes)
+	case SDRRecordTypeEntityAssociation:
+		return "N/A"
+	case SDRRecordTypeDeviceRelativeEntityAssociation:
+		return "N/A"
+	case SDRRecordTypeGenericLocator:
+		return string(sdr.GenericDeviceLocator.DeviceIDString)
+	case SDRRecordTypeFRUDeviceLocator:
+		return string(sdr.FRUDeviceLocator.DeviceIDBytes)
+	case SDRRecordTypeManagementControllerDeviceLocator:
+		return string(sdr.MgmtControllerDeviceLocator.DeviceIDBytes)
+	case SDRRecordTypeManagementControllerConfirmation:
+		return "N/A"
+	case SDRRecordTypeOEM:
+		return "N/A"
+	default:
+		return "N/A"
+	}
+}
+
+func (sdr *SDR) GeneratorID() uint16 {
+	recordType := sdr.RecordHeader.RecordType
+	switch recordType {
+	case SDRRecordTypeFullSensor:
+		return sdr.Full.GeneratorID
+	case SDRRecordTypeCompactSensor:
+		return sdr.Compact.GeneratorID
+	case SDRRecordTypeEventOnly:
+		return sdr.EventOnly.GeneratorID
+	case SDRRecordTypeEntityAssociation:
+		return 0
+	case SDRRecordTypeDeviceRelativeEntityAssociation:
+		return 0
+	case SDRRecordTypeGenericLocator:
+		return 0
+	case SDRRecordTypeFRUDeviceLocator:
+		return 0
+	case SDRRecordTypeManagementControllerDeviceLocator:
+		return 0
+	case SDRRecordTypeManagementControllerConfirmation:
+		return 0
+	case SDRRecordTypeOEM:
+		return 0
+	default:
+		return 0
+	}
+}
+
+func (sdr *SDR) StringHeader() string {
+	formatValues := []formatValue{
+		fv("%-8s", "RecordID"),
+		fv("%-10s", "RecordType"),
+		fv("%-20s", "RecordTypeStr"),
+		fv("%-11s", "GeneratorID"),
+		fv("%-7s", "Sensor#"),
+		fv("%-16s", "SensorName"),
+	}
+	return formatValuesTable(formatValues)
+
+}
+
 func (sdr *SDR) String() string {
 	if sdr.RecordHeader == nil {
 		return ""
 	}
 
-	// RecordID, RecordType, SensorName, SensorNumber
-	format := "%#02x | %#02x | %-16s | %#02x"
 	recordID := sdr.RecordHeader.RecordID
 	recordType := sdr.RecordHeader.RecordType
+
 	switch recordType {
 	case SDRRecordTypeFullSensor:
-		return fmt.Sprintf(format, recordID, uint8(recordType), string(sdr.Full.SensorName), sdr.Full.SensorNumber)
 	case SDRRecordTypeCompactSensor:
-		return fmt.Sprintf(format, recordID, uint8(recordType), string(sdr.Compact.SensorName), sdr.Compact.SensorNumber)
 	case SDRRecordTypeEventOnly:
-		return fmt.Sprintf(format, recordID, uint8(recordType), string(sdr.EventOnly.SensorName), sdr.EventOnly.SensorNumber)
-	case SDRRecordTypeEntityAssociation:
-		return fmt.Sprintf(format, recordID, uint8(recordType), string(sdr.EntityAssociation.SensorName), sdr.EntityAssociation.ContainerEntityID)
 	case SDRRecordTypeDeviceRelativeEntityAssociation:
-		return fmt.Sprintf(format, recordID, uint8(recordType), string(sdr.DeviceRelative.SensorName), sdr.DeviceRelative.ContainerEntityID)
 	case SDRRecordTypeGenericLocator:
-		return fmt.Sprintf(format, recordID, uint8(recordType), string(sdr.GenericDeviceLocator.SensorName), sdr.GenericDeviceLocator.EntityID)
 	case SDRRecordTypeFRUDeviceLocator:
-		return fmt.Sprintf(format, recordID, uint8(recordType), string(sdr.FRUDeviceLocator.SensorName), sdr.FRUDeviceLocator.FRUEntityID)
 	case SDRRecordTypeManagementControllerDeviceLocator:
-		return fmt.Sprintf(format, recordID, uint8(recordType), string(sdr.MgmtControllerDeviceLocator.SensorName), sdr.MgmtControllerDeviceLocator.EntityID)
 	case SDRRecordTypeManagementControllerConfirmation:
-		return fmt.Sprintf(format, recordID, uint8(recordType), string(sdr.MgmtControllerConfirmation.ManufacturerID), sdr.MgmtControllerConfirmation.ManufacturerID)
 	case SDRRecordTypeBMCMessageChannelInfo:
-		return fmt.Sprintf(format, recordID, uint8(recordType), string(sdr.BMCChannelInfo.Channel0), sdr.BMCChannelInfo.Channel0)
 	case SDRRecordTypeOEM:
-		return "OEM"
 	default:
-		return ""
 	}
+
+	var gidStr string
+	if sdr.GeneratorID() == 0 {
+		gidStr = "N/A"
+	} else {
+		gidStr = fmt.Sprintf("%#04x", sdr.GeneratorID())
+	}
+	formatValues := []formatValue{
+		fv("%-8s", fmt.Sprintf("%#02x", recordID)),
+		fv("%-10s", fmt.Sprintf("%#02x", uint8(recordType))),
+		fv("%-20s", recordType),
+		fv("%-11s", gidStr),
+		fv("%-7s", fmt.Sprintf("%#02x", sdr.SensorNumber())),
+		fv("%-16s", sdr.SensorName()),
+	}
+	return formatValuesTable(formatValues)
 }
 
 // 43.1 SDRFull Type 01h, Full Sensor Record
@@ -149,28 +248,23 @@ type SDRFull struct {
 	// The Record Key bytes shall be contiguous and follow the Record Header.
 	// The number of bytes that make up the Record Key field may vary according to record type.
 
-	// [7:1] - 7-bit I2C Slave Address, or 7-bit system software ID[2]
-	// [0] - 0b = ID is IPMB Slave Address, 1b = system software ID
-	SensorOwnerID uint8
-
-	SensorOwnerLUN uint8
-	SensorNumber   uint8 // Unique number identifying the sensor behind a given slave address and LUN. Code FFh reserved.
+	GeneratorID  uint16
+	SensorNumber uint8
 
 	//
 	// RECORD BODY
 	//
 
-	SensorEntityID       uint8
-	SensorEntityInstance uint8
-	SensorInitialization uint8
-	SensorCapabilitites  uint8
-	SensorType           uint8
-	SensorEventType      uint8
+	SensorEntityID         uint8
+	SensorEntityInstance   uint8
+	SensorInitialization   uint8
+	SensorCapabilitites    uint8
+	SensorType             uint8
+	SensorEventReadingType EventReadingType
 
-	// Todo
-	AssertionEventMask           uint16
-	DeassertionEventMask         uint16
-	DiscreteSettableReadableMask uint16
+	AssertionEventLowerThresholdReadingMask   AssertionEventLowerThresholdReadingMask
+	DeassertionEventUpperThresholdReadingMask DeassertionEventUpperThresholdReadingMask
+	DiscreteSettableReadableMask              DiscreteSettableReadableMask
 
 	SensorUnits1 uint8
 	SensorUnits2 uint8 // Base Unit [7:0] - Units Type code: See Table 43-, Sensor Unit Type Codes
@@ -188,7 +282,6 @@ type SDRFull struct {
 
 	EntityInstanceSharing uint8
 
-	// ===== Full Sensor ONLY
 	Linearization uint8
 	M             uint8
 	MTolerance    uint8
@@ -216,13 +309,79 @@ type SDRFull struct {
 	LowerNonRecoverableThreshold uint8
 	LowerCriticalThreshold       uint8
 	LowerNonCriticalThreshold    uint8
-	// ===== Full Sensor ONLY
 
 	PositiveGoingThresholdHysteresisValue uint8
 	NegativeGoingThresholdHysteresisValue uint8
 
-	TypeLength TypeLength
-	SensorName []byte
+	IDStringTypeLength TypeLength
+	IDStringBytes      []byte
+}
+
+func parseSDRFullSensor(data []byte, sdr *SDR) error {
+	minSize := SDRFullSensorMinSize
+	if len(data) < minSize {
+		return fmt.Errorf("sdr (full sensor) data must be longer than %d", minSize)
+	}
+
+	s := &SDRFull{}
+	sdr.Full = s
+
+	s.GeneratorID, _, _ = unpackUint16L(data, 5)
+	s.SensorNumber, _, _ = unpackUint8(data, 7)
+
+	s.SensorEntityID, _, _ = unpackUint8(data, 8)
+	s.SensorEntityInstance, _, _ = unpackUint8(data, 9)
+	s.SensorInitialization, _, _ = unpackUint8(data, 10)
+	s.SensorCapabilitites, _, _ = unpackUint8(data, 11)
+	s.SensorType, _, _ = unpackUint8(data, 12)
+
+	eventReadingType, _, _ := unpackUint8(data, 13)
+	s.SensorEventReadingType = EventReadingType(eventReadingType)
+
+	b1516, _, _ := unpackUint16(data, 14)
+	s.AssertionEventLowerThresholdReadingMask = parseAssertionEventLowerThresholdReadingMask(b1516)
+
+	b1718, _, _ := unpackUint16(data, 16)
+	s.DeassertionEventUpperThresholdReadingMask = parseDeassertionEventUpperThresholdReadingMask(b1718)
+
+	b1920, _, _ := unpackUint16(data, 18)
+	s.DiscreteSettableReadableMask = parseDiscreteSettableReadableMask(b1920)
+
+	s.SensorUnits1, _, _ = unpackUint8(data, 20)
+	s.SensorUnits1, _, _ = unpackUint8(data, 21)
+	s.SensorUnits3, _, _ = unpackUint8(data, 22)
+
+	s.Linearization, _, _ = unpackUint8(data, 23)
+
+	s.NominalReading, _, _ = unpackUint8(data, 31)
+
+	s.NormalMaximum, _, _ = unpackUint8(data, 32)
+	s.NormalMinimum, _, _ = unpackUint8(data, 33)
+	s.SensorMaximumReading, _, _ = unpackUint8(data, 34)
+	s.SensorMinimumReading, _, _ = unpackUint8(data, 35)
+
+	s.UpperNonRecoverableThreshold, _, _ = unpackUint8(data, 36)
+	s.UpperCriticalThreshold, _, _ = unpackUint8(data, 37)
+	s.UpperNonCriticalThreshold, _, _ = unpackUint8(data, 38)
+
+	s.LowerNonRecoverableThreshold, _, _ = unpackUint8(data, 39)
+	s.LowerCriticalThreshold, _, _ = unpackUint8(data, 40)
+	s.LowerNonCriticalThreshold, _, _ = unpackUint8(data, 41)
+
+	s.PositiveGoingThresholdHysteresisValue, _, _ = unpackUint8(data, 42)
+	s.NegativeGoingThresholdHysteresisValue, _, _ = unpackUint8(data, 43)
+
+	typeLength, _, _ := unpackUint8(data, 47)
+	s.IDStringTypeLength = TypeLength(typeLength)
+
+	idStrLen := int(s.IDStringTypeLength.Length())
+
+	if len(data) < minSize+idStrLen {
+		return fmt.Errorf("sdr (full sensor) data must be longer than %d", minSize+idStrLen)
+	}
+	s.IDStringBytes, _, _ = unpackBytes(data, minSize, idStrLen)
+
+	return nil
 }
 
 // 43.2 SDR Type 02h, Compact Sensor Record
@@ -231,28 +390,22 @@ type SDRCompact struct {
 	// Record KEY
 	//
 
-	// [7:1] - 7-bit I2C Slave Address, or 7-bit system software ID[2]
-	// [0] - 0b = ID is IPMB Slave Address, 1b = system software ID
-	SensorOwnerID uint8
-
-	SensorOwnerLUN uint8
-	SensorNumber   uint8 // Unique number identifying the sensor behind a given slave address and LUN. Code FFh reserved.
-
+	GeneratorID  uint16
+	SensorNumber uint8
 	//
 	// RECORD BODY
 	//
 
-	SensorEntityID       uint8
-	SensorEntityInstance uint8
-	SensorInitialization uint8
-	SensorCapabilitites  uint8
-	SensorType           uint8
-	SensorEventType      uint8
+	SensorEntityID         uint8
+	SensorEntityInstance   uint8
+	SensorInitialization   uint8
+	SensorCapabilitites    uint8
+	SensorType             uint8
+	SensorEventReadingType uint8
 
-	// Todo
-	AssertionEventMask           uint16
-	DeassertionEventMask         uint16
-	DiscreteSettableReadableMask uint16
+	AssertionEventLowerThresholdReadingMask   AssertionEventLowerThresholdReadingMask
+	DeassertionEventUpperThresholdReadingMask DeassertionEventUpperThresholdReadingMask
+	DiscreteSettableReadableMask              DiscreteSettableReadableMask
 
 	SensorUnits1 uint8
 	SensorUnits2 uint8 // Base Unit [7:0] - Units Type code: See Table 43-, Sensor Unit Type Codes
@@ -273,8 +426,54 @@ type SDRCompact struct {
 	PositiveGoingThresholdHysteresisValue uint8
 	NegativeGoingThresholdHysteresisValue uint8
 
-	TypeLength TypeLength
-	SensorName []byte
+	IDStringTypeLength TypeLength // Sensor ID String Type/Length Code
+	IDStringBytes      []byte     // Sensor ID String bytes.
+}
+
+func parseSDRCompactSensor(data []byte, sdr *SDR) error {
+	minSize := SDRCompactSensorMinSize
+	if len(data) < minSize {
+		return fmt.Errorf("sdr (compact sensor) data must be longer than %d", minSize)
+	}
+
+	s := &SDRCompact{}
+	sdr.Compact = s
+
+	s.GeneratorID, _, _ = unpackUint16L(data, 5)
+	s.SensorNumber, _, _ = unpackUint8(data, 7)
+
+	s.SensorEntityID, _, _ = unpackUint8(data, 8)
+	s.SensorEntityInstance, _, _ = unpackUint8(data, 9)
+	s.SensorInitialization, _, _ = unpackUint8(data, 10)
+	s.SensorCapabilitites, _, _ = unpackUint8(data, 11)
+	s.SensorType, _, _ = unpackUint8(data, 12)
+	s.SensorEventReadingType, _, _ = unpackUint8(data, 13)
+
+	b1516, _, _ := unpackUint16(data, 14)
+	s.AssertionEventLowerThresholdReadingMask = parseAssertionEventLowerThresholdReadingMask(b1516)
+
+	b1718, _, _ := unpackUint16(data, 16)
+	s.DeassertionEventUpperThresholdReadingMask = parseDeassertionEventUpperThresholdReadingMask(b1718)
+
+	b1920, _, _ := unpackUint16(data, 18)
+	s.DiscreteSettableReadableMask = parseDiscreteSettableReadableMask(b1920)
+
+	s.SensorUnits1, _, _ = unpackUint8(data, 20)
+	s.SensorUnits1, _, _ = unpackUint8(data, 21)
+	s.SensorUnits3, _, _ = unpackUint8(data, 22)
+
+	s.PositiveGoingThresholdHysteresisValue, _, _ = unpackUint8(data, 25)
+	s.NegativeGoingThresholdHysteresisValue, _, _ = unpackUint8(data, 26)
+
+	typeLength, _, _ := unpackUint8(data, 31)
+	s.IDStringTypeLength = TypeLength(typeLength)
+
+	idStrLen := int(s.IDStringTypeLength.Length())
+	if len(data) < minSize+idStrLen {
+		return fmt.Errorf("sdr (compact sensor) data must be longer than %d", minSize+idStrLen)
+	}
+	s.IDStringBytes, _, _ = unpackBytes(data, minSize, idStrLen)
+	return nil
 }
 
 // 43.3 SDR Type 03h, Event-Only Record
@@ -283,26 +482,50 @@ type SDREventOnly struct {
 	// Record KEY
 	//
 
-	// [7:1] - 7-bit I2C Slave Address, or 7-bit system software ID[2]
-	// [0] - 0b = ID is IPMB Slave Address, 1b = system software ID
-	SensorOwnerID uint8
-
-	SensorOwnerLUN uint8
-	SensorNumber   uint8 // Unique number identifying the sensor behind a given slave address and LUN. Code FFh reserved.
+	GeneratorID  uint16
+	SensorNumber uint8 // Unique number identifying the sensor behind a given slave address and LUN. Code FFh reserved.
 
 	//
 	// RECORD BODY
 	//
 
-	SensorEntityID        uint8
-	SensorEntityInstance  uint8
-	SensorType            uint8
-	SensorEventType       uint8
-	SensorDirection       uint8
-	EntityInstanceSharing uint8
+	SensorEntityID         uint8
+	SensorEntityInstance   uint8
+	SensorType             uint8
+	SensorEventReadingType uint8
+	SensorDirection        uint8
+	EntityInstanceSharing  uint8
 
-	TypeLength TypeLength
-	SensorName []byte
+	IDStringTypeLength TypeLength
+	IDStringBytes      []byte
+}
+
+func parseSDREventOnly(data []byte, sdr *SDR) error {
+	minSize := SDREventOnlyMinSize
+	if len(data) < minSize {
+		return fmt.Errorf("sdr (event-only) data must be longer than %d", minSize)
+	}
+
+	s := &SDREventOnly{}
+	sdr.EventOnly = s
+
+	s.GeneratorID, _, _ = unpackUint16L(data, 5)
+	s.SensorNumber, _, _ = unpackUint8(data, 7)
+
+	s.SensorEntityID, _, _ = unpackUint8(data, 8)
+	s.SensorEntityInstance, _, _ = unpackUint8(data, 9)
+	s.SensorType, _, _ = unpackUint8(data, 10)
+	s.SensorEventReadingType, _, _ = unpackUint8(data, 11)
+
+	typeLength, _, _ := unpackUint8(data, 16)
+	s.IDStringTypeLength = TypeLength(typeLength)
+
+	idStrLen := int(s.IDStringTypeLength.Length())
+	if len(data) < minSize+idStrLen {
+		return fmt.Errorf("sdr (event-only) data must be longer than %d", minSize+idStrLen)
+	}
+	s.IDStringBytes, _, _ = unpackBytes(data, minSize, idStrLen)
+	return nil
 }
 
 // 43.4 SDR Type 08h - Entity Association Record
@@ -311,9 +534,25 @@ type SDREntityAssociation struct {
 	// Record KEY
 	//
 
-	ContainerEntityID          uint8
-	ContainerEntityInstance    uint8
-	Flags                      uint8
+	ContainerEntityID       uint8
+	ContainerEntityInstance uint8
+
+	// [7] - 0b = contained entities specified as list
+	//       1b = contained entities specified as range
+	ContainedEntitiesAsRange bool
+	// [6] - Record Link
+	//       0b = no linked Entity Association records
+	//       1b = linked Entity Association records exist
+	LinkedEntityAssiactionExist bool
+	// [5] - 0b = Container entity and contained entities can be assumed absent
+	//            if presence sensor for container entity cannot be accessed.
+	//            This value is also used if the entity does not have a presence sensor.
+	//       1b = Presence sensor should always be accessible. Software should consider
+	//            it an error if the presence sensor associated with the container entity
+	//            is not accessible. If a presence sensor is accessible, then the
+	//            presence sensor can still report that the container entity is absent.
+	PresenceSensorAlwaysAccessible bool
+
 	ContaineredEntity1ID       uint8
 	ContaineredEntity1Instance uint8
 
@@ -327,9 +566,35 @@ type SDREntityAssociation struct {
 	ContaineredEntity3Instance uint8
 	ContaineredEntity4ID       uint8
 	ContaineredEntity4Instance uint8
+}
 
-	TypeLength TypeLength
-	SensorName []byte
+func parseSDREntityAssociation(data []byte, sdr *SDR) error {
+	size := SDREntityAssociationSize
+	if len(data) < size {
+		return fmt.Errorf("sdr (entity association) data must be longer than %d", size)
+	}
+
+	s := &SDREntityAssociation{}
+	sdr.EntityAssociation = s
+
+	s.ContainerEntityID, _, _ = unpackUint8(data, 5)
+	s.ContainerEntityInstance, _, _ = unpackUint8(data, 6)
+
+	flag, _, _ := unpackUint8(data, 7)
+	s.ContainedEntitiesAsRange = isBit7Set(flag)
+	s.LinkedEntityAssiactionExist = isBit6Set(flag)
+	s.PresenceSensorAlwaysAccessible = isBit5Set(flag)
+
+	s.ContaineredEntity1ID, _, _ = unpackUint8(data, 8)
+	s.ContaineredEntity1Instance, _, _ = unpackUint8(data, 9)
+	s.ContaineredEntity2ID, _, _ = unpackUint8(data, 10)
+	s.ContaineredEntity2Instance, _, _ = unpackUint8(data, 11)
+	s.ContaineredEntity3ID, _, _ = unpackUint8(data, 12)
+	s.ContaineredEntity3Instance, _, _ = unpackUint8(data, 13)
+	s.ContaineredEntity4ID, _, _ = unpackUint8(data, 14)
+	s.ContaineredEntity4Instance, _, _ = unpackUint8(data, 15)
+
+	return nil
 }
 
 // 43.5 SDR Type 09h - Device-relative Entity Association Record
@@ -338,11 +603,27 @@ type SDRDeviceRelative struct {
 	// Record KEY
 	//
 
-	ContainerEntityID               uint8
-	ContainerEntityInstance         uint8
-	ContainerEntityDeviceAddress    uint8
-	ContainerEntityDeviceChannel    uint8
-	Flags                           uint8
+	ContainerEntityID            uint8
+	ContainerEntityInstance      uint8
+	ContainerEntityDeviceAddress uint8
+	ContainerEntityDeviceChannel uint8
+
+	// [7] - 0b = contained entities specified as list
+	//       1b = contained entities specified as range
+	ContainedEntitiesAsRange bool
+	// [6] - Record Link
+	//       0b = no linked Entity Association records
+	//       1b = linked Entity Association records exist
+	LinkedEntityAssiactionExist bool
+	// [5] - 0b = Container entity and contained entities can be assumed absent
+	//            if presence sensor for container entity cannot be accessed.
+	//            This value is also used if the entity does not have a presence sensor.
+	//       1b = Presence sensor should always be accessible. Software should consider
+	//            it an error if the presence sensor associated with the container entity
+	//            is not accessible. If a presence sensor is accessible, then the
+	//            presence sensor can still report that the container entity is absent.
+	PresenceSensorAlwaysAccessible bool
+
 	ContaineredEntity1DeviceAddress uint8
 	ContaineredEntity1DeviceChannel uint8
 	ContaineredEntity1ID            uint8
@@ -356,32 +637,80 @@ type SDRDeviceRelative struct {
 	ContaineredEntity2DeviceChannel uint8
 	ContaineredEntity2ID            uint8
 	ContaineredEntity2Instance      uint8
+
 	ContaineredEntity3DeviceAddress uint8
 	ContaineredEntity3DeviceChannel uint8
 	ContaineredEntity3ID            uint8
 	ContaineredEntity3Instance      uint8
+
 	ContaineredEntity4DeviceAddress uint8
 	ContaineredEntity4DeviceChannel uint8
 	ContaineredEntity4ID            uint8
 	ContaineredEntity4Instance      uint8
-
-	TypeLength TypeLength
-	SensorName []byte
 }
 
-// 43.6 SDR Type 0Ah:0Fh - Reserved Records
-type SDRReserved struct {
+func parseSDRDeviceRelativeEntityAssociation(data []byte, sdr *SDR) error {
+	size := SDRDeviceRelativeEntityAssociationSize
+	if len(data) < size {
+		return fmt.Errorf("sdr (device-relative entity association) data must be longer than %d", size)
+	}
+
+	s := &SDRDeviceRelative{}
+	sdr.DeviceRelative = s
+
+	s.ContainerEntityID, _, _ = unpackUint8(data, 5)
+	s.ContainerEntityInstance, _, _ = unpackUint8(data, 6)
+	s.ContainerEntityDeviceAddress, _, _ = unpackUint8(data, 7)
+	s.ContainerEntityDeviceChannel, _, _ = unpackUint8(data, 8)
+
+	flag, _, _ := unpackUint8(data, 9)
+	s.ContainedEntitiesAsRange = isBit7Set(flag)
+	s.LinkedEntityAssiactionExist = isBit6Set(flag)
+	s.PresenceSensorAlwaysAccessible = isBit5Set(flag)
+
+	s.ContaineredEntity1DeviceAddress, _, _ = unpackUint8(data, 10)
+	s.ContaineredEntity1DeviceChannel, _, _ = unpackUint8(data, 11)
+	s.ContaineredEntity1ID, _, _ = unpackUint8(data, 12)
+	s.ContaineredEntity1Instance, _, _ = unpackUint8(data, 13)
+
+	s.ContaineredEntity2DeviceAddress, _, _ = unpackUint8(data, 14)
+	s.ContaineredEntity2DeviceChannel, _, _ = unpackUint8(data, 15)
+	s.ContaineredEntity2ID, _, _ = unpackUint8(data, 16)
+	s.ContaineredEntity2Instance, _, _ = unpackUint8(data, 17)
+
+	s.ContaineredEntity3DeviceAddress, _, _ = unpackUint8(data, 18)
+	s.ContaineredEntity3DeviceChannel, _, _ = unpackUint8(data, 19)
+	s.ContaineredEntity3ID, _, _ = unpackUint8(data, 20)
+	s.ContaineredEntity3Instance, _, _ = unpackUint8(data, 21)
+
+	s.ContaineredEntity4DeviceAddress, _, _ = unpackUint8(data, 22)
+	s.ContaineredEntity4DeviceChannel, _, _ = unpackUint8(data, 23)
+	s.ContaineredEntity4ID, _, _ = unpackUint8(data, 24)
+	s.ContaineredEntity4Instance, _, _ = unpackUint8(data, 25)
+
+	unpackBytes(data, 26, 6) // last 6 bytes reserved
+	return nil
 }
 
 // 43.7 SDR Type 10h - Generic Device Locator Record
+// This record is used to store the location and type information for devices
+// on the IPMB or management controller private busses that are neither
+// IPMI FRU devices nor IPMI management controllers.
+//
+// These devices can either be common non-intelligent I2C devices, special management ASICs, or proprietary controllers.
+//
+// IPMI FRU Devices and Management Controllers are located via the FRU Device Locator
+// and Management Controller Device Locator records described in following sections.
 type SDRGenericDeviceLocator struct {
 	//
 	// Record KEY
 	//
 
-	DeviceAccessAddress uint8
+	DeviceAccessAddress uint8 // Slave address of management controller used to access device. 0000000b if device is directly on IPMB
 	DeviceSlaveAddress  uint8
-	AccessLUNBusID      uint8
+	ChannelNumber       uint8 // Channel number for management controller used to access device
+	AccessLUN           uint8 // LUN for Master Write-Read command. 00b if device is non-intelligent device directly on IPMB.
+	PrivateBusID        uint8 // Private bus ID if bus = Private. 000b if device directly on IPMB
 
 	//
 	// RECORD BODY
@@ -393,20 +722,67 @@ type SDRGenericDeviceLocator struct {
 	EntityID           uint8
 	EntityInstance     uint8
 
-	TypeLength TypeLength
-	SensorName []byte
+	DeviceIDTypeLength TypeLength
+	DeviceIDString     []byte // Short ID string for the device
+}
+
+func parseSDRGenericLocator(data []byte, sdr *SDR) error {
+	minSize := SDRGenericLocatorMinSize
+
+	if len(data) < minSize {
+		return fmt.Errorf("sdr (generic-locator) data must be longer than %d", minSize)
+	}
+
+	s := &SDRGenericDeviceLocator{}
+	sdr.GenericDeviceLocator = s
+
+	s.DeviceAccessAddress, _, _ = unpackUint8(data, 5)
+
+	b, _, _ := unpackUint8(data, 6)
+	s.DeviceSlaveAddress = b >> 1
+
+	c, _, _ := unpackUint8(data, 7)
+	s.ChannelNumber = ((b & 0x01) << 4) | (c >> 5)
+	s.AccessLUN = (c & 0x1f) >> 3
+	s.PrivateBusID = (c & 0x07)
+
+	s.AddressSpan, _, _ = unpackUint8(data, 8)
+	s.DeviceType, _, _ = unpackUint8(data, 10)
+	s.DeviceTypeModifier, _, _ = unpackUint8(data, 11)
+
+	s.EntityID, _, _ = unpackUint8(data, 12)
+	s.EntityInstance, _, _ = unpackUint8(data, 13)
+
+	typeLength, _, _ := unpackUint8(data, 15)
+	s.DeviceIDTypeLength = TypeLength(typeLength)
+
+	idStrLen := int(s.DeviceIDTypeLength.Length())
+	if len(data) < minSize+idStrLen {
+		return fmt.Errorf("sdr (generic-locator) data must be longer than %d", minSize+idStrLen)
+	}
+	s.DeviceIDString, _, _ = unpackBytes(data, minSize, idStrLen)
+	return nil
 }
 
 // 43.8 SDR Type 11h - FRU Device Locator Record
+// 38. Accessing FRU Devices
 type SDRFRUDeviceLocator struct {
 	//
 	// Record KEY
 	//
 
+	// Slave address of controller used to access device. 0000000b if device is directly on IPMB.
+	// This field indicates whether the device is on a private bus or not.
 	DeviceAccessAddress uint8
-	DeviceSlaveAddress  uint8
-	AccessLUNBusID      uint8
-	ChannelNumber       uint8
+
+	FRUDeviceID        uint8 // For LOGICAL FRU DEVICE
+	DeviceSlaveAddress uint8 // For non-intelligent FRU device
+
+	IsLogicalFRUDevice bool
+	AccessLUN          uint8
+	PrivateBusID       uint8
+
+	ChannelNumber uint8
 
 	//
 	// RECORD BODY
@@ -417,8 +793,48 @@ type SDRFRUDeviceLocator struct {
 	FRUEntityID        uint8
 	FRUEntityInstance  uint8
 
-	TypeLength TypeLength
-	SensorName []byte
+	DeviceIDTypeLength TypeLength
+	DeviceIDBytes      []byte // Short ID string for the FRU Device
+}
+
+func parseSDRFRUDeviceLocator(data []byte, sdr *SDR) error {
+	minSize := SDRFRUDeviceLocatorMinSize
+	if len(data) < minSize {
+		return fmt.Errorf("sdr (fru device) data must be longer than %d", minSize)
+	}
+
+	s := &SDRFRUDeviceLocator{}
+	sdr.FRUDeviceLocator = s
+
+	s.DeviceAccessAddress, _, _ = unpackUint8(data, 5)
+
+	b7, _, _ := unpackUint8(data, 6)
+	s.FRUDeviceID = b7
+	s.DeviceSlaveAddress = b7 >> 1
+
+	b8, _, _ := unpackUint8(data, 7)
+	s.IsLogicalFRUDevice = isBit7Set(b8)
+	s.AccessLUN = (b8 & 0x1f) >> 3
+	s.PrivateBusID = b8 & 0x07
+
+	b9, _, _ := unpackUint8(data, 8)
+	s.ChannelNumber = b9 >> 4
+
+	s.DeviceType, _, _ = unpackUint8(data, 10)
+	s.DeviceTypeModifier, _, _ = unpackUint8(data, 11)
+
+	s.FRUEntityID, _, _ = unpackUint8(data, 12)
+	s.FRUEntityInstance, _, _ = unpackUint8(data, 13)
+
+	typeLength, _, _ := unpackUint8(data, 15)
+	s.DeviceIDTypeLength = TypeLength(typeLength)
+
+	idStrLen := int(s.DeviceIDTypeLength.Length())
+	if len(data) < minSize+idStrLen {
+		return fmt.Errorf("sdr (fru device) data must be longer than %d", minSize+idStrLen)
+	}
+	s.DeviceIDBytes, _, _ = unpackBytes(data, minSize, idStrLen)
+	return nil
 }
 
 // 43.9 SDR Type 12h - Management Controller Device Locator Record
@@ -427,20 +843,78 @@ type SDRMgmtControllerDeviceLocator struct {
 	// Record KEY
 	//
 
-	DeviceSlaveAddress uint8
+	DeviceSlaveAddress uint8 // 7-bit I2C Slave Address[1] of device on channel
 	ChannelNumber      uint8
 
 	//
 	// RECORD BODY
 	//
 
-	PowerStateNotification uint8
-	DeviceCapabilities     uint8
-	EntityID               uint8
-	EntityInstance         uint8
+	ACPISystemPowerStateNotificationRequired bool
+	ACPIDevicePowerStateNotificationRequired bool
+	ControllerLogsInitializationAgentErrors  bool
+	LogInitializationAgentErrors             bool
 
-	TypeLength TypeLength
-	SensorName []byte
+	DeviceCap_ChassisDevice      bool // device functions as chassis device
+	DeviceCap_Bridge             bool // Controller responds to Bridge NetFn command
+	DeviceCap_IPMBEventGenerator bool // device generates event messages on IPMB
+	DeviceCap_IPMBEventReceiver  bool // device accepts event messages from IPMB
+	DeviceCap_FRUInventoryDevice bool // accepts FRU commands to FRU Device #0 at LUN 00b
+	DeviceCap_SELDevice          bool // provides interface to SEL
+	DeviceCap_SDRRepoDevice      bool // For BMC, indicates BMC provides interface to	1b = SDR Repository. For other controller, indicates controller accepts Device SDR commands
+	DeviceCap_SensorDevice       bool // device accepts sensor commands
+
+	EntityID       uint8
+	EntityInstance uint8
+
+	DeviceIDTypeLength TypeLength
+	DeviceIDBytes      []byte
+}
+
+func parseSDRManagementControllerDeviceLocator(data []byte, sdr *SDR) error {
+	minSize := SDRManagementControllerDeviceLocatorMinSize
+
+	if len(data) < minSize {
+		return fmt.Errorf("sdr (mgmt controller device locator) data must be longer than %d", minSize)
+	}
+
+	s := &SDRMgmtControllerDeviceLocator{}
+	sdr.MgmtControllerDeviceLocator = s
+
+	b6, _, _ := unpackUint8(data, 5)
+	s.DeviceSlaveAddress = b6 >> 1
+
+	b7, _, _ := unpackUint8(data, 6)
+	s.ChannelNumber = b7
+
+	b8, _, _ := unpackUint8(data, 7)
+	s.ACPISystemPowerStateNotificationRequired = isBit7Set(b8)
+	s.ACPIDevicePowerStateNotificationRequired = isBit6Set(b8)
+	s.ControllerLogsInitializationAgentErrors = isBit3Set(b8)
+	s.LogInitializationAgentErrors = isBit2Set(b8)
+
+	b9, _, _ := unpackUint8(data, 8)
+	s.DeviceCap_ChassisDevice = isBit7Set(b9)
+	s.DeviceCap_Bridge = isBit6Set(b9)
+	s.DeviceCap_IPMBEventGenerator = isBit5Set(b9)
+	s.DeviceCap_IPMBEventReceiver = isBit4Set(b9)
+	s.DeviceCap_FRUInventoryDevice = isBit3Set(b9)
+	s.DeviceCap_SELDevice = isBit2Set(b9)
+	s.DeviceCap_SDRRepoDevice = isBit1Set(b9)
+	s.DeviceCap_SensorDevice = isBit0Set(b9)
+
+	s.EntityID, _, _ = unpackUint8(data, 12)
+	s.EntityInstance, _, _ = unpackUint8(data, 13)
+
+	typeLength, _, _ := unpackUint8(data, 15)
+	s.DeviceIDTypeLength = TypeLength(typeLength)
+
+	idStrLen := int(s.DeviceIDTypeLength.Length())
+	if len(data) < minSize+idStrLen {
+		return fmt.Errorf("sdr (mgmt controller device locator) data must be longer than %d", minSize+idStrLen)
+	}
+	s.DeviceIDBytes, _, _ = unpackBytes(data, minSize, idStrLen)
+	return nil
 }
 
 // 43.10 SDR Type 13h - Management Controller Confirmation Record
@@ -449,20 +923,57 @@ type SDRMgmtControllerConfirmation struct {
 	// Record KEY
 	//
 
-	DeviceSlaveAddress uint8
+	DeviceSlaveAddress uint8 // 7-bit I2C Slave Address[1] of device on IPMB.
 	DeviceID           uint8
 	ChannelNumber      uint8
+	DeviceRevision     uint8
 
 	//
 	// RECORD BODY
 	//
 
-	FirmwareRevision1 uint8
-	FirmwareRevision2 uint8
-	IPMIVersion       uint8
-	ManufacturerID    uint32 // 3 bytes only
-	ProductID         uint16
-	DeviceGUID        []byte // 16 bytes
+	FirmwareMajorRevision uint8 // [6:0] - Major Firmware Revision, binary encoded.
+	FirmwareMinorRevision uint8 // Minor Firmware Revision. BCD encoded.
+
+	//IPMI Version from Get Device ID command. Holds IPMI Command Specification
+	// Version. BCD encoded. 00h = reserved. Bits 7:4 hold the Least Significant digit of the
+	// revision, while bits 3:0 hold the Most Significant bits. E.g. a value of 01h indicates
+	// revision 1.0
+	IPMIVersion uint8
+
+	ManufacturerID uint32 // 3 bytes only
+	ProductID      uint16
+	DeviceGUID     []byte // 16 bytes
+}
+
+func parseSDRManagementControllerConfirmation(data []byte, sdr *SDR) error {
+	minSize := SDRManagementControllerConfirmationSize
+	if len(data) < minSize {
+		return fmt.Errorf("sdr (mgmt controller confirmation) data must be longer than %d", minSize)
+	}
+
+	s := &SDRMgmtControllerConfirmation{}
+	sdr.MgmtControllerConfirmation = s
+
+	b6, _, _ := unpackUint8(data, 5)
+	s.DeviceSlaveAddress = b6 >> 1
+
+	s.DeviceID, _, _ = unpackUint8(data, 6)
+
+	b8, _, _ := unpackUint8(data, 7)
+	s.ChannelNumber = b8 >> 4
+	s.DeviceRevision = b8 & 0x0f
+
+	b9, _, _ := unpackUint8(data, 8)
+	s.FirmwareMajorRevision = b9 & 0x7f
+
+	s.FirmwareMinorRevision, _, _ = unpackUint8(data, 9)
+
+	s.IPMIVersion, _, _ = unpackUint8(data, 10)
+	s.ManufacturerID, _, _ = unpackUint24L(data, 11)
+	s.ProductID, _, _ = unpackUint16L(data, 14)
+	s.DeviceGUID, _, _ = unpackBytes(data, 16, 16)
+	return nil
 }
 
 // 43.11 SDR Type 14h - BMC Message Channel Info Record
@@ -475,18 +986,55 @@ type SDRBMCChannelInfo struct {
 	// RECORD BODY
 	//
 
-	Channel0 uint8
-	Channel1 uint8
-	Channel2 uint8
-	Channel3 uint8
-	Channel4 uint8
-	Channel5 uint8
-	Channel6 uint8
-	Channel7 uint8
+	Channel0 ChannelInfo
+	Channel1 ChannelInfo
+	Channel2 ChannelInfo
+	Channel3 ChannelInfo
+	Channel4 ChannelInfo
+	Channel5 ChannelInfo
+	Channel6 ChannelInfo
+	Channel7 ChannelInfo
 
 	MessagingInterruptType uint8
 
 	EventMessageBufferInterruptType uint8
+}
+
+type ChannelInfo struct {
+	TransmitSupported bool // false means  receive message queue access only
+	MessageReceiveLUN uint8
+	ChannelProtocol   uint8
+}
+
+func parseChannelInfo(b uint8) ChannelInfo {
+	return ChannelInfo{
+		TransmitSupported: isBit7Set(b),
+		MessageReceiveLUN: (b & 0x7f) >> 4,
+		ChannelProtocol:   b & 0x0f,
+	}
+}
+
+func parseSDRBMCMessageChannelInfo(data []byte, sdr *SDR) error {
+	minSize := SDRBMCMessageChannelInfoSize
+	if len(data) < minSize {
+		return fmt.Errorf("sdr (bmc message channel info) data must be longer than %d", minSize)
+	}
+
+	s := &SDRBMCChannelInfo{}
+	sdr.BMCChannelInfo = s
+
+	s.Channel0 = parseChannelInfo(data[5])
+	s.Channel1 = parseChannelInfo(data[6])
+	s.Channel2 = parseChannelInfo(data[7])
+	s.Channel3 = parseChannelInfo(data[8])
+	s.Channel4 = parseChannelInfo(data[9])
+	s.Channel5 = parseChannelInfo(data[10])
+	s.Channel6 = parseChannelInfo(data[11])
+	s.Channel7 = parseChannelInfo(data[12])
+
+	s.MessagingInterruptType, _, _ = unpackUint8(data, 13)
+	s.EventMessageBufferInterruptType, _, _ = unpackUint8(data, 14)
+	return nil
 }
 
 // 43.12 SDR Type C0h - OEM Record
@@ -501,6 +1049,24 @@ type SDROEM struct {
 
 	ManufacturerID uint32 // 3 bytes only
 	OEMData        []byte
+}
+
+func parseSDROEM(data []byte, sdr *SDR) error {
+	minSize := SDROEMMinSize
+	if len(data) < minSize {
+		return fmt.Errorf("sdr (bmc message channel info) data must be longer than %d", minSize)
+	}
+
+	s := &SDROEM{}
+	sdr.OEM = s
+
+	s.ManufacturerID, _, _ = unpackUint24L(data, 5)
+	s.OEMData, _, _ = unpackBytesMost(data, 8, SDROEMMaxSize-8)
+	return nil
+}
+
+// 43.6 SDR Type 0Ah:0Fh - Reserved Records
+type SDRReserved struct {
 }
 
 // 43.15 Type/Length Byte Format
@@ -554,6 +1120,237 @@ func (tl TypeLength) Length() uint8 {
 	}
 
 	return size
+}
+
+type AssertionEventLowerThresholdReadingMask struct {
+	// for non-threshold based sensors
+	// Assertion Event Mask
+	AssertionEvent14Supported bool
+	AssertionEvent13Supported bool
+	AssertionEvent12Supported bool
+	AssertionEvent11Supported bool
+	AssertionEvent10Supported bool
+	AssertionEvent9Supported  bool
+	AssertionEvent8Supported  bool
+	AssertionEvent7Supported  bool
+	AssertionEvent6Supported  bool
+	AssertionEvent5Supported  bool
+	AssertionEvent4Supported  bool
+	AssertionEvent3Supported  bool
+	AssertionEvent2Supported  bool
+	AssertionEvent1Supported  bool
+	AssertionEvent0Supported  bool
+
+	// for threshold-based sensors
+	// Lower Threshold Reading Mask
+	// Indicates which lower threshold comparison status is returned via the Get Sensor Reading command.
+	LowerNonRecoverableThresholdComparsion bool // LNR
+	LowerCriticalThresholdComparsion       bool // LC
+	LowerNonCriticalThresholdComparsion    bool // LNC
+	// Threshold Assertion Event Mask
+	Assertion_UNR_GoHigh_Supported bool
+	Assertion_UNR_GoLow_Supported  bool
+	Assertion_UC_GoHigh_Supported  bool
+	Assertion_UC_GoLow_Supported   bool
+	Assertion_UNC_GoHigh_Supported bool
+	Assertion_UNC_GoLow_Supported  bool
+
+	Assertion_LNR_GoHigh_Supported bool
+	Assertion_LNR_GoLow_Supported  bool
+	Assertion_LC_GoHigh_Supported  bool
+	Assertion_LC_GoLow_Supported   bool
+	Assertion_LNC_GoHigh_Supported bool
+	Assertion_LNC_GoLow_Supported  bool
+}
+
+func parseAssertionEventLowerThresholdReadingMask(b uint16) AssertionEventLowerThresholdReadingMask {
+	lsb := uint8(b & 0x0000ffff) // Least Significant Byte
+	msb := uint8(b >> 8)         // Most Significant Byte
+
+	return AssertionEventLowerThresholdReadingMask{
+		AssertionEvent14Supported: isBit6Set(lsb),
+		AssertionEvent13Supported: isBit5Set(lsb),
+		AssertionEvent12Supported: isBit4Set(lsb),
+		AssertionEvent11Supported: isBit3Set(lsb),
+		AssertionEvent10Supported: isBit2Set(lsb),
+		AssertionEvent9Supported:  isBit1Set(lsb),
+		AssertionEvent8Supported:  isBit0Set(lsb),
+		AssertionEvent7Supported:  isBit7Set(msb),
+		AssertionEvent6Supported:  isBit6Set(msb),
+		AssertionEvent5Supported:  isBit5Set(msb),
+		AssertionEvent4Supported:  isBit4Set(msb),
+		AssertionEvent3Supported:  isBit3Set(msb),
+		AssertionEvent2Supported:  isBit2Set(msb),
+		AssertionEvent1Supported:  isBit1Set(msb),
+		AssertionEvent0Supported:  isBit0Set(msb),
+
+		LowerNonRecoverableThresholdComparsion: isBit6Set(lsb),
+		LowerCriticalThresholdComparsion:       isBit5Set(lsb),
+		LowerNonCriticalThresholdComparsion:    isBit4Set(lsb),
+		Assertion_UNR_GoHigh_Supported:         isBit3Set(lsb),
+		Assertion_UNR_GoLow_Supported:          isBit2Set(lsb),
+		Assertion_UC_GoHigh_Supported:          isBit1Set(lsb),
+		Assertion_UC_GoLow_Supported:           isBit0Set(lsb),
+		Assertion_UNC_GoHigh_Supported:         isBit7Set(msb),
+		Assertion_UNC_GoLow_Supported:          isBit6Set(msb),
+		Assertion_LNR_GoHigh_Supported:         isBit5Set(msb),
+		Assertion_LNR_GoLow_Supported:          isBit4Set(msb),
+		Assertion_LC_GoHigh_Supported:          isBit3Set(msb),
+		Assertion_LC_GoLow_Supported:           isBit2Set(msb),
+		Assertion_LNC_GoHigh_Supported:         isBit1Set(msb),
+		Assertion_LNC_GoLow_Supported:          isBit0Set(msb),
+	}
+}
+
+type DeassertionEventUpperThresholdReadingMask struct {
+	// for non-threshold based sensors
+	// Assertion Event Mask
+	DeassertionEvent14Supported bool
+	DeassertionEvent13Supported bool
+	DeassertionEvent12Supported bool
+	DeassertionEvent11Supported bool
+	DeassertionEvent10Supported bool
+	DeassertionEvent9Supported  bool
+	DeassertionEvent8Supported  bool
+	DeassertionEvent7Supported  bool
+	DeassertionEvent6Supported  bool
+	DeassertionEvent5Supported  bool
+	DeassertionEvent4Supported  bool
+	DeassertionEvent3Supported  bool
+	DeassertionEvent2Supported  bool
+	DeassertionEvent1Supported  bool
+	DeassertionEvent0Supported  bool
+
+	// for threshold-based sensors
+	// Lower Threshold Reading Mask
+	// Indicates which upper threshold comparison status is returned via the Get Sensor Reading command.
+	UpperNonRecoverableThresholdComparsion bool // UNR
+	UpperCriticalThresholdComparsion       bool // UC
+	UpperNonCriticalThresholdComparsion    bool // UNC
+	// Threshold Assertion Event Mask
+	Deassertion_UNR_GoHigh_Supported bool
+	Deassertion_UNR_GoLow_Supported  bool
+	Deassertion_UC_GoHigh_Supported  bool
+	Deassertion_UC_GoLow_Supported   bool
+	Deassertion_UNC_GoHigh_Supported bool
+	Deassertion_UNC_GoLow_Supported  bool
+
+	Deassertion_LNR_GoHigh_Supported bool
+	Deassertion_LNR_GoLow_Supported  bool
+	Deassertion_LC_GoHigh_Supported  bool
+	Deassertion_LC_GoLow_Supported   bool
+	Deassertion_LNC_GoHigh_Supported bool
+	Deassertion_LNC_GoLow_Supported  bool
+}
+
+func parseDeassertionEventUpperThresholdReadingMask(b uint16) DeassertionEventUpperThresholdReadingMask {
+	lsb := uint8(b & 0x0000ffff) // Least Significant Byte
+	msb := uint8(b >> 8)         // Most Significant Byte
+	return DeassertionEventUpperThresholdReadingMask{
+		DeassertionEvent14Supported: isBit6Set(lsb),
+		DeassertionEvent13Supported: isBit5Set(lsb),
+		DeassertionEvent12Supported: isBit4Set(lsb),
+		DeassertionEvent11Supported: isBit3Set(lsb),
+		DeassertionEvent10Supported: isBit2Set(lsb),
+		DeassertionEvent9Supported:  isBit1Set(lsb),
+		DeassertionEvent8Supported:  isBit0Set(lsb),
+		DeassertionEvent7Supported:  isBit7Set(msb),
+		DeassertionEvent6Supported:  isBit6Set(msb),
+		DeassertionEvent5Supported:  isBit5Set(msb),
+		DeassertionEvent4Supported:  isBit4Set(msb),
+		DeassertionEvent3Supported:  isBit3Set(msb),
+		DeassertionEvent2Supported:  isBit2Set(msb),
+		DeassertionEvent1Supported:  isBit1Set(msb),
+		DeassertionEvent0Supported:  isBit0Set(msb),
+
+		UpperNonRecoverableThresholdComparsion: isBit6Set(lsb),
+		UpperCriticalThresholdComparsion:       isBit5Set(lsb),
+		UpperNonCriticalThresholdComparsion:    isBit4Set(lsb),
+		Deassertion_UNR_GoHigh_Supported:       isBit3Set(lsb),
+		Deassertion_UNR_GoLow_Supported:        isBit2Set(lsb),
+		Deassertion_UC_GoHigh_Supported:        isBit1Set(lsb),
+		Deassertion_UC_GoLow_Supported:         isBit0Set(lsb),
+		Deassertion_UNC_GoHigh_Supported:       isBit7Set(msb),
+		Deassertion_UNC_GoLow_Supported:        isBit6Set(msb),
+		Deassertion_LNR_GoHigh_Supported:       isBit5Set(msb),
+		Deassertion_LNR_GoLow_Supported:        isBit4Set(msb),
+		Deassertion_LC_GoHigh_Supported:        isBit3Set(msb),
+		Deassertion_LC_GoLow_Supported:         isBit2Set(msb),
+		Deassertion_LNC_GoHigh_Supported:       isBit1Set(msb),
+		Deassertion_LNC_GoLow_Supported:        isBit0Set(msb),
+	}
+}
+
+type DiscreteSettableReadableMask struct {
+	// Reading Mask (for non-threshold based sensors)
+	DiscreteReading14Supported bool
+	DiscreteReading13Supported bool
+	DiscreteReading12Supported bool
+	DiscreteReading11Supported bool
+	DiscreteReading10Supported bool
+	DiscreteReading9Supported  bool
+	DiscreteReading8Supported  bool
+	DiscreteReading7Supported  bool
+	DiscreteReading6Supported  bool
+	DiscreteReading5Supported  bool
+	DiscreteReading4Supported  bool
+	DiscreteReading3Supported  bool
+	DiscreteReading2Supported  bool
+	DiscreteReading1Supported  bool
+	DiscreteReading0Supported  bool
+
+	// Settable Threshold Mask (for threshold-based sensors)
+	UpperNonRecoverableThresholdSettable bool // UNR
+	UpperCriticalThresholdSettable       bool // UC
+	UpperNonCriticalThresholdSettable    bool // UNC
+	LowerNonRecoverableThresholdSettable bool // LNR
+	LowerCriticalThresholdSettable       bool // LC
+	LowerNonCriticalThresholdSettable    bool // LNC
+	// Readable Threshold Mask (for threshold-based sensors)
+	UpperNonRecoverableThresholdReadable bool // UNR
+	UpperCriticalThresholdReadable       bool // UC
+	UpperNonCriticalThresholdReadable    bool // UNC
+	LowerNonRecoverableThresholdReadable bool // LNR
+	LowerCriticalThresholdReadable       bool // LC
+	LowerNonCriticalThresholdReadable    bool // LNC
+}
+
+func parseDiscreteSettableReadableMask(b uint16) DiscreteSettableReadableMask {
+	lsb := uint8(b & 0x0000ffff) // Least Significant Byte
+	msb := uint8(b >> 8)         // Most Significant Byte
+	return DiscreteSettableReadableMask{
+		// Reading Mask (for non-threshold based sensors)
+		DiscreteReading14Supported: isBit6Set(lsb),
+		DiscreteReading13Supported: isBit5Set(lsb),
+		DiscreteReading12Supported: isBit4Set(lsb),
+		DiscreteReading11Supported: isBit3Set(lsb),
+		DiscreteReading10Supported: isBit2Set(lsb),
+		DiscreteReading9Supported:  isBit1Set(lsb),
+		DiscreteReading8Supported:  isBit0Set(lsb),
+		DiscreteReading7Supported:  isBit7Set(msb),
+		DiscreteReading6Supported:  isBit6Set(msb),
+		DiscreteReading5Supported:  isBit5Set(msb),
+		DiscreteReading4Supported:  isBit4Set(msb),
+		DiscreteReading3Supported:  isBit3Set(msb),
+		DiscreteReading2Supported:  isBit2Set(msb),
+		DiscreteReading1Supported:  isBit1Set(msb),
+		DiscreteReading0Supported:  isBit0Set(msb),
+
+		// Settable Threshold Mask (for threshold-based sensors)
+		UpperNonRecoverableThresholdSettable: isBit5Set(lsb),
+		UpperCriticalThresholdSettable:       isBit4Set(lsb),
+		UpperNonCriticalThresholdSettable:    isBit3Set(lsb),
+		LowerNonRecoverableThresholdSettable: isBit2Set(lsb),
+		LowerCriticalThresholdSettable:       isBit1Set(lsb),
+		LowerNonCriticalThresholdSettable:    isBit0Set(lsb),
+		// Readable Threshold Mask (for threshold-based sensors)
+		UpperNonRecoverableThresholdReadable: isBit5Set(msb),
+		UpperCriticalThresholdReadable:       isBit4Set(msb),
+		UpperNonCriticalThresholdReadable:    isBit3Set(msb),
+		LowerNonRecoverableThresholdReadable: isBit2Set(msb),
+		LowerCriticalThresholdReadable:       isBit1Set(msb),
+		LowerNonCriticalThresholdReadable:    isBit0Set(msb),
+	}
 }
 
 func ParseSDR(data []byte, nextRecordID uint16) (*SDR, error) {
@@ -621,350 +1418,4 @@ func ParseSDR(data []byte, nextRecordID uint16) (*SDR, error) {
 	}
 
 	return sdr, nil
-}
-
-func parseSDRFullSensor(data []byte, sdr *SDR) error {
-	minSize := SDRFullSensorMinSize
-	if len(data) < minSize {
-		return fmt.Errorf("sdr (full sensor) data must be longer than %d", minSize)
-	}
-
-	s := &SDRFull{}
-	sdr.Full = s
-
-	s.SensorOwnerID, _, _ = unpackUint8(data, 5)
-	s.SensorOwnerLUN, _, _ = unpackUint8(data, 6)
-	s.SensorNumber, _, _ = unpackUint8(data, 7)
-	s.SensorEntityID, _, _ = unpackUint8(data, 8)
-	s.SensorEntityInstance, _, _ = unpackUint8(data, 9)
-	s.SensorInitialization, _, _ = unpackUint8(data, 10)
-	s.SensorCapabilitites, _, _ = unpackUint8(data, 11)
-	s.SensorType, _, _ = unpackUint8(data, 12)
-	s.SensorEventType, _, _ = unpackUint8(data, 13)
-
-	s.SensorUnits1, _, _ = unpackUint8(data, 20)
-	s.SensorUnits1, _, _ = unpackUint8(data, 21)
-	s.SensorUnits3, _, _ = unpackUint8(data, 22)
-
-	s.Linearization, _, _ = unpackUint8(data, 23)
-
-	s.NominalReading, _, _ = unpackUint8(data, 31)
-
-	s.NormalMaximum, _, _ = unpackUint8(data, 32)
-	s.NormalMinimum, _, _ = unpackUint8(data, 33)
-	s.SensorMaximumReading, _, _ = unpackUint8(data, 34)
-	s.SensorMinimumReading, _, _ = unpackUint8(data, 35)
-
-	s.UpperNonRecoverableThreshold, _, _ = unpackUint8(data, 36)
-	s.UpperCriticalThreshold, _, _ = unpackUint8(data, 37)
-	s.UpperNonCriticalThreshold, _, _ = unpackUint8(data, 38)
-
-	s.LowerNonRecoverableThreshold, _, _ = unpackUint8(data, 39)
-	s.LowerCriticalThreshold, _, _ = unpackUint8(data, 40)
-	s.LowerNonCriticalThreshold, _, _ = unpackUint8(data, 41)
-
-	s.PositiveGoingThresholdHysteresisValue, _, _ = unpackUint8(data, 42)
-	s.NegativeGoingThresholdHysteresisValue, _, _ = unpackUint8(data, 43)
-
-	typeLength, _, _ := unpackUint8(data, 47)
-	s.TypeLength = TypeLength(typeLength)
-
-	idStrLen := int(s.TypeLength.Length())
-
-	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (full sensor) data must be longer than %d", minSize+idStrLen)
-	}
-	s.SensorName, _, _ = unpackBytes(data, minSize, idStrLen)
-
-	return nil
-}
-
-func parseSDRCompactSensor(data []byte, sdr *SDR) error {
-	minSize := SDRCompactSensorMinSize
-	if len(data) < minSize {
-		return fmt.Errorf("sdr (compact sensor) data must be longer than %d", minSize)
-	}
-
-	s := &SDRCompact{}
-	sdr.Compact = s
-
-	s.SensorOwnerID, _, _ = unpackUint8(data, 5)
-	s.SensorOwnerLUN, _, _ = unpackUint8(data, 6)
-	s.SensorNumber, _, _ = unpackUint8(data, 7)
-	s.SensorEntityID, _, _ = unpackUint8(data, 8)
-	s.SensorEntityInstance, _, _ = unpackUint8(data, 9)
-	s.SensorInitialization, _, _ = unpackUint8(data, 10)
-	s.SensorCapabilitites, _, _ = unpackUint8(data, 11)
-	s.SensorType, _, _ = unpackUint8(data, 12)
-	s.SensorEventType, _, _ = unpackUint8(data, 13)
-
-	s.SensorUnits1, _, _ = unpackUint8(data, 20)
-	s.SensorUnits1, _, _ = unpackUint8(data, 21)
-	s.SensorUnits3, _, _ = unpackUint8(data, 22)
-
-	s.PositiveGoingThresholdHysteresisValue, _, _ = unpackUint8(data, 25)
-	s.NegativeGoingThresholdHysteresisValue, _, _ = unpackUint8(data, 26)
-
-	typeLength, _, _ := unpackUint8(data, 31)
-	s.TypeLength = TypeLength(typeLength)
-
-	idStrLen := int(s.TypeLength.Length())
-	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (compact sensor) data must be longer than %d", minSize+idStrLen)
-	}
-	s.SensorName, _, _ = unpackBytes(data, minSize, idStrLen)
-	return nil
-}
-
-func parseSDREventOnly(data []byte, sdr *SDR) error {
-	minSize := SDREventOnlyMinSize
-	if len(data) < minSize {
-		return fmt.Errorf("sdr (event-only) data must be longer than %d", minSize)
-	}
-
-	s := &SDREventOnly{}
-	sdr.EventOnly = s
-
-	s.SensorOwnerID, _, _ = unpackUint8(data, 5)
-	s.SensorOwnerLUN, _, _ = unpackUint8(data, 6)
-	s.SensorNumber, _, _ = unpackUint8(data, 7)
-	s.SensorEntityID, _, _ = unpackUint8(data, 8)
-	s.SensorEntityInstance, _, _ = unpackUint8(data, 9)
-	s.SensorType, _, _ = unpackUint8(data, 10)
-	s.SensorEventType, _, _ = unpackUint8(data, 11)
-
-	typeLength, _, _ := unpackUint8(data, 16)
-	s.TypeLength = TypeLength(typeLength)
-
-	idStrLen := int(s.TypeLength.Length())
-	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (event-only) data must be longer than %d", minSize+idStrLen)
-	}
-	s.SensorName, _, _ = unpackBytes(data, minSize, idStrLen)
-	return nil
-}
-
-func parseSDREntityAssociation(data []byte, sdr *SDR) error {
-	size := SDREntityAssociationSize
-	if len(data) < size {
-		return fmt.Errorf("sdr (entity association) data must be longer than %d", size)
-	}
-
-	s := &SDREntityAssociation{}
-	sdr.EntityAssociation = s
-
-	s.ContainerEntityID, _, _ = unpackUint8(data, 5)
-	s.ContainerEntityInstance, _, _ = unpackUint8(data, 6)
-	s.Flags, _, _ = unpackUint8(data, 7)
-	s.ContaineredEntity1ID, _, _ = unpackUint8(data, 8)
-	s.ContaineredEntity1Instance, _, _ = unpackUint8(data, 9)
-
-	s.ContaineredEntity2ID, _, _ = unpackUint8(data, 10)
-	s.ContaineredEntity2Instance, _, _ = unpackUint8(data, 11)
-	s.ContaineredEntity3ID, _, _ = unpackUint8(data, 12)
-	s.ContaineredEntity3Instance, _, _ = unpackUint8(data, 13)
-	s.ContaineredEntity4ID, _, _ = unpackUint8(data, 14)
-	s.ContaineredEntity4Instance, _, _ = unpackUint8(data, 15)
-
-	typeLength, _, _ := unpackUint8(data, 16)
-	s.TypeLength = TypeLength(typeLength)
-
-	idStrLen := int(s.TypeLength.Length())
-	if len(data) < size+idStrLen {
-		return fmt.Errorf("sdr (entity association) data must be longer than %d", size+idStrLen)
-	}
-	s.SensorName, _, _ = unpackBytes(data, size, idStrLen)
-	return nil
-}
-
-func parseSDRDeviceRelativeEntityAssociation(data []byte, sdr *SDR) error {
-	size := SDRDeviceRelativeEntityAssociationSize
-	if len(data) < size {
-		return fmt.Errorf("sdr (device-relative entity association) data must be longer than %d", size)
-	}
-
-	s := &SDRDeviceRelative{}
-	sdr.DeviceRelative = s
-
-	s.ContainerEntityID, _, _ = unpackUint8(data, 5)
-	s.ContainerEntityInstance, _, _ = unpackUint8(data, 6)
-	s.ContainerEntityDeviceAddress, _, _ = unpackUint8(data, 7)
-	s.ContainerEntityDeviceChannel, _, _ = unpackUint8(data, 8)
-
-	s.Flags, _, _ = unpackUint8(data, 9)
-
-	s.ContaineredEntity1DeviceAddress, _, _ = unpackUint8(data, 10)
-	s.ContaineredEntity1DeviceChannel, _, _ = unpackUint8(data, 11)
-	s.ContaineredEntity1ID, _, _ = unpackUint8(data, 12)
-	s.ContaineredEntity1Instance, _, _ = unpackUint8(data, 13)
-
-	s.ContaineredEntity2DeviceAddress, _, _ = unpackUint8(data, 14)
-	s.ContaineredEntity2DeviceChannel, _, _ = unpackUint8(data, 15)
-	s.ContaineredEntity2ID, _, _ = unpackUint8(data, 16)
-	s.ContaineredEntity2Instance, _, _ = unpackUint8(data, 17)
-
-	s.ContaineredEntity3DeviceAddress, _, _ = unpackUint8(data, 18)
-	s.ContaineredEntity3DeviceChannel, _, _ = unpackUint8(data, 19)
-	s.ContaineredEntity3ID, _, _ = unpackUint8(data, 20)
-	s.ContaineredEntity3Instance, _, _ = unpackUint8(data, 21)
-
-	s.ContaineredEntity4DeviceAddress, _, _ = unpackUint8(data, 22)
-	s.ContaineredEntity4DeviceChannel, _, _ = unpackUint8(data, 23)
-	s.ContaineredEntity4ID, _, _ = unpackUint8(data, 24)
-	s.ContaineredEntity4Instance, _, _ = unpackUint8(data, 25)
-
-	unpackBytes(data, 26, 6) // last 6 bytes reserved
-	return nil
-}
-
-func parseSDRGenericLocator(data []byte, sdr *SDR) error {
-	minSize := SDRGenericLocatorMinSize
-
-	if len(data) < minSize {
-		return fmt.Errorf("sdr (generic-locator) data must be longer than %d", minSize)
-	}
-
-	s := &SDRGenericDeviceLocator{}
-	sdr.GenericDeviceLocator = s
-
-	s.DeviceAccessAddress, _, _ = unpackUint8(data, 5)
-	s.DeviceSlaveAddress, _, _ = unpackUint8(data, 6)
-	s.AccessLUNBusID, _, _ = unpackUint8(data, 7)
-
-	s.AddressSpan, _, _ = unpackUint8(data, 8)
-	s.DeviceType, _, _ = unpackUint8(data, 10)
-	s.DeviceTypeModifier, _, _ = unpackUint8(data, 11)
-
-	s.EntityID, _, _ = unpackUint8(data, 12)
-	s.EntityInstance, _, _ = unpackUint8(data, 13)
-
-	typeLength, _, _ := unpackUint8(data, 15)
-	s.TypeLength = TypeLength(typeLength)
-
-	idStrLen := int(s.TypeLength.Length())
-	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (generic-locator) data must be longer than %d", minSize+idStrLen)
-	}
-	s.SensorName, _, _ = unpackBytes(data, minSize, idStrLen)
-	return nil
-}
-
-func parseSDRFRUDeviceLocator(data []byte, sdr *SDR) error {
-	minSize := SDRFRUDeviceLocatorMinSize
-	if len(data) < minSize {
-		return fmt.Errorf("sdr (fru device) data must be longer than %d", minSize)
-	}
-
-	s := &SDRFRUDeviceLocator{}
-	sdr.FRUDeviceLocator = s
-
-	s.DeviceAccessAddress, _, _ = unpackUint8(data, 5)
-	s.DeviceSlaveAddress, _, _ = unpackUint8(data, 6)
-	s.AccessLUNBusID, _, _ = unpackUint8(data, 7)
-	s.ChannelNumber, _, _ = unpackUint8(data, 8)
-
-	s.DeviceType, _, _ = unpackUint8(data, 10)
-	s.DeviceTypeModifier, _, _ = unpackUint8(data, 11)
-
-	s.FRUEntityID, _, _ = unpackUint8(data, 12)
-	s.FRUEntityInstance, _, _ = unpackUint8(data, 13)
-
-	typeLength, _, _ := unpackUint8(data, 15)
-	s.TypeLength = TypeLength(typeLength)
-
-	idStrLen := int(s.TypeLength.Length())
-	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (fru device) data must be longer than %d", minSize+idStrLen)
-	}
-	s.SensorName, _, _ = unpackBytes(data, minSize, idStrLen)
-	return nil
-}
-
-func parseSDRManagementControllerDeviceLocator(data []byte, sdr *SDR) error {
-	minSize := SDRManagementControllerDeviceLocatorMinSize
-
-	if len(data) < minSize {
-		return fmt.Errorf("sdr (mgmt controller device locator) data must be longer than %d", minSize)
-	}
-
-	s := &SDRMgmtControllerDeviceLocator{}
-	sdr.MgmtControllerDeviceLocator = s
-
-	s.DeviceSlaveAddress, _, _ = unpackUint8(data, 5)
-	s.ChannelNumber, _, _ = unpackUint8(data, 6)
-
-	s.PowerStateNotification, _, _ = unpackUint8(data, 7)
-	s.DeviceCapabilities, _, _ = unpackUint8(data, 8)
-
-	s.EntityID, _, _ = unpackUint8(data, 12)
-	s.EntityInstance, _, _ = unpackUint8(data, 13)
-
-	typeLength, _, _ := unpackUint8(data, 15)
-	s.TypeLength = TypeLength(typeLength)
-
-	idStrLen := int(s.TypeLength.Length())
-	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (mgmt controller device locator) data must be longer than %d", minSize+idStrLen)
-	}
-	s.SensorName, _, _ = unpackBytes(data, minSize, idStrLen)
-	return nil
-}
-
-func parseSDRManagementControllerConfirmation(data []byte, sdr *SDR) error {
-	minSize := SDRManagementControllerConfirmationSize
-	if len(data) < minSize {
-		return fmt.Errorf("sdr (mgmt controller confirmation) data must be longer than %d", minSize)
-	}
-
-	s := &SDRMgmtControllerConfirmation{}
-	sdr.MgmtControllerConfirmation = s
-
-	s.DeviceSlaveAddress, _, _ = unpackUint8(data, 5)
-	s.DeviceID, _, _ = unpackUint8(data, 6)
-	s.ChannelNumber, _, _ = unpackUint8(data, 7)
-
-	s.FirmwareRevision1, _, _ = unpackUint8(data, 8)
-	s.FirmwareRevision2, _, _ = unpackUint8(data, 9)
-	s.IPMIVersion, _, _ = unpackUint8(data, 10)
-	s.ManufacturerID, _, _ = unpackUint24L(data, 11)
-	s.ProductID, _, _ = unpackUint16L(data, 14)
-	s.DeviceGUID, _, _ = unpackBytes(data, 16, 16)
-	return nil
-}
-
-func parseSDRBMCMessageChannelInfo(data []byte, sdr *SDR) error {
-	minSize := SDRBMCMessageChannelInfoSize
-	if len(data) < minSize {
-		return fmt.Errorf("sdr (bmc message channel info) data must be longer than %d", minSize)
-	}
-
-	s := &SDRBMCChannelInfo{}
-	sdr.BMCChannelInfo = s
-
-	s.Channel0, _, _ = unpackUint8(data, 5)
-	s.Channel1, _, _ = unpackUint8(data, 6)
-	s.Channel2, _, _ = unpackUint8(data, 7)
-	s.Channel3, _, _ = unpackUint8(data, 8)
-	s.Channel4, _, _ = unpackUint8(data, 9)
-	s.Channel5, _, _ = unpackUint8(data, 10)
-	s.Channel6, _, _ = unpackUint8(data, 11)
-	s.Channel7, _, _ = unpackUint8(data, 12)
-
-	s.MessagingInterruptType, _, _ = unpackUint8(data, 13)
-	s.EventMessageBufferInterruptType, _, _ = unpackUint8(data, 14)
-	return nil
-}
-
-func parseSDROEM(data []byte, sdr *SDR) error {
-	minSize := SDROEMMinSize
-	if len(data) < minSize {
-		return fmt.Errorf("sdr (bmc message channel info) data must be longer than %d", minSize)
-	}
-
-	s := &SDROEM{}
-	sdr.OEM = s
-
-	s.ManufacturerID, _, _ = unpackUint24L(data, 5)
-	s.OEMData, _, _ = unpackBytesMost(data, 8, SDROEMMaxSize-8)
-	return nil
 }

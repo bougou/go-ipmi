@@ -80,7 +80,7 @@ func (c *Client) GetSELEntries(startRecordID uint16) ([]*SEL, error) {
 		}
 		c.DebugBytes("sel entry record data", selEntry.Data, 16)
 
-		sel, err := unpackSEL(selEntry.Data)
+		sel, err := ParseSEL(selEntry.Data)
 		if err != nil {
 			return nil, fmt.Errorf("unpackSEL record failed, err: %s", err)
 		}

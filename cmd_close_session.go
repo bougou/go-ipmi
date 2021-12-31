@@ -43,12 +43,9 @@ func (res *CloseSessionResponse) Format() string {
 	return fmt.Sprintf("%s", res)
 }
 
-func (c *Client) CloseSession() (*CloseSessionResponse, error) {
-
-	req := &CloseSessionRequest{SessionID: c.session.v20.bmcSessionID}
-	res := &CloseSessionResponse{}
-	if err := c.Exchange(req, res); err != nil {
-		return nil, err
-	}
-	return res, nil
+func (c *Client) CloseSession() (response *CloseSessionResponse, err error) {
+	request := &CloseSessionRequest{SessionID: c.session.v20.bmcSessionID}
+	response = &CloseSessionResponse{}
+	err = c.Exchange(request, response)
+	return
 }

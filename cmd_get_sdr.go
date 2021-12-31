@@ -57,13 +57,40 @@ func (c *Client) GetSDR(recordID uint16) (response *GetSDRResponse, err error) {
 	return
 }
 
+func (c *Client) GetSDRBySensorID(sensorID uint8) (*SDR, error) {
+	var recordID uint16 = 0
+	for {
+		res, err := c.GetSDR(recordID)
+		if err != nil {
+			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %s", recordID, err)
+		}
+		recordID = res.NextRecordID
+
+		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
+		if err != nil {
+			return nil, fmt.Errorf("ParseSDR for recordID (%#0x) failed, err: %s", recordID, err)
+		}
+		if sdr.SensorNumber() == sensorID {
+			return sdr, nil
+		}
+		if recordID == 0xffff {
+			break
+		}
+	}
+
+	return nil, fmt.Errorf("not found SDR for sensor id (%#0x)", sensorID)
+}
+
 // GetSDRs fetches the SDR records of the specified RecordType.
-// Pass 0 to fetch all SDR records.
 func (c *Client) GetSDRs(recordType SDRRecordType) ([]*SDR, error) {
 	var recordID uint16 = 0
 
 	var out = make([]*SDR, 0)
 	for {
+		if recordID == 0xffff {
+			break
+		}
+
 		res, err := c.GetSDR(recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %s", recordID, err)
@@ -78,10 +105,41 @@ func (c *Client) GetSDRs(recordType SDRRecordType) ([]*SDR, error) {
 			continue
 		}
 		out = append(out, sdr)
+	}
 
+	return out, nil
+}
+
+func (c *Client) GetSDRsMap(recordType SDRRecordType) (map[uint16]map[uint8]*SDR, error) {
+	var recordID uint16 = 0
+
+	var out = make(map[uint16]map[uint8]*SDR)
+	for {
 		if recordID == 0xffff {
 			break
 		}
+
+		res, err := c.GetSDR(recordID)
+		if err != nil {
+			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %s", recordID, err)
+		}
+		recordID = res.NextRecordID
+
+		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
+		if err != nil {
+			return nil, fmt.Errorf("ParseSDR for recordID (%#0x) failed, err: %s", recordID, err)
+		}
+		if recordType != 0 && sdr.RecordHeader.RecordType != recordType {
+			continue
+		}
+
+		gid := sdr.GeneratorID()
+		sn := sdr.SensorNumber()
+
+		if _, ok := out[gid]; !ok {
+			out[gid] = make(map[uint8]*SDR)
+		}
+		out[gid][sn] = sdr
 	}
 
 	return out, nil

@@ -22,7 +22,6 @@ var (
 )
 
 func initClient() error {
-	fmt.Println("Client initing ...")
 	c, err := ipmi.NewClient(host, port, username, password)
 	if err != nil {
 		return fmt.Errorf("create client failed, err: %s", err)
@@ -33,7 +32,6 @@ func initClient() error {
 	if err := client.Connect(); err != nil {
 		return fmt.Errorf("client connect failed, err: %s", err)
 	}
-	fmt.Println("Client connected :)")
 	return nil
 }
 
@@ -58,6 +56,7 @@ func NewRootCommand() *cobra.Command {
 
 	rootCmd.AddCommand(NewCmdSEL())
 	rootCmd.AddCommand(NewCmdSDR())
+	rootCmd.AddCommand(NewCmdChassis())
 
 	rootCmd.SilenceUsage = true
 	rootCmd.SilenceErrors = true
