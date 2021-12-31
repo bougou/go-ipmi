@@ -42,11 +42,11 @@ func (res *SetSessionPrivilegeLevelResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
 
-func (c *Client) SetSessionPrivilegeLevel(privilegeLevel PrivilegeLevel) (*SetSessionPrivilegeLevelResponse, error) {
-	req := &SetSessionPrivilegeLevelRequest{
+func (c *Client) SetSessionPrivilegeLevel(privilegeLevel PrivilegeLevel) (response *SetSessionPrivilegeLevelResponse, err error) {
+	request := &SetSessionPrivilegeLevelRequest{
 		PrivilegeLevel: privilegeLevel,
 	}
-	res := &SetSessionPrivilegeLevelResponse{}
-	err := c.Exchange(req, res)
-	return res, err
+	response = &SetSessionPrivilegeLevelResponse{}
+	err = c.Exchange(request, response)
+	return
 }
