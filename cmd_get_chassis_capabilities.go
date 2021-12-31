@@ -1,49 +1,69 @@
 package ipmi
 
+// 28.1 Get Chassis Capabilities Command
 type GetChassisCapabilitiesRequest struct {
 	// no request data
 }
 
-func (req *GetChassisCapabilitiesRequest) Pack() []byte {
-	return nil
-}
-
 type GetChassisCapabilitiesResponse struct {
-	CompletionCode
-
-	// Capabilities Flags
-	// [7:4] - reserved
-	// [3] - 1b = provides power interlock (IPMI 1.5)
-	// [2] - 1b = provides Diagnostic Interrupt (FP NMI) (IPMI 1.5)
-	// [1] - 1b = Provides Front Panel Lockout (this indicates that the chassis
-	// has capabilities to lock out external power control and reset
-	// button or front panel interfaces and/or detect tampering with
-	// those interfaces)
-	// [0] - 1b = Chassis provides intrusion (physical security) sensor
 	ProvidePowerInterlock      bool
 	ProvideDiagnosticInterrupt bool
 	ProvideFrontPanelLockout   bool
 	ProvideIntrusionSensor     bool
 
-	// Chassis FRU Info Device Address.
-	// Note: all IPMB addresses used in this command are have the 7-bit I2C slave
-	// address as the most-significant 7-bits and the least significant bit set to 0b.
-	// 00h = unspecified
 	FRUDeviceAddress uint8
 
-	// Chassis SDR Device Address
 	SDRDeviceAddress uint8
 
-	// Chassis SEL Device Address
 	SELDeviceAddress uint8
 
-	// Chassis System Management Device Address
 	SystemManagementDeviceAddress uint8
 
-	// Chassis Bridge Device Address. Reports location of the ICMB bridge
-	// function. If this field is not provided, the address is assumed to be the BMC
-	// address (20h). Implementing this field is required when the Get Chassis
-	// Capabilities command is implemented by a BMC, and whenever the Chassis
-	// Bridge function is implemented at an address other than 20h.
+	//  If this field is not provided, the address is assumed to be the BMC address (20h).
 	BridgeDeviceAddress uint8
+}
+
+func (req *GetChassisCapabilitiesRequest) Pack() []byte {
+	return []byte{}
+}
+
+func (req *GetChassisCapabilitiesRequest) Command() Command {
+	return CommandGetChassisCapabilities
+}
+
+func (res *GetChassisCapabilitiesResponse) CompletionCodes() map[uint8]string {
+	return map[uint8]string{}
+}
+
+func (res *GetChassisCapabilitiesResponse) Unpack(msg []byte) error {
+	if len(msg) < 5 {
+		return ErrUnpackedDataTooShort
+	}
+
+	b1, _, _ := unpackUint8(msg, 0)
+	res.ProvidePowerInterlock = isBit3Set(b1)
+	res.ProvideDiagnosticInterrupt = isBit2Set(b1)
+	res.ProvideFrontPanelLockout = isBit1Set(b1)
+	res.ProvideIntrusionSensor = isBit0Set(b1)
+
+	res.FRUDeviceAddress, _, _ = unpackUint8(msg, 1)
+	res.SDRDeviceAddress, _, _ = unpackUint8(msg, 2)
+	res.SELDeviceAddress, _, _ = unpackUint8(msg, 3)
+	res.SystemManagementDeviceAddress, _, _ = unpackUint8(msg, 4)
+
+	if len(msg) == 6 {
+		res.BridgeDeviceAddress, _, _ = unpackUint8(msg, 5)
+	}
+	return nil
+}
+
+func (res *GetChassisCapabilitiesResponse) Format() string {
+	return ""
+}
+
+func (c *Client) GetChassisCapabilities() (response *GetChassisCapabilitiesResponse, err error) {
+	request := &GetChassisCapabilitiesRequest{}
+	response = &GetChassisCapabilitiesResponse{}
+	err = c.Exchange(request, response)
+	return
 }
