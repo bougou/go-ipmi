@@ -56,76 +56,44 @@ type EventData struct {
 // 42.1 Event/Reading Type Codes
 type EventReadingType uint8
 
-type EventReadingTypeCategory string
-
-const (
-	EventReadingTypeCategoryUnspecified    EventReadingTypeCategory = "Unspecified"
-	EventReadingTypeCategoryThreshold      EventReadingTypeCategory = "Threshold"       // Threshold
-	EventReadingTypeCategoryGeneric        EventReadingTypeCategory = "Generic"         // Discrete
-	EventReadingTypeCategorySensorSpecific EventReadingTypeCategory = "Sensor Specific" // Discrete
-	EventReadingTypeCategoryOEM            EventReadingTypeCategory = "OEM"             // Discrete
-	EventReadingTypeCategoryReserved       EventReadingTypeCategory = "Reserved"
-)
-
-func (typ EventReadingType) Category() EventReadingTypeCategory {
-	var c EventReadingTypeCategory
-
+func (typ EventReadingType) String() string {
+	var c string
 	switch typ {
 	case 0x00:
-		c = EventReadingTypeCategoryUnspecified
+		c = "Unspecified"
 	case 0x01:
-		c = EventReadingTypeCategoryThreshold
+		c = "Threshold"
 	case 0x6f:
-		c = EventReadingTypeCategorySensorSpecific
+		c = "Sensor Specific"
 	default:
 		if typ >= 0x02 && typ <= 0x0c {
-			c = EventReadingTypeCategoryGeneric
+			c = "Generic"
 		} else if typ >= 0x70 && typ <= 0x7f {
-			c = EventReadingTypeCategoryOEM
+			c = "OEM"
 		} else {
-			c = EventReadingTypeCategoryReserved
+			c = "Reserved"
 		}
 	}
-
 	return c
-}
-
-func (typ EventReadingType) SensorClass() SensorClass {
-	var s SensorClass
-
-	switch typ.Category() {
-	case EventReadingTypeCategoryUnspecified:
-		s = SensorClassNotApplicable
-	case EventReadingTypeCategoryThreshold:
-		s = SensorClassThreshold
-	case EventReadingTypeCategorySensorSpecific:
-		s = SensorClassDiscrete
-	case EventReadingTypeCategoryGeneric:
-		s = SensorClassDiscrete
-	case EventReadingTypeCategoryOEM:
-		s = SensorClassOEM
-	case EventReadingTypeCategoryReserved:
-		s = SensorClassNotApplicable
-	}
-
-	return s
 }
 
 func (typ EventReadingType) EventString(sensorType SensorType, generatorID GeneratorID, sensorNumber SensorNumber, offset uint8) string {
 	var s string
-	switch typ.Category() {
-	case EventReadingTypeCategoryUnspecified:
+	switch typ {
+	case 0x00:
 		s = "Unspecified"
-	case EventReadingTypeCategoryThreshold:
+	case 0x01:
 		s = genericEventString(typ, offset)
-	case EventReadingTypeCategoryGeneric:
+	case 0x6f:
 		s = genericEventString(typ, offset)
-	case EventReadingTypeCategorySensorSpecific:
-		s = sensorSpecificEventString(sensorType, offset)
-	case EventReadingTypeCategoryOEM:
-		s = oemEventString(sensorType, sensorNumber, offset)
-	case EventReadingTypeCategoryReserved:
-		s = "Reserved"
+	default:
+		if typ >= 0x02 && typ <= 0x0c {
+			s = sensorSpecificEventString(sensorType, offset)
+		} else if typ >= 0x70 && typ <= 0x7f {
+			s = oemEventString(sensorType, sensorNumber, offset)
+		} else {
+			s = "Reserved"
+		}
 	}
 	return s
 }
@@ -702,6 +670,6 @@ var SensorSpecificEvents = map[uint8]map[uint8]string{
 		0x04: "FRU Active",
 		0x05: "FRU Deactivation Requested",
 		0x06: "FRU Deactivation In Progress",
-		0x07: " FRU Communication Lost",
+		0x07: "FRU Communication Lost",
 	},
 }

@@ -83,22 +83,22 @@ func NewCmdSELElist() *cobra.Command {
 				CheckErr(fmt.Errorf("GetSELInfo failed, err: %s", err))
 			}
 			for i, v := range selEntries {
-				if v.RecordType != ipmi.EventRecordTypeSystemEvent {
-					continue
-				}
-
-				gid := uint16(v.Default.GeneratorID)
-				sn := uint8(v.Default.SensorNumber)
-				sdr, ok := sdrMap[gid][sn]
-				if !ok {
-					fmt.Printf("NOT FOUND %#04x, %#02x\n", gid, sn)
-					continue
+				var sensorName string
+				if v.RecordType == ipmi.EventRecordTypeSystemEvent {
+					gid := uint16(v.Default.GeneratorID)
+					sn := uint8(v.Default.SensorNumber)
+					sdr, ok := sdrMap[gid][sn]
+					if !ok {
+						sensorName = fmt.Sprintf("N/A %#04x, %#02x", gid, sn)
+					} else {
+						sensorName = sdr.SensorName()
+					}
 				}
 
 				if i == 0 {
 					fmt.Println(v.StringHeader())
 				}
-				fmt.Println(v.Format(), "||||", sdr.SensorName())
+				fmt.Println(v.Format(), " | ", sensorName)
 				if i == len(selEntries)-1 {
 					fmt.Println(v.StringHeader())
 				}

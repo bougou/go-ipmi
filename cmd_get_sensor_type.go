@@ -41,11 +41,9 @@ func (r *GetSensorTypeResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetSensorTypeResponse) Format() string {
 	return fmt.Sprintf(`Sensor Type                 : %s
-Event/Reading Type          : %#02x,
-Event/Reading Type Category : %s`,
+Event/Reading Type          : %#02x (%s)`,
 		res.SensorType,
-		res.EventReadingType,
-		res.EventReadingType.Category(),
+		res.EventReadingType, res.EventReadingType,
 	)
 }
 
