@@ -17,6 +17,9 @@ func NewCmdMC() *cobra.Command {
 		},
 	}
 	cmd.AddCommand(NewCmdMCInfo())
+	cmd.AddCommand(NewCmdMCReset())
+	cmd.AddCommand(NewCmdMC_ACPI())
+	cmd.AddCommand(NewCmdMC_GUID())
 
 	return cmd
 }
@@ -80,12 +83,27 @@ func NewCmdMC_ACPI() *cobra.Command {
 				if err != nil {
 					CheckErr(fmt.Errorf("GetACPIPowerState failed, err: %s", err))
 				}
-				fmt.Println(res)
+				fmt.Println(res.Format())
 			case "set":
 				//
 			default:
 				CheckErr(fmt.Errorf("usage: %s", usage))
 			}
+		},
+	}
+	return cmd
+}
+
+func NewCmdMC_GUID() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "guid",
+		Short: "guid",
+		Run: func(cmd *cobra.Command, args []string) {
+			res, err := client.GetSystemGUID()
+			if err != nil {
+				CheckErr(fmt.Errorf("GetSystemGUID failed, err: %s", err))
+			}
+			fmt.Println(res.Format())
 		},
 	}
 	return cmd
