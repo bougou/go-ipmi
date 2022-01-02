@@ -63,3 +63,30 @@ func NewCmdMCReset() *cobra.Command {
 	}
 	return cmd
 }
+
+func NewCmdMC_ACPI() *cobra.Command {
+	usage := "acpi <get|set>"
+
+	cmd := &cobra.Command{
+		Use:   "acpi",
+		Short: "acpi",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				CheckErr(fmt.Errorf("usage: %s", usage))
+			}
+			switch args[0] {
+			case "get":
+				res, err := client.GetACPIPowerState()
+				if err != nil {
+					CheckErr(fmt.Errorf("GetACPIPowerState failed, err: %s", err))
+				}
+				fmt.Println(res)
+			case "set":
+				//
+			default:
+				CheckErr(fmt.Errorf("usage: %s", usage))
+			}
+		},
+	}
+	return cmd
+}

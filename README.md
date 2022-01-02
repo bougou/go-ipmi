@@ -62,7 +62,8 @@ func main() {
 | ColdReset             | ipmitool mc reset cold                                |
 | GetSelfTestResults    | ipmitool mc selftest                                  |
 | ManufacturingTestOn   |                                                       |
-
+| GetACPIPowerState     |                                                       |
+| SetACPIPowerState     |                                                       |
 
 ## Reference
 

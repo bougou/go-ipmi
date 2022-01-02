@@ -3,7 +3,7 @@ package ipmi
 type ChassisControl uint8
 
 const (
-	ChassisControlPowerDown           ChassisControl = 0
+	ChassisControlPowerDown           ChassisControl = 0 // down, off
 	ChassisControlPowerUp             ChassisControl = 1
 	ChassisControlPowerCycle          ChassisControl = 2
 	ChassisControlHardwareRest        ChassisControl = 3
