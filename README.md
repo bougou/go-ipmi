@@ -58,6 +58,11 @@ func main() {
 | SetPowerRestorePolicy | ipmitool chassis policy always-on/previous/always-off |
 | GetSystemRestartCause | ipmitool chassis restart_cause                        |
 | GetDeviceID           | ipmitool mc info                                      |
+| WarmReset             | ipmitool mc reset warm                                |
+| ColdReset             | ipmitool mc reset cold                                |
+| GetSelfTestResults    | ipmitool mc selftest                                  |
+| ManufacturingTestOn   |                                                       |
+
 
 ## Reference
 

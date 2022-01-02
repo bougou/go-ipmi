@@ -8,8 +8,6 @@ type GetDeviceIDRequest struct {
 }
 
 type GetDeviceIDResponse struct {
-	CompletionCode
-
 	DeviceID uint8
 
 	// [7] 1 = device provides Device SDRs

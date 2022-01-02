@@ -28,7 +28,7 @@ var (
 	CommandGetDeviceID                        = Command{ID: 0x01, NetFn: NetFnAppRequest, Name: "Get Device ID"}
 	CommandColdReset                          = Command{ID: 0x02, NetFn: NetFnAppRequest, Name: "Cold Reset"}
 	CommandWarmReset                          = Command{ID: 0x03, NetFn: NetFnAppRequest, Name: "Warm Reset"}
-	CommandGetSelfTest                        = Command{ID: 0x04, NetFn: NetFnAppRequest, Name: "Get Self Test Results"}
+	CommandGetSelfTestResults                 = Command{ID: 0x04, NetFn: NetFnAppRequest, Name: "Get Self Test Results"}
 	CommandManufacturingTestOn                = Command{ID: 0x05, NetFn: NetFnAppRequest, Name: "Manufacturing Test On"}
 	CommandSetACPIPowerState                  = Command{ID: 0x06, NetFn: NetFnAppRequest, Name: "Set ACPI Power State"}
 	CommandGetACPIPowerState                  = Command{ID: 0x07, NetFn: NetFnAppRequest, Name: "Get ACPI Power State"}
