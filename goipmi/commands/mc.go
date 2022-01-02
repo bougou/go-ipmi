@@ -35,3 +35,31 @@ func NewCmdMCInfo() *cobra.Command {
 	}
 	return cmd
 }
+
+func NewCmdMCReset() *cobra.Command {
+	usage := "reset <cold|warm>"
+
+	cmd := &cobra.Command{
+		Use:   "reset",
+		Short: "reset",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				CheckErr(fmt.Errorf("usage: %s", usage))
+			}
+			switch args[0] {
+			case "warm":
+				if err := client.WarmReset(); err != nil {
+					CheckErr(fmt.Errorf("WarmReset failed, err: %s", err))
+				}
+
+			case "cold":
+				if err := client.ColdReset(); err != nil {
+					CheckErr(fmt.Errorf("ColdReset failed, err: %s", err))
+				}
+			default:
+				CheckErr(fmt.Errorf("usage: %s", usage))
+			}
+		},
+	}
+	return cmd
+}
