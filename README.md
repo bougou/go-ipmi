@@ -57,6 +57,7 @@ func main() {
 | SetFrontPanelEnables  |
 | SetPowerRestorePolicy | ipmitool chassis policy always-on/previous/always-off |
 | GetSystemRestartCause | ipmitool chassis restart_cause                        |
+| GetDeviceID           | ipmitool mc info                                      |
 
 ## Reference
 

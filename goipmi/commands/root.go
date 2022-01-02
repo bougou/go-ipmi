@@ -54,6 +54,7 @@ func NewRootCommand() *cobra.Command {
 
 	rootCmd.Flags().AddGoFlagSet(flag.CommandLine)
 
+	rootCmd.AddCommand(NewCmdMC())
 	rootCmd.AddCommand(NewCmdSEL())
 	rootCmd.AddCommand(NewCmdSDR())
 	rootCmd.AddCommand(NewCmdChassis())

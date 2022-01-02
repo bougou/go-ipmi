@@ -1,14 +1,13 @@
 package ipmi
 
+import "fmt"
+
 // 20.1
 type GetDeviceIDRequest struct {
+	// empty
 }
 
-func (r *GetDeviceIDRequest) Pack() []byte {
-	return nil
-}
-
-type GetDeviceResponse struct {
+type GetDeviceIDResponse struct {
 	CompletionCode
 
 	DeviceID uint8
@@ -17,7 +16,7 @@ type GetDeviceResponse struct {
 	// 0 = device does not provide Device SDRs
 	// [6:4] reserved. Return as 0.
 	// [3:0] Device Revision, binary encoded
-	ProvideDeviceSDRs bool
+	DeviceProvideSDRs bool
 	DeviceRevision    uint8
 
 	// [7] Device available: 0=normal operation, 1= device firmware, SDR
@@ -25,6 +24,7 @@ type GetDeviceResponse struct {
 	// Repository updates can be differentiated by issuing a Get SDR
 	// command and checking the completion code.]
 	// [6:0] Major Firmware Revision, binary encoded
+	DeviceAvailable       bool
 	MajorFirmwareRevision uint8
 
 	// BCD encoded
@@ -83,4 +83,86 @@ type GetDeviceResponse struct {
 	// vendor-specific definition is not known, generic utilities should display each
 	// byte as 2-digit hexadecimal numbers, with byte 13 displayed first as the mostsignificant byte.
 	AuxiliaryFirmwareRevision uint32
+}
+
+func (req *GetDeviceIDRequest) Command() Command {
+	return CommandGetDeviceID
+}
+
+func (req *GetDeviceIDRequest) Pack() []byte {
+	return []byte{}
+}
+
+func (res *GetDeviceIDResponse) CompletionCodes() map[uint8]string {
+	return map[uint8]string{}
+}
+
+func (res *GetDeviceIDResponse) Unpack(msg []byte) error {
+	if len(msg) < 11 {
+		return ErrUnpackedDataTooShort
+	}
+
+	res.DeviceID, _, _ = unpackUint8(msg, 0)
+	b2, _, _ := unpackUint8(msg, 1)
+	res.DeviceProvideSDRs = isBit7Set(b2)
+	res.DeviceRevision = b2 & 0x0f
+
+	b3, _, _ := unpackUint8(msg, 2)
+	res.DeviceAvailable = isBit7Set(b3)
+	res.MajorFirmwareRevision = b3 & 0x3f // binary encoded
+
+	res.MinorFirmwareRevision, _, _ = unpackUint8(msg, 3) // BCD encoded
+	res.IPMIVersion, _, _ = unpackUint8(msg, 4)           // BCD encoded
+
+	b6, _, _ := unpackUint8(msg, 5) // BCD encoded
+
+	res.SupportChassis = isBit7Set(b6)
+	res.SupportBridge = isBit6Set(b6)
+	res.SupportIPMBEventGenerator = isBit5Set(b6)
+	res.SupportIPMBEventReceiver = isBit4Set(b6)
+	res.SupportFRUInventory = isBit3Set(b6)
+	res.SupportSEL = isBit2Set(b6)
+	res.SupportSDRRepo = isBit1Set(b6)
+	res.SupportSensor = isBit0Set(b6)
+
+	res.ManufacturerID, _, _ = unpackUint24L(msg, 6)
+	res.ProductID, _, _ = unpackUint16L(msg, 9)
+
+	if len(msg) > 11 && len(msg) < 15 {
+		return ErrUnpackedDataTooShort
+	} else {
+		res.AuxiliaryFirmwareRevision, _, _ = unpackUint32L(msg, 11)
+	}
+	return nil
+}
+
+func (res *GetDeviceIDResponse) Format() string {
+	return fmt.Sprintf(`Device ID                 : %d
+Device Revision           : %d
+Firmware Revision         : %d.%d
+IPMI Version              : %d
+Manufacturer ID           : %d
+Manufacturer Name         :
+Product ID                : %d (%#02x)
+Product Name              :
+Device Available          : %s
+Provides Device SDRs      : %s
+Additional Device Support :
+Aux Firmware Rev Info     :`,
+		res.DeviceID,
+		res.DeviceRevision,
+		res.MajorFirmwareRevision, res.MinorFirmwareRevision,
+		res.IPMIVersion,
+		res.ManufacturerID,
+		res.ProductID, res.ProductID,
+		formatBool(res.DeviceAvailable, "yes", "no"),
+		formatBool(res.DeviceProvideSDRs, "yes", "no"),
+	)
+}
+
+func (c *Client) GetDeviceID() (response *GetDeviceIDResponse, err error) {
+	request := &GetDeviceIDRequest{}
+	response = &GetDeviceIDResponse{}
+	err = c.Exchange(request, response)
+	return
 }

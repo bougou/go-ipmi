@@ -3,7 +3,7 @@ package ipmi
 import "fmt"
 
 type GetSELAllocInfoRequest struct {
-	// empyt
+	// empty
 }
 
 type GetSELAllocInfoResponse struct {
