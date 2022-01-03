@@ -2,6 +2,7 @@ package ipmi
 
 import "fmt"
 
+// 28.2 Get Chassis Status Command
 type GetChassisStatusRequest struct {
 	// no data
 }
