@@ -50,8 +50,8 @@ var (
 	CommandGetWatchdogTimer   = Command{ID: 0x25, NetFn: NetFnAppRequest, Name: "Get Watchdog Timer"}
 
 	// BMC Device and Messaging Commands
-	CommandSetBmcGlobalEnables           = Command{ID: 0x2e, NetFn: NetFnAppRequest, Name: "Set BMC Global Enables"}
-	CommandGetBmcGlobalEnables           = Command{ID: 0x2f, NetFn: NetFnAppRequest, Name: "Get BMC Global Enables"}
+	CommandSetBMCGlobalEnables           = Command{ID: 0x2e, NetFn: NetFnAppRequest, Name: "Set BMC Global Enables"}
+	CommandGetBMCGlobalEnables           = Command{ID: 0x2f, NetFn: NetFnAppRequest, Name: "Get BMC Global Enables"}
 	CommandClearMessageFlags             = Command{ID: 0x30, NetFn: NetFnAppRequest, Name: "Clear Message Flags"}
 	CommandGetMessageFlags               = Command{ID: 0x31, NetFn: NetFnAppRequest, Name: "Get Message Flags"}
 	CommandEnableMessagechannelReceive   = Command{ID: 0x32, NetFn: NetFnAppRequest, Name: "Enable Message Channel Receive"}
@@ -179,7 +179,7 @@ var (
 	// LAN Device Commands
 	CommandSetLanConfigParams = Command{ID: 0x01, NetFn: NetFnTransportRequest, Name: "Set LAN Configuration Parameters"}
 	CommandGetLanConfigParams = Command{ID: 0x02, NetFn: NetFnTransportRequest, Name: "Get LAN Configuration Parameters"}
-	CommandSuspendBmcArps     = Command{ID: 0x03, NetFn: NetFnTransportRequest, Name: "Suspend BMC ARPs"}
+	CommandSuspendBMCArps     = Command{ID: 0x03, NetFn: NetFnTransportRequest, Name: "Suspend BMC ARPs"}
 	CommandGetIpStatistics    = Command{ID: 0x04, NetFn: NetFnTransportRequest, Name: "Get IP/UDP/RMCP Statistics"}
 
 	// Serial/Modem Device Commands
