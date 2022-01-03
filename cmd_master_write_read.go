@@ -1,27 +1,17 @@
 package ipmi
 
-import "fmt"
-
 // 22.11 Master Write-Read Command
 type MasterWriteReadRequest struct {
-	ChannelNumber uint8
-
-	BusID uint8
-
-	BusType uint8
+	ChannelNumber    uint8
+	BusID            uint8
+	BusTypeIsPrivate bool
 
 	SlaveAddress uint8
-
-	ReadCount uint8
-
-	Data []byte
+	ReadCount    uint8
+	Data         []byte // Data to write. This command should support at least 35 bytes of write data
 }
 
 type MasterWriteReadResponse struct {
-	// A management controller shall return an error Completion Code if an attempt is made to access an unsupported bus.
-	// generic, plus command specific codes
-	CompletionCode
-
 	// Bytes read from specified slave address. This field will be absent if the read count is 0. The controller terminates the I2C transaction with a STOP condition after reading the requested number of bytes.
 	Data []byte
 }
@@ -31,7 +21,19 @@ func (req *MasterWriteReadRequest) Command() Command {
 }
 
 func (req *MasterWriteReadRequest) Pack() []byte {
-	return nil
+	out := make([]byte, 3+len(req.Data))
+
+	var b uint8 = req.ChannelNumber << 4
+	b |= (req.BusID << 1) & 0x0e
+	if req.BusTypeIsPrivate {
+		b = setBit0(b)
+	}
+	packUint8(b, out, 0)
+	packUint8(req.SlaveAddress<<1, out, 1)
+	packUint8(req.ReadCount, out, 2)
+	packBytes(req.Data, out, 3)
+
+	return out
 }
 
 func (res *MasterWriteReadResponse) Unpack(msg []byte) error {
@@ -48,18 +50,10 @@ func (*MasterWriteReadResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *MasterWriteReadResponse) Format() string {
-	return fmt.Sprintf("%v", res)
+	return ""
 }
 
-func (c *Client) MasterWriteRead() (*MasterWriteReadResponse, error) {
-	// var cc = map[CompletionCode]string{
-	// 	0x81: "Lost Arbitration",
-	// 	0x82: "Bus Error",
-	// 	0x83: "NAK on Write",
-	// 	0x84: "Truncated Read",
-	// }
-
-	request := &MasterWriteReadRequest{}
+func (c *Client) MasterWriteRead(request *MasterWriteReadRequest) (*MasterWriteReadResponse, error) {
 	response := &MasterWriteReadResponse{}
 	err := c.Exchange(request, response)
 	return response, err
