@@ -38,25 +38,6 @@ func (*GetSystemGUIDResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{}
 }
 
-type GUID struct {
-	Node               [6]byte
-	ClockSeqLow        uint8
-	ClockSeqHigh       uint8
-	TimeHighAndVersion uint16
-	TimeMid            uint16
-	TimeLow            uint32
-}
-
-type GUIDVersion uint8
-
-const (
-	GUIDVersionTimebased     GUIDVersion = 1 // 0001b
-	GUIDVersionDCESec        GUIDVersion = 2 // 0010b
-	GUIDVersionNamebaesdMD5  GUIDVersion = 3 // 0011b
-	GUIDVersionRandom        GUIDVersion = 4 // 0100b
-	GUIDVersionNamebasedSHA1 GUIDVersion = 5 // 0101b
-)
-
 func (res *GetSystemGUIDResponse) Format() string {
 	uuidRFC4122MSB := make([]byte, 16)
 	for i := 0; i < 16; i++ {
