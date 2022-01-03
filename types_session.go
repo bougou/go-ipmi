@@ -201,9 +201,9 @@ func (h *SessionHeader20) Unpack(msg []byte) error {
 	h.AuthType = AuthType(authType)
 
 	payloadType, _, _ := unpackUint8(msg, 1)
-	h.PayloadEncrypted = payloadType&0x80 == 0x80     // bit 7 is set
-	h.PayloadAuthenticated = payloadType&0x40 == 0x40 // bit 6 is set
-	h.PayloadType = PayloadType(payloadType & 0x3f)   // clear bit 7 and bit 6
+	h.PayloadEncrypted = isBit7Set(payloadType)
+	h.PayloadAuthenticated = isBit6Set(payloadType)
+	h.PayloadType = PayloadType(payloadType & 0x3f)
 
 	var sessionIDIndex int
 	if h.PayloadType == PayloadTypeOEM {

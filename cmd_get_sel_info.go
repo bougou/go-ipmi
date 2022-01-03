@@ -52,11 +52,11 @@ func (res *GetSELInfoResponse) Unpack(msg []byte) error {
 
 	b := msg[13]
 	res.OperationSupport = SELOperationSupport{
-		Overflow:        b&0x80 == 0x80,
-		DeleteSEL:       b&0x08 == 0x08,
-		PartialAddSEL:   b&0x04 == 0x04,
-		ReserveSEL:      b&0x02 == 0x02,
-		GetSELAllocInfo: b&0x01 == 0x01,
+		Overflow:        isBit7Set(b),
+		DeleteSEL:       isBit3Set(b),
+		PartialAddSEL:   isBit2Set(b),
+		ReserveSEL:      isBit1Set(b),
+		GetSELAllocInfo: isBit0Set(b),
 	}
 
 	return nil

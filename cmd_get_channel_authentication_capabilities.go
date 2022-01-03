@@ -111,24 +111,24 @@ func (res *GetChannelAuthenticationCapabilitiesResponse) Unpack(msg []byte) erro
 	res.ChannelNumber, _, _ = unpackUint8(msg, 0)
 
 	b, _, _ := unpackUint8(msg, 1)
-	res.IPMIv20ExtendedAvailable = (b&0x80 == 0x80)        // bit 7 is 1b
-	res.AuthTypeOEMProprietarySupported = (b&0x20 == 0x20) // bit 5 is 1b
-	res.AuthTypePasswordSupported = (b&0x10 == 0x10)       // bit 4 is 1b
-	res.AuthTypeMD5Supported = (b&0x04 == 0x04)            // bit 2 is 1b
-	res.AuthTypeMD2Supported = (b&0x02 == 0x02)            // bit 1 is 1b
+	res.IPMIv20ExtendedAvailable = isBit7Set(b)
+	res.AuthTypeOEMProprietarySupported = isBit5Set(b)
+	res.AuthTypePasswordSupported = isBit4Set(b)
+	res.AuthTypeMD5Supported = isBit2Set(b)
+	res.AuthTypeMD2Supported = isBit1Set(b)
 
-	b2, _, _ := unpackUint8(msg, 2)
-	res.KgStatus = (b2&0x20 == 0x20)
-	res.PerMessageAuthenticationDisabled = (b2&0x10 == 0x10)
-	res.UserLevelAuthenticationDisabled = (b2&0x08 == 0x08)
-	res.NonNullUsernamesEnabled = (b2&0x04 == 0x04)
-	res.NullUsernamesEnabled = (b2&0x02 == 0x02)
-	res.AnonymousLoginEnabled = (b2&0x01 == 0x01)
+	c, _, _ := unpackUint8(msg, 2)
+	res.KgStatus = isBit5Set(c)
+	res.PerMessageAuthenticationDisabled = isBit4Set(c)
+	res.UserLevelAuthenticationDisabled = isBit3Set(c)
+	res.NonNullUsernamesEnabled = isBit2Set(c)
+	res.NullUsernamesEnabled = isBit1Set(c)
+	res.AnonymousLoginEnabled = isBit0Set(c)
 
-	b3, _, _ := unpackUint8(msg, 3)
+	d, _, _ := unpackUint8(msg, 3)
 	if res.IPMIv20ExtendedAvailable {
-		res.SupportIPMIv20 = (b3&0x02 == 0x02)
-		res.SupportIPMIv15 = (b3&0x01 == 0x01)
+		res.SupportIPMIv20 = isBit1Set(d)
+		res.SupportIPMIv15 = isBit0Set(d)
 	}
 
 	res.OEMID, _, _ = unpackUint24L(msg, 4)

@@ -55,13 +55,13 @@ func (res *GetSDRRepoInfoResponse) Unpack(msg []byte) error {
 
 	b, _, _ := unpackUint8(msg, 13)
 	res.SDROperationSupport = SDROperationSupport{
-		Overflow:                     b&0x80 == 0x80, // bit 7 is set
-		SupportModalSDRRepoUpdate:    b&0x40 == 0x40, // bit 6 is set
-		SupportNonModalSDRRepoUpdate: b&0x20 == 0x20, // bit 5 is set
-		SupportDeleteSDR:             b&0x08 == 0x08, // bit 3 is set
-		SupportParitialAddSDR:        b&0x04 == 0x04, // bit 2 is set
-		SupportReserveSDRRepo:        b&0x02 == 0x02, // bit 1 is set
-		SupportGetSDRRepoAllocInfo:   b&0x01 == 0x01, // bit 0 is set
+		Overflow:                     isBit7Set(b),
+		SupportModalSDRRepoUpdate:    isBit6Set(b),
+		SupportNonModalSDRRepoUpdate: isBit5Set(b),
+		SupportDeleteSDR:             isBit3Set(b),
+		SupportParitialAddSDR:        isBit2Set(b),
+		SupportReserveSDRRepo:        isBit1Set(b),
+		SupportGetSDRRepoAllocInfo:   isBit0Set(b),
 	}
 	return nil
 }

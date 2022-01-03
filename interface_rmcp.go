@@ -169,7 +169,7 @@ func (r *RmcpHeader) Unpack(msg []byte) error {
 
 	var b uint8
 	b, _, _ = unpackUint8(msg, 3)
-	r.ACKFlag = b&0x80 == 0x80
+	r.ACKFlag = isBit7Set(b)
 	messageClass := b & 0x7f // clear the ACK bit
 	r.MessageClass = MessageClass(messageClass)
 	return nil

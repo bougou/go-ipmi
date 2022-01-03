@@ -256,7 +256,7 @@ func parseSELDefault(msg []byte, sel *SEL) error {
 	s.SensorNumber = SensorNumber(sensorNumber)
 
 	b, _, _ := unpackUint8(msg, 12)
-	s.EventDir = b&0x80 == 0x80
+	s.EventDir = EventDir(isBit7Set(b))
 	s.EventReadingType = EventReadingType(b & 0x7f) // clear bit 7
 
 	s.EventData1, _, _ = unpackUint8(msg, 13)
