@@ -15,6 +15,9 @@ func NewCmdMC() *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 		},
+		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+			return closeClient()
+		},
 	}
 	cmd.AddCommand(NewCmdMCInfo())
 	cmd.AddCommand(NewCmdMCReset())

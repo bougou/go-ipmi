@@ -34,6 +34,13 @@ func (c *Client) DebugBytes(header string, data []byte, width int) {
 	fmt.Printf("\n")
 }
 
+func formatBool(b bool, trueStr string, falseStr string) string {
+	if b {
+		return trueStr
+	}
+	return falseStr
+}
+
 func isByteSliceEqual(b1 []byte, b2 []byte) bool {
 	// not equal if both are nil
 	if b1 == nil || b2 == nil {

@@ -19,6 +19,9 @@ func NewCmdSDR() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("sdr ...")
 		},
+		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+			return closeClient()
+		},
 	}
 	cmd.AddCommand(NewCmdSDRInfo())
 	cmd.AddCommand(NewCmdSDRGet())

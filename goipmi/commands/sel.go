@@ -16,6 +16,9 @@ func NewCmdSEL() *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 		},
+		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+			return closeClient()
+		},
 	}
 	cmd.AddCommand(NewCmdSELInfo())
 	cmd.AddCommand(NewCmdSELList())

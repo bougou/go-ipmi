@@ -35,6 +35,13 @@ func initClient() error {
 	return nil
 }
 
+func closeClient() error {
+	if _, err := client.CloseSession(); err != nil {
+		return fmt.Errorf("close client session failed, err: %s", err)
+	}
+	return nil
+}
+
 func NewRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "goipmi",

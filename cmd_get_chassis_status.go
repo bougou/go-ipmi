@@ -126,13 +126,6 @@ func (res *GetChassisStatusResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func formatBool(b bool, trueStr string, falseStr string) string {
-	if b {
-		return trueStr
-	}
-	return falseStr
-}
-
 func (res *GetChassisStatusResponse) Format() string {
 	return "System Power         : " + formatBool(res.PowerIsOn, "on", "off") + "\n" +
 		"Power Overload       : " + fmt.Sprintf("%v", res.PowerOverload) + "\n" +
