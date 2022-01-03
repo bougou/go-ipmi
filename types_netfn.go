@@ -6,6 +6,8 @@ type NetFn uint8
 // Network Function Codes, section 5.1 Table 5
 // Even NetFn values are used for requests to the BMC,
 // and odd NetFn values are returned in responses from the BMC.
+//
+// six-bit field identifying the function, so total 64 NetFn (32 NetFn pairs)
 const (
 	NetFnChassisRequest      NetFn = 0x00
 	NetFnChassisResponse     NetFn = 0x01
@@ -30,4 +32,5 @@ const (
 	NetFnOEMGroupResponse       NetFn = 0x2f
 
 	// 30h-3Fh controller specific
+	// Vendor specific (16 Network Functions [8 pairs]).
 )
