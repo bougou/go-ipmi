@@ -66,8 +66,10 @@ func (res *GetSystemInterfaceCapabilitiesResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetSystemInterfaceCapabilities() (response *GetSystemInterfaceCapabilitiesResponse, err error) {
-	request := &GetSystemInterfaceCapabilitiesRequest{}
+func (c *Client) GetSystemInterfaceCapabilities(interfaceType SystemInterfaceType) (response *GetSystemInterfaceCapabilitiesResponse, err error) {
+	request := &GetSystemInterfaceCapabilitiesRequest{
+		SystemInterfaceType: interfaceType,
+	}
 	response = &GetSystemInterfaceCapabilitiesResponse{}
 	err = c.Exchange(request, response)
 	return
