@@ -54,7 +54,7 @@ var (
 	CommandGetBMCGlobalEnables           = Command{ID: 0x2f, NetFn: NetFnAppRequest, Name: "Get BMC Global Enables"}
 	CommandClearMessageFlags             = Command{ID: 0x30, NetFn: NetFnAppRequest, Name: "Clear Message Flags"}
 	CommandGetMessageFlags               = Command{ID: 0x31, NetFn: NetFnAppRequest, Name: "Get Message Flags"}
-	CommandEnableMessagechannelReceive   = Command{ID: 0x32, NetFn: NetFnAppRequest, Name: "Enable Message Channel Receive"}
+	CommandEnableMessageChannelReceive   = Command{ID: 0x32, NetFn: NetFnAppRequest, Name: "Enable Message Channel Receive"}
 	CommandGetMessage                    = Command{ID: 0x33, NetFn: NetFnAppRequest, Name: "Get Message"}
 	CommandSendMessage                   = Command{ID: 0x34, NetFn: NetFnAppRequest, Name: "Send Message"}
 	CommandReadEventMessageBuffer        = Command{ID: 0x35, NetFn: NetFnAppRequest, Name: "Read Event Message Buffer"}
