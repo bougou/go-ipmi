@@ -105,7 +105,23 @@ func (*OpenSessionResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *OpenSessionResponse) Format() string {
-	return fmt.Sprintf("%v", res)
+	return fmt.Sprintf(`  Message tag                        : %#02x
+  RMCP+ status                       : %#02x %s
+  Maximum privilege level            : %#02x %s
+  Console Session ID                 : %#0x
+  BMC Session ID                     : %#0x
+  Negotiated authenticatin algorithm : %#02x %s
+  Negotiated integrity algorithm     : %#02x %s
+  Negotiated encryption algorithm    : %#02x %s`,
+		res.MessageTag,
+		res.RmcpStatusCode, RakpStatus(res.RmcpStatusCode),
+		res.MaximumPrivilegeLevel, PrivilegeLevel(res.MaximumPrivilegeLevel),
+		res.RemoteConsoleSessionID,
+		res.ManagedSystemSessionID,
+		res.AuthAlg, AuthAlg(res.AuthAlg),
+		res.IntegrityAlg, IntegrityAlg(res.IntegrityAlg),
+		res.CryptAlg, CryptAlg(res.CryptAlg),
+	)
 }
 
 func (c *Client) OpenSession() (response *OpenSessionResponse, err error) {
@@ -150,6 +166,8 @@ func (c *Client) OpenSession() (response *OpenSessionResponse, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("client exchange failed, err: %s", err)
 	}
+
+	c.Debug("OPEN SESSION RESPONSE", response.Format())
 
 	if response.RmcpStatusCode != uint8(RakpStatusNoErrors) {
 		err = fmt.Errorf("rakp status code error: %x", response.RmcpStatusCode)
@@ -260,3 +278,32 @@ const (
 
 	// 13h-FFh Reserved for future definition by this specification
 )
+
+func (r RakpStatus) String() string {
+	m := map[RakpStatus]string{
+		0x00: "No errors",
+		0x01: "Insufficient resources to create a session",
+		0x02: "Invalid Session ID",
+		0x03: "Invalid payload type",
+		0x04: "Invalid authentication algorithm",
+		0x05: "Invalid integrity algorithm",
+		0x06: "No matching authentication payload",
+		0x07: "No matching integrity payload",
+		0x08: "Inactive Session ID",
+		0x09: "Invalid role",
+		0x0a: "Unauthorized role or privilege level requested",
+		0x0b: "Insufficient resources to create a session at the requested role",
+		0x0c: "Invalid name length",
+		0x0d: "Unauthorized name",
+		0x0e: "Unauthorized GUID",
+		0x0f: "Invalid integrity check value",
+		0x10: "Invalid confidentiality algorithm",
+		0x11: "No Cipher Suite match with proposed security algorithms",
+		0x12: "Illegal or unrecognized parameter",
+	}
+	s, ok := m[r]
+	if ok {
+		return s
+	}
+	return ""
+}

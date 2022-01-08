@@ -104,3 +104,18 @@ const (
 	PrivilegeLevelAdministrator PrivilegeLevel = 0x04
 	PrivilegeLevelOEM           PrivilegeLevel = 0x05
 )
+
+func (l PrivilegeLevel) String() string {
+	m := map[PrivilegeLevel]string{
+		0x01: "callback",
+		0x02: "user",
+		0x03: "operator",
+		0x04: "admin",
+		0x05: "Oem",
+	}
+	s, ok := m[l]
+	if ok {
+		return s
+	}
+	return ""
+}

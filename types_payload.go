@@ -46,6 +46,20 @@ const (
 	AuthAlgRAKP_HMAC_SHA256 AuthAlg = 0x03 // Optional
 )
 
+func (authAlg AuthAlg) String() string {
+	m := map[AuthAlg]string{
+		0x00: "none",
+		0x01: "hmac_sha1",
+		0x02: "hmac_md5",
+		0x03: "hmac_sha256",
+	}
+	s, ok := m[authAlg]
+	if ok {
+		return s
+	}
+	return ""
+}
+
 // 13.28.4
 type IntegrityAlg uint8
 
@@ -56,6 +70,21 @@ const (
 	IntegrityAlg_MD5_128         IntegrityAlg = 0x03 // Optional
 	IntegrityAlg_HMAC_SHA256_128 IntegrityAlg = 0x04 // Optional
 )
+
+func (integrityAlg IntegrityAlg) String() string {
+	m := map[IntegrityAlg]string{
+		0x00: "none",
+		0x01: "hmac_sha1_96",
+		0x02: "hmac_md5_128",
+		0x03: "md5_128",
+		0x04: "hmac_sha256_128",
+	}
+	s, ok := m[integrityAlg]
+	if ok {
+		return s
+	}
+	return ""
+}
 
 // 13.28.5
 // Confidentiality (Encryption) Algorithms
@@ -71,3 +100,17 @@ const (
 
 	Encryption_AES_CBS_128_BlockSize uint8 = 0x10
 )
+
+func (cryptAlg CryptAlg) String() string {
+	m := map[CryptAlg]string{
+		0x00: "none",
+		0x01: "aes_cbc_128",
+		0x02: "xrc4_128",
+		0x03: "xrc4_40",
+	}
+	s, ok := m[cryptAlg]
+	if ok {
+		return s
+	}
+	return ""
+}

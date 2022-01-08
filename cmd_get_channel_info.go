@@ -27,10 +27,10 @@ type InterruptType uint8
 
 func (typ InterruptType) String() string {
 	if typ >= 0x00 && typ <= 0x0f {
-		return fmt.Sprintf("IRQ %d", typ)
+		return fmt.Sprintf("IRQ %d", uint8(typ))
 	}
 	if typ >= 0x10 && typ <= 0x13 {
-		return fmt.Sprintf("PCI %X", typ)
+		return fmt.Sprintf("PCI %X", uint8(typ))
 	}
 	if typ == 0x14 {
 		return "SMI"
@@ -39,7 +39,7 @@ func (typ InterruptType) String() string {
 		return "SCI"
 	}
 	if typ >= 20 && typ <= 0x5f {
-		return fmt.Sprintf("system interrupt %d", typ-32)
+		return fmt.Sprintf("system interrupt %d", uint8(typ-32))
 	}
 	if typ == 0x60 {
 		return "assigned by ACPI / Plug in Play BIOS"

@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/rand"
+	"time"
 
 	"github.com/kr/pretty"
 )
@@ -15,7 +16,7 @@ func (c *Client) Debug(header string, object interface{}) {
 	if !c.debug {
 		return
 	}
-	pretty.Printf("%s: %# v\n", header, object)
+	pretty.Printf("%s: \n%# v\n", header, object)
 }
 
 // DebugBytes print byte slices with a fixed width of bytes on each line.
@@ -41,6 +42,18 @@ func formatBool(b bool, trueStr string, falseStr string) string {
 	return falseStr
 }
 
+func padBytes(s string, width int, pad byte) []byte {
+	o := []byte(s)
+	if len(s) >= width {
+		return o[:16]
+	}
+
+	for i := 0; i < width-len(s); i++ {
+		o = append(o, pad)
+	}
+	return o
+}
+
 func isByteSliceEqual(b1 []byte, b2 []byte) bool {
 	// not equal if both are nil
 	if b1 == nil || b2 == nil {
@@ -63,7 +76,14 @@ func array16(s []byte) [16]byte {
 	return out
 }
 
+func randomUint32() uint32 {
+	rand.Seed(time.Now().Unix())
+	return rand.Uint32()
+}
+
 func randomBytes(n int) []byte {
+	rand.Seed(time.Now().Unix())
+
 	b := make([]byte, n)
 	rand.Read(b)
 	return b
