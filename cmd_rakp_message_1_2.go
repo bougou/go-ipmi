@@ -24,8 +24,8 @@ type RAKPMessage1 struct {
 	NameOnlyLookup                 bool
 	RequestedMaximumPrivilegeLevel PrivilegeLevel
 
-	// ASCII character Name that the user at the Remote Console wishes to assume for this session. No NULL characters (00h) are allowed in the name. Sixteen-bytes, max.
-	Username []byte
+	UsernameLength uint8
+	Username       []byte
 }
 
 type RAKPMessage2 struct {
@@ -68,18 +68,22 @@ func (r *RAKPMessage1) Pack() []byte {
 	packUint32L(r.ManagedSystemSessionID, msg, 4)
 	packBytes((r.RemoteConsoleRandomNumber[:]), msg, 8)
 
-	var nameOnlyLookupMask uint8
-	if r.NameOnlyLookup {
-		nameOnlyLookupMask = 0x10 // the least 4th bit of the byte
-	}
-	privilegeLevel := nameOnlyLookupMask | uint8(r.RequestedMaximumPrivilegeLevel)
-	// The whole byte of priviledgelevel should be stored for compute auth code of rakp2
-	packUint8(privilegeLevel, msg, 24)
+	packUint8(r.Role(), msg, 24)
 	packUint16L(0, msg, 25) // 2 bytes reserved
 
-	packUint8(uint8(len(r.Username)), msg, 27)
+	packUint8(r.UsernameLength, msg, 27)
 	packBytes(r.Username, msg, 28)
 	return msg
+}
+
+// the combination of RequestedMaximumPrivilegeLevel and NameOnlyLookup field
+// The whole byte should be stored to client session for computing auth code of rakp2
+func (r *RAKPMessage1) Role() uint8 {
+	privilegeLevel := uint8(r.RequestedMaximumPrivilegeLevel)
+	if r.NameOnlyLookup {
+		privilegeLevel = setBit4(privilegeLevel)
+	}
+	return privilegeLevel
 }
 
 func (res *RAKPMessage2) Unpack(msg []byte) error {
@@ -150,7 +154,7 @@ func (c *Client) ValidateRAKP2(rakp2 *RAKPMessage2) (bool, error) {
 func (c *Client) RAKPMessage1() (response *RAKPMessage2, err error) {
 
 	c.session.v20.consoleRand = array16(randomBytes(16))
-	c.DebugBytes("rakp1 generate console random number", c.session.v20.consoleRand[:], 16)
+	c.DebugBytes("console generate console random number", c.session.v20.consoleRand[:], 16)
 
 	request := &RAKPMessage1{
 		MessageTag:                     0,
@@ -158,16 +162,11 @@ func (c *Client) RAKPMessage1() (response *RAKPMessage2, err error) {
 		RemoteConsoleRandomNumber:      c.session.v20.consoleRand,
 		RequestedMaximumPrivilegeLevel: c.session.v20.maxPrivilegeLevel,
 		NameOnlyLookup:                 true,
+		UsernameLength:                 uint8(len(c.Username)),
 		Username:                       []byte(c.Username),
 	}
 
-	var nameOnlyLookupMask uint8
-	if request.NameOnlyLookup {
-		nameOnlyLookupMask = 0x10 // the least 4th bit of the byte
-	}
-	privilegeLevel := nameOnlyLookupMask | uint8(request.RequestedMaximumPrivilegeLevel)
-	// The whole byte of priviledgelevel should be stored for compute auth code of rakp2
-	c.session.v20.role = privilegeLevel
+	c.session.v20.role = request.Role()
 
 	response = &RAKPMessage2{
 		authAlg: c.session.v20.authAlg,

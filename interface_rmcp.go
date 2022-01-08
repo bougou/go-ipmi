@@ -319,8 +319,6 @@ func (c *Client) BuildRmcpRequest(reqCmd Request) (*Rmcp, error) {
 			return nil, fmt.Errorf("genSession20 failed, err: %s", err)
 		}
 
-		c.session.v20.sequence += 1
-
 		rmcp := &Rmcp{
 			RmcpHeader: NewRmcpHeader(),
 			Session20:  session20,
@@ -333,7 +331,7 @@ func (c *Client) BuildRmcpRequest(reqCmd Request) (*Rmcp, error) {
 	if err != nil {
 		return nil, fmt.Errorf("genSession15 failed, err: %s", err)
 	}
-	c.session.v15.outSeq += 1
+
 	rmcp := &Rmcp{
 		RmcpHeader: NewRmcpHeader(),
 		Session15:  session15,

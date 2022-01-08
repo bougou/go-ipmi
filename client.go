@@ -7,8 +7,13 @@ import (
 	"time"
 )
 
+type Interface string
+
 const (
-	DefaultExchangeTimeoutSec int = 120
+	InterfaceLan     Interface = "lan"
+	InterfaceLanplus Interface = "lanplus"
+
+	DefaultExchangeTimeoutSec int = 10
 	DefaultBufferSize         int = 1024
 )
 
@@ -17,7 +22,7 @@ type Client struct {
 	Port      int
 	Username  string // length must <= 16
 	Password  string
-	Interface string
+	Interface Interface
 
 	debug bool
 
@@ -52,13 +57,15 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 		Port:      port,
 		Username:  user,
 		Password:  pass,
-		Interface: "lanplus",
+		Interface: "",
 
 		v20:        true,
 		timeout:    time.Second * time.Duration(DefaultExchangeTimeoutSec),
 		bufferSize: DefaultBufferSize,
 
 		session: &session{
+			// IPMI Request Sequence, start from 1
+			ipmiSeq: 1,
 			v20: v20{
 				state: SessionStatePreSession,
 			},
@@ -68,33 +75,9 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 		},
 	}
 
-	l := len([]byte(c.Password))
-	if l >= 20 {
-		c.passwordPad20 = []byte(c.Password)[:20]
-	} else {
-		c.passwordPad20 = []byte(c.Password)
-		for i := 0; i < 20-l; i++ {
-			c.passwordPad20 = append(c.passwordPad20, 0x00)
-		}
-	}
-	if l >= 16 {
-		c.passwordPad16 = []byte(c.Password)[:16]
-	} else {
-		c.passwordPad16 = []byte(c.Password)
-		for i := 0; i < 16-l; i++ {
-			c.passwordPad16 = append(c.passwordPad16, 0x00)
-		}
-	}
-
-	lu := len([]byte(c.Username))
-	if lu >= 16 {
-		c.usernamePad16 = []byte(c.Username)[:16]
-	} else {
-		c.usernamePad16 = []byte(c.Username)
-		for i := 0; i < 20-lu; i++ {
-			c.usernamePad16 = append(c.usernamePad16, 0x00)
-		}
-	}
+	c.passwordPad20 = padBytes(c.Password, 20, 0x00)
+	c.passwordPad16 = padBytes(c.Password, 16, 0x00)
+	c.usernamePad16 = padBytes(c.Username, 16, 0x00)
 
 	c.udpClient = &UDPClient{
 		Host:       host,
@@ -104,6 +87,11 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 	}
 
 	return c, nil
+}
+
+func (c *Client) WithInterface(intf Interface) *Client {
+	c.Interface = intf
+	return c
 }
 
 func (c *Client) WithDebug(debug bool) *Client {
@@ -137,13 +125,16 @@ func (c *Client) Connect() error {
 	// 	return fmt.Errorf("ipmi not supported")
 	// }
 
-	if c.Interface == "lanplus" {
+	if c.Interface == "" {
+		return c.ConnectAuto()
+	}
+
+	if c.Interface == InterfaceLanplus {
 		c.v20 = true
 		return c.Connect20()
 	}
-	if c.Interface == "lan" {
+	if c.Interface == InterfaceLan {
 		c.v20 = false
-
 		return c.Connect15()
 	}
 
@@ -176,9 +167,16 @@ func (c *Client) Connect15() error {
 		return fmt.Errorf("GetSessionChallenge failed, err: %s", err)
 	}
 
+	c.session.v15.preSession = true
+
 	_, err = c.ActivateSession()
 	if err != nil {
 		return fmt.Errorf("ActivateSession failed, err: %s", err)
+	}
+
+	_, err = c.SetSessionPrivilegeLevel(PrivilegeLevelAdministrator)
+	if err != nil {
+		return fmt.Errorf("SetSessionPrivilegeLevel failed, err: %s", err)
 	}
 
 	return nil
@@ -219,7 +217,55 @@ func (c *Client) Connect20() error {
 	}
 
 	return nil
+}
 
+func (c *Client) ConnectAuto() error {
+	var (
+		err error
+
+		// 0h-Bh,Fh = specific channel number
+		// Eh = retrieve information for channel this request was issued on
+		channelNumber uint8 = 0x0e
+
+		privilegeLevel PrivilegeLevel = PrivilegeLevelAdministrator
+	)
+
+	// force use IPMI v1.5 first
+	c.v20 = false
+	cap, err := c.GetChannelAuthenticationCapabilities(channelNumber, privilegeLevel)
+	if err != nil {
+		return fmt.Errorf("cmd: Get Channel Authentication Capabilities failed, err: %s", err)
+	}
+	if cap.SupportIPMIv20 {
+		c.v20 = true
+		return c.Connect20()
+	}
+	if cap.SupportIPMIv15 {
+		return c.Connect15()
+	}
+	return fmt.Errorf("client does not IPMI v1.5 and IPMI v.20")
+}
+
+func (c *Client) Close() error {
+	var sessionID uint32
+	if c.v20 {
+		sessionID = c.session.v20.bmcSessionID
+	} else {
+		sessionID = c.session.v15.sessionID
+	}
+
+	request := &CloseSessionRequest{
+		SessionID: sessionID,
+	}
+	if _, err := c.CloseSession(request); err != nil {
+		return fmt.Errorf("CloseSession failed, err: %s", err)
+	}
+
+	if err := c.udpClient.Close(); err != nil {
+		return fmt.Errorf("close udp connection failed, err: %s", err)
+	}
+
+	return nil
 }
 
 func (c *Client) Exchange(request Request, response Response) error {
@@ -257,12 +303,26 @@ type session struct {
 }
 
 type v15 struct {
-	active            bool
+	// indicate whether or not the session is in Pre-Session stage,
+	// that is between "GetSessionChallenge" and "ActivateSession"
+	preSession bool
+
+	// indicate whether or not the IPMI 1.5 session is activated.
+	active bool
+
 	maxPrivilegeLevel PrivilegeLevel
 	sessionID         uint32
-	inSeq             uint32
-	outSeq            uint32 // 6.12.12 IPMI v1.5 Outbound Session Sequence Number Tracking and Handling
-	challenge         [16]byte
+
+	// Sequence number that BMC wants remote console to use for subsequent messages in the session.
+	// Remote console use "inSeq" and increment it when sending Request to BMC.
+	// "inSeq" is first updated by returned ActivateSession response.
+	inSeq uint32
+
+	// "outSeq" is set by Remote Console to indicate the sequence number should picked by BMC.
+	// 6.12.12 IPMI v1.5 Outbound Session Sequence Number Tracking and Handling.
+	outSeq uint32
+
+	challenge [16]byte
 }
 
 type v20 struct {

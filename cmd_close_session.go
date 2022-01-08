@@ -41,8 +41,7 @@ func (res *CloseSessionResponse) Format() string {
 	return ""
 }
 
-func (c *Client) CloseSession() (response *CloseSessionResponse, err error) {
-	request := &CloseSessionRequest{SessionID: c.session.v20.bmcSessionID}
+func (c *Client) CloseSession(request *CloseSessionRequest) (response *CloseSessionResponse, err error) {
 	response = &CloseSessionResponse{}
 	err = c.Exchange(request, response)
 	return

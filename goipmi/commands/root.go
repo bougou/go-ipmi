@@ -29,6 +29,8 @@ func initClient() error {
 	client = c
 
 	client.WithDebug(debug)
+	client.WithInterface(ipmi.Interface(intf))
+
 	if err := client.Connect(); err != nil {
 		return fmt.Errorf("client connect failed, err: %s", err)
 	}
@@ -36,8 +38,8 @@ func initClient() error {
 }
 
 func closeClient() error {
-	if _, err := client.CloseSession(); err != nil {
-		return fmt.Errorf("close client session failed, err: %s", err)
+	if err := client.Close(); err != nil {
+		return fmt.Errorf("close client failed, err: %s", err)
 	}
 	return nil
 }

@@ -1,9 +1,5 @@
 package ipmi
 
-import (
-	"fmt"
-)
-
 const (
 	IPMIRequesterSequenceMax uint8 = 0x3f // RequesterSequence only occupy 6 bits
 )
@@ -96,7 +92,7 @@ func (req *IPMIRequest) Pack() []byte {
 	return msg
 }
 
-func (req *IPMIRequest) ComputeChecksum() error {
+func (req *IPMIRequest) ComputeChecksum() {
 	// 8-bit checksum algorithm: Initialize checksum to 0. For each byte, checksum = (checksum + byte) modulo 256. Then checksum = - checksum. When the checksum and the bytes are added together, modulo 256, the result should be 0.
 	//
 	// the posititon end is not included
@@ -115,8 +111,6 @@ func (req *IPMIRequest) ComputeChecksum() error {
 
 	cs2Start, cs2End := 3, len(tempData)-1
 	req.Checksum2 = checksumFn(tempData, cs2Start, cs2End)
-
-	return nil
 }
 
 func (res *IPMIResponse) Unpack(msg []byte) error {
@@ -167,12 +161,11 @@ func (c *Client) BuildIPMIRequest(reqCmd Request) (*IPMIRequest, error) {
 
 	c.session.ipmiSeq += 1
 	if c.session.ipmiSeq > IPMIRequesterSequenceMax {
-		c.session.ipmiSeq = 0
+		c.session.ipmiSeq = 1
 	}
 
-	if err := ipmiReq.ComputeChecksum(); err != nil {
-		return nil, fmt.Errorf("compute IPMIMsgRequest checksum failed, err: %s", err)
-	}
+	ipmiReq.ComputeChecksum()
+
 	return ipmiReq, nil
 }
 

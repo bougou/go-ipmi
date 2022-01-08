@@ -7,6 +7,116 @@ import (
 	"github.com/bougou/go-ipmi/utils/md2"
 )
 
+// 22.17.1 AuthCode Algorithms
+// Single Session AuthCode carried in IPMI message data for Activate Session Command
+// to fill ActiveSessionRequest.Challenge
+type AuthCodeSingleSessionInput struct {
+	Password  string
+	SessionID uint32
+	Challenge []byte
+}
+
+func (a AuthCodeSingleSessionInput) AuthCode(authType AuthType) []byte {
+	password := padBytes(a.Password, 16, 0x00)
+	inputLength := 16 + 4 + len(a.Challenge) + 16
+
+	var input = make([]byte, inputLength)
+	packBytes(password, input, 0)
+	packUint32L(a.SessionID, input, 16)
+	packBytes(a.Challenge[:], input, 20)
+	packBytes(password, input, 20+len(a.Challenge))
+
+	var authCode []byte
+	switch authType {
+	case AuthTypePassword:
+		authCode = password
+	case AuthTypeMD2:
+		authCode = md2.New().Sum(input)
+		authCode = authCode[:16]
+	case AuthTypeMD5:
+		c := md5.Sum(input) // can not use md5.New().Sum(input)
+		authCode = c[:]
+	}
+
+	return authCode[:16]
+}
+
+// 22.17.1 AuthCode Algorithms
+// Multi-Session AuthCode carried in session header for all authenticated packets
+type AuthCodeMultiSessionInput struct {
+	Password   string
+	SessionID  uint32
+	SessionSeq uint32
+	IPMIData   []byte
+}
+
+func (i *AuthCodeMultiSessionInput) AuthCode(authType AuthType) []byte {
+	password := padBytes(i.Password, 16, 0x00)
+	ipmiData := i.IPMIData
+
+	// The Integrity Algorithm Number specifies the algorithm used to generate the contents
+	// for the AuthCode signature field that accompanies authenticated IPMI v2.0/RMCP+ messages once the session has been
+	// established.
+	// Unless otherwise specified, the integrity algorithm is applied to the packet data starting with the
+	// AuthType/Format field up to and including the field that immediately precedes the AuthCode field itself.
+	authCodeInputLength := len(password) +
+		4 + // session od uint32
+		len(ipmiData) +
+		4 + // session seq uint32
+		len(password)
+
+	var input = make([]byte, authCodeInputLength)
+	packBytes(password, input, 0)
+	packUint32L(i.SessionID, input, 16)
+	packBytes(ipmiData, input, 20)
+	packUint32L(i.SessionSeq, input, 20+len(ipmiData))
+	packBytes(password, input, 20+len(ipmiData)+4)
+
+	// c := md5.Sum(input)
+	// authCode := c[:]
+
+	var authCode []byte
+	switch authType {
+	case AuthTypePassword:
+		authCode = password
+	case AuthTypeMD2:
+		authCode = md2.New().Sum(input)
+		authCode = authCode[:16]
+	case AuthTypeMD5:
+		c := md5.Sum(input) // can not use md5.New().Sum(input)
+		authCode = c[:]
+	}
+
+	return authCode[:16]
+}
+
+func (c *Client) genAuthCodeForSingleSession() []byte {
+	input := &AuthCodeSingleSessionInput{
+		Password:  c.Password,
+		SessionID: c.session.v15.sessionID,
+		Challenge: c.session.v15.challenge[:],
+	}
+
+	authCode := input.AuthCode(c.session.authType)
+	c.DebugBytes(fmt.Sprintf("authtype (%d) gen authcode", c.session.authType), authCode, 16)
+	return authCode
+}
+
+// only be used for ActivateSession (IPMI v1.5)
+// see 22.17.1 AuthCode Algorithms
+func (c *Client) genAuthCodeForMultiSession(ipmiMsg []byte) []byte {
+	input := &AuthCodeMultiSessionInput{
+		Password:   c.Password,
+		SessionID:  c.session.v15.sessionID,
+		SessionSeq: c.session.v15.inSeq,
+		IPMIData:   ipmiMsg,
+	}
+
+	authCode := input.AuthCode(c.session.authType)
+	c.DebugBytes(fmt.Sprintf("authtype (%d) gen authcode", c.session.authType), authCode, 16)
+	return authCode
+}
+
 // When the HMAC-SHA1-96 Integrity Algorithm is used the resulting AuthCode field is 12 bytes (96 bits).
 // When the HMAC-SHA256-128 and HMAC-MD5-128 Integrity Algorithms are used the resulting AuthCode field is 16-bytes (128 bits).
 func (c *Client) genIntegrityAuthCode(input []byte) ([]byte, error) {
@@ -49,79 +159,6 @@ func (c *Client) genIntegrityAuthCode(input []byte) ([]byte, error) {
 	default:
 		return nil, fmt.Errorf("not support for integrity algorithm %x", c.session.v20.integrityAlg)
 	}
-}
-
-func (c *Client) generateAuthCodeForSingleSession() []byte {
-	authCodeInputLength := 16 +
-		4 + // temp session od uint32
-		len(c.session.v15.challenge) +
-		16
-
-	var input = make([]byte, authCodeInputLength)
-	packBytes(c.passwordPad16, input, 0)
-	packUint32L(c.session.v15.sessionID, input, 16)
-	packBytes(c.session.v15.challenge[:], input, 20)
-	packBytes(c.passwordPad16, input, 20+len(c.session.v15.challenge))
-
-	// generate AuthCode carried in IPMI message data for Activate Session Command
-	// see 22.17.1 AuthCode Algorithms
-	// Table 22-, AuthCode Algorithms
-	authCode := []byte{}
-	switch c.session.authType {
-	case AuthTypePassword:
-		authCode = c.passwordPad16
-	case AuthTypeMD2:
-		authCode = md2.New().Sum(input)
-	case AuthTypeMD5:
-		authCode = md5.New().Sum(input)
-	}
-
-	return authCode
-}
-
-// sessionID should be the Temporary Session ID when calculating the AuthCode for the initial Activate Session command.
-//
-// only be used for ActivateSession (IPMI v1.5)
-// see 22.17
-//
-// generate AuthCode carried in IPMI message data for Activate Session Command
-// see 22.17.1 AuthCode Algorithms
-// Table 22-, AuthCode Algorithms
-func (c *Client) genAuthCodeForMultiSession(ipmiMsg []byte) []byte {
-	// The Integrity Algorithm Number specifies the algorithm used to generate the contents
-	// for the AuthCode signature field that accompanies authenticated IPMI v2.0/RMCP+ messages once the session has been
-	// established.
-	// Unless otherwise specified, the integrity algorithm is applied to the packet data starting with the
-	// AuthType/Format field up to and including the field that immediately precedes the AuthCode field itself.
-	authCodeInputLength := len(c.passwordPad16) +
-		4 + // session od uint32
-		len(ipmiMsg) +
-		4 + // session seq uint32
-		len(c.passwordPad16)
-
-	var input = make([]byte, authCodeInputLength)
-	packBytes(c.passwordPad16, input, 0)
-	packUint32L(c.session.v15.sessionID, input, 16)
-	packBytes(ipmiMsg, input, 48)
-	packUint32L(c.session.v15.inSeq, input, 48+len(ipmiMsg))
-	packBytes(c.passwordPad16, input, 48+len(ipmiMsg)+32)
-
-	c.DebugBytes("gen authcode input", input, 16)
-
-	var authCode []byte
-	switch c.session.authType {
-	case AuthTypePassword:
-		authCode = c.passwordPad16
-	case AuthTypeMD2:
-		authCode = md2.New().Sum(input)
-		authCode = authCode[:16]
-	case AuthTypeMD5:
-		c := md5.Sum(input)
-		authCode = c[:]
-	}
-
-	c.DebugBytes("gen authcode", authCode, 16)
-	return authCode[:16]
 }
 
 // sik (Session Integrite Key)

@@ -2,7 +2,6 @@ package ipmi
 
 import (
 	"fmt"
-	"math/rand"
 )
 
 // 22.17
@@ -121,9 +120,6 @@ func (res *ActivateSessionResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
 
-// authType is from corresponding Get Session Challenge command.
-// sessionID is Temporary Session ID value from corresponding Get Session Challenge command, or present Session ID if session already active
-//
 // ActivateSession is only used for IPMI v1.5
 func (c *Client) ActivateSession() (response *ActivateSessionResponse, err error) {
 	request := &ActivateSessionRequest{
@@ -132,21 +128,21 @@ func (c *Client) ActivateSession() (response *ActivateSessionResponse, err error
 		Challenge:          c.session.v15.challenge,
 
 		// the outbound session sequence number is set by the remote console and can be any random value.
-		InitialOutboundSequenceNumber: rand.Uint32(),
+		InitialOutboundSequenceNumber: randomUint32(),
 	}
+	c.session.v15.outSeq = request.InitialOutboundSequenceNumber
 
 	response = &ActivateSessionResponse{}
 
 	// The Activate Session packet is typically authenticated.
-	// We set session to active here, but if ActivateSession Command failed, we should set sessoin active to false
-	c.session.v15.active = true
+	// We set session to active here to indicate this request should be authenticated
+	// but if ActivateSession Command failed, we should set sessoin active to false
 	err = c.Exchange(request, response)
 	if err != nil {
-		c.session.v15.active = false
 		return
 	}
-
-	c.session.v15.outSeq = request.InitialOutboundSequenceNumber
+	c.session.v15.active = true
+	c.session.v15.preSession = false
 
 	// to use for the remainder of the session
 	// Todo, validate the SessionID

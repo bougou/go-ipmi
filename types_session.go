@@ -71,7 +71,7 @@ func (h *SessionHeader15) Pack() []byte {
 		packBytes(h.AuthCode, msg, 9)
 	}
 
-	packUint8(h.PayloadLength, msg, len(msg))
+	packUint8(h.PayloadLength, msg, 9+len(h.AuthCode))
 	return msg
 }
 
@@ -330,9 +330,6 @@ const (
 )
 
 func (c *Client) genSession15(rawPayload []byte) (*Session15, error) {
-	//
-	// Session Header
-	//
 	sessionHeader := &SessionHeader15{
 		AuthType:      AuthTypeNone,
 		Sequence:      0,
@@ -341,14 +338,18 @@ func (c *Client) genSession15(rawPayload []byte) (*Session15, error) {
 		PayloadLength: uint8(len(rawPayload)),
 	}
 
-	if c.session.v15.active && c.session.authType != AuthTypeNone {
+	if c.session.v15.preSession || c.session.v15.active {
 		sessionHeader.AuthType = c.session.authType
-		sessionHeader.Sequence = c.session.v15.inSeq
 		sessionHeader.SessionID = c.session.v15.sessionID
+	}
 
+	if c.session.v15.active {
+		c.session.v15.inSeq += 1
+		sessionHeader.Sequence = c.session.v15.inSeq
+	}
+
+	if sessionHeader.AuthType != AuthTypeNone {
 		authCode := c.genAuthCodeForMultiSession(rawPayload)
-
-		c.DebugBytes("session 15 authcode", authCode, 16)
 		sessionHeader.AuthCode = authCode
 	}
 
@@ -376,6 +377,8 @@ func (c *Client) genSession20(payloadType PayloadType, rawPayload []byte) (*Sess
 		sessionHeader.PayloadAuthenticated = true
 		sessionHeader.PayloadEncrypted = true
 		sessionHeader.SessionID = c.session.v20.bmcSessionID // use bmc session id
+
+		c.session.v20.sequence += 1
 		sessionHeader.Sequence = c.session.v20.sequence
 	}
 
