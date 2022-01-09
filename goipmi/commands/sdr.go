@@ -110,15 +110,8 @@ func NewCmdSDRList() *cobra.Command {
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSDRs failed, err: %s", err))
 			}
-			for k, sdr := range sdrs {
-				if k == 0 {
-					fmt.Println(sdr.StringHeader())
-				}
-				fmt.Println(sdr)
-				if k == len(sdrs)-1 {
-					fmt.Println(sdr.StringHeader())
-				}
-			}
+
+			fmt.Println(ipmi.FormatSDRs(sdrs))
 		},
 	}
 

@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // section 43
 type SDRRecordType uint8
@@ -184,58 +187,6 @@ func (sdr *SDR) GeneratorID() uint16 {
 	default:
 		return 0
 	}
-}
-
-func (sdr *SDR) StringHeader() string {
-	formatValues := []formatValue{
-		fv("%-8s", "RecordID"),
-		fv("%-10s", "RecordType"),
-		fv("%-20s", "RecordTypeStr"),
-		fv("%-11s", "GeneratorID"),
-		fv("%-7s", "Sensor#"),
-		fv("%-16s", "SensorName"),
-	}
-	return formatValuesTable(formatValues)
-
-}
-
-func (sdr *SDR) String() string {
-	if sdr.RecordHeader == nil {
-		return ""
-	}
-
-	recordID := sdr.RecordHeader.RecordID
-	recordType := sdr.RecordHeader.RecordType
-
-	switch recordType {
-	case SDRRecordTypeFullSensor:
-	case SDRRecordTypeCompactSensor:
-	case SDRRecordTypeEventOnly:
-	case SDRRecordTypeDeviceRelativeEntityAssociation:
-	case SDRRecordTypeGenericLocator:
-	case SDRRecordTypeFRUDeviceLocator:
-	case SDRRecordTypeManagementControllerDeviceLocator:
-	case SDRRecordTypeManagementControllerConfirmation:
-	case SDRRecordTypeBMCMessageChannelInfo:
-	case SDRRecordTypeOEM:
-	default:
-	}
-
-	var gidStr string
-	if sdr.GeneratorID() == 0 {
-		gidStr = "N/A"
-	} else {
-		gidStr = fmt.Sprintf("%#04x", sdr.GeneratorID())
-	}
-	formatValues := []formatValue{
-		fv("%-8s", fmt.Sprintf("%#02x", recordID)),
-		fv("%-10s", fmt.Sprintf("%#02x", uint8(recordType))),
-		fv("%-20s", recordType),
-		fv("%-11s", gidStr),
-		fv("%-7s", fmt.Sprintf("%#02x", sdr.SensorNumber())),
-		fv("%-16s", sdr.SensorName()),
-	}
-	return formatValuesTable(formatValues)
 }
 
 // 43.1 SDRFull Type 01h, Full Sensor Record
@@ -1418,4 +1369,62 @@ func ParseSDR(data []byte, nextRecordID uint16) (*SDR, error) {
 	}
 
 	return sdr, nil
+}
+
+func FormatSDRs(records []*SDR) string {
+	var lines []string
+
+	headers := []formatValue{
+		fv("%-8s", "RecordID"),
+		fv("%-10s", "RecordType"),
+		fv("%-20s", "RecordTypeStr"),
+		fv("%-11s", "GeneratorID"),
+		fv("%-7s", "Sensor#"),
+		fv("%-16s", "SensorName"),
+	}
+
+	lines = append(lines, formatValuesTable(headers))
+
+	for _, sdr := range records {
+		if sdr.RecordHeader == nil {
+			return ""
+		}
+
+		recordID := sdr.RecordHeader.RecordID
+		recordType := sdr.RecordHeader.RecordType
+		switch recordType {
+		case SDRRecordTypeFullSensor:
+		case SDRRecordTypeCompactSensor:
+		case SDRRecordTypeEventOnly:
+		case SDRRecordTypeDeviceRelativeEntityAssociation:
+		case SDRRecordTypeGenericLocator:
+		case SDRRecordTypeFRUDeviceLocator:
+		case SDRRecordTypeManagementControllerDeviceLocator:
+		case SDRRecordTypeManagementControllerConfirmation:
+		case SDRRecordTypeBMCMessageChannelInfo:
+		case SDRRecordTypeOEM:
+		default:
+		}
+
+		var generatorIDStr string
+		if sdr.GeneratorID() == 0 {
+			generatorIDStr = "N/A"
+		} else {
+			generatorIDStr = fmt.Sprintf("%#04x", sdr.GeneratorID())
+		}
+
+		content := []formatValue{
+			fv("%-8s", fmt.Sprintf("%#02x", recordID)),
+			fv("%-10s", fmt.Sprintf("%#02x", uint8(recordType))),
+			fv("%-20s", recordType),
+			fv("%-11s", generatorIDStr),
+			fv("%-7s", fmt.Sprintf("%#02x", sdr.SensorNumber())),
+			fv("%-16s", sdr.SensorName()),
+		}
+		lines = append(lines, formatValuesTable(content))
+	}
+
+	lines = append(lines, formatValuesTable(headers))
+
+	return strings.Join(lines, "\n")
 }

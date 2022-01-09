@@ -1,36 +1,48 @@
 package ipmi
 
+import "fmt"
+
+// 31.6.1 SEL Record Type Ranges
 type EventRecordType uint8
+type EventRecordTypeRange string
 
 const (
-	EventRecordTypeSystemEvent EventRecordType = 0x02
+	// Range reserved for standard SEL Record Types.
+	// As of this writing, only type 02h is defined.
+	// Records are automatically timestamped unless otherwise indicated
+	// 00h - BFh
+	EventRecordTypeRangeStandard EventRecordTypeRange = "standard"
 
 	// 32.2 OEM SEL Record - Type C0h-DFh
-	// C0h-DFh = OEM timestamped
+	// Range reserved for timestamped OEM SEL records.
+	// These records are automatically timestamped by the SEL Device
+	// C0h - DFh
+	EventRecordTypeRangeTimestampedOEM EventRecordTypeRange = "timestamped OEM"
 
 	// 32.3 OEM SEL Record - Type E0h-FFh
-	// E0h-FFh = OEM non-timestamped
+	// Range reserved for non-timestamped OEM SEL records.
+	// The SEL Device does not automatically timestamp these records.
+	// The four bytes passed in the byte locations for the timestamp will be directly entered into the SEL.
+	// E0h - FFh
+	EventRecordTypeRangeNonTimestampedOEM EventRecordTypeRange = "non-timestamped OEM"
 )
 
-func isEventRecordTypeOEMTimestamped(eventRecordType EventRecordType) bool {
-	return eventRecordType >= 0xc0 && eventRecordType <= 0xdf
+func (typ EventRecordType) Range() EventRecordTypeRange {
+	t := uint8(typ)
+	if t >= 0x00 && t <= 0xbf {
+		return EventRecordTypeRangeStandard
+	}
+
+	if t >= 0xc0 && t <= 0xdf {
+		return EventRecordTypeRangeTimestampedOEM
+	}
+
+	// t >= 0xe0 && t <= 0xff
+	return EventRecordTypeRangeNonTimestampedOEM
 }
 
-func isEventRecordTypeOEMNonTimestamped(eventRecordType EventRecordType) bool {
-	return eventRecordType >= 0xe0 && eventRecordType <= 0xff
-}
-
-func (t EventRecordType) String() string {
-	if t == EventRecordTypeSystemEvent {
-		return "system event"
-	}
-	if isEventRecordTypeOEMTimestamped(t) {
-		return "OEM timestamped"
-	}
-	if isEventRecordTypeOEMNonTimestamped(t) {
-		return "OEM non-timestamped"
-	}
-	return "unknown"
+func (typ EventRecordType) String() string {
+	return string(typ.Range())
 }
 
 type EventDir bool
@@ -47,9 +59,22 @@ func (d EventDir) String() string {
 	return "Assertion"
 }
 
-// Todo
+// 29.7 Event Data Field Formats
 type EventData struct {
-	Offset uint8 // only 4 bits, 0-15
+	EventData1 uint8
+	EventData2 uint8
+	EventData3 uint8
+}
+
+// 29.7
+// Event Data 1
+// [3:0] - Offset from Event/Reading Code for threshold event.
+func (ed *EventData) EventReadingOffset() uint8 {
+	return ed.EventData1 & 0x0f
+}
+
+func (ed *EventData) String() string {
+	return fmt.Sprintf("%02x%02x%02x", ed.EventData1, ed.EventData2, ed.EventData3)
 }
 
 // 41.2 Event/Reading Type Code
@@ -77,7 +102,10 @@ func (typ EventReadingType) String() string {
 	return c
 }
 
-func (typ EventReadingType) EventString(sensorType SensorType, generatorID GeneratorID, sensorNumber SensorNumber, offset uint8) string {
+// EventString returns description of the event
+func (typ EventReadingType) EventString(sensorType SensorType, sensorNumber SensorNumber, eventData EventData) string {
+	offset := eventData.EventReadingOffset()
+
 	var s string
 	switch typ {
 	case 0x00:
@@ -85,10 +113,10 @@ func (typ EventReadingType) EventString(sensorType SensorType, generatorID Gener
 	case 0x01:
 		s = genericEventString(typ, offset)
 	case 0x6f:
-		s = genericEventString(typ, offset)
+		s = sensorSpecificEventString(sensorType, offset)
 	default:
 		if typ >= 0x02 && typ <= 0x0c {
-			s = sensorSpecificEventString(sensorType, offset)
+			s = genericEventString(typ, offset)
 		} else if typ >= 0x70 && typ <= 0x7f {
 			s = oemEventString(sensorType, sensorNumber, offset)
 		} else {

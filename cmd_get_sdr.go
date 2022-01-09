@@ -110,6 +110,7 @@ func (c *Client) GetSDRs(recordType SDRRecordType) ([]*SDR, error) {
 	return out, nil
 }
 
+// GetSDRsMap returns all SDRs grouped by GeneratorID and SensorNumber.
 func (c *Client) GetSDRsMap(recordType SDRRecordType) (map[uint16]map[uint8]*SDR, error) {
 	var recordID uint16 = 0
 

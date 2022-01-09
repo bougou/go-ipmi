@@ -35,6 +35,11 @@ func (c *Client) DebugBytes(header string, data []byte, width int) {
 	fmt.Printf("\n")
 }
 
+// 37 Timestamp Format
+func parseTimestamp(timestamp uint32) time.Time {
+	return time.Unix(int64(timestamp), 0)
+}
+
 func formatBool(b bool, trueStr string, falseStr string) string {
 	if b {
 		return trueStr

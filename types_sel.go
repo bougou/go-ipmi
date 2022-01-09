@@ -2,24 +2,11 @@ package ipmi
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
-// type SELRecordType uint8
-
-// const (
-// 	SELRecordTypeDefault = SELRecordType(0x02)
-
-// 	// These records are automatically timestamped by the SEL Device.
-// 	SELRecordTypeOEMTimestampedL = SELRecordType(0xC0)
-// 	SELRecordTypeOEMTimestampedH = SELRecordType(0xDF)
-
-// 	// The SEL Device does not automatically timestamp these records.
-// 	// The four bytes passed in the byte locations for the timestamp will be directly entered into the SEL.
-// 	SELRecordTypeOEMNonTimestampedL = SELRecordType(0xE0)
-// 	SELRecordTypeOEMNonTimestampedH = SELRecordType(0xFF)
-// )
-
+// 32. SEL Record Formats
 type SEL struct {
 	// SEL Record IDs 0000h and FFFFh are reserved for functional use and are not legal ID values.
 	// Record IDs are handles. They are not required to be sequential or consecutive.
@@ -27,49 +14,9 @@ type SEL struct {
 	RecordID   uint16
 	RecordType EventRecordType
 
-	Default           *SELDefault
+	Standard          *SELStandard
 	OEMTimestamped    *SELOEMTimestamped
 	OEMNonTimestamped *SELOEMNonTimestamped
-}
-
-func (sel *SEL) StringHeader() string {
-	formatValues := []formatValue{
-		fv("%-6s", "ID"),
-		fv("%-15s", "RecordType"),
-		fv("%-6s", "EvmRev"),
-		fv("%-29s", "Timestamp"),
-		fv("%-6s", "GID"),
-		fv("%-7s", "Sensor#"),
-		fv("%-6s", "ERType"),
-		fv("%-15s", "ERCategory"),
-		fv("%-27s", "SensorType"),
-		fv("%-6s", "STCode"),
-		fv("%-6s", "Offset"),
-		fv("%-64s", "EventDescription"),
-		fv("%-11s", "EventDir"),
-		fv("%-10s", "EventData1"),
-		fv("%-10s", "EventData2"),
-		fv("%-10s", "EventData3"),
-	}
-	return formatValuesTable(formatValues)
-}
-
-func (sel *SEL) Format() string {
-	formatValues := []formatValue{
-		fv("%-6s", fmt.Sprintf("%#04x", sel.RecordID)),
-		fv("%-15s", sel.RecordType),
-	}
-
-	if sel.RecordType == EventRecordTypeSystemEvent {
-		formatValues = append(formatValues, sel.Default.Format()...)
-	}
-	if isEventRecordTypeOEMTimestamped(sel.RecordType) {
-		formatValues = append(formatValues, sel.OEMTimestamped.Format()...)
-	}
-	if isEventRecordTypeOEMNonTimestamped(sel.RecordType) {
-		formatValues = append(formatValues, sel.OEMNonTimestamped.Format()...)
-	}
-	return formatValuesTable(formatValues)
 }
 
 func (sel *SEL) Pack() []byte {
@@ -77,23 +24,24 @@ func (sel *SEL) Pack() []byte {
 	packUint16L(sel.RecordID, msg, 0)
 	packUint8(uint8(sel.RecordType), msg, 2)
 
-	packUint32L(uint32(sel.Default.Timestamp.Unix()), msg, 3)
+	packUint32L(uint32(sel.Standard.Timestamp.Unix()), msg, 3)
 
-	packUint16L(uint16(sel.Default.GeneratorID), msg, 7)
+	packUint16L(uint16(sel.Standard.GeneratorID), msg, 7)
 
-	packUint8(sel.Default.EvMRev, msg, 9)
-	packUint8(uint8(sel.Default.SensorType), msg, 10)
-	packUint8(uint8(sel.Default.SensorNumber), msg, 11)
+	packUint8(sel.Standard.EvMRev, msg, 9)
+	packUint8(uint8(sel.Standard.SensorType), msg, 10)
+	packUint8(uint8(sel.Standard.SensorNumber), msg, 11)
 
-	var eventType = uint8(sel.Default.EventReadingType)
-	if sel.Default.EventDir {
+	var eventType = uint8(sel.Standard.EventReadingType)
+	if sel.Standard.EventDir {
 		eventType = eventType | 0x80
 	}
 	packUint8(eventType, msg, 12)
 
-	packUint8(sel.Default.EventData1, msg, 13)
-	packUint8(sel.Default.EventData2, msg, 14)
-	packUint8(sel.Default.EventData3, msg, 15)
+	packUint8(sel.Standard.EventData.EventData1, msg, 13)
+	packUint8(sel.Standard.EventData.EventData2, msg, 14)
+	packUint8(sel.Standard.EventData.EventData3, msg, 15)
+
 	return msg
 }
 
@@ -102,26 +50,28 @@ func ParseSEL(msg []byte) (*SEL, error) {
 		return nil, fmt.Errorf("SEL Record msg should be 16 bytes in length")
 	}
 
-	sel := &SEL{}
-	sel.RecordID, _, _ = unpackUint16L(msg, 0)
-
+	recordID, _, _ := unpackUint16L(msg, 0)
 	recordType, _, _ := unpackUint8(msg, 2)
-	sel.RecordType = EventRecordType(recordType)
+	sel := &SEL{
+		RecordID:   recordID,
+		RecordType: EventRecordType(recordType),
+	}
 
-	if sel.RecordType == EventRecordTypeSystemEvent {
+	recordTypeRange := sel.RecordType.Range()
+	switch recordTypeRange {
+	case EventRecordTypeRangeStandard:
 		if err := parseSELDefault(msg, sel); err != nil {
 			return nil, fmt.Errorf("parseSELDefault failed, err: %s", err)
 		}
-	} else if isEventRecordTypeOEMTimestamped(sel.RecordType) {
+	case EventRecordTypeRangeTimestampedOEM:
 		if err := parseSELOEMTimestamped(msg, sel); err != nil {
 			return nil, fmt.Errorf("parseSELOEMTimestamped failed, err: %s", err)
 		}
-	} else if isEventRecordTypeOEMNonTimestamped(sel.RecordType) {
+	case EventRecordTypeRangeNonTimestampedOEM:
 		if err := parseSELOEMNonTimestamped(msg, sel); err != nil {
 			return nil, fmt.Errorf("parseSELOEMNonTimestamped failed, err: %s", err)
 		}
 	}
-
 	return sel, nil
 }
 
@@ -136,9 +86,8 @@ type SELOEMNonTimestamped struct {
 	OEM []byte // 13 bytes
 }
 
-// 32.1 SELDefault Event Records
-// Each SELDefault record is 16 bytes in length.
-type SELDefault struct {
+// 32.1 SEL Standard Event Records
+type SELStandard struct {
 	Timestamp    time.Time    // Time when event was logged. uint32 LS byte first.
 	GeneratorID  GeneratorID  // RqSA & LUN if event was generated from IPMB. Software ID if event was generatedfrom system software.
 	EvMRev       uint8        // Event Message Revision (format version)
@@ -152,94 +101,17 @@ type SELDefault struct {
 	//
 	// The sensor class determines the corresponding Event Data format.
 	// The sensor class can be extracted from EventReadingType.
-	EventData1 uint8
-	EventData2 uint8
-	EventData3 uint8
-}
-
-// 29.7
-// Event Data 1
-// [3:0] - Offset from Event/Reading Code for threshold event.
-func (sel *SELDefault) EventReadingOffset() uint8 {
-	return sel.EventData1 & 0x0f
+	EventData EventData
 }
 
 // EventString return string description of the event.
-func (sel *SELDefault) EventString() string {
-	offset := sel.EventReadingOffset()
-	return sel.EventReadingType.EventString(sel.SensorType, sel.GeneratorID, sel.SensorNumber, offset)
-}
-
-// 37 Timestamp Format
-func parseTimestamp(timestamp uint32) time.Time {
-	return time.Unix(int64(timestamp), 0)
-}
-
-func (s *SELDefault) Format() []formatValue {
-	formatValues := []formatValue{
-		fv("%-6s", fmt.Sprintf("%#02x", s.EvMRev)),
-		fv("%-29s", s.Timestamp),
-		fv("%-6s", fmt.Sprintf("%#04x", s.GeneratorID)),
-		fv("%-7s", fmt.Sprintf("%#02x", s.SensorNumber)),
-		fv("%-6s", fmt.Sprintf("%#02x", uint8(s.EventReadingType))),
-		fv("%-15s", s.EventReadingType),
-		fv("%-27s", s.SensorType),
-		fv("%-6s", fmt.Sprintf("%#02x", uint8(s.SensorType))),
-		fv("%-6s", fmt.Sprintf("%#02x", s.EventReadingOffset())),
-		fv("%-64s", s.EventString()),
-		fv("%-11s", s.EventDir),
-		fv("%-10s", fmt.Sprintf("%02x", s.EventData1)),
-		fv("%-10s", fmt.Sprintf("%02x", s.EventData2)),
-		fv("%-10s", fmt.Sprintf("%02x", s.EventData3)),
-	}
-	return formatValues
-}
-
-func (s *SELOEMTimestamped) Format() []formatValue {
-	formatValues := []formatValue{
-		fv("%-6s", ""),
-		fv("%-29s", s.Timestamp),
-		fv("%-6s", ""),
-		fv("%-7s", ""),
-		fv("%-11s", ""),
-		fv("%-27s", ""),
-		fv("%-6s", ""),
-		fv("%-6s", ""),
-		fv("%-15s", ""),
-		fv("%-6s", ""),
-		fv("%-64s", fmt.Sprintf("%v", s.OEMDefined)),
-		fv("%-11s", ""),
-		fv("%-10s", ""),
-		fv("%-10s", ""),
-		fv("%-10s", ""),
-	}
-	return formatValues
-}
-
-func (s *SELOEMNonTimestamped) Format() []formatValue {
-	formatValues := []formatValue{
-		fv("%-6s", ""),
-		fv("%-29s", ""),
-		fv("%-6s", ""),
-		fv("%-7s", ""),
-		fv("%-11s", ""),
-		fv("%-27s", ""),
-		fv("%-6s", ""),
-		fv("%-6s", ""),
-		fv("%-15s", ""),
-		fv("%-6s", ""),
-		fv("%-64s", fmt.Sprintf("%v", s.OEM)),
-		fv("%-11s", ""),
-		fv("%-10s", ""),
-		fv("%-10s", ""),
-		fv("%-10s", ""),
-	}
-	return formatValues
+func (sel *SELStandard) EventString() string {
+	return sel.EventReadingType.EventString(sel.SensorType, sel.SensorNumber, sel.EventData)
 }
 
 func parseSELDefault(msg []byte, sel *SEL) error {
-	var s = &SELDefault{}
-	sel.Default = s
+	var s = &SELStandard{}
+	sel.Standard = s
 
 	ts, _, _ := unpackUint32L(msg, 3)
 	s.Timestamp = parseTimestamp(ts)
@@ -259,9 +131,9 @@ func parseSELDefault(msg []byte, sel *SEL) error {
 	s.EventDir = EventDir(isBit7Set(b))
 	s.EventReadingType = EventReadingType(b & 0x7f) // clear bit 7
 
-	s.EventData1, _, _ = unpackUint8(msg, 13)
-	s.EventData2, _, _ = unpackUint8(msg, 14)
-	s.EventData3, _, _ = unpackUint8(msg, 15)
+	s.EventData.EventData1, _, _ = unpackUint8(msg, 13)
+	s.EventData.EventData2, _, _ = unpackUint8(msg, 14)
+	s.EventData.EventData3, _, _ = unpackUint8(msg, 15)
 
 	return nil
 }
@@ -286,4 +158,118 @@ func parseSELOEMNonTimestamped(msg []byte, sel *SEL) error {
 
 	s.OEM, _, _ = unpackBytes(msg, 3, 13)
 	return nil
+}
+
+// FormatSELs print sel records in table format.
+// The second sdrMap is optional. If the sdrMap is not nil,
+// it will also print sensor number, entity id and instance, and asserted discrete states.
+// sdrMap can be get by client GetSDRsMap method.
+func FormatSELs(records []*SEL, sdrMap map[uint16]map[uint8]*SDR) string {
+	var lines []string
+
+	var elistMode bool
+	if sdrMap != nil {
+		elistMode = true
+	}
+	headers := []formatValue{
+		fv("%-6s", "ID"),
+		fv("%-15s", "RecordType"),
+		fv("%-6s", "EvmRev"),
+		fv("%-29s", "Timestamp"),
+		fv("%-6s", "GID"),
+		fv("%-12s", "SensorNumber"),
+		fv("%-14s", "SensorTypeCode"),
+		fv("%-27s", "SensorType"),
+		fv("%-9s", "EventType"),
+		fv("%-64s", "EventDescription"),
+		fv("%-11s", "EventDir"),
+		fv("%-9s", "EventData"),
+	}
+	if elistMode {
+		headers = append(headers, fv("%16s", "SensorName"))
+	}
+	lines = append(lines, formatValuesTable(headers))
+
+	for _, sel := range records {
+		recordTypeRange := sel.RecordType.Range()
+
+		var content []formatValue
+
+		switch recordTypeRange {
+		case EventRecordTypeRangeStandard:
+			s := sel.Standard
+			content = []formatValue{
+				fv("%-6s", fmt.Sprintf("%#04x", sel.RecordID)),
+				fv("%-15s", sel.RecordType),
+				fv("%-6s", fmt.Sprintf("%#02x", s.EvMRev)),
+				fv("%-29s", s.Timestamp),
+				fv("%-6s", fmt.Sprintf("%#04x", s.GeneratorID)),
+				fv("%-12s", fmt.Sprintf("%#02x", s.SensorNumber)),
+				fv("%-14s", fmt.Sprintf("%#02x", uint8(s.SensorType))),
+				fv("%-27s", s.SensorType),
+				fv("%-9s", fmt.Sprintf("%#02x", uint8(s.EventReadingType))),
+				fv("%-64s", s.EventString()),
+				fv("%-11s", s.EventDir),
+				fv("%-9s", s.EventData.String()),
+			}
+			if elistMode {
+				var sensorName string
+				gid := uint16(s.GeneratorID)
+				sn := uint8(s.SensorNumber)
+				sdr, ok := sdrMap[gid][sn]
+				if !ok {
+					sensorName = fmt.Sprintf("N/A %#04x, %#02x", gid, sn)
+				} else {
+					sensorName = sdr.SensorName()
+				}
+				content = append(content, fv("%16s", sensorName))
+			}
+
+		case EventRecordTypeRangeTimestampedOEM:
+			s := sel.OEMTimestamped
+			content = []formatValue{
+				fv("%-6s", fmt.Sprintf("%#04x", sel.RecordID)),
+				fv("%-15s", sel.RecordType),
+				fv("%-6s", ""),
+				fv("%-29s", s.Timestamp),
+				fv("%-6s", ""),
+				fv("%-14s", ""),
+				fv("%-6s", ""),
+				fv("%-27s", ""),
+				fv("%-9s", ""),
+				fv("%-64s", fmt.Sprintf("%v", s.OEMDefined)),
+				fv("%-11s", ""),
+				fv("%-9s", ""),
+			}
+			if elistMode {
+				content = append(content, fv("", ""))
+			}
+
+		case EventRecordTypeRangeNonTimestampedOEM:
+			s := sel.OEMNonTimestamped
+			content = []formatValue{
+				fv("%-6s", fmt.Sprintf("%#04x", sel.RecordID)),
+				fv("%-15s", sel.RecordType),
+				fv("%-6s", ""),
+				fv("%-29s", ""),
+				fv("%-6s", ""),
+				fv("%-12s", ""),
+				fv("%-14s", ""),
+				fv("%-27s", ""),
+				fv("%-9s", ""),
+				fv("%-64s", fmt.Sprintf("%v", s.OEM)),
+				fv("%-11s", ""),
+				fv("%-9s", ""),
+			}
+			if elistMode {
+				content = append(content, fv("", ""))
+			}
+		}
+
+		lines = append(lines, formatValuesTable(content))
+	}
+
+	lines = append(lines, formatValuesTable(headers))
+
+	return strings.Join(lines, "\n")
 }
