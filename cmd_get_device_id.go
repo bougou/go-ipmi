@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // 20.1
 type GetDeviceIDRequest struct {
@@ -35,7 +38,8 @@ type GetDeviceIDResponse struct {
 	// E.g. a value of 51h indicates revision 1.5 functionality.
 	// 02h for implementations that provide IPMI v2.0 capabilities
 	// per this specification.
-	IPMIVersion uint8
+	MajorIPMIVersion uint8
+	MinorIPMIVersion uint8
 
 	// Additional Device Support (formerly called IPM Device Support). Lists the
 	// IPMI 'logical device' commands and functions that the controller supports that
@@ -80,7 +84,7 @@ type GetDeviceIDResponse struct {
 	// specific to the vendor identified by Manufacturer ID (see below). When the
 	// vendor-specific definition is not known, generic utilities should display each
 	// byte as 2-digit hexadecimal numbers, with byte 13 displayed first as the mostsignificant byte.
-	AuxiliaryFirmwareRevision uint32
+	AuxiliaryFirmwareRevision []byte // 4 bytes
 }
 
 func (req *GetDeviceIDRequest) Command() Command {
@@ -101,18 +105,23 @@ func (res *GetDeviceIDResponse) Unpack(msg []byte) error {
 	}
 
 	res.DeviceID, _, _ = unpackUint8(msg, 0)
+
 	b2, _, _ := unpackUint8(msg, 1)
 	res.DeviceProvideSDRs = isBit7Set(b2)
 	res.DeviceRevision = b2 & 0x0f
 
 	b3, _, _ := unpackUint8(msg, 2)
-	res.DeviceAvailable = isBit7Set(b3)
-	res.MajorFirmwareRevision = b3 & 0x3f // binary encoded
+	res.DeviceAvailable = !isBit7Set(b3)
+	res.MajorFirmwareRevision = b3 & 0x7f // binary encoded
 
-	res.MinorFirmwareRevision, _, _ = unpackUint8(msg, 3) // BCD encoded
-	res.IPMIVersion, _, _ = unpackUint8(msg, 4)           // BCD encoded
+	b4, _, _ := unpackUint8(msg, 3) // BCD encoded
+	res.MinorFirmwareRevision = bcdUint8(b4)
 
-	b6, _, _ := unpackUint8(msg, 5) // BCD encoded
+	ipmiVersionBCD, _, _ := unpackUint8(msg, 4) // BCD encoded
+	res.MajorIPMIVersion = ipmiVersionBCD & 0x0f
+	res.MinorIPMIVersion = ipmiVersionBCD >> 4
+
+	b6, _, _ := unpackUint8(msg, 5)
 
 	res.SupportChassis = isBit7Set(b6)
 	res.SupportBridge = isBit6Set(b6)
@@ -129,32 +138,73 @@ func (res *GetDeviceIDResponse) Unpack(msg []byte) error {
 	if len(msg) > 11 && len(msg) < 15 {
 		return ErrUnpackedDataTooShort
 	} else {
-		res.AuxiliaryFirmwareRevision, _, _ = unpackUint32L(msg, 11)
+		res.AuxiliaryFirmwareRevision, _, _ = unpackBytes(msg, 11, 4)
 	}
 	return nil
 }
 
+func (res *GetDeviceIDResponse) FirmwareVersionStr() string {
+	return fmt.Sprintf("%d.%d", res.MajorFirmwareRevision, res.MinorFirmwareRevision)
+}
+
 func (res *GetDeviceIDResponse) Format() string {
+	deviceSupport := []string{}
+	if res.SupportChassis {
+		deviceSupport = append(deviceSupport, "    Chassis Device")
+	}
+	if res.SupportBridge {
+		deviceSupport = append(deviceSupport, "    Bridge Device")
+	}
+	if res.SupportIPMBEventGenerator {
+		deviceSupport = append(deviceSupport, "    IPMB Event Generator")
+	}
+	if res.SupportIPMBEventReceiver {
+		deviceSupport = append(deviceSupport, "    IPMB Event Receiver")
+	}
+	if res.SupportFRUInventory {
+		deviceSupport = append(deviceSupport, "    FRU Inventory Device")
+	}
+	if res.SupportSEL {
+		deviceSupport = append(deviceSupport, "    SEL Device")
+	}
+	if res.SupportSDRRepo {
+		deviceSupport = append(deviceSupport, "    SDR Repo Device")
+	}
+	if res.SupportSensor {
+		deviceSupport = append(deviceSupport, "    Sensor Device")
+	}
+
+	auxFirmwareInfo := []string{}
+	for _, v := range res.AuxiliaryFirmwareRevision {
+		auxFirmwareInfo = append(auxFirmwareInfo, fmt.Sprintf("    %#02x", v))
+	}
+
 	return fmt.Sprintf(`Device ID                 : %d
 Device Revision           : %d
 Firmware Revision         : %d.%d
-IPMI Version              : %d
+IPMI Version              : %d.%d
 Manufacturer ID           : %d
-Manufacturer Name         :
-Product ID                : %d (%#02x)
-Product Name              :
+Manufacturer Name         : %#02x
+Product ID                : %d (%#04x)
+Product Name              : %#02x
 Device Available          : %s
 Provides Device SDRs      : %s
 Additional Device Support :
-Aux Firmware Rev Info     :`,
+%s
+Aux Firmware Rev Info     :
+%s`,
 		res.DeviceID,
 		res.DeviceRevision,
 		res.MajorFirmwareRevision, res.MinorFirmwareRevision,
-		res.IPMIVersion,
+		res.MajorIPMIVersion, res.MinorIPMIVersion,
+		res.ManufacturerID,
 		res.ManufacturerID,
 		res.ProductID, res.ProductID,
+		res.ProductID,
 		formatBool(res.DeviceAvailable, "yes", "no"),
 		formatBool(res.DeviceProvideSDRs, "yes", "no"),
+		strings.Join(deviceSupport, "    \n"),
+		strings.Join(auxFirmwareInfo, "    \n"),
 	)
 }
 

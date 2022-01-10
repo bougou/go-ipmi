@@ -886,11 +886,12 @@ type SDRMgmtControllerConfirmation struct {
 	FirmwareMajorRevision uint8 // [6:0] - Major Firmware Revision, binary encoded.
 	FirmwareMinorRevision uint8 // Minor Firmware Revision. BCD encoded.
 
-	//IPMI Version from Get Device ID command. Holds IPMI Command Specification
+	// IPMI Version from Get Device ID command. Holds IPMI Command Specification
 	// Version. BCD encoded. 00h = reserved. Bits 7:4 hold the Least Significant digit of the
 	// revision, while bits 3:0 hold the Most Significant bits. E.g. a value of 01h indicates
 	// revision 1.0
-	IPMIVersion uint8
+	MajorIPMIVersion uint8
+	MinorIPMIVersion uint8
 
 	ManufacturerID uint32 // 3 bytes only
 	ProductID      uint16
@@ -920,7 +921,10 @@ func parseSDRManagementControllerConfirmation(data []byte, sdr *SDR) error {
 
 	s.FirmwareMinorRevision, _, _ = unpackUint8(data, 9)
 
-	s.IPMIVersion, _, _ = unpackUint8(data, 10)
+	ipmiVersionBCD, _, _ := unpackUint8(data, 10)
+	s.MajorIPMIVersion = ipmiVersionBCD & 0x0f
+	s.MinorIPMIVersion = ipmiVersionBCD >> 4
+
 	s.ManufacturerID, _, _ = unpackUint24L(data, 11)
 	s.ProductID, _, _ = unpackUint16L(data, 14)
 	s.DeviceGUID, _, _ = unpackBytes(data, 16, 16)
@@ -1054,7 +1058,7 @@ func (tl TypeLength) Type() string {
 
 func (tl TypeLength) Length() uint8 {
 	typecode := (uint8(tl) & 0xc0) >> 6 // the highest 2 bits
-	l := uint8(tl) & 0x3f               // the lowest 5 bits
+	l := uint8(tl) & 0x3f               // the lowest 6 bits
 
 	var size uint8
 	switch typecode {
