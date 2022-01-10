@@ -162,8 +162,8 @@ func (c *Client) genIntegrityAuthCode(input []byte) ([]byte, error) {
 }
 
 // sik (Session Integrite Key)
-// both the remote console and the managed system generate sik by using the same hmackey and hmac data.
-// so they should be same.
+// Both the remote console and the managed system generate sik by using
+// the same hmackey and hmac data, so they should be same.
 // see 13.31
 func (c *Client) generate_sik() ([]byte, error) {
 	input := make([]byte, 34+len(c.Username))
@@ -175,10 +175,12 @@ func (c *Client) generate_sik() ([]byte, error) {
 
 	c.DebugBytes("sik mac input", input, 16)
 	var hmacKey []byte
+	// hmacKey shoud use 160-bit key Kg
+	// and Kuid is used in place of Kg if "one-key" logins are being used.
 	if len(c.session.v20.bmcKey) != 0 {
 		hmacKey = c.session.v20.bmcKey
 	} else {
-		hmacKey = c.passwordPad20
+		hmacKey = padBytes(c.Password, 20, 0x00) // 160 bit = 20 bytes
 	}
 	c.DebugBytes("sik mac key", hmacKey, 16)
 
@@ -259,8 +261,7 @@ func (c *Client) generate_rakp2_authcode() ([]byte, error) {
 
 	// The bmc also use user password to caculate authcode, so if the authcode does not match,
 	// it may indicates the password is no right.
-	hmacKey := []byte(c.passwordPad20)
-	// Todo, pading to 20 bytes
+	hmacKey := padBytes(c.Password, 20, 0x00)
 	c.DebugBytes("rakp2 authcode key", hmacKey, 16)
 
 	b, err := generate_auth_hmac(c.session.v20.authAlg, buffer, hmacKey)
@@ -320,7 +321,7 @@ func (c *Client) generate_rakp3_authcode() ([]byte, error) {
 
 	c.DebugBytes("rakp3 auth code input", input, 16)
 
-	hmacKey := []byte(c.passwordPad20)
+	hmacKey := padBytes(c.Password, 20, 0x00)
 
 	c.DebugBytes("rakp3 auth code key", hmacKey, 16)
 

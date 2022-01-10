@@ -13,7 +13,7 @@ const (
 	InterfaceLan     Interface = "lan"
 	InterfaceLanplus Interface = "lanplus"
 
-	DefaultExchangeTimeoutSec int = 10
+	DefaultExchangeTimeoutSec int = 20
 	DefaultBufferSize         int = 1024
 )
 
@@ -26,12 +26,11 @@ type Client struct {
 
 	debug bool
 
+	// this flags controls which IPMI version (1.5 or 2.0) be used by Client to send Request
 	v20 bool
 
-	usernamePad16 []byte
-	passwordPad16 []byte
-	passwordPad20 []byte
-
+	// holds data exchanged during Session Activation stage.
+	// see: 13.14 IPMI v1.5 LAN Session Activation, 13.15 IPMI v2.0/RMCP+ Session Activation
 	session *session
 
 	udpClient  *UDPClient
@@ -74,10 +73,6 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 			},
 		},
 	}
-
-	c.passwordPad20 = padBytes(c.Password, 20, 0x00)
-	c.passwordPad16 = padBytes(c.Password, 16, 0x00)
-	c.usernamePad16 = padBytes(c.Username, 16, 0x00)
 
 	c.udpClient = &UDPClient{
 		Host:       host,
@@ -138,9 +133,6 @@ func (c *Client) Connect() error {
 		return c.Connect15()
 	}
 
-	// Todo, if c.Interface not specified,
-	// first try v1.5 to find detect version from GetChannelAuthenticaitonCapabilities
-	// then decide to use v1.5 or v2.0
 	return fmt.Errorf("not supported interface (lan or lanplus)")
 }
 
@@ -219,6 +211,9 @@ func (c *Client) Connect20() error {
 	return nil
 }
 
+// ConnectAuto detects the IPMI version supported by BMC by using
+// GetChannelAuthenticaitonCapabilities commmand, Then decide to use v1.5 or v2.0
+// for subsequent requests.
 func (c *Client) ConnectAuto() error {
 	var (
 		err error
@@ -243,7 +238,7 @@ func (c *Client) ConnectAuto() error {
 	if cap.SupportIPMIv15 {
 		return c.Connect15()
 	}
-	return fmt.Errorf("client does not IPMI v1.5 and IPMI v.20")
+	return fmt.Errorf("client does not support IPMI v1.5 and IPMI v.20")
 }
 
 func (c *Client) Close() error {
@@ -359,10 +354,10 @@ type v20 struct {
 	rakp2ReturnCode uint8    // will be used in rakp3 message
 
 	// see 13.33
-	// User passwords (keys, Kuid) are set using the Set User Password command.
-	// Kg is set using the Set Channel Security Keys command.
-	bmcKey []byte // BMC key, known as Kg
-	// ipmi user password, the pre-shared key, known as Kuid
+	// Kuid vs Kg
+	//  - ipmi user password (the pre-shared key), known as Kuid, which are set using the Set User Password command.
+	//  - BMC key, known as Kg, Kg is set using the Set Channel Security Keys command.
+	bmcKey []byte
 
 	accumulatedPayloadSize uint32
 

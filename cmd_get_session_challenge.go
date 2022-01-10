@@ -52,9 +52,10 @@ func (res *GetSessionChallengeResponse) Format() string {
 // The command selects which of the BMC-supported authentication types the Remote Console would like to use,
 // and a username that selects which set of user information should be used for the session
 func (c *Client) GetSessionChallenge() (response *GetSessionChallengeResponse, err error) {
+	username := padBytes(c.Username, 16, 0x00)
 	request := &GetSessionChallengeRequest{
 		AuthType: c.session.authType,
-		Username: array16(c.usernamePad16),
+		Username: array16(username),
 	}
 
 	response = &GetSessionChallengeResponse{}

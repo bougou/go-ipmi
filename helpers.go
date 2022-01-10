@@ -50,7 +50,7 @@ func formatBool(b bool, trueStr string, falseStr string) string {
 func padBytes(s string, width int, pad byte) []byte {
 	o := []byte(s)
 	if len(s) >= width {
-		return o[:16]
+		return o[:width]
 	}
 
 	for i := 0; i < width-len(s); i++ {
@@ -480,4 +480,11 @@ func formatValuesTable(formatValues []formatValue) string {
 		values = append(values, v.value)
 	}
 	return fmt.Sprintf(format, values...)
+}
+
+// 8421 BCD
+func bcdUint8(i uint8) uint8 {
+	msb4 := i >> 4
+	lsb4 := i & 0x0f
+	return msb4*10 + lsb4
 }
