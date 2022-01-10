@@ -38,7 +38,7 @@ func (req *GetSELEntryRequest) Pack() []byte {
 }
 
 func (res *GetSELEntryResponse) Unpack(msg []byte) error {
-	if len(msg) < 3 {
+	if len(msg) < 2 {
 		return ErrUnpackedDataTooShort
 	}
 	res.NextRecordID, _, _ = unpackUint16L(msg, 0)
@@ -56,9 +56,10 @@ func (res *GetSELEntryResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
 
-func (c *Client) GetSELEntry(recordID uint16) (response *GetSELEntryResponse, err error) {
+// The reservationID is only required for partial Get, use 0000h otherwise.
+func (c *Client) GetSELEntry(reservationID uint16, recordID uint16) (response *GetSELEntryResponse, err error) {
 	request := &GetSELEntryRequest{
-		ReservationID: 0,
+		ReservationID: reservationID,
 		RecordID:      recordID,
 		Offset:        0,
 		ReadBytes:     0xff,
@@ -72,9 +73,9 @@ func (c *Client) GetSELEntry(recordID uint16) (response *GetSELEntryResponse, er
 // Pass 0 means retrieve all SEL entries.
 func (c *Client) GetSELEntries(startRecordID uint16) ([]*SEL, error) {
 	var out = make([]*SEL, 0)
-	var recordID uint16 = 0
+	var recordID uint16 = startRecordID
 	for {
-		selEntry, err := c.GetSELEntry(recordID)
+		selEntry, err := c.GetSELEntry(0, recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSELEntry failed, err: %s", err)
 		}

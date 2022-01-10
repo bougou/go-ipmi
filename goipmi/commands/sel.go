@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/bougou/go-ipmi"
@@ -21,6 +22,7 @@ func NewCmdSEL() *cobra.Command {
 		},
 	}
 	cmd.AddCommand(NewCmdSELInfo())
+	cmd.AddCommand(NewCmdSELGet())
 	cmd.AddCommand(NewCmdSELList())
 	cmd.AddCommand(NewCmdSELElist())
 
@@ -43,6 +45,35 @@ func NewCmdSELInfo() *cobra.Command {
 				CheckErr(fmt.Errorf("GetSELInfo failed, err: %s", err))
 			}
 			fmt.Println(selAllocInfo.Format())
+		},
+	}
+	return cmd
+}
+
+func NewCmdSELGet() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "get",
+		Short: "get",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				CheckErr(errors.New("no Record ID supplied"))
+			}
+			id, err := parseStringToInt64(args[0])
+			if err != nil {
+				CheckErr(fmt.Errorf("invalid Record ID passed, err: %s", err))
+			}
+			recordID := uint16(id)
+
+			selEntryRes, err := client.GetSELEntry(0x0, recordID)
+			if err != nil {
+				CheckErr(fmt.Errorf("GetSELEntry failed, err: %s", err))
+			}
+
+			sel, err := ipmi.ParseSEL(selEntryRes.Data)
+			if err != nil {
+				CheckErr(fmt.Errorf("ParseSEL failed, err: %s", err))
+			}
+			fmt.Println(ipmi.FormatSELs([]*ipmi.SEL{sel}, nil))
 		},
 	}
 	return cmd

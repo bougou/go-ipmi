@@ -649,11 +649,13 @@ func (c *Client) ParseRmcpResponse(msg []byte, response Response) error {
 			// Standard Payload Types
 			ipmiPayload := rmcp.Session20.SessionPayload
 			if sessionHdr.PayloadEncrypted {
+				c.DebugBytes("decrypting", ipmiPayload, 16)
 				d, err := c.decryptPayload(rmcp.Session20.SessionPayload)
 				if err != nil {
 					return fmt.Errorf("decrypt session payload failed, err: %s", err)
 				}
 				ipmiPayload = d
+				c.DebugBytes("decrypted", ipmiPayload, 16)
 			}
 
 			ipmiRes := IPMIResponse{}
