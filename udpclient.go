@@ -91,7 +91,7 @@ func (c *UDPClient) Close() error {
 // It sends the request, and waits for a reply.
 // Exchange does not retry a failed query.
 // The sent content is read from reader.
-func (c *UDPClient) Exchanged(ctx context.Context, reader io.Reader) ([]byte, error) {
+func (c *UDPClient) Exchange(ctx context.Context, reader io.Reader) ([]byte, error) {
 	if err := c.initConn(); err != nil {
 		return nil, fmt.Errorf("init udp connection failed, err: %s", err)
 	}

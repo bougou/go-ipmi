@@ -275,7 +275,7 @@ func (c *Client) Exchange(request Request, response Response) error {
 	c.DebugBytes("sent", sent, 16)
 
 	ctx := context.Background()
-	recv, err := c.udpClient.Exchanged(ctx, bytes.NewReader(sent))
+	recv, err := c.udpClient.Exchange(ctx, bytes.NewReader(sent))
 	if err != nil {
 		return fmt.Errorf("client udp exchange msg failed, err: %s", err)
 	}
