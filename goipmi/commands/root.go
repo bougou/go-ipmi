@@ -68,6 +68,7 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.AddCommand(NewCmdSDR())
 	rootCmd.AddCommand(NewCmdChassis())
 	rootCmd.AddCommand(NewCmdChannel())
+	rootCmd.AddCommand(NewCmdLan())
 
 	rootCmd.SilenceUsage = true
 	rootCmd.SilenceErrors = true
