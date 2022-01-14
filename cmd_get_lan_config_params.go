@@ -98,19 +98,19 @@ func (c *Client) GetLanConfig(channelNumber uint8) (*LanConfig, error) {
 }
 
 func parseLanConfig(lanConfig *LanConfig, paramSelector LanParamSelector, paramData []byte) error {
-	var lanParams LanParam
+	var lanParam LanParam
 	for _, v := range LanParams {
 		if v.Selector == paramSelector {
-			lanParams = v
+			lanParam = v
 			break
 		}
 	}
 
-	if uint8(len(paramData)) < lanParams.DataSize {
-		return fmt.Errorf("the data size (%d) for param is too short, required (%d)", len(paramData), lanParams.DataSize)
+	if uint8(len(paramData)) < lanParam.DataSize {
+		return fmt.Errorf("the data for param (%s) is too short, input (%d), required (%d)", paramSelector, len(paramData), lanParam.DataSize)
 	}
 
-	switch lanParams.Selector {
+	switch lanParam.Selector {
 	case LanParam_SetInProgress:
 		lanConfig.SetInProgress = SetInProgress(paramData[0])
 
