@@ -97,7 +97,7 @@ const (
 type PrivilegeLevel uint8
 
 const (
-	PrivilegeLevelAutoDetect    PrivilegeLevel = 0x00
+	PrivilegeLevelUnspecified   PrivilegeLevel = 0x00
 	PrivilegeLevelCallback      PrivilegeLevel = 0x01
 	PrivilegeLevelUser          PrivilegeLevel = 0x02
 	PrivilegeLevelOperator      PrivilegeLevel = 0x03
@@ -105,13 +105,36 @@ const (
 	PrivilegeLevelOEM           PrivilegeLevel = 0x05
 )
 
+func (l PrivilegeLevel) Short() string {
+	// :     X=Cipher Suite Unused
+	// :     c=CALLBACK
+	// :     u=USER
+	// :     o=OPERATOR
+	// :     a=ADMIN
+	// :     O=OEM
+	m := map[PrivilegeLevel]string{
+		0x00: "X",
+		0x01: "c",
+		0x02: "u",
+		0x03: "o",
+		0x04: "a",
+		0x05: "O",
+	}
+	s, ok := m[l]
+	if ok {
+		return s
+	}
+	return "-"
+}
+
 func (l PrivilegeLevel) String() string {
 	m := map[PrivilegeLevel]string{
+		0x00: "unspecified",
 		0x01: "callback",
 		0x02: "user",
 		0x03: "operator",
 		0x04: "admin",
-		0x05: "Oem",
+		0x05: "oem",
 	}
 	s, ok := m[l]
 	if ok {

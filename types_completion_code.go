@@ -63,3 +63,13 @@ var CC = map[uint8]string{
 	0xd6: "Cannot execute command, command disabled",
 	0xff: "Unspecified error",
 }
+
+// String return description of global completion code.
+// Please use StrCC function to get description for any completion code
+// returned for specific command response.
+func (cc CompletionCode) String() string {
+	if s, ok := CC[uint8(cc)]; ok {
+		return s
+	}
+	return ""
+}

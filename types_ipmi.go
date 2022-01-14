@@ -169,8 +169,8 @@ func (c *Client) BuildIPMIRequest(reqCmd Request) (*IPMIRequest, error) {
 	return ipmiReq, nil
 }
 
-// allCC returns all possible completion codes for the specified response.
-func allCC(response Response) map[uint8]string {
+// AllCC returns all possible completion codes for the specified response.
+func AllCC(response Response) map[uint8]string {
 	out := map[uint8]string{}
 	for k, v := range CC {
 		out[k] = v
@@ -181,8 +181,11 @@ func allCC(response Response) map[uint8]string {
 	return out
 }
 
-func ccStr(response Response, ccode uint8) string {
-	s, ok := allCC(response)[ccode]
+// StrCC return the description of ccode for the specified response.
+// The available completion codes set consists of general completion codes (CC) for all
+// Commands Resonse and specific completion codes for this response.
+func StrCC(response Response, ccode uint8) string {
+	s, ok := AllCC(response)[ccode]
 	if ok {
 		return s
 	}

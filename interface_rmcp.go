@@ -622,11 +622,18 @@ func (c *Client) ParseRmcpResponse(msg []byte, response Response) error {
 
 		ccode := ipmiRes.CompletionCode
 		if ccode != 0x00 {
-			return fmt.Errorf("ipmiRes CompletaionCode (%0x) is not normal: %s", ccode, ccStr(response, ccode))
+			return &ResponseError{
+				completionCode: CompletionCode(ccode),
+				description:    fmt.Sprintf("ipmiRes CompletaionCode (%0x) is not normal: %s", ccode, StrCC(response, ccode)),
+			}
 		}
 
+		// now ccode is 0x00, we can continue to deserialize response
 		if err := response.Unpack(ipmiRes.Data); err != nil {
-			return fmt.Errorf("unpack response failed, err: %s", err)
+			return &ResponseError{
+				completionCode: 0x00,
+				description:    fmt.Sprintf("unpack response failed, err: %s", err),
+			}
 		}
 	}
 
@@ -666,13 +673,19 @@ func (c *Client) ParseRmcpResponse(msg []byte, response Response) error {
 
 			ccode := ipmiRes.CompletionCode
 			if ccode != 0x00 {
-				return fmt.Errorf("ipmiRes CompletaionCode (%0x) is not normal: %s", ccode, ccStr(response, ccode))
+				return &ResponseError{
+					completionCode: CompletionCode(ccode),
+					description:    fmt.Sprintf("ipmiRes CompletaionCode (%0x) is not normal: %s", ccode, StrCC(response, ccode)),
+				}
 			}
 
+			// now ccode is 0x00, we can continue to deserialize response
 			if err := response.Unpack(ipmiRes.Data); err != nil {
-				return fmt.Errorf("unpack response failed, err: %s", err)
+				return &ResponseError{
+					completionCode: 0x00,
+					description:    fmt.Sprintf("unpack response failed, err: %s", err),
+				}
 			}
-			return nil
 		}
 	}
 

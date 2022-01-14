@@ -282,7 +282,9 @@ func (c *Client) Exchange(request Request, response Response) error {
 	c.DebugBytes("recv", recv, 16)
 
 	if err := c.ParseRmcpResponse(recv, response); err != nil {
-		return fmt.Errorf("build rmcp response failed, err: %s", err)
+		// Warn, must directly return err.
+		// The error returned by ParseRmcpResponse might be of *ResponseError type.
+		return err
 	}
 
 	c.Debug("<< Commmand Response", response)

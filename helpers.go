@@ -12,6 +12,13 @@ import (
 )
 
 // Debug pretty print any object
+func (c *Client) Debugf(format string, object ...interface{}) {
+	if !c.debug {
+		return
+	}
+	pretty.Printf(format, object...)
+}
+
 func (c *Client) Debug(header string, object interface{}) {
 	if !c.debug {
 		return

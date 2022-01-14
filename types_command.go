@@ -18,6 +18,22 @@ type Response interface {
 	Format() string
 }
 
+// ResponseError encapsulate the CompletionCode of IPMI Response Msg
+// alongside with error description.
+type ResponseError struct {
+	completionCode CompletionCode
+	description    string
+}
+
+// Error implements the error interface
+func (e *ResponseError) Error() string {
+	return e.description
+}
+
+func (e *ResponseError) CompletionCode() CompletionCode {
+	return e.completionCode
+}
+
 // Appendix G - Command Assignments
 // Command Number Assignments (Appendix G, table G-1)
 var (
