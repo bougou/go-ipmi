@@ -212,7 +212,7 @@ func (c *Client) Connect20() error {
 }
 
 // ConnectAuto detects the IPMI version supported by BMC by using
-// GetChannelAuthenticaitonCapabilities commmand, Then decide to use v1.5 or v2.0
+// GetChannelAuthenticaitonCapabilities commmand, then decide to use v1.5 or v2.0
 // for subsequent requests.
 func (c *Client) ConnectAuto() error {
 	var (

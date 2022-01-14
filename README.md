@@ -40,31 +40,281 @@ func main() {
 ## Functions Comparision with ipmitool
 
 > More is ongoing ...
->
-| Client Method         | ipmitool cmdline                                      |
-| --------------------- | ----------------------------------------------------- |
-| GetSELInfo            | ipmitool sel info                                     |
-| GetSELAllocInfo       | ipmitool sel info                                     |
-| ClearSEL              | ipmitool sel clear                                    |
-| GetSDRRepoInfo        | ipmitool sdr info                                     |
-| GetSDRRepoAllocInfo   | ipmitool sdr info                                     |
-| GetSDR                | ipmitool sdr get                                      |
-| GetSDRs               | ipmitool sdr list/elist                               |
-| GetChassisStatus      | ipmitool chassis status                               |
-| GetChassisStatus      | ipmitool chassis power status                         |
-| ChassisControl        | ipmitool chassis power on/off/cycle/reset/diag/soft   |
-| ChassisIdentify       | ipmitool chassis identify                             |
-| SetFrontPanelEnables  |
-| SetPowerRestorePolicy | ipmitool chassis policy always-on/previous/always-off |
-| GetSystemRestartCause | ipmitool chassis restart_cause                        |
-| GetDeviceID           | ipmitool mc info                                      |
-| WarmReset             | ipmitool mc reset warm                                |
-| ColdReset             | ipmitool mc reset cold                                |
-| GetSelfTestResults    | ipmitool mc selftest                                  |
-| GetSystemGUID         | ipmitool mc guid                                      |
-| ManufacturingTestOn   |                                                       |
-| GetACPIPowerState     |                                                       |
-| SetACPIPowerState     |                                                       |
+
+### IPM Device Global Commands
+
+| Method                             | Status | akin ipmitool usage |
+| ---------------------------------- | ------ | ------------------- |
+| GetDeviceID                        | √      | mc info             |
+| ColdReset                          | √      | mc reset cold       |
+| WarmReset                          | √      | mc reset warm       |
+| GetSelfTestResults                 | √      | mc selftest         |
+| ManufacturingTestOn                | √      |
+| SetACPIPowerState                  | √      |
+| GetACPIPowerState                  | √      |
+| GetDeviceGUID                      | √      |
+| GetNetFnSupport                    | √      |
+| GetCommandSupport                  | √      |
+| GetCommandSubfunctionSupport       |        |
+| GetConfigurableCommands            | √      |
+| GetConfigurableCommandSubfunctions |        |
+| SetCommandEnables                  |        |
+| GetCommandEnables                  | √      |
+| GetCommandSubfunctionsEnables      | √      |
+| GetSubfunctionsEnables             |        |
+| GetOEMNetFnIanaSupport             |        |
+
+### BMC Watchdog Timer Commands
+
+| Method             | Status | akin ipmitool usage |
+| ------------------ | ------ | ------------------- |
+| ResetWatchdogTimer |        |
+| SetWatchdogTimer   |        |
+| GetWatchdogTimer   |        |
+
+### BMC Device and Messaging Commands
+
+| Method                         | Status | akin ipmitool usage |
+| ------------------------------ | ------ | ------------------- |
+| SetBMCGlobalEnables            | √      |
+| GetBMCGlobalEnables            | √      |
+| ClearMessageFlags              | √      |
+| GetMessageFlags                | √      |
+| EnableMessageChannelReceive    | √      |
+| GetMessage                     | √      |
+| SendMessage                    | √      |
+| ReadEventMessageBuffer         | √      |
+| GetBTInterfaceCapabilities     |        |
+| GetSystemGUID                  | √      | mc guid             |
+| SetSystemInfoParameters        |        |
+| GetSystemInfoParameters        |        |
+| GetChannelAuthCapabilities     | √      |
+| GetSessionChallenge            | √      |
+| ActivateSession                | √      |
+| SetSessionPrivilegeLevel       | √      |
+| CloseSession                   | √      |
+| GetSessionInfo                 | √      |
+| GetAuthCode                    | √      |
+| SetChannelAccess               |        |
+| GetChannelAccess               |        |
+| GetChannelInfo                 | √      |
+| SetUserAccess                  |        |
+| GetUserAccess                  |        |
+| SetUsername                    |        |
+| GetUsername                    |        |
+| SetUserPassword                |        |
+| ActivatePayload                |        |
+| DeactivatePayload              |        |
+| GetPayloadActivationStatus     |        |
+| GetPayloadInstanceInfo         |        |
+| SetUserPayloadAccess           |        |
+| GetUserPayloadAccess           |        |
+| GetChannelPayloadSupport       |        |
+| GetChannelPayloadVersion       |        |
+| GetChannelOEMPayloadInfo       |        |
+| MasterWriteRead                |        |
+| GetChannelCipherSuites         | √      |
+| SuspendOrResumeEncryption      |        |
+| SetChannelCipherSuites         |        |
+| GetSystemInterfaceCapabilities | √      |
+
+### Chassis Device Commands
+
+| Method                 | Status | akin ipmitool usage                          |
+| ---------------------- | ------ | -------------------------------------------- |
+| GetChassisCapabilities | √      |
+| GetChassisStatus       | √      | chassis status                               |
+| ChassisControl         | √      | chassis power on/off/cycle/reset/diag/soft   |
+| ChassisReset           |        |
+| ChassisIdentify        | √      | chassis identify                             |
+| SetChassisCapabilities | √      |
+| SetPowerRestorePolicy  | √      | chassis policy always-on/previous/always-off |
+| GetSystemRestartCause  | √      | chassis restart_cause                        |
+| SetSystemBootOptions   | √      |
+| GetSystemBootOptions   | √      |
+| SetFrontPanelEnables   | √      |
+| SetPowerCycleInterval  | √      |
+| GetPOHCounter          |        |
+
+### Event Commands
+
+| Method           | Status | akin ipmitool usage |
+| ---------------- | ------ | ------------------- |
+| SetEventReceiver |        |
+| GetEventReceiver |        |
+| EventMessage     |        |
+
+### PEF and Alerting Commands
+
+| Method                  | Status | akin ipmitool usage |
+| ----------------------- | ------ | ------------------- |
+| GetPefCapabilities      |        |
+| ArmPefPostponeTimer     |        |
+| SetPefConfigParameters  |        |
+| GetPefConfigParameters  |        |
+| SetLastProcessedEventId |        |
+| GetLastProcessedEventId |        |
+| AlertImmediate          |        |
+| PetAck                  |        |
+
+### Sensor Device Commands
+
+| Method                         | Status | akin ipmitool usage |
+| ------------------------------ | ------ | ------------------- |
+| GetDeviceSDRInfo               | √      |
+| GetDeviceSDR                   | √      |
+| ReserveDeviceSDRRepo           | √      |
+| GetSensorReadingFactors        | √      |
+| SetSensorHysteresis            | √      |
+| GetSensorHysteresis            | √      |
+| SetSensorThresholds            | √      |
+| GetSensorThresholds            | √      |
+| SetSensorEventEnable           |        |
+| GetSensorEventEnable           | √      |
+| RearmSensorEvents              |        |
+| GetSensorEventStatus           | √      |
+| GetSensorReading               | √      |
+| SetSensorType                  | √      |
+| GetSensorType                  | √      |
+| SetSensorReadingAndEventStatus | √      |
+
+### FRU Device Commands
+
+| Method                  | Status | akin ipmitool usage |
+| ----------------------- | ------ | ------------------- |
+| GetFRUInventoryAreaInfo | √      |
+| ReadFRUData             | √      |
+| WriteFRUData            | √      |
+
+
+### SDR Device Commands
+
+| Method                 | Status | akin ipmitool usage |
+| ---------------------- | ------ | ------------------- |
+| GetSDRRepoInfo         | √      | sdr info            |
+| GetSDRRepoAllocInfo    | √      | sdr info            |
+| ReserveSDRRepo         |        |
+| GetSDR                 | √      | sdr get             |
+| GetSDRs ()             | √      | sdr list/elist      |
+| AddSDR                 |        |
+| PartialAddSDR          |        |
+| DeleteSDR              |        |
+| ClearSDRRepo           |        |
+| GetSDRRepoTime         |        |
+| SetSDRRepoTime         |        |
+| EnterSDRRepoUpateMode  |        |
+| ExitSDRRepoUpdateMode  |        |
+| RunInitializationAgent |        |
+
+### SEL Device Commands
+
+| Method              | Status | akin ipmitool usage |
+| ------------------- | ------ | ------------------- |
+| GetSELInfo          | √      | sel info            |
+| GetSELAllocInfo     | √      | sel info            |
+| ReserveSEL          | √      |
+| GetSELEntry         | √      |
+| AddSELEntry         |        |
+| PartialAddSELEntry  |        |
+| DeleteSELEntry      |        |
+| ClearSEL            | √      | sel clear           |
+| GetSELTime          |        |
+| SetSELTime          |        |
+| GetAuxLogStatus     |        |
+| SetAuxLogStatus     |        |
+| GetSELTimeUtcOffset |        |
+| SetSELTimeUtcOffset |        |
+
+### LAN Device Commands
+
+| Method             | Status | akin ipmitool usage |
+| ------------------ | ------ | ------------------- |
+| SetLanConfigParams |        |
+| GetLanConfigParams | √      |
+| SuspendARPs        | √      |
+| GetIpStatistics    | √      |
+
+### Serial/Modem Device Commands
+
+| Method                 | Status | akin ipmitool usage |
+| ---------------------- | ------ | ------------------- |
+| SetSerialConfig        |        |
+| GetSerialConfig        |        |
+| SetSerialMux           |        |
+| GetTapResponseCodes    |        |
+| SetPPPTransmitData     |        |
+| GetPPPTransmitData     |        |
+| SendPPPPacket          |        |
+| GetPPPReceiveData      |        |
+| SerialConnectionActive |        |
+| Callback               |        |
+| SetUserCallbackOptions |        |
+| GetUserCallbackOptions |        |
+| SetSerialRoutingMux    |        |
+| SolActivating          |        |
+| GetSolConfigParams     |        |
+| SetSolConfigParams     |        |
+
+### Command Forwarding Commands
+
+| Method          | Status | akin ipmitool usage |
+| --------------- | ------ | ------------------- |
+| Fowarded        |        |
+| SetForwarded    |        |
+| GetForwarded    |        |
+| EnableForwarded |        |
+
+### Bridge Management Commands (ICMB)
+
+| Method                | Status | akin ipmitool usage |
+| --------------------- | ------ | ------------------- |
+| GetBridgeState        |        |
+| SetBridgeState        |        |
+| GetICMBAddress        |        |
+| SetICMBAddress        |        |
+| SetBridgeProxyAddress |        |
+| GetBridgeStatistics   |        |
+| GetICMBCapabilities   |        |
+| ClearBridgeStatistics |        |
+| GetBridgeProxyAddress |        |
+| GetICMBConnectorInfo  |        |
+| GetICMBConnectionID   |        |
+| SendICMBConnectionID  |        |
+
+### Discovery Commands (ICMB)
+
+| Method              | Status | akin ipmitool usage |
+| ------------------- | ------ | ------------------- |
+| PrepareForDiscovery |        |
+| GetAddresses        |        |
+| SetDiscovered       |        |
+| GetChassisDeviceId  |        |
+| SetChassisDeviceId  |        |
+
+### Bridging Commands (ICMB)
+
+| Method        | Status | akin ipmitool usage |
+| ------------- | ------ | ------------------- |
+| BridgeRequest |        |
+| BridgeMessage |        |
+
+### Event Commands (ICMB)
+
+| Method                 | Status | akin ipmitool usage |
+| ---------------------- | ------ | ------------------- |
+| GetEventCount          |        |
+| SetEventDestination    |        |
+| SetEventReceptionState |        |
+| SendICMBEventMessage   |        |
+| GetEventDestination    |        |
+| GetEventReceptionState |        |
+
+
+### Other Bridge Commands
+
+| Method      | Status | akin ipmitool usage |
+| ----------- | ------ | ------------------- |
+| ErrorReport |        |
 
 ## Reference
 

@@ -58,7 +58,7 @@ var (
 	CommandGetCommandEnables                  = Command{ID: 0x61, NetFn: NetFnAppRequest, Name: "Get Command Enables"}
 	CommandSetCommandSubfunctionsEnables      = Command{ID: 0x62, NetFn: NetFnAppRequest, Name: "Set Command Sub-function Enables"}
 	CommandGetCommandSubfunctionsEnables      = Command{ID: 0x63, NetFn: NetFnAppRequest, Name: "Get Command Sub-function Enables"}
-	CommandGetOemNetFnIanaSupport             = Command{ID: 0x64, NetFn: NetFnAppRequest, Name: "Get OEM NetFn IANA Support"}
+	CommandGetOEMNetFnIanaSupport             = Command{ID: 0x64, NetFn: NetFnAppRequest, Name: "Get OEM NetFn IANA Support"}
 
 	// BMC Watchdog Timer Commands
 	CommandResetWatchdogTimer = Command{ID: 0x22, NetFn: NetFnAppRequest, Name: "Reset Watchdog Timer"}
@@ -101,7 +101,7 @@ var (
 	CommandGetUserPayloadAccess           = Command{ID: 0x4d, NetFn: NetFnAppRequest, Name: "Get User Payload Access"}
 	CommandGetChannelPayloadSupport       = Command{ID: 0x4e, NetFn: NetFnAppRequest, Name: "Get Channel Payload Support"}
 	CommandGetChannelPayloadVersion       = Command{ID: 0x4f, NetFn: NetFnAppRequest, Name: "Get Channel Payload Version"}
-	CommandGetChannelOemPayloadInfo       = Command{ID: 0x50, NetFn: NetFnAppRequest, Name: "Get Channel OEM Payload Info"} // 51 unassigned
+	CommandGetChannelOEMPayloadInfo       = Command{ID: 0x50, NetFn: NetFnAppRequest, Name: "Get Channel OEM Payload Info"} // 51 unassigned
 	CommandMasterWriteRead                = Command{ID: 0x52, NetFn: NetFnAppRequest, Name: "Master Write-Read"}            // 53 unassigned
 	CommandGetChannelCipherSuites         = Command{ID: 0x54, NetFn: NetFnAppRequest, Name: "Get Channel Cipher Suites"}
 	CommandSuspendOrResumeEncryption      = Command{ID: 0x55, NetFn: NetFnAppRequest, Name: "Suspend/Resume Payload Encryption"}
@@ -195,7 +195,7 @@ var (
 	// LAN Device Commands
 	CommandSetLanConfigParams = Command{ID: 0x01, NetFn: NetFnTransportRequest, Name: "Set LAN Configuration Parameters"}
 	CommandGetLanConfigParams = Command{ID: 0x02, NetFn: NetFnTransportRequest, Name: "Get LAN Configuration Parameters"}
-	CommandSuspendBMCArps     = Command{ID: 0x03, NetFn: NetFnTransportRequest, Name: "Suspend BMC ARPs"}
+	CommandSuspendARPs        = Command{ID: 0x03, NetFn: NetFnTransportRequest, Name: "Suspend BMC ARPs"}
 	CommandGetIpStatistics    = Command{ID: 0x04, NetFn: NetFnTransportRequest, Name: "Get IP/UDP/RMCP Statistics"}
 
 	// Serial/Modem Device Commands

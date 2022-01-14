@@ -1,20 +1,20 @@
 package ipmi
 
 // 23.3 Suspend BMC ARPs Command
-type SuspendBMCARPsRequest struct {
+type SuspendARPsRequest struct {
 	ChannelNumber        uint8
 	SuspendARP           bool
 	SuspendGratuitousARP bool
 }
 
-type SuspendBMCARPsResponse struct {
+type SuspendARPsResponse struct {
 	// Present state of ARP suspension
 
 	IsARPOccurring           bool
 	IsGratuitousARPOccurring bool
 }
 
-func (req *SuspendBMCARPsRequest) Pack() []byte {
+func (req *SuspendARPsRequest) Pack() []byte {
 	out := make([]byte, 2)
 
 	packUint8(req.ChannelNumber, out, 0)
@@ -31,17 +31,17 @@ func (req *SuspendBMCARPsRequest) Pack() []byte {
 	return out
 }
 
-func (req *SuspendBMCARPsRequest) Command() Command {
-	return CommandSuspendBMCArps
+func (req *SuspendARPsRequest) Command() Command {
+	return CommandSuspendARPs
 }
 
-func (res *SuspendBMCARPsResponse) CompletionCodes() map[uint8]string {
+func (res *SuspendARPsResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{
 		0x80: "parameter not supported.",
 	}
 }
 
-func (res *SuspendBMCARPsResponse) Unpack(msg []byte) error {
+func (res *SuspendARPsResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return ErrUnpackedDataTooShort
 	}
@@ -52,17 +52,17 @@ func (res *SuspendBMCARPsResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *SuspendBMCARPsResponse) Format() string {
+func (res *SuspendARPsResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SuspendBMCArps(channelNumber uint8, suspendARP bool, suspendGratuitousARP bool) (response *SuspendBMCARPsResponse, err error) {
-	request := &SuspendBMCARPsRequest{
+func (c *Client) SuspendARPs(channelNumber uint8, suspendARP bool, suspendGratuitousARP bool) (response *SuspendARPsResponse, err error) {
+	request := &SuspendARPsRequest{
 		ChannelNumber:        channelNumber,
 		SuspendARP:           suspendARP,
 		SuspendGratuitousARP: suspendGratuitousARP,
 	}
-	response = &SuspendBMCARPsResponse{}
+	response = &SuspendARPsResponse{}
 	err = c.Exchange(request, response)
 	return
 }
