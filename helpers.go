@@ -54,6 +54,8 @@ func formatBool(b bool, trueStr string, falseStr string) string {
 	return falseStr
 }
 
+// padBytes will padding the origin "s" string to fixed "width" length,
+// with "pad" as the padding byte.
 func padBytes(s string, width int, pad byte) []byte {
 	o := []byte(s)
 	if len(s) >= width {
