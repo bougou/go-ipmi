@@ -85,14 +85,6 @@ func (cp ChannelMedium) String() string {
 	return "reserved"
 }
 
-// 6.6 Channel Access Modes
-const (
-	ChannelAccessModePrebootOnly = "pre-boot only"
-	ChannelAccessModeAlways      = "always available"
-	ChannelAccessModeShared      = "shared"
-	ChannelAccessModeDisabled    = "disabled"
-)
-
 // 6.8 Channel Privilege Levels
 type PrivilegeLevel uint8
 
@@ -142,3 +134,45 @@ func (l PrivilegeLevel) String() string {
 	}
 	return "NO ACCESS"
 }
+
+// see: Table 22-28, Get Channel Access Command
+
+type ChannelAccessOption uint8
+
+const (
+	ChannelAccessOption_NoChange    ChannelAccessOption = 0
+	ChannelAccessOption_NonVolatile ChannelAccessOption = 1
+	ChannelAccessOption_Volatile    ChannelAccessOption = 2
+)
+
+// 6.6 Channel Access Modes
+type ChannelAccessMode uint8
+
+const (
+	ChannelAccessMode_Disabled        ChannelAccessMode = 0
+	ChannelAccessMode_PrebootOnly     ChannelAccessMode = 1
+	ChannelAccessMode_AlwaysAvailable ChannelAccessMode = 2
+	ChannelAccessMode_Shared          ChannelAccessMode = 3
+)
+
+func (mode ChannelAccessMode) String() string {
+	m := map[ChannelAccessMode]string{
+		0: "disabled",
+		1: "pre-boot only",
+		2: "always available",
+		3: "shared",
+	}
+	s, ok := m[mode]
+	if ok {
+		return s
+	}
+	return ""
+}
+
+type ChannelPrivilegeOption uint8
+
+const (
+	ChanenlPrivilegeOption_NoChange    ChannelPrivilegeOption = 0
+	ChannelPrivilegeOption_NonVolatile ChannelPrivilegeOption = 1
+	ChannelPrivilegeOption_Volatile    ChannelPrivilegeOption = 2
+)

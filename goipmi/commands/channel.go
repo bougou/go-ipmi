@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 
+	"github.com/bougou/go-ipmi"
 	"github.com/spf13/cobra"
 )
 
@@ -42,9 +43,29 @@ func NewCmdChannelInfo() *cobra.Command {
 			}
 			res, err := client.GetChannelInfo(channelNumber)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetChannelInfo failed, err: %s", err))
+				if err != nil {
+					CheckErr(fmt.Errorf("GetChannelInfo failed, err: %s", err))
+				}
 			}
 			fmt.Println(res.Format())
+
+			res2, err := client.GetChannelAccess(channelNumber, ipmi.ChannelAccessOption_Volatile)
+			if err != nil {
+				if err != nil {
+					CheckErr(fmt.Errorf("GetChannelAccess failed, err: %s", err))
+				}
+			}
+			fmt.Println("  Volatile(active) Settings")
+			fmt.Println(res2.Format())
+
+			res3, err := client.GetChannelAccess(channelNumber, ipmi.ChannelAccessOption_NonVolatile)
+			if err != nil {
+				if err != nil {
+					CheckErr(fmt.Errorf("GetChannelAccess failed, err: %s", err))
+				}
+			}
+			fmt.Println("  Non-Volatile Settings")
+			fmt.Println(res3.Format())
 		},
 	}
 	return cmd

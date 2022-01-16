@@ -95,9 +95,9 @@ func main() {
 | CloseSession                   | √      |
 | GetSessionInfo                 | √      |
 | GetAuthCode                    | √      |
-| SetChannelAccess               |        |
-| GetChannelAccess               |        |
-| GetChannelInfo                 | √      |
+| SetChannelAccess               | √      | channel setaccess            |
+| GetChannelAccess               | √      | channel info/getaccess       |
+| GetChannelInfo                 | √      | channel info                 |
 | SetUserAccess                  | √      |
 | GetUserAccess                  | √      | user summary                 |
 | GetUsers (*)                   | √      | user list                    |
