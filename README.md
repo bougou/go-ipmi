@@ -43,12 +43,12 @@ func main() {
 
 ### IPM Device Global Commands
 
-| Method                             | Status | akin ipmitool usage |
-| ---------------------------------- | ------ | ------------------- |
-| GetDeviceID                        | √      | mc info             |
-| ColdReset                          | √      | mc reset cold       |
-| WarmReset                          | √      | mc reset warm       |
-| GetSelfTestResults                 | √      | mc selftest         |
+| Method                             | Status | corresponding ipmitool usage |
+| ---------------------------------- | ------ | ---------------------------- |
+| GetDeviceID                        | √      | mc info                      |
+| ColdReset                          | √      | mc reset cold                |
+| WarmReset                          | √      | mc reset warm                |
+| GetSelfTestResults                 | √      | mc selftest                  |
 | ManufacturingTestOn                | √      |
 | SetACPIPowerState                  | √      |
 | GetACPIPowerState                  | √      |
@@ -66,16 +66,16 @@ func main() {
 
 ### BMC Watchdog Timer Commands
 
-| Method             | Status | akin ipmitool usage |
-| ------------------ | ------ | ------------------- |
+| Method             | Status | corresponding ipmitool usage |
+| ------------------ | ------ | ---------------------------- |
 | ResetWatchdogTimer |        |
 | SetWatchdogTimer   |        |
 | GetWatchdogTimer   |        |
 
 ### BMC Device and Messaging Commands
 
-| Method                         | Status | akin ipmitool usage |
-| ------------------------------ | ------ | ------------------- |
+| Method                         | Status | corresponding ipmitool usage |
+| ------------------------------ | ------ | ---------------------------- |
 | SetBMCGlobalEnables            | √      |
 | GetBMCGlobalEnables            | √      |
 | ClearMessageFlags              | √      |
@@ -85,7 +85,7 @@ func main() {
 | SendMessage                    | √      |
 | ReadEventMessageBuffer         | √      |
 | GetBTInterfaceCapabilities     |        |
-| GetSystemGUID                  | √      | mc guid             |
+| GetSystemGUID                  | √      | mc guid                      |
 | SetSystemInfoParameters        |        |
 | GetSystemInfoParameters        |        |
 | GetChannelAuthCapabilities     | √      |
@@ -98,11 +98,15 @@ func main() {
 | SetChannelAccess               |        |
 | GetChannelAccess               |        |
 | GetChannelInfo                 | √      |
-| SetUserAccess                  |        |
-| GetUserAccess                  |        |
-| SetUsername                    |        |
-| GetUsername                    |        |
-| SetUserPassword                |        |
+| SetUserAccess                  | √      |
+| GetUserAccess                  | √      | user summary                 |
+| GetUsers (*)                   | √      | user list                    |
+| SetUsername                    | √      | user set name                |
+| DisableUser (*)                | √      | user disable                 |
+| EnableUser (*)                 | √      | user enable                  |
+| GetUsername                    | √      |
+| SetUserPassword                | √      | user set password            |
+| TestUserPassword(*)            | √      | user test                    |
 | ActivatePayload                |        |
 | DeactivatePayload              |        |
 | GetPayloadActivationStatus     |        |
@@ -120,7 +124,7 @@ func main() {
 
 ### Chassis Device Commands
 
-| Method                 | Status | akin ipmitool usage                          |
+| Method                 | Status | corresponding ipmitool usage                 |
 | ---------------------- | ------ | -------------------------------------------- |
 | GetChassisCapabilities | √      |
 | GetChassisStatus       | √      | chassis status                               |
@@ -138,16 +142,16 @@ func main() {
 
 ### Event Commands
 
-| Method           | Status | akin ipmitool usage |
-| ---------------- | ------ | ------------------- |
+| Method           | Status | corresponding ipmitool usage |
+| ---------------- | ------ | ---------------------------- |
 | SetEventReceiver |        |
 | GetEventReceiver |        |
 | EventMessage     |        |
 
 ### PEF and Alerting Commands
 
-| Method                  | Status | akin ipmitool usage |
-| ----------------------- | ------ | ------------------- |
+| Method                  | Status | corresponding ipmitool usage |
+| ----------------------- | ------ | ---------------------------- |
 | GetPefCapabilities      |        |
 | ArmPefPostponeTimer     |        |
 | SetPefConfigParameters  |        |
@@ -159,8 +163,8 @@ func main() {
 
 ### Sensor Device Commands
 
-| Method                         | Status | akin ipmitool usage |
-| ------------------------------ | ------ | ------------------- |
+| Method                         | Status | corresponding ipmitool usage |
+| ------------------------------ | ------ | ---------------------------- |
 | GetDeviceSDRInfo               | √      |
 | GetDeviceSDR                   | √      |
 | ReserveDeviceSDRRepo           | √      |
@@ -180,8 +184,8 @@ func main() {
 
 ### FRU Device Commands
 
-| Method                  | Status | akin ipmitool usage |
-| ----------------------- | ------ | ------------------- |
+| Method                  | Status | corresponding ipmitool usage |
+| ----------------------- | ------ | ---------------------------- |
 | GetFRUInventoryAreaInfo | √      |
 | ReadFRUData             | √      |
 | WriteFRUData            | √      |
@@ -189,13 +193,13 @@ func main() {
 
 ### SDR Device Commands
 
-| Method                 | Status | akin ipmitool usage |
-| ---------------------- | ------ | ------------------- |
-| GetSDRRepoInfo         | √      | sdr info            |
-| GetSDRRepoAllocInfo    | √      | sdr info            |
+| Method                 | Status | corresponding ipmitool usage |
+| ---------------------- | ------ | ---------------------------- |
+| GetSDRRepoInfo         | √      | sdr info                     |
+| GetSDRRepoAllocInfo    | √      | sdr info                     |
 | ReserveSDRRepo         |        |
-| GetSDR                 | √      | sdr get             |
-| GetSDRs ()             | √      | sdr list/elist      |
+| GetSDR                 | √      | sdr get                      |
+| GetSDRs (*)            | √      | sdr list/elist               |
 | AddSDR                 |        |
 | PartialAddSDR          |        |
 | DeleteSDR              |        |
@@ -208,16 +212,16 @@ func main() {
 
 ### SEL Device Commands
 
-| Method              | Status | akin ipmitool usage |
-| ------------------- | ------ | ------------------- |
-| GetSELInfo          | √      | sel info            |
-| GetSELAllocInfo     | √      | sel info            |
+| Method              | Status | corresponding ipmitool usage |
+| ------------------- | ------ | ---------------------------- |
+| GetSELInfo          | √      | sel info                     |
+| GetSELAllocInfo     | √      | sel info                     |
 | ReserveSEL          | √      |
 | GetSELEntry         | √      |
 | AddSELEntry         |        |
 | PartialAddSELEntry  |        |
 | DeleteSELEntry      |        |
-| ClearSEL            | √      | sel clear           |
+| ClearSEL            | √      | sel clear                    |
 | GetSELTime          |        |
 | SetSELTime          |        |
 | GetAuxLogStatus     |        |
@@ -227,8 +231,8 @@ func main() {
 
 ### LAN Device Commands
 
-| Method             | Status | akin ipmitool usage |
-| ------------------ | ------ | ------------------- |
+| Method             | Status | corresponding ipmitool usage |
+| ------------------ | ------ | ---------------------------- |
 | SetLanConfigParams |        |
 | GetLanConfigParams | √      |
 | SuspendARPs        | √      |
@@ -236,8 +240,8 @@ func main() {
 
 ### Serial/Modem Device Commands
 
-| Method                 | Status | akin ipmitool usage |
-| ---------------------- | ------ | ------------------- |
+| Method                 | Status | corresponding ipmitool usage |
+| ---------------------- | ------ | ---------------------------- |
 | SetSerialConfig        |        |
 | GetSerialConfig        |        |
 | SetSerialMux           |        |
@@ -257,8 +261,8 @@ func main() {
 
 ### Command Forwarding Commands
 
-| Method          | Status | akin ipmitool usage |
-| --------------- | ------ | ------------------- |
+| Method          | Status | corresponding ipmitool usage |
+| --------------- | ------ | ---------------------------- |
 | Fowarded        |        |
 | SetForwarded    |        |
 | GetForwarded    |        |
@@ -266,8 +270,8 @@ func main() {
 
 ### Bridge Management Commands (ICMB)
 
-| Method                | Status | akin ipmitool usage |
-| --------------------- | ------ | ------------------- |
+| Method                | Status | corresponding ipmitool usage |
+| --------------------- | ------ | ---------------------------- |
 | GetBridgeState        |        |
 | SetBridgeState        |        |
 | GetICMBAddress        |        |
@@ -283,8 +287,8 @@ func main() {
 
 ### Discovery Commands (ICMB)
 
-| Method              | Status | akin ipmitool usage |
-| ------------------- | ------ | ------------------- |
+| Method              | Status | corresponding ipmitool usage |
+| ------------------- | ------ | ---------------------------- |
 | PrepareForDiscovery |        |
 | GetAddresses        |        |
 | SetDiscovered       |        |
@@ -293,15 +297,15 @@ func main() {
 
 ### Bridging Commands (ICMB)
 
-| Method        | Status | akin ipmitool usage |
-| ------------- | ------ | ------------------- |
+| Method        | Status | corresponding ipmitool usage |
+| ------------- | ------ | ---------------------------- |
 | BridgeRequest |        |
 | BridgeMessage |        |
 
 ### Event Commands (ICMB)
 
-| Method                 | Status | akin ipmitool usage |
-| ---------------------- | ------ | ------------------- |
+| Method                 | Status | corresponding ipmitool usage |
+| ---------------------- | ------ | ---------------------------- |
 | GetEventCount          |        |
 | SetEventDestination    |        |
 | SetEventReceptionState |        |
@@ -312,8 +316,8 @@ func main() {
 
 ### Other Bridge Commands
 
-| Method      | Status | akin ipmitool usage |
-| ----------- | ------ | ------------------- |
+| Method      | Status | corresponding ipmitool usage |
+| ----------- | ------ | ---------------------------- |
 | ErrorReport |        |
 
 ## Reference

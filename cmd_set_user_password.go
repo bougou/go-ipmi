@@ -65,10 +65,10 @@ func (res *SetUserPasswordResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetUserPassword(userID uint8, password string) (response *SetUserPasswordResponse, err error) {
+func (c *Client) SetUserPassword(userID uint8, password string, stored20 bool) (response *SetUserPasswordResponse, err error) {
 	request := &SetUserPasswordRequest{
 		UserID:    userID,
-		Stored20:  c.v20,
+		Stored20:  stored20,
 		Operation: PasswordOperationSetPassword,
 		Password:  password,
 	}
@@ -77,10 +77,10 @@ func (c *Client) SetUserPassword(userID uint8, password string) (response *SetUs
 	return
 }
 
-func (c *Client) TestUserPassword(userID uint8, password string) (response *SetUserPasswordResponse, err error) {
+func (c *Client) TestUserPassword(userID uint8, password string, stored20 bool) (response *SetUserPasswordResponse, err error) {
 	request := &SetUserPasswordRequest{
 		UserID:    userID,
-		Stored20:  c.v20,
+		Stored20:  stored20,
 		Operation: PasswordOperationTestPassword,
 		Password:  password,
 	}

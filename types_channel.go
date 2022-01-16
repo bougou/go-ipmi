@@ -129,16 +129,16 @@ func (l PrivilegeLevel) Short() string {
 
 func (l PrivilegeLevel) String() string {
 	m := map[PrivilegeLevel]string{
-		0x00: "unspecified",
-		0x01: "callback",
-		0x02: "user",
-		0x03: "operator",
-		0x04: "admin",
-		0x05: "oem",
+		0x00: "Unspecified",
+		0x01: "CALLBACK",
+		0x02: "USER",
+		0x03: "OPERATOR",
+		0x04: "ADMINISTRATOR",
+		0x05: "OEM",
 	}
 	s, ok := m[l]
 	if ok {
 		return s
 	}
-	return ""
+	return "NO ACCESS"
 }
