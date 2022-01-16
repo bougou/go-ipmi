@@ -1,5 +1,10 @@
 package ipmi
 
+import (
+	"fmt"
+	"net"
+)
+
 // 22.20 Get Session Info Command
 type GetSessionInfoRequest struct {
 	// 00h = Return info for active session associated with session this command was received over.
@@ -18,15 +23,20 @@ type GetSessionInfoResponse struct {
 	PossbileActiveSessions uint8 // This value reflects the number of possible entries (slots) in the sessions table.
 	CurrentActiveSessions  uint8 // Number of currently active sessions on all channels on this controller
 
-	UserID                       uint8
-	OperatingPrivilegeLevel      PrivilegeLevel
-	SessionProtocolAuxiliaryData uint8 // 4bits
-	ChannelNumber                uint8 // 4bits
+	UserID                  uint8
+	OperatingPrivilegeLevel PrivilegeLevel
+
+	// [7:4] - Session protocol auxiliary data
+	// For Channel Type = 802.3 LAN:
+	// 0h = IPMI v1.5
+	// 1h = IPMI v2.0/RMCP+
+	AuxiliaryData uint8 // 4bits
+	ChannelNumber uint8 // 4bits
 
 	// if Channel Type = 802.3 LAN:
-	RemoteConsoleIPAddr  uint32 // IP Address of remote console (MS-byte first).
-	RemoteConsoleMacAddr []byte // 6 bytes, MAC Address (MS-byte first)
-	RemoteConsolePort    uint16 // Port Number of remote console (LS-byte first)
+	RemoteConsoleIPAddr  net.IP           // IP Address of remote console (MS-byte first).
+	RemoteConsoleMacAddr net.HardwareAddr // 6 bytes, MAC Address (MS-byte first)
+	RemoteConsolePort    uint16           // Port Number of remote console (LS-byte first)
 
 	// if Channel Type = asynch. serial/modem
 	SessionChannelActivityType uint8
@@ -76,13 +86,15 @@ func (res *GetSessionInfoResponse) Unpack(msg []byte) error {
 	b5, _, _ := unpackUint8(msg, 4)
 	res.OperatingPrivilegeLevel = PrivilegeLevel(b5)
 	b6, _, _ := unpackUint8(msg, 5)
-	res.SessionProtocolAuxiliaryData = b6 >> 4
+	res.AuxiliaryData = b6 >> 4
 	res.ChannelNumber = b6 & 0x0f
 
 	//  Channel Type = 802.3 LAN:
 	if len(msg) >= 18 {
-		res.RemoteConsoleIPAddr, _, _ = unpackUint32(msg, 6)
-		res.RemoteConsoleMacAddr, _, _ = unpackBytes(msg, 10, 6)
+		ipBytes, _, _ := unpackBytes(msg, 6, 4)
+		res.RemoteConsoleIPAddr = net.IP(ipBytes)
+		macBytes, _, _ := unpackBytes(msg, 10, 6)
+		res.RemoteConsoleMacAddr = net.HardwareAddr(macBytes)
 		res.RemoteConsolePort, _, _ = unpackUint16L(msg, 16)
 	}
 
@@ -101,8 +113,36 @@ func (res *GetSessionInfoResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetSessionInfoResponse) Format() string {
-	// Todo
-	return ""
+	var sessionType string
+	switch res.AuxiliaryData {
+	case 0:
+		sessionType = "IPMIv1.5"
+	case 1:
+		sessionType = "IPMIv2/RMCP+"
+	}
+
+	return fmt.Sprintf(`session handle                : %d
+slot count                    : %d
+active sessions               : %d
+user id                       : %d
+privilege level               : %s
+session type                  : %s
+channel number                : %#02x
+console ip                    : %s
+console mac                   : %s
+console port                  : %d
+	`,
+		res.SessionHandle,
+		res.PossbileActiveSessions,
+		res.CurrentActiveSessions,
+		res.UserID,
+		res.OperatingPrivilegeLevel,
+		sessionType,
+		res.ChannelNumber,
+		res.RemoteConsoleIPAddr,
+		res.RemoteConsoleMacAddr,
+		res.RemoteConsolePort,
+	)
 }
 
 func (c *Client) GetSessionInfo(request *GetSessionInfoRequest) (response *GetSessionInfoResponse, err error) {

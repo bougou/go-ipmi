@@ -93,7 +93,7 @@ func main() {
 | ActivateSession                | √      |
 | SetSessionPrivilegeLevel       | √      |
 | CloseSession                   | √      |
-| GetSessionInfo                 | √      |
+| GetSessionInfo                 | √      | session info                 |
 | GetAuthCode                    | √      |
 | SetChannelAccess               | √      | channel setaccess            |
 | GetChannelAccess               | √      | channel info/getaccess       |
