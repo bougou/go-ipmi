@@ -27,6 +27,10 @@ const (
 	EventRecordTypeRangeNonTimestampedOEM EventRecordTypeRange = "non-timestamped OEM"
 )
 
+// The EventRecordType can be categorized into 3 ranges according to the EventRecordType value.
+//  - 00h - BFh -> standard
+//  - C0h - DFh -> timestamped OEM
+//  - E0h - FFh -> none-timestamped OEM
 func (typ EventRecordType) Range() EventRecordTypeRange {
 	t := uint8(typ)
 	if t >= 0x00 && t <= 0xbf {

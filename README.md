@@ -21,19 +21,27 @@ func main() {
 		panic(err)
 	}
 
+	// you can optionally open debug switch
+	// client.WithDebug(true)
+
 	// Connect will create an authenticated session for you.
 	if err := client.Connect(); err != nil {
 		panic(err)
 	}
 
-	// Now you can execute other commands that need authentication.
+  // Now you can execute other IPMI commands that need authentication.
+
+	res, err := client.GetDeviceID()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(res.Format())
+
 	selEntries, err := client.GetSELEntries(0)
 	if err != nil {
 		panic(err)
 	}
-	for _, sel := range selEntries {
-		fmt.Println(sel)
-	}
+	fmt.Println(ipmi.FormatSELs(selEntries, nil))
 }
 ```
 
@@ -42,6 +50,8 @@ func main() {
 > More is ongoing ...
 
 ### IPM Device Global Commands
+
+> Note: All IPMI commands are implemented as methods of the `ipmi.Client` struct.
 
 | Method                             | Status | corresponding ipmitool usage |
 | ---------------------------------- | ------ | ---------------------------- |

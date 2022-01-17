@@ -18,10 +18,18 @@ var (
 	intf     string
 	debug    bool
 
+	showVersion bool
+
 	client *ipmi.Client
 )
 
 func initClient() error {
+	if debug {
+		fmt.Printf("Version: %s\n", Version)
+		fmt.Printf("Commit: %s\n", Commit)
+		fmt.Printf("BuildAt: %s\n", BuildAt)
+	}
+
 	c, err := ipmi.NewClient(host, port, username, password)
 	if err != nil {
 		return fmt.Errorf("create client failed, err: %s", err)
@@ -49,8 +57,15 @@ func NewRootCommand() *cobra.Command {
 		Use:   "goipmi",
 		Short: "goipmi",
 		Long:  fmt.Sprintf("goipmi\n\nFind more information at: %s\n\n", homePage),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if showVersion {
+				fmt.Printf("Version: %s\n", Version)
+				fmt.Printf("Commit: %s\n", Commit)
+				fmt.Printf("BuildAt: %s\n", BuildAt)
+			}
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("goipmi run ...")
 		},
 	}
 
@@ -60,6 +75,7 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVarP(&password, "pass", "P", "", "password")
 	rootCmd.PersistentFlags().StringVarP(&intf, "interface", "I", "lanplus", "interface")
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug")
+	rootCmd.PersistentFlags().BoolVarP(&showVersion, "version", "V", false, "version")
 
 	rootCmd.Flags().AddGoFlagSet(flag.CommandLine)
 
