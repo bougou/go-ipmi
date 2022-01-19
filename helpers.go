@@ -103,6 +103,42 @@ func randomBytes(n int) []byte {
 	return b
 }
 
+func onesComplement(i uint32, bitSize uint8) int32 {
+	var leftBitSize uint8 = 32 - bitSize
+	var temp uint32 = i << uint32(leftBitSize) >> uint32(leftBitSize)
+
+	var mask uint32 = 1 << (bitSize - 1)
+	if temp&mask == 0 {
+		// means the bit at `bitSize-1` (from left starting at 0) is 0
+		// which meas the result should be a positive value
+		return int32(temp)
+	}
+
+	// means the bit at `bitSize-1` (from left starting at 0) is 1
+	// which meas the result should be a negative value
+	t := temp ^ 0xffff
+	t = t << uint32(leftBitSize) >> uint32(leftBitSize)
+	return -int32(t)
+}
+
+func twosComplement(i uint32, bitSize uint8) int32 {
+	var leftBitSize uint8 = 32 - bitSize
+	var temp uint32 = i << uint32(leftBitSize) >> uint32(leftBitSize)
+
+	var mask uint32 = 1 << (bitSize - 1)
+	if temp&mask == 0 {
+		// means the bit at `bitSize-1` (from left starting at 0) is 0
+		// which meas the result should be a positive value
+		return int32(temp)
+	}
+
+	// means the bit at `bitSize-1` (from left starting at 0) is 1
+	// which meas the result should be a negative value
+	t := temp ^ 0xffff + 1
+	t = t << uint32(leftBitSize) >> uint32(leftBitSize)
+	return -int32(t)
+}
+
 // The TCP/IP standard network byte order is big-endian.
 
 var base32HexNoPadEncoding = base32.HexEncoding.WithPadding(base32.NoPadding)
