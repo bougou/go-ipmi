@@ -22,7 +22,7 @@ func (e EntityID) String() string {
 		return out
 	}
 
-	if e >= 0x80 && e <= 0xaf {
+	if e >= 0x90 && e <= 0xaf {
 		// These IDs are system specific and can be assigned by the chassis provider.
 		return fmt.Sprintf("Chassis-specific Entities (#%#02x)", uint8(e))
 	}
@@ -34,6 +34,7 @@ func (e EntityID) String() string {
 		// These IDs are system specific and can be assigned by the system integrator, or OEM.
 		return fmt.Sprintf("OEM System Integrator defined (#%#02x)", uint8(e))
 	}
+
 	return fmt.Sprintf("reserved (#%#02x)", uint8(e))
 }
 
@@ -101,10 +102,13 @@ var entityIDMap = map[EntityID]string{
 	0x42: "system board",    // This Entity ID value is equivalent to Entity ID 07h (system board). It is provided for interoperability with the DCMI 1.0 specifications.
 }
 
+// see: 39.1 System- and Device-relative Entity Instance Values
+//
 // Entity Instance values in the system-relative range are required to be unique for all entities with the same Entity ID in the system.
+//
 // Device-relative Entity Instance values are only required to be unique among all entities that have the same Entity ID within a given device (management controller).
+//
 // For example, management controller A and B could both have FAN entities that have and Entity Instance value of 60h.
-
 type EntityInstance uint8
 
 // 39.1 System- and Device-relative Entity Instance Values
