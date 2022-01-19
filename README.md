@@ -29,7 +29,7 @@ func main() {
 		panic(err)
 	}
 
-  // Now you can execute other IPMI commands that need authentication.
+	// Now you can execute other IPMI commands that need authentication.
 
 	res, err := client.GetDeviceID()
 	if err != nil {

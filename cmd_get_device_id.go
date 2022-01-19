@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// 20.1
+// 20.1 Get Device ID Command
 type GetDeviceIDRequest struct {
 	// empty
 }
@@ -16,16 +16,16 @@ type GetDeviceIDResponse struct {
 	// [7] 1 = device provides Device SDRs
 	// 0 = device does not provide Device SDRs
 	// [6:4] reserved. Return as 0.
+	ProvideDeviceSDRs bool
 	// [3:0] Device Revision, binary encoded
-	DeviceProvideSDRs bool
-	DeviceRevision    uint8
+	DeviceRevision uint8
 
 	// [7] Device available: 0=normal operation, 1= device firmware, SDR
 	// Repository update or self-initialization in progress. [Firmware / SDR
 	// Repository updates can be differentiated by issuing a Get SDR
 	// command and checking the completion code.]
+	DeviceAvailable bool
 	// [6:0] Major Firmware Revision, binary encoded
-	DeviceAvailable       bool
 	MajorFirmwareRevision uint8
 
 	// BCD encoded
@@ -107,7 +107,7 @@ func (res *GetDeviceIDResponse) Unpack(msg []byte) error {
 	res.DeviceID, _, _ = unpackUint8(msg, 0)
 
 	b2, _, _ := unpackUint8(msg, 1)
-	res.DeviceProvideSDRs = isBit7Set(b2)
+	res.ProvideDeviceSDRs = isBit7Set(b2)
 	res.DeviceRevision = b2 & 0x0f
 
 	b3, _, _ := unpackUint8(msg, 2)
@@ -202,7 +202,7 @@ Aux Firmware Rev Info     :
 		res.ProductID, res.ProductID,
 		res.ProductID,
 		formatBool(res.DeviceAvailable, "yes", "no"),
-		formatBool(res.DeviceProvideSDRs, "yes", "no"),
+		formatBool(res.ProvideDeviceSDRs, "yes", "no"),
 		strings.Join(deviceSupport, "    \n"),
 		strings.Join(auxFirmwareInfo, "    \n"),
 	)

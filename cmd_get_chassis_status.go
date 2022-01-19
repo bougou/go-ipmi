@@ -42,13 +42,14 @@ type GetChassisStatusResponse struct {
 	PoweroffButtonDisabled         bool
 }
 
-// only store the
+// PowerRestorePolicy
+// 通电开机策略
 type PowerRestorePolicy uint8
 
 const (
-	PowerRestorePolicyAlwaysOff      PowerRestorePolicy = 0
-	PowerRestorePolicyAlwaysPrevious PowerRestorePolicy = 1
-	PowerRestorePolicyAlwaysOn       PowerRestorePolicy = 2
+	PowerRestorePolicyAlwaysOff PowerRestorePolicy = 0 // 保持下电
+	PowerRestorePolicyPrevious  PowerRestorePolicy = 1 // 与之前保持一致
+	PowerRestorePolicyAlwaysOn  PowerRestorePolicy = 2 // 保持上电
 )
 
 var SupportedPowerRestorePolicies = []string{

@@ -70,7 +70,7 @@ always-off  : stay off after power is restored`
 						CheckErr(fmt.Errorf("SetPowerRestorePolicy failed, err: %s", err))
 					}
 				case "previous":
-					_, err := client.SetPowerRestorePolicy(ipmi.PowerRestorePolicyAlwaysPrevious)
+					_, err := client.SetPowerRestorePolicy(ipmi.PowerRestorePolicyPrevious)
 					if err != nil {
 						CheckErr(fmt.Errorf("SetPowerRestorePolicy failed, err: %s", err))
 					}
