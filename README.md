@@ -47,11 +47,20 @@ func main() {
 
 ## Functions Comparision with ipmitool
 
-> More is ongoing ...
+Each command defined in the IPMI specification is a pair of request/response messages.
+These IPMI commands are implemented as methods of the `ipmi.Client` struct in this library.
+
+Some `ipmitool` cmdline usages are implemented by calling just one IPMI command,
+but others are not. Like `ipmitool sdr list`, it's a loop of `GetSDR` IPMI command.
+
+So this library also implements some methods that are not IPMI commands defined
+in IPMI sepcification, but just some common helpers, like `GetSDRs` to get all SDRs.
+
+All IPMI commands implementation logic is almost same. See [Contributing](./CONTRIBUTING.md)
+> More commmands are ongoing ...
 
 ### IPM Device Global Commands
 
-> Note: All IPMI commands are implemented as methods of the `ipmi.Client` struct.
 
 | Method                             | Status | corresponding ipmitool usage |
 | ---------------------------------- | ------ | ---------------------------- |
