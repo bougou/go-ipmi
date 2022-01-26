@@ -166,7 +166,7 @@ func (c *Client) Connect15() error {
 		return fmt.Errorf("ActivateSession failed, err: %s", err)
 	}
 
-	_, err = c.SetSessionPrivilegeLevel(PrivilegeLevelAdministrator)
+	_, err = c.SetSessionPrivilegeLevel(c.session.v15.maxPrivilegeLevel)
 	if err != nil {
 		return fmt.Errorf("SetSessionPrivilegeLevel failed, err: %s", err)
 	}
@@ -206,6 +206,11 @@ func (c *Client) Connect20() error {
 	_, err = c.RAKPMessage3()
 	if err != nil {
 		return fmt.Errorf("cmd: rakp3 failed, err: %s", err)
+	}
+
+	_, err = c.SetSessionPrivilegeLevel(c.session.v20.maxPrivilegeLevel)
+	if err != nil {
+		return fmt.Errorf("SetSessionPrivilegeLevel failed, err: %s", err)
 	}
 
 	return nil

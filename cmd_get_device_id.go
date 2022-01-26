@@ -183,8 +183,8 @@ func (res *GetDeviceIDResponse) Format() string {
 Device Revision           : %d
 Firmware Revision         : %d.%d
 IPMI Version              : %d.%d
-Manufacturer ID           : %d
-Manufacturer Name         : %#02x
+Manufacturer ID           : %d (%#02x)
+Manufacturer Name         : %s
 Product ID                : %d (%#04x)
 Product Name              : %#02x
 Device Available          : %s
@@ -197,8 +197,8 @@ Aux Firmware Rev Info     :
 		res.DeviceRevision,
 		res.MajorFirmwareRevision, res.MinorFirmwareRevision,
 		res.MajorIPMIVersion, res.MinorIPMIVersion,
-		res.ManufacturerID,
-		res.ManufacturerID,
+		res.ManufacturerID, res.ManufacturerID,
+		OEM(res.ManufacturerID),
 		res.ProductID, res.ProductID,
 		res.ProductID,
 		formatBool(res.DeviceAvailable, "yes", "no"),
