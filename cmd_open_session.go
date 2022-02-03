@@ -128,7 +128,7 @@ func (c *Client) OpenSession() (response *OpenSessionResponse, err error) {
 	bestSuiteID := findBestCipherSuite()
 	authAlg, integrityAlg, cryptAlg, err := getCipherSuiteAlgorithms(bestSuiteID)
 	if err != nil {
-		return nil, fmt.Errorf("get cipher suite failed for id %0x failed, err: %s", bestSuiteID, err)
+		return nil, fmt.Errorf("get cipher suite for id %0x failed, err: %s", bestSuiteID, err)
 	}
 	c.session.v20.requestedAuthAlg = authAlg
 	c.session.v20.requestedIntegrityAlg = integrityAlg

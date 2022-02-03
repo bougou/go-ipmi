@@ -5,31 +5,31 @@ type CompletionCode uint8
 // 5.2 Table 5 for generic completion codes
 const (
 	// GENERIC COMPLETION CODES 00h, C0h-FFh
-	CompletionCodeNormal                               = CompletionCode(0x00)
-	CompletionCodeNodeBusy                             = CompletionCode(0xC0)
-	CompletionCodeInvalidCommand                       = CompletionCode(0xC1)
-	CompletionCodeInvalidCommandForLUN                 = CompletionCode(0xC2)
-	CompletionCodeProcessTimeout                       = CompletionCode(0xC3)
-	CompletionCodeOutOfSpace                           = CompletionCode(0xC4)
-	CompletionCodeReservationCanceled                  = CompletionCode(0xC5)
-	CompletionCodeRequestDataTruncated                 = CompletionCode(0xC6)
-	CompletionCodeRequestDataLengthInvalid             = CompletionCode(0xC7)
-	CompletionCodeRequestDataLengthLimitExceeded       = CompletionCode(0xC8)
-	CompletionCodeParameterOutOfRange                  = CompletionCode(0xC9)
-	CompletionCodeCannotReturnRequestedDataBytes       = CompletionCode(0xCA)
-	CompletionCodeRequestedDataNotPresent              = CompletionCode(0xCB)
-	CompletionCodeRequestDataFieldInvalid              = CompletionCode(0xCC)
-	CompletionCodeIllegalCommand                       = CompletionCode(0xCD)
-	CompletionCodeCannotProvideResponse                = CompletionCode(0xCE)
-	CompletionCodeCannotExecuteDuplicatedRequest       = CompletionCode(0xCF)
-	CompletionCodeCannotProvideResponseSDRRInUpdate    = CompletionCode(0xD0)
-	CompletionCodeCannotProvideResponseFirmwareUpdate  = CompletionCode(0xD1)
-	CompletionCodeCannotProvideResponseBMCInitialize   = CompletionCode(0xD2)
-	CompletionCodeDestinationUnavailable               = CompletionCode(0xD3)
-	CompletionCodeCannotExecuteCommandSecurityRestrict = CompletionCode(0xD4)
-	CompletionCodeCannotExecuteCommandNotSupported     = CompletionCode(0xD5)
-	CompletionCodeCannotExecuteCommandSubFnDisabled    = CompletionCode(0xD6)
-	CompletionCodeUnspecifiedError                     = CompletionCode(0xFF)
+	CompletionCodeNormal                               CompletionCode = 0x00
+	CompletionCodeNodeBusy                             CompletionCode = 0xC0
+	CompletionCodeInvalidCommand                       CompletionCode = 0xC1
+	CompletionCodeInvalidCommandForLUN                 CompletionCode = 0xC2
+	CompletionCodeProcessTimeout                       CompletionCode = 0xC3
+	CompletionCodeOutOfSpace                           CompletionCode = 0xC4
+	CompletionCodeReservationCanceled                  CompletionCode = 0xC5
+	CompletionCodeRequestDataTruncated                 CompletionCode = 0xC6
+	CompletionCodeRequestDataLengthInvalid             CompletionCode = 0xC7
+	CompletionCodeRequestDataLengthLimitExceeded       CompletionCode = 0xC8
+	CompletionCodeParameterOutOfRange                  CompletionCode = 0xC9
+	CompletionCodeCannotReturnRequestedDataBytes       CompletionCode = 0xCA
+	CompletionCodeRequestedDataNotPresent              CompletionCode = 0xCB
+	CompletionCodeRequestDataFieldInvalid              CompletionCode = 0xCC
+	CompletionCodeIllegalCommand                       CompletionCode = 0xCD
+	CompletionCodeCannotProvideResponse                CompletionCode = 0xCE
+	CompletionCodeCannotExecuteDuplicatedRequest       CompletionCode = 0xCF
+	CompletionCodeCannotProvideResponseSDRRInUpdate    CompletionCode = 0xD0
+	CompletionCodeCannotProvideResponseFirmwareUpdate  CompletionCode = 0xD1
+	CompletionCodeCannotProvideResponseBMCInitialize   CompletionCode = 0xD2
+	CompletionCodeDestinationUnavailable               CompletionCode = 0xD3
+	CompletionCodeCannotExecuteCommandSecurityRestrict CompletionCode = 0xD4
+	CompletionCodeCannotExecuteCommandNotSupported     CompletionCode = 0xD5
+	CompletionCodeCannotExecuteCommandSubFnDisabled    CompletionCode = 0xD6
+	CompletionCodeUnspecifiedError                     CompletionCode = 0xFF
 
 	// DEVICE-SPECIFIC (OEM) CODES 01h-7Eh
 

@@ -177,9 +177,13 @@ type FRUProductInfoArea struct {
 }
 
 type FRUMultiRecord struct {
-	RecordTypeID MultiRecordType
+	RecordTypeID MultiRecordType // used to identify the information contained in the record
 
-	EndOfList           bool
+	EndOfList bool // indicates if this record is the last record in the MultiRecord area
+
+	// This field is used to identify the revision level of information stored in this area.
+	// This number will start at zero for each new area. If changes need to be made to the record,
+	// e.g. fields added/removed, the version number will be increased to reflect the change.
 	RecordFormatVersion uint8
 
 	RecordLength   uint8
@@ -191,20 +195,29 @@ type FRUMultiRecord struct {
 
 type MultiRecordType uint8
 
-var MultiRecordTypeMap = map[uint8]string{
-	0x00: "Power Supply",
-	0x01: "DC Output",
-	0x02: "DC Load",
-	0x03: "Management Access",
-	0x04: "Base Compatibility",
-	0x05: "Extended Compatibility",
-	0x06: "ASF Fixed SMBus Device",
-	0x07: "ASF Legacy-Device Alerts",
-	0x08: "ASF Remote Control",
-	0x09: "Extended DC Output",
-	0x0a: "Extended DC Load",
+func (t MultiRecordType) String() string {
+	// fru: Table 16-2, MultiRecord Area Record Types
+	m := map[MultiRecordType]string{
+		0x00: "Power Supply",
+		0x01: "DC Output",
+		0x02: "DC Load",
+		0x03: "Management Access",
+		0x04: "Base Compatibility",
+		0x05: "Extended Compatibility",
+		0x06: "ASF Fixed SMBus Device",
+		0x07: "ASF Legacy-Device Alerts",
+		0x08: "ASF Remote Control",
+		0x09: "Extended DC Output",
+		0x0a: "Extended DC Load",
+	}
+	s, ok := m[t]
+	if ok {
+		return s
+	}
+	return ""
 }
 
+// fru: 18.1 Power Supply Information (Record Type 0x00)
 type RecordTypePowerSupply struct {
 	// This field allows for Power Supplies with capacities from 0 to 4095 watts.
 	OverallCapacity uint16
@@ -228,8 +241,6 @@ type RecordTypePowerSupply struct {
 	HighEndInputFrequencyRange uint8
 	// Minimum number of milliseconds the power supply can hold up POWERGOOD (and maintain valid DC output) after input power is lost.
 	InputDropoutToleranceMilliSecond uint8
-
-	TachometerPulses bool
 
 	HotSwapSuppot         bool
 	Autoswitch            bool
@@ -264,14 +275,136 @@ type RecordTypePowerSupply struct {
 
 // FRU: 18.2 DC Output (Record Type 0x01)
 type RecordTypeDCOutput struct {
+	//  if the power supply provides this output even when the power supply is switched off.
+	OutputWhenOff bool
+
+	OutputNumber uint8
+
+	// Expected voltage from the power supply. Value is a signed short given in 10 millivolt increments.
+	// 额定电压 毫-伏特
+	NominalVoltage10MilliVolt int16
+
+	MaxNegativeVoltage10MilliVolt int16
+
+	MaxPositiveVoltage10MilliVolt int16
+
+	RippleNoise uint16
+
+	// 毫-安培
+	MinCurrentDrawMilliAmp uint16
+
+	MaxCurrentDrawMilliAmp uint16
+}
+
+func (output *RecordTypeDCOutput) Unpack(msg []byte) error {
+	if len(msg) < 12 {
+		return ErrUnpackedDataTooShort
+	}
+	b, _, _ := unpackUint8(msg, 0)
+	output.OutputWhenOff = isBit7Set(b)
+	output.OutputNumber = b & 0x0f
+
+	b1, _, _ := unpackUint16L(msg, 1)
+	output.NominalVoltage10MilliVolt = int16(b1)
+
+	b3, _, _ := unpackUint16L(msg, 3)
+	output.MaxNegativeVoltage10MilliVolt = int16(b3)
+
+	b5, _, _ := unpackUint16L(msg, 5)
+	output.MaxPositiveVoltage10MilliVolt = int16(b5)
+
+	output.RippleNoise, _, _ = unpackUint16L(msg, 7)
+	output.MinCurrentDrawMilliAmp, _, _ = unpackUint16L(msg, 9)
+	output.MaxCurrentDrawMilliAmp, _, _ = unpackUint16L(msg, 11)
+
+	return nil
 }
 
 // FRU: 18.2a Extended DC Output (Record Type 0x09)
 type RecordTypeExtenedDCOutput struct {
+	//  if the power supply provides this output even when the power supply is switched off.
+	OutputWhenOff bool
+
+	// This record can be used to support power supplies with outputs that exceed 65.535 Amps.
+	// 0b = 10 mA
+	// 1b = 100 mA
+	CurrentUnits100 bool
+
+	OutputNumber uint8
+
+	// Expected voltage from the power supply. Value is a signed short given in 10 millivolt increments.
+	// 毫-伏特
+	NominalVoltage10MilliVolt int16
+
+	MaxNegativeVoltage10MilliVolt int16
+
+	MaxPositiveVoltage10MilliVolt int16
+
+	RippleNoise uint16
+
+	// The unit is determined by CurrentUnits100 field.
+	MinCurrentDraw uint16
+	MaxCurrentDraw uint16
+}
+
+func (output *RecordTypeExtenedDCOutput) Unpack(msg []byte) error {
+	if len(msg) < 12 {
+		return ErrUnpackedDataTooShort
+	}
+	b, _, _ := unpackUint8(msg, 0)
+	output.OutputWhenOff = isBit7Set(b)
+	output.CurrentUnits100 = isBit4Set(b)
+	output.OutputNumber = b & 0x0f
+
+	b1, _, _ := unpackUint16L(msg, 1)
+	output.NominalVoltage10MilliVolt = int16(b1)
+
+	b3, _, _ := unpackUint16L(msg, 3)
+	output.MaxNegativeVoltage10MilliVolt = int16(b3)
+
+	b5, _, _ := unpackUint16L(msg, 5)
+	output.MaxPositiveVoltage10MilliVolt = int16(b5)
+
+	output.RippleNoise, _, _ = unpackUint16L(msg, 7)
+	output.MinCurrentDraw, _, _ = unpackUint16L(msg, 9)
+	output.MaxCurrentDraw, _, _ = unpackUint16L(msg, 11)
+
+	return nil
 }
 
 // FRU: 18.3 DC Load (Record Type 0x02)
 type RecordTypeDCLoad struct {
+	OutputNumber                   uint8
+	NominalVoltage10MilliVolt      int16
+	MinTolerableVoltage10MilliVolt int16
+	MaxTolerableVoltage10MilliVolt int16
+	RippleNoise                    uint16
+	MinCurrentLoadMilliAmp         uint16
+	MaxCurrentLoadMilliAmp         uint16
+}
+
+func (output *RecordTypeDCLoad) Unpack(msg []byte) error {
+	if len(msg) < 12 {
+		return ErrUnpackedDataTooShort
+	}
+	b, _, _ := unpackUint8(msg, 0)
+	output.OutputNumber = b & 0x0f
+
+	b1, _, _ := unpackUint16L(msg, 1)
+	output.NominalVoltage10MilliVolt = int16(b1)
+
+	b3, _, _ := unpackUint16L(msg, 3)
+	output.MinTolerableVoltage10MilliVolt = int16(b3)
+
+	b5, _, _ := unpackUint16L(msg, 5)
+	output.MaxTolerableVoltage10MilliVolt = int16(b5)
+
+	output.RippleNoise, _, _ = unpackUint16L(msg, 7)
+	output.MinCurrentLoadMilliAmp, _, _ = unpackUint16L(msg, 9)
+	output.MaxCurrentLoadMilliAmp, _, _ = unpackUint16L(msg, 11)
+
+	return nil
+
 }
 
 // FRU: 18.3a Extended DC Load (Record Type 0x0A)

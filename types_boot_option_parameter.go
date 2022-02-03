@@ -20,35 +20,35 @@ type BootOptionParameter struct {
 type BootOptionParameterSelector uint8 //  only 7 bits occupied, 0-127
 
 const (
-	BootOptionParameterSelector_SetInProgressState       BootOptionParameterSelector = 0x00
-	BootOptionParameterSelector_ServicePartitionSelector BootOptionParameterSelector = 0x01
-	BootOptionParameterSelector_ServicePartitionScan     BootOptionParameterSelector = 0x02
-	BootOptionParameterSelector_BMCBootFlagValidBitClear BootOptionParameterSelector = 0x03
-	BootOptionParameterSelector_BootInfoAcknowledge      BootOptionParameterSelector = 0x04
-	BootOptionParameterSelector_BootFlags                BootOptionParameterSelector = 0x05
-	BootOptionParameterSelector_BootInitiatorInfo        BootOptionParameterSelector = 0x06
-	BootOptionParameterSelector_BootInitiatorMailbox     BootOptionParameterSelector = 0x07
+	BOPS_SetInProgressState       BootOptionParameterSelector = 0x00
+	BOPS_ServicePartitionSelector BootOptionParameterSelector = 0x01
+	BOPS_ServicePartitionScan     BootOptionParameterSelector = 0x02
+	BOPS_BMCBootFlagValidBitClear BootOptionParameterSelector = 0x03
+	BOPS_BootInfoAcknowledge      BootOptionParameterSelector = 0x04
+	BOPS_BootFlags                BootOptionParameterSelector = 0x05
+	BOPS_BootInitiatorInfo        BootOptionParameterSelector = 0x06
+	BOPS_BootInitiatorMailbox     BootOptionParameterSelector = 0x07
 
 	// OEM Parameters, 96:127
 )
 
 func (bop *BootOptionParameter) Format(paramSelecotr BootOptionParameterSelector) string {
 	switch paramSelecotr {
-	case BootOptionParameterSelector_SetInProgressState:
+	case BOPS_SetInProgressState:
 		return fmt.Sprintf(" Set In Progress : %s", bop.SetInProgressState.Format())
-	case BootOptionParameterSelector_ServicePartitionSelector:
+	case BOPS_ServicePartitionSelector:
 		return fmt.Sprintf(" Service Partition Selector : %s", bop.ServicePartitionSelector.Format())
-	case BootOptionParameterSelector_ServicePartitionScan:
+	case BOPS_ServicePartitionScan:
 		return fmt.Sprintf(" Service Partition Scan :\n%s", bop.ServicePartitionScan.Format())
-	case BootOptionParameterSelector_BMCBootFlagValidBitClear:
+	case BOPS_BMCBootFlagValidBitClear:
 		return fmt.Sprintf(" BMC boot flag valid bit clearing :\n%s", bop.BMCBootFlagValidBitClear.Format())
-	case BootOptionParameterSelector_BootInfoAcknowledge:
+	case BOPS_BootInfoAcknowledge:
 		return fmt.Sprintf(" Boot Info Acknowledge :\n%s", bop.BootInfoAcknowledge.Format())
-	case BootOptionParameterSelector_BootFlags:
+	case BOPS_BootFlags:
 		return fmt.Sprintf(" Boot Flags :\n%s", bop.BootFlags.Format())
-	case BootOptionParameterSelector_BootInitiatorInfo:
+	case BOPS_BootInitiatorInfo:
 		return fmt.Sprintf(" Boot Initiator Info :\n%s", bop.BootInitiatorInfo.Format())
-	case BootOptionParameterSelector_BootInitiatorMailbox:
+	case BOPS_BootInitiatorMailbox:
 		return bop.BootInitiatorMailbox.Format()
 	}
 	return ""
@@ -56,21 +56,21 @@ func (bop *BootOptionParameter) Format(paramSelecotr BootOptionParameterSelector
 
 func (bop *BootOptionParameter) Pack(paramSelecotr BootOptionParameterSelector) []byte {
 	switch paramSelecotr {
-	case BootOptionParameterSelector_SetInProgressState:
+	case BOPS_SetInProgressState:
 		return bop.SetInProgressState.Pack()
-	case BootOptionParameterSelector_ServicePartitionSelector:
+	case BOPS_ServicePartitionSelector:
 		return bop.ServicePartitionSelector.Pack()
-	case BootOptionParameterSelector_ServicePartitionScan:
+	case BOPS_ServicePartitionScan:
 		return bop.ServicePartitionScan.Pack()
-	case BootOptionParameterSelector_BMCBootFlagValidBitClear:
+	case BOPS_BMCBootFlagValidBitClear:
 		return bop.BMCBootFlagValidBitClear.Pack()
-	case BootOptionParameterSelector_BootInfoAcknowledge:
+	case BOPS_BootInfoAcknowledge:
 		return bop.BootInfoAcknowledge.Pack()
-	case BootOptionParameterSelector_BootFlags:
+	case BOPS_BootFlags:
 		return bop.BootFlags.Pack()
-	case BootOptionParameterSelector_BootInitiatorInfo:
+	case BOPS_BootInitiatorInfo:
 		return bop.BootInitiatorInfo.Pack()
-	case BootOptionParameterSelector_BootInitiatorMailbox:
+	case BOPS_BootInitiatorMailbox:
 		return bop.BootInitiatorMailbox.Pack()
 	}
 	return nil
@@ -81,7 +81,7 @@ func ParseBootOptionParameterData(paramSelecotr BootOptionParameterSelector, par
 
 	var err error
 	switch paramSelecotr {
-	case BootOptionParameterSelector_SetInProgressState:
+	case BOPS_SetInProgressState:
 		var tmp uint8
 		p := (*BOP_SetInProgressState)(&tmp)
 		err = p.Unpack(paramData)
@@ -90,7 +90,7 @@ func ParseBootOptionParameterData(paramSelecotr BootOptionParameterSelector, par
 		}
 		bop.SetInProgressState = p
 
-	case BootOptionParameterSelector_ServicePartitionSelector:
+	case BOPS_ServicePartitionSelector:
 		var tmp uint8
 		p := (*BOP_ServicePartitionSelector)(&tmp)
 		err = p.Unpack(paramData)
@@ -99,7 +99,7 @@ func ParseBootOptionParameterData(paramSelecotr BootOptionParameterSelector, par
 		}
 		bop.ServicePartitionSelector = p
 
-	case BootOptionParameterSelector_ServicePartitionScan:
+	case BOPS_ServicePartitionScan:
 		var tmp uint8
 		p := (*BOP_ServicePartitionScan)(&tmp)
 		err = p.Unpack(paramData)
@@ -108,7 +108,7 @@ func ParseBootOptionParameterData(paramSelecotr BootOptionParameterSelector, par
 		}
 		bop.ServicePartitionScan = p
 
-	case BootOptionParameterSelector_BMCBootFlagValidBitClear:
+	case BOPS_BMCBootFlagValidBitClear:
 		p := &BOP_BMCBootFlagValidBitClear{}
 		err = p.Unpack(paramData)
 		if err != nil {
@@ -116,7 +116,7 @@ func ParseBootOptionParameterData(paramSelecotr BootOptionParameterSelector, par
 		}
 		bop.BMCBootFlagValidBitClear = p
 
-	case BootOptionParameterSelector_BootInfoAcknowledge:
+	case BOPS_BootInfoAcknowledge:
 		p := &BOP_BootInfoAcknowledge{}
 		err = p.Unpack(paramData)
 		if err != nil {
@@ -124,7 +124,7 @@ func ParseBootOptionParameterData(paramSelecotr BootOptionParameterSelector, par
 		}
 		bop.BootInfoAcknowledge = p
 
-	case BootOptionParameterSelector_BootFlags:
+	case BOPS_BootFlags:
 		p := &BOP_BootFlags{}
 		err = p.Unpack(paramData)
 		if err != nil {
@@ -132,7 +132,7 @@ func ParseBootOptionParameterData(paramSelecotr BootOptionParameterSelector, par
 		}
 		bop.BootFlags = p
 
-	case BootOptionParameterSelector_BootInitiatorInfo:
+	case BOPS_BootInitiatorInfo:
 		p := &BOP_BootInitiatorInfo{}
 		err = p.Unpack(paramData)
 		if err != nil {
@@ -140,7 +140,7 @@ func ParseBootOptionParameterData(paramSelecotr BootOptionParameterSelector, par
 		}
 		bop.BootInitiatorInfo = p
 
-	case BootOptionParameterSelector_BootInitiatorMailbox:
+	case BOPS_BootInitiatorMailbox:
 		p := &BOP_BootInitiatorMailbox{}
 		err = p.Unpack(paramData)
 		if err != nil {
@@ -151,7 +151,7 @@ func ParseBootOptionParameterData(paramSelecotr BootOptionParameterSelector, par
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("unpack paramData failed for paramSelector (%d), err: %s", paramSelecotr, err)
+		return nil, fmt.Errorf("unpack paramData for paramSelector (%d) failed, err: %s", paramSelecotr, err)
 	}
 	return bop, nil
 }
@@ -348,19 +348,19 @@ func (p *BOP_BootInfoAcknowledge) Pack() []byte {
 
 	var b uint8
 	if p.ByOEM {
-		setBit4(b)
+		b = setBit4(b)
 	}
 	if p.BySMS {
-		setBit4(b)
+		b = setBit4(b)
 	}
 	if p.ByOSServicePartition {
-		setBit4(b)
+		b = setBit4(b)
 	}
 	if p.ByOSLoader {
-		setBit4(b)
+		b = setBit4(b)
 	}
 	if p.ByBIOSPOST {
-		setBit4(b)
+		b = setBit4(b)
 	}
 	packUint8(b, out, 1)
 	return out
