@@ -20,29 +20,15 @@ type GetSensorReadingResponse struct {
 
 	// The following fields are optionally, they are only meaningful when reading is valid.
 
-	Above_UNR_Threshold bool // at or above
-	Above_UCR_Threshold bool // at or above
-	Above_UNC_Threshold bool // at or above
-	Below_LNR_Threshold bool // at or below
-	Below_LCR_Threshold bool // at or below
-	Below_LNC_Threshold bool // at or below
+	Above_UNR bool // at or above UNR threshold
+	Above_UCR bool // at or above UCR threshold
+	Above_UNC bool // at or above UNC threshold
+	Below_LNR bool // at or below LNR threshold
+	Below_LCR bool // at or below LCR threshold
+	Below_LNC bool // at or below LNC threhsold
 
-	State7Asserted bool
-	State6Asserted bool
-	State5Asserted bool
-	State4Asserted bool
-	State3Asserted bool
-	State2Asserted bool
-	State1Asserted bool
-	State0Asserted bool
-
-	State14Asserted bool
-	State13Asserted bool
-	State12Asserted bool
-	State11Asserted bool
-	State10Asserted bool
-	State9Asserted  bool
-	State8Asserted  bool
+	// see 42.1 It is possible for a discrete sensor to have more than one state active at a time
+	ActiveStates Mask_DiscreteEvent
 
 	optionalData1 uint8
 	optionalData2 uint8
@@ -72,21 +58,21 @@ func (res *GetSensorReadingResponse) Unpack(msg []byte) error {
 	if len(msg) >= 3 {
 		b2, _, _ := unpackUint8(msg, 2)
 		// For threshold-based sensors, Present threshold comparison status
-		res.Above_UNR_Threshold = isBit5Set(b2)
-		res.Above_UCR_Threshold = isBit4Set(b2)
-		res.Above_UNC_Threshold = isBit3Set(b2)
-		res.Below_LNR_Threshold = isBit2Set(b2)
-		res.Below_LCR_Threshold = isBit1Set(b2)
-		res.Below_LNC_Threshold = isBit0Set(b2)
+		res.Above_UNR = isBit5Set(b2)
+		res.Above_UCR = isBit4Set(b2)
+		res.Above_UNC = isBit3Set(b2)
+		res.Below_LNR = isBit2Set(b2)
+		res.Below_LCR = isBit1Set(b2)
+		res.Below_LNC = isBit0Set(b2)
 		// For discrete reading sensors
-		res.State7Asserted = isBit7Set(b2)
-		res.State6Asserted = isBit6Set(b2)
-		res.State5Asserted = isBit5Set(b2)
-		res.State4Asserted = isBit4Set(b2)
-		res.State3Asserted = isBit3Set(b2)
-		res.State2Asserted = isBit2Set(b2)
-		res.State1Asserted = isBit1Set(b2)
-		res.State0Asserted = isBit0Set(b2)
+		res.ActiveStates.State_7 = isBit7Set(b2)
+		res.ActiveStates.State_6 = isBit6Set(b2)
+		res.ActiveStates.State_5 = isBit5Set(b2)
+		res.ActiveStates.State_4 = isBit4Set(b2)
+		res.ActiveStates.State_3 = isBit3Set(b2)
+		res.ActiveStates.State_2 = isBit2Set(b2)
+		res.ActiveStates.State_1 = isBit1Set(b2)
+		res.ActiveStates.State_0 = isBit0Set(b2)
 
 		res.optionalData1 = b2
 	}
@@ -95,13 +81,13 @@ func (res *GetSensorReadingResponse) Unpack(msg []byte) error {
 	if len(msg) >= 4 {
 		b3, _, _ := unpackUint8(msg, 3)
 		// For discrete reading sensors
-		res.State14Asserted = isBit6Set(b3)
-		res.State13Asserted = isBit5Set(b3)
-		res.State12Asserted = isBit4Set(b3)
-		res.State11Asserted = isBit3Set(b3)
-		res.State10Asserted = isBit2Set(b3)
-		res.State9Asserted = isBit1Set(b3)
-		res.State8Asserted = isBit0Set(b3)
+		res.ActiveStates.State_14 = isBit6Set(b3)
+		res.ActiveStates.State_13 = isBit5Set(b3)
+		res.ActiveStates.State_12 = isBit4Set(b3)
+		res.ActiveStates.State_11 = isBit3Set(b3)
+		res.ActiveStates.State_10 = isBit2Set(b3)
+		res.ActiveStates.State_9 = isBit1Set(b3)
+		res.ActiveStates.State_8 = isBit0Set(b3)
 
 		res.optionalData2 = b3
 	}
@@ -115,22 +101,22 @@ func (r *GetSensorReadingResponse) CompletionCodes() map[uint8]string {
 }
 
 func (r *GetSensorReadingResponse) ThresholdStatus() SensorThresholdStatus {
-	if r.Above_UCR_Threshold {
+	if r.Above_UCR {
 		return SensorThresholdStatus_UCR
 	}
-	if r.Above_UNC_Threshold {
+	if r.Above_UNC {
 		return SensorThresholdStatus_UCR
 	}
-	if r.Above_UNR_Threshold {
+	if r.Above_UNR {
 		return SensorThresholdStatus_UCR
 	}
-	if r.Below_LCR_Threshold {
+	if r.Below_LCR {
 		return SensorThresholdStatus_UCR
 	}
-	if r.Below_LNC_Threshold {
+	if r.Below_LNC {
 		return SensorThresholdStatus_UCR
 	}
-	if r.Below_LNR_Threshold {
+	if r.Below_LNR {
 		return SensorThresholdStatus_UCR
 	}
 	return SensorThresholdStatus_OK
@@ -143,12 +129,14 @@ Event Message Disabled : %v
 Scanning Disabled      : %v
 Reading Unavailable    : %v
 Threshold Status       : %s
+Discrete Events        : %v
 `,
 		res.AnalogReading,
 		res.EventMessagesDisabled,
 		res.SensorScaningDisabled,
 		res.ReadingUnavailable,
 		res.ThresholdStatus(),
+		res.ActiveStates.TrueEvents(),
 	)
 }
 

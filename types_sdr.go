@@ -374,58 +374,82 @@ func (mask *Mask_Thresholds) IsThresholdReadable(thresholdType SensorThresholdTy
 	return false
 }
 
+type Mask_DiscreteEvent struct {
+	State_0  bool
+	State_1  bool
+	State_2  bool
+	State_3  bool
+	State_4  bool
+	State_5  bool
+	State_6  bool
+	State_7  bool
+	State_8  bool
+	State_9  bool
+	State_10 bool
+	State_11 bool
+	State_12 bool
+	State_13 bool
+	State_14 bool
+}
+
+func (mask Mask_DiscreteEvent) TrueEvents() []int {
+	events := []int{}
+
+	if mask.State_0 {
+		events = append(events, 0)
+	}
+	if mask.State_1 {
+		events = append(events, 1)
+	}
+	if mask.State_2 {
+		events = append(events, 2)
+	}
+	if mask.State_3 {
+		events = append(events, 3)
+	}
+	if mask.State_4 {
+		events = append(events, 4)
+	}
+	if mask.State_5 {
+		events = append(events, 5)
+	}
+	if mask.State_6 {
+		events = append(events, 6)
+	}
+	if mask.State_7 {
+		events = append(events, 7)
+	}
+	if mask.State_8 {
+		events = append(events, 8)
+	}
+	if mask.State_9 {
+		events = append(events, 9)
+	}
+	if mask.State_10 {
+		events = append(events, 10)
+	}
+	if mask.State_11 {
+		events = append(events, 11)
+	}
+	if mask.State_12 {
+		events = append(events, 12)
+	}
+	if mask.State_13 {
+		events = append(events, 13)
+	}
+	if mask.State_14 {
+		events = append(events, 14)
+	}
+	return events
+}
+
 type Mask_Discrete struct {
-	// Assertion Event Mask for non-threshold based sensors
-
-	Event_14_Assert bool
-	Event_13_Assert bool
-	Event_12_Assert bool
-	Event_11_Assert bool
-	Event_10_Assert bool
-	Event_9_Assert  bool
-	Event_8_Assert  bool
-	Event_7_Assert  bool
-	Event_6_Assert  bool
-	Event_5_Assert  bool
-	Event_4_Assert  bool
-	Event_3_Assert  bool
-	Event_2_Assert  bool
-	Event_1_Assert  bool
-	Event_0_Assert  bool
-	// Deassertion Event Mask for non-threshold based sensors
-
-	Event_14_Deassert bool
-	Event_13_Deassert bool
-	Event_12_Deassert bool
-	Event_11_Deassert bool
-	Event_10_Deassert bool
-	Event_9_Deassert  bool
-	Event_8_Deassert  bool
-	Event_7_Deassert  bool
-	Event_6_Deassert  bool
-	Event_5_Deassert  bool
-	Event_4_Deassert  bool
-	Event_3_Deassert  bool
-	Event_2_Deassert  bool
-	Event_1_Deassert  bool
-	Event_0_Deassert  bool
-
-	// Reading Mask for non-threshold based sensors
-	Reading_14_Supported bool
-	Reading_13_Supported bool
-	Reading_12_Supported bool
-	Reading_11_Supported bool
-	Reading_10_Supported bool
-	Reading_9_Supported  bool
-	Reading_8_Supported  bool
-	Reading_7_Supported  bool
-	Reading_6_Supported  bool
-	Reading_5_Supported  bool
-	Reading_4_Supported  bool
-	Reading_3_Supported  bool
-	Reading_2_Supported  bool
-	Reading_1_Supported  bool
-	Reading_0_Supported  bool
+	// Assertion Event Mask for non-threshold based sensors, true means assertion event can be generated for this state
+	Assert Mask_DiscreteEvent
+	// Deassertion Event Mask for non-threshold based sensors, true means deassertion event can be generated for this state
+	Deassert Mask_DiscreteEvent
+	// Reading Mask for non-threshold based sensors, true means discrete state can be returned by this sensor
+	Reading Mask_DiscreteEvent
 }
 
 // Mask holds
@@ -443,21 +467,21 @@ func (mask *Mask) ParseAssertLower(b uint16) {
 	lsb := uint8(b & 0x00ff) // Least Significant Byte
 	msb := uint8(b >> 8)     // Most Significant Byte
 
-	mask.Discrete.Event_14_Assert = isBit6Set(lsb)
-	mask.Discrete.Event_13_Assert = isBit5Set(lsb)
-	mask.Discrete.Event_12_Assert = isBit4Set(lsb)
-	mask.Discrete.Event_11_Assert = isBit3Set(lsb)
-	mask.Discrete.Event_10_Assert = isBit2Set(lsb)
-	mask.Discrete.Event_9_Assert = isBit1Set(lsb)
-	mask.Discrete.Event_8_Assert = isBit0Set(lsb)
-	mask.Discrete.Event_7_Assert = isBit7Set(msb)
-	mask.Discrete.Event_6_Assert = isBit6Set(msb)
-	mask.Discrete.Event_5_Assert = isBit5Set(msb)
-	mask.Discrete.Event_4_Assert = isBit4Set(msb)
-	mask.Discrete.Event_3_Assert = isBit3Set(msb)
-	mask.Discrete.Event_2_Assert = isBit2Set(msb)
-	mask.Discrete.Event_1_Assert = isBit1Set(msb)
-	mask.Discrete.Event_0_Assert = isBit0Set(msb)
+	mask.Discrete.Assert.State_14 = isBit6Set(lsb)
+	mask.Discrete.Assert.State_13 = isBit5Set(lsb)
+	mask.Discrete.Assert.State_12 = isBit4Set(lsb)
+	mask.Discrete.Assert.State_11 = isBit3Set(lsb)
+	mask.Discrete.Assert.State_10 = isBit2Set(lsb)
+	mask.Discrete.Assert.State_9 = isBit1Set(lsb)
+	mask.Discrete.Assert.State_8 = isBit0Set(lsb)
+	mask.Discrete.Assert.State_7 = isBit7Set(msb)
+	mask.Discrete.Assert.State_6 = isBit6Set(msb)
+	mask.Discrete.Assert.State_5 = isBit5Set(msb)
+	mask.Discrete.Assert.State_4 = isBit4Set(msb)
+	mask.Discrete.Assert.State_3 = isBit3Set(msb)
+	mask.Discrete.Assert.State_2 = isBit2Set(msb)
+	mask.Discrete.Assert.State_1 = isBit1Set(msb)
+	mask.Discrete.Assert.State_0 = isBit0Set(msb)
 
 	mask.Threshold.LNR.StatusReturned = isBit6Set(lsb)
 	mask.Threshold.LCR.StatusReturned = isBit5Set(lsb)
@@ -481,21 +505,21 @@ func (mask *Mask) ParseDeassertUpper(b uint16) {
 	lsb := uint8(b & 0x00ff) // Least Significant Byte
 	msb := uint8(b >> 8)     // Most Significant Byte
 
-	mask.Discrete.Event_14_Deassert = isBit6Set(lsb)
-	mask.Discrete.Event_13_Deassert = isBit5Set(lsb)
-	mask.Discrete.Event_12_Deassert = isBit4Set(lsb)
-	mask.Discrete.Event_11_Deassert = isBit3Set(lsb)
-	mask.Discrete.Event_10_Deassert = isBit2Set(lsb)
-	mask.Discrete.Event_9_Deassert = isBit1Set(lsb)
-	mask.Discrete.Event_8_Deassert = isBit0Set(lsb)
-	mask.Discrete.Event_7_Deassert = isBit7Set(msb)
-	mask.Discrete.Event_6_Deassert = isBit6Set(msb)
-	mask.Discrete.Event_5_Deassert = isBit5Set(msb)
-	mask.Discrete.Event_4_Deassert = isBit4Set(msb)
-	mask.Discrete.Event_3_Deassert = isBit3Set(msb)
-	mask.Discrete.Event_2_Deassert = isBit2Set(msb)
-	mask.Discrete.Event_1_Deassert = isBit1Set(msb)
-	mask.Discrete.Event_0_Deassert = isBit0Set(msb)
+	mask.Discrete.Deassert.State_14 = isBit6Set(lsb)
+	mask.Discrete.Deassert.State_13 = isBit5Set(lsb)
+	mask.Discrete.Deassert.State_12 = isBit4Set(lsb)
+	mask.Discrete.Deassert.State_11 = isBit3Set(lsb)
+	mask.Discrete.Deassert.State_10 = isBit2Set(lsb)
+	mask.Discrete.Deassert.State_9 = isBit1Set(lsb)
+	mask.Discrete.Deassert.State_8 = isBit0Set(lsb)
+	mask.Discrete.Deassert.State_7 = isBit7Set(msb)
+	mask.Discrete.Deassert.State_6 = isBit6Set(msb)
+	mask.Discrete.Deassert.State_5 = isBit5Set(msb)
+	mask.Discrete.Deassert.State_4 = isBit4Set(msb)
+	mask.Discrete.Deassert.State_3 = isBit3Set(msb)
+	mask.Discrete.Deassert.State_2 = isBit2Set(msb)
+	mask.Discrete.Deassert.State_1 = isBit1Set(msb)
+	mask.Discrete.Deassert.State_0 = isBit0Set(msb)
 
 	mask.Threshold.UNR.StatusReturned = isBit6Set(lsb)
 	mask.Threshold.UCR.StatusReturned = isBit5Set(lsb)
@@ -520,21 +544,21 @@ func (mask *Mask) ParseReading(b uint16) {
 	lsb := uint8(b & 0x0000ffff) // Least Significant Byte
 	msb := uint8(b >> 8)         // Most Significant Byte
 
-	mask.Discrete.Reading_14_Supported = isBit6Set(lsb)
-	mask.Discrete.Reading_13_Supported = isBit5Set(lsb)
-	mask.Discrete.Reading_12_Supported = isBit4Set(lsb)
-	mask.Discrete.Reading_11_Supported = isBit3Set(lsb)
-	mask.Discrete.Reading_10_Supported = isBit2Set(lsb)
-	mask.Discrete.Reading_9_Supported = isBit1Set(lsb)
-	mask.Discrete.Reading_8_Supported = isBit0Set(lsb)
-	mask.Discrete.Reading_7_Supported = isBit7Set(msb)
-	mask.Discrete.Reading_6_Supported = isBit6Set(msb)
-	mask.Discrete.Reading_5_Supported = isBit5Set(msb)
-	mask.Discrete.Reading_4_Supported = isBit4Set(msb)
-	mask.Discrete.Reading_3_Supported = isBit3Set(msb)
-	mask.Discrete.Reading_2_Supported = isBit2Set(msb)
-	mask.Discrete.Reading_1_Supported = isBit1Set(msb)
-	mask.Discrete.Reading_0_Supported = isBit0Set(msb)
+	mask.Discrete.Reading.State_14 = isBit6Set(lsb)
+	mask.Discrete.Reading.State_13 = isBit5Set(lsb)
+	mask.Discrete.Reading.State_12 = isBit4Set(lsb)
+	mask.Discrete.Reading.State_11 = isBit3Set(lsb)
+	mask.Discrete.Reading.State_10 = isBit2Set(lsb)
+	mask.Discrete.Reading.State_9 = isBit1Set(lsb)
+	mask.Discrete.Reading.State_8 = isBit0Set(lsb)
+	mask.Discrete.Reading.State_7 = isBit7Set(msb)
+	mask.Discrete.Reading.State_6 = isBit6Set(msb)
+	mask.Discrete.Reading.State_5 = isBit5Set(msb)
+	mask.Discrete.Reading.State_4 = isBit4Set(msb)
+	mask.Discrete.Reading.State_3 = isBit3Set(msb)
+	mask.Discrete.Reading.State_2 = isBit2Set(msb)
+	mask.Discrete.Reading.State_1 = isBit1Set(msb)
+	mask.Discrete.Reading.State_0 = isBit0Set(msb)
 
 	mask.Threshold.UNR.Settable = isBit5Set(lsb)
 	mask.Threshold.UCR.Settable = isBit4Set(lsb)

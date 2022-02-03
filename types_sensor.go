@@ -389,19 +389,19 @@ func (types SensorThresholdTypes) Strings() []string {
 
 // SensorThresholdStatus are enums for threshold status of sensor.
 //
-// ....UNR status
+// ....UNR status (NonRecoverable)
 // -----------------UNR threshold
-// ....UCR status
+// ....UCR status (Critical)
 // -----------------UCR threshold
-// ....UNC status
+// ....UNC status (NonCritical)
 // -----------------UNC threshold
-// ....OK status
+// ....OK status (OK)
 // -----------------LNC threshold
-// ....LNC status
+// ....LNC status (NonCritical)
 // -----------------LCR threshold
-// ....LCR status
+// ....LCR status (Critical)
 // -----------------LNR threshold
-// ....LNR status
+// ....LNR status (NonRecoverable)
 type SensorThresholdStatus string
 
 const (
@@ -857,9 +857,11 @@ type Sensor struct {
 	Number uint8
 	Name   string
 
-	SensorType       SensorType
-	EventReadingType EventReadingType
-	SensorUnit       SensorUnit
+	SensorType           SensorType
+	EventReadingType     EventReadingType
+	SensorUnit           SensorUnit
+	SensorInitialization SensorInitialization
+	SensorCapabilitites  SensorCapabilitites
 
 	// To interpret all other values of Sensor, you must firstly determine wether Reading is valid or not.
 	// If ReadingValid is fase, it normally means the sensor device does not exist.
@@ -911,7 +913,8 @@ type Sensor struct {
 	}
 
 	Discrete struct {
-		Mask Mask_Discrete
+		Mask         Mask_Discrete
+		ActiveStates Mask_DiscreteEvent
 
 		// filled by GetSensorReadingResponse
 		optionalData1 uint8
@@ -946,16 +949,17 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 		"ScanD",
 		"ReadU",
 		"HasAR",
+		"DiscreteEvents",
 	}
 	table.SetHeader(headers)
 	table.SetFooter(headers)
 
 	for _, sensor := range sensors {
-		table.Append([]string{
+		content := []string{
 			sensor.SDRRecordType.String(),
 			fmt.Sprintf("%#02x", sensor.Number),
 			sensor.Name,
-			sensor.SensorType.String(),
+			fmt.Sprintf("%s (%#02x)", sensor.SensorType.String(), uint8(sensor.SensorType)),
 			sensor.ReadingStr(),
 			sensor.SensorUnit.String(),
 			sensor.Status(),
@@ -965,13 +969,21 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 			sensor.ThresholdStr(SensorThresholdType_UNC),
 			sensor.ThresholdStr(SensorThresholdType_UCR),
 			sensor.ThresholdStr(SensorThresholdType_UNR),
-			sensor.EventReadingType.String(),
+			fmt.Sprintf("%s (%#02x)", sensor.EventReadingType.String(), uint8(sensor.EventReadingType)),
 			sensor.SensorUnit.AnalogDataFormat.String(),
 			fmt.Sprintf("%v", sensor.ReadingValid),
 			fmt.Sprintf("%v", sensor.scanningDisabled),
 			fmt.Sprintf("%v", sensor.readingUnavailable),
 			fmt.Sprintf("%v", sensor.HasAnalogReading),
-		})
+		}
+
+		if sensor.IsThreshold() {
+			content = append(content, "na")
+		} else {
+			content = append(content, fmt.Sprintf("%v", sensor.Discrete.ActiveStates.TrueEvents()))
+		}
+
+		table.Append(content)
 	}
 
 	table.Render()
@@ -983,6 +995,7 @@ func (sensor *Sensor) Status() string {
 	if sensor.IsThreshold() {
 		return string(sensor.Threshold.ThresholdStatus)
 	}
+
 	return fmt.Sprintf("0x%02x%02x", sensor.Discrete.optionalData1, sensor.Discrete.optionalData2)
 }
 

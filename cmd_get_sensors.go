@@ -52,9 +52,8 @@ func (c *Client) GetSensorByName(sensorName string) (*Sensor, error) {
 	return sensor, nil
 }
 
-// sdrToSensor convert SDR record to Sensor.
-// Only Full and Compact SDR records are meaningful here. Pass SDRs with other record types
-// will return error.
+// sdrToSensor convert SDR record to Sensor struct.
+// Only Full and Compact SDR records are meaningful here. Pass SDRs with other record types will return error.
 func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 	if sdr == nil {
 		return nil, fmt.Errorf("nil sdr parameter")
@@ -72,6 +71,8 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 		sensor.SensorUnit = sdr.Full.SensorUnit
 		sensor.SensorType = sdr.Full.SensorType
 		sensor.EventReadingType = sdr.Full.SensorEventReadingType
+		sensor.SensorInitialization = sdr.Full.SensorInitialization
+		sensor.SensorCapabilitites = sdr.Full.SensorCapabilitites
 
 		sensor.Threshold.LinearizationFunc = sdr.Full.LinearizationFunc
 		sensor.Threshold.ReadingFactors = sdr.Full.ReadingFactors
@@ -82,6 +83,8 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 		sensor.SensorUnit = sdr.Compact.SensorUnit
 		sensor.SensorType = sdr.Compact.SensorType
 		sensor.EventReadingType = sdr.Compact.SensorEventReadingType
+		sensor.SensorInitialization = sdr.Compact.SensorInitialization
+		sensor.SensorCapabilitites = sdr.Compact.SensorCapabilitites
 
 	default:
 		return nil, fmt.Errorf("only support Full or Compact SDR record type, input is %s", sdr.RecordHeader.RecordType)
@@ -114,12 +117,13 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 		sensor.readingUnavailable = readingRes.ReadingUnavailable
 		sensor.Threshold.ThresholdStatus = readingRes.ThresholdStatus()
 
+		sensor.Discrete.ActiveStates = readingRes.ActiveStates
 		sensor.Discrete.optionalData1 = readingRes.optionalData1
 		sensor.Discrete.optionalData2 = readingRes.optionalData2
 	}
 
 	if sensor.scanningDisabled {
-		// Sensor scanning disabled, skip all left
+		// Sensor scanning disabled, no need to continue
 		c.Debug(fmt.Sprintf(":( Sensor [%s](%#02x) scanning disabled\n", sensor.Name, sensor.Number), "")
 		return sensor, nil
 	}
@@ -127,13 +131,6 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 	if !sensor.readingUnavailable {
 		sensor.ReadingValid = true
 	}
-
-	typeRes, err := c.GetSensorType(sensor.Number)
-	if err != nil {
-		return nil, fmt.Errorf("GetSensorType for sensor %#02x failed, err: %s", sensor.Number, err)
-	}
-	sensor.SensorType = typeRes.SensorType
-	sensor.EventReadingType = typeRes.EventReadingType
 
 	if !sensor.EventReadingType.IsThreshold() || !sensor.SensorUnit.IsAnalog() {
 		if err := c.setSensorDiscrete(sensor); err != nil {
@@ -154,7 +151,7 @@ func (c *Client) setSensorDiscrete(sensor *Sensor) error {
 	if err != nil {
 		return fmt.Errorf("GetSensorEventStatus for sensor %#02x failed, err: %s", sensor.Number, err)
 	}
-	sensor.OccuredEvents = statusRes.SensorEventMasks.TrueEvents()
+	sensor.OccuredEvents = statusRes.SensorEventFlag.TrueEvents()
 	return nil
 }
 
@@ -203,6 +200,8 @@ func (c *Client) setSensorThreshold(sensor *Sensor) error {
 	}
 	sensor.Threshold.PositiveHysteresisRaw = hysteresisRes.PositiveRaw
 	sensor.Threshold.NegativeHysteresisRaw = hysteresisRes.NegativeRaw
+	sensor.Threshold.PositiveHysteresis = sensor.ConvertSensorHysteresis(hysteresisRes.PositiveRaw)
+	sensor.Threshold.NegativeHysteresis = sensor.ConvertSensorHysteresis(hysteresisRes.NegativeRaw)
 
 	return nil
 }

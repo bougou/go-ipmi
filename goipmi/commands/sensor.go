@@ -26,6 +26,7 @@ func NewCmdSensor() *cobra.Command {
 	cmd.AddCommand(NewCmdSensorThreshold())
 	cmd.AddCommand(NewCmdSensorEventEnable())
 	cmd.AddCommand(NewCmdSensorEventStatus())
+	cmd.AddCommand(NewCmdSensorReading())
 	cmd.AddCommand(NewCmdSensorReadingFactors())
 	cmd.AddCommand(NewCmdSensorDetail())
 
@@ -204,6 +205,43 @@ sensor event-enable get <sensor_number>
 				res, err := client.GetSensorEventEnable(sensorNumber)
 				if err != nil {
 					CheckErr(fmt.Errorf("GetSensorEventEnable failed, err: %s", err))
+				}
+				fmt.Println(res.Format())
+			case "set":
+			default:
+				CheckErr(fmt.Errorf("usage: %s", usage))
+			}
+		},
+	}
+	return cmd
+}
+
+func NewCmdSensorReading() *cobra.Command {
+	usage := `
+sensor reading get <sensor_number>
+	`
+	cmd := &cobra.Command{
+		Use:   "reading",
+		Short: "reading",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 2 {
+				CheckErr(fmt.Errorf("usage: %s", usage))
+			}
+
+			action := args[0]
+
+			var sensorNumber uint8
+			i, err := parseStringToInt64(args[1])
+			if err != nil {
+				CheckErr(fmt.Errorf("invalid sensor number, err: %s", err))
+			}
+			sensorNumber = uint8(i)
+
+			switch action {
+			case "get":
+				res, err := client.GetSensorReading(sensorNumber)
+				if err != nil {
+					CheckErr(fmt.Errorf("GetSensorReading failed, err: %s", err))
 				}
 				fmt.Println(res.Format())
 			case "set":

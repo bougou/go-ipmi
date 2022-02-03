@@ -70,9 +70,11 @@ type EventData struct {
 	EventData3 uint8
 }
 
-// 29.7
+// 29.7 Event Data Field Formats
 // Event Data 1
-// [3:0] - Offset from Event/Reading Code for threshold event.
+// [3:0] -
+// for threshold sensors: Offset from Event/Reading Code for threshold event.
+// for discrete sensors: Offset from Event/Reading Code for discrete event state (corresponding 15 possible discrete events)
 func (ed *EventData) EventReadingOffset() uint8 {
 	return ed.EventData1 & 0x0f
 }
@@ -1143,9 +1145,9 @@ var (
 	}
 )
 
-// SensorEventMasks holds a struct with fields indicating the specified sensor event is set or not.
-// SensorEventMasks was embeded in Sensor related commands.
-type SensorEventMasks struct {
+// SensorEventFlag holds a struct with fields indicating the specified sensor event is set or not.
+// SensorEventFlag was embeded in Sensor related commands.
+type SensorEventFlag struct {
 	SensorEvent_UNC_High_Assert bool
 	SensorEvent_UNC_Low_Assert  bool
 	SensorEvent_LNR_High_Assert bool
@@ -1205,7 +1207,7 @@ type SensorEventMasks struct {
 	SensorEvent_State_8_Deassert  bool
 }
 
-func (sensorEventMasks *SensorEventMasks) TrueEvents() []SensorEvent {
+func (sensorEventMasks *SensorEventFlag) TrueEvents() []SensorEvent {
 	out := make([]SensorEvent, 0)
 	if sensorEventMasks.SensorEvent_UNC_High_Assert {
 		out = append(out, SensorEvent_UNC_High_Assert)

@@ -1,6 +1,6 @@
 package ipmi
 
-// 35.13 Get Sensor Event Status Command
+// 35.17 Set Sensor Reading And Event Status Command
 type SetSensorReadingAndEventStatusRequest struct {
 	SensorNumber uint8
 
@@ -11,7 +11,7 @@ type SetSensorReadingAndEventStatusRequest struct {
 
 	SensorReading uint8
 
-	SensorEventMasks
+	SensorEventFlag
 
 	EventData1 uint8
 	EventData2 uint8

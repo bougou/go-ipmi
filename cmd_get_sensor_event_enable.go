@@ -15,7 +15,7 @@ type GetSensorEventEnableResponse struct {
 	EventMessagesDisabled bool
 	SensorScaningDisabled bool
 
-	SensorEventMasks
+	SensorEventFlag
 }
 
 func (req *GetSensorEventEnableRequest) Command() Command {
@@ -114,12 +114,12 @@ func (r *GetSensorEventEnableResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetSensorEventEnableResponse) Format() string {
-	all := res.SensorEventMasks.TrueEvents()
+	all := res.SensorEventFlag.TrueEvents()
 	asserted := SensorEvents(all).FilterAssert()
 	deasserted := SensorEvents(all).FilterDeassert()
 
-	var assertedStr = []string{""}
-	var deassertedStr = []string{""}
+	var assertedStr = []string{}
+	var deassertedStr = []string{}
 	for _, v := range asserted {
 		assertedStr = append(assertedStr, v.String())
 	}
