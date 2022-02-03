@@ -13,7 +13,7 @@ in IPMI sepcification, but just some common helpers, like `GetSDRs` to get all S
 For a IPMI Command `DoSomething`:
 
 - Must define `DoSomethingRequest` which conforms to the `ipmi.Request` interface, it holds the request message data.
-- Must define `DoSomethingResponse` which conforms to the `ipmi.Response` interface, it holds the resonse message data.
+- Must define `DoSomethingResponse` which conforms to the `ipmi.Response` interface, it holds the response message data.
 - Must define `DoSomething` method on `ipmi.Client`
 
 For `DoSomething` method, you can pass `DoSomethingRequest` directly as the input parameter, like:

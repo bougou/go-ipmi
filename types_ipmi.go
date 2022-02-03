@@ -183,7 +183,7 @@ func AllCC(response Response) map[uint8]string {
 
 // StrCC return the description of ccode for the specified response.
 // The available completion codes set consists of general completion codes (CC) for all
-// Commands Resonse and specific completion codes for this response.
+// commands response and specific completion codes for this response.
 func StrCC(response Response, ccode uint8) string {
 	s, ok := AllCC(response)[ccode]
 	if ok {

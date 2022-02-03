@@ -26,23 +26,22 @@ func (sel *SEL) Pack() []byte {
 	packUint16L(sel.RecordID, msg, 0)
 	packUint8(uint8(sel.RecordType), msg, 2)
 
-	packUint32L(uint32(sel.Standard.Timestamp.Unix()), msg, 3)
+	switch sel.RecordType.Range() {
+	case SELRecordTypeRangeStandard:
+		if sel.Standard != nil {
+			msg = append(msg[0:3], sel.Standard.Pack()...)
+		}
 
-	packUint16L(uint16(sel.Standard.GeneratorID), msg, 7)
+	case SELRecordTypeRangeTimestampedOEM:
+		if sel.OEMTimestamped != nil {
+			msg = append(msg[0:3], sel.OEMTimestamped.Pack()...)
+		}
 
-	packUint8(sel.Standard.EvMRev, msg, 9)
-	packUint8(uint8(sel.Standard.SensorType), msg, 10)
-	packUint8(uint8(sel.Standard.SensorNumber), msg, 11)
-
-	var eventType = uint8(sel.Standard.EventReadingType)
-	if sel.Standard.EventDir {
-		eventType = eventType | 0x80
+	case SELRecordTypeRangeNonTimestampedOEM:
+		if sel.OEMNonTimestamped != nil {
+			msg = append(msg[0:3], sel.OEMNonTimestamped.Pack()...)
+		}
 	}
-	packUint8(eventType, msg, 12)
-
-	packUint8(sel.Standard.EventData.EventData1, msg, 13)
-	packUint8(sel.Standard.EventData.EventData2, msg, 14)
-	packUint8(sel.Standard.EventData.EventData3, msg, 15)
 
 	return msg
 }
@@ -81,11 +80,23 @@ func ParseSEL(msg []byte) (*SEL, error) {
 type SELOEMTimestamped struct {
 	Timestamp      time.Time // Time when event was logged. uint32 LS byte first.
 	ManufacturerID uint32    // only 3 bytes
-	OEMDefined     []byte    // 6 bytes
+	OEMDefined     [6]byte
+}
+
+func (oemTimestamped *SELOEMTimestamped) Pack() []byte {
+	var msg = make([]byte, 13)
+	packUint32L(uint32(oemTimestamped.Timestamp.Unix()), msg, 0)
+	packUint24L(oemTimestamped.ManufacturerID, msg, 4)
+	packBytes(oemTimestamped.OEMDefined[:], msg, 7)
+	return msg
 }
 
 type SELOEMNonTimestamped struct {
-	OEM []byte // 13 bytes
+	OEM [13]byte
+}
+
+func (oemNonTimestamped *SELOEMNonTimestamped) Pack() []byte {
+	return oemNonTimestamped.OEM[:]
 }
 
 // 32.1 SEL Standard Event Records
@@ -106,12 +117,40 @@ type SELStandard struct {
 	EventData EventData
 }
 
+func (standard *SELStandard) Pack() []byte {
+	var msg = make([]byte, 13)
+
+	packUint32L(uint32(standard.Timestamp.Unix()), msg, 0)
+
+	packUint16L(uint16(standard.GeneratorID), msg, 4)
+
+	packUint8(standard.EvMRev, msg, 6)
+	packUint8(uint8(standard.SensorType), msg, 7)
+	packUint8(uint8(standard.SensorNumber), msg, 8)
+
+	var eventType = uint8(standard.EventReadingType)
+	if standard.EventDir {
+		eventType = eventType | 0x80
+	}
+	packUint8(eventType, msg, 9)
+
+	packUint8(standard.EventData.EventData1, msg, 10)
+	packUint8(standard.EventData.EventData2, msg, 11)
+	packUint8(standard.EventData.EventData3, msg, 12)
+
+	return msg
+}
+
 // EventString return string description of the event.
 func (sel *SELStandard) EventString() string {
 	return sel.EventReadingType.EventString(sel.SensorType, sel.SensorNumber, sel.EventData)
 }
 
 func parseSELDefault(msg []byte, sel *SEL) error {
+	if len(msg) < 16 {
+		return ErrUnpackedDataTooShort
+	}
+
 	var s = &SELStandard{}
 	sel.Standard = s
 
@@ -141,6 +180,10 @@ func parseSELDefault(msg []byte, sel *SEL) error {
 }
 
 func parseSELOEMTimestamped(msg []byte, sel *SEL) error {
+	if len(msg) < 16 {
+		return ErrUnpackedDataTooShort
+	}
+
 	var s = &SELOEMTimestamped{}
 	sel.OEMTimestamped = s
 
@@ -150,15 +193,29 @@ func parseSELOEMTimestamped(msg []byte, sel *SEL) error {
 	id, _, _ := unpackUint24L(msg, 7)
 	s.ManufacturerID = id
 
-	s.OEMDefined, _, _ = unpackBytes(msg, 10, 6)
+	s.OEMDefined = [6]byte{}
+	b, _, _ := unpackBytes(msg, 10, 6)
+	for i := 0; i < 6; i++ {
+		s.OEMDefined[i] = b[i]
+	}
+
 	return nil
 }
 
 func parseSELOEMNonTimestamped(msg []byte, sel *SEL) error {
+	if len(msg) < 16 {
+		return ErrUnpackedDataTooShort
+	}
+
 	var s = &SELOEMNonTimestamped{}
 	sel.OEMNonTimestamped = s
 
-	s.OEM, _, _ = unpackBytes(msg, 3, 13)
+	s.OEM = [13]byte{}
+	b, _, _ := unpackBytes(msg, 3, 13)
+	for i := 0; i < 6; i++ {
+		s.OEM[i] = b[i]
+	}
+
 	return nil
 }
 

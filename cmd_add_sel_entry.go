@@ -8,8 +8,7 @@ type AddSELEntryRequest struct {
 }
 
 type AddSELEntryResponse struct {
-	CompletionCode uint8
-	RecordID       uint16 // Record ID for added record, LS Byte first
+	RecordID uint16 // Record ID for added record, LS Byte first
 }
 
 func (req *AddSELEntryRequest) Command() Command {
@@ -21,10 +20,9 @@ func (req *AddSELEntryRequest) Pack() []byte {
 }
 
 func (res *AddSELEntryResponse) Unpack(msg []byte) error {
-	if len(msg) < 3 {
+	if len(msg) < 2 {
 		return ErrUnpackedDataTooShort
 	}
-	res.CompletionCode, _, _ = unpackUint8(msg, 0)
 	res.RecordID, _, _ = unpackUint16L(msg, 0)
 	return nil
 }
@@ -37,7 +35,7 @@ func (res *AddSELEntryResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *AddSELEntryResponse) Format() string {
-	return fmt.Sprintf("%v", res)
+	return fmt.Sprintf("Record ID : %d (%#02x)", res.RecordID, res.RecordID)
 }
 
 func (c *Client) AddSELEntry(sel *SEL) (response *AddSELEntryResponse, err error) {
