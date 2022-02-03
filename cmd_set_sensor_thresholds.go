@@ -6,19 +6,19 @@ type SetSensorThresholdsRequest struct {
 
 	// Set Threshold flag
 	SetUNR bool
-	SetUC  bool
+	SetUCR bool
 	SetUNC bool
 	SetLNR bool
-	SetLC  bool
+	SetLCR bool
 	SetLNC bool
 
 	// Threshold value
-	LNC uint8
-	LC  uint8
-	LNR uint8
-	UNC uint8
-	UC  uint8
-	UNR uint8
+	LNC_Raw uint8
+	LCR_Raw uint8
+	LNR_Raw uint8
+	UNC_Raw uint8
+	UCR_Raw uint8
+	UNR_Raw uint8
 }
 
 type SetSensorThresholdsResponse struct {
@@ -37,7 +37,7 @@ func (req *SetSensorThresholdsRequest) Pack() []byte {
 	if req.SetUNR {
 		b = setBit5(b)
 	}
-	if req.SetUC {
+	if req.SetUCR {
 		b = setBit4(b)
 	}
 	if req.SetUNC {
@@ -46,7 +46,7 @@ func (req *SetSensorThresholdsRequest) Pack() []byte {
 	if req.SetLNR {
 		b = setBit2(b)
 	}
-	if req.SetLC {
+	if req.SetLCR {
 		b = setBit1(b)
 	}
 	if req.SetLNC {
@@ -54,12 +54,12 @@ func (req *SetSensorThresholdsRequest) Pack() []byte {
 	}
 	packUint8(b, out, 1)
 
-	packUint8(req.LNC, out, 2)
-	packUint8(req.LC, out, 3)
-	packUint8(req.LNR, out, 4)
-	packUint8(req.UNC, out, 5)
-	packUint8(req.UC, out, 6)
-	packUint8(req.UNR, out, 7)
+	packUint8(req.LNC_Raw, out, 2)
+	packUint8(req.LCR_Raw, out, 3)
+	packUint8(req.LNR_Raw, out, 4)
+	packUint8(req.UNC_Raw, out, 5)
+	packUint8(req.UCR_Raw, out, 6)
+	packUint8(req.UNR_Raw, out, 7)
 	return out
 }
 

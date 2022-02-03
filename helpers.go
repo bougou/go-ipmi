@@ -103,6 +103,8 @@ func randomBytes(n int) []byte {
 	return b
 }
 
+// onesComplement returns the signed interger of the input number encoded with 1's complement.
+// The lowest significant 'bitSize' bits of the input number i is considered.
 func onesComplement(i uint32, bitSize uint8) int32 {
 	var leftBitSize uint8 = 32 - bitSize
 	var temp uint32 = i << uint32(leftBitSize) >> uint32(leftBitSize)
@@ -110,17 +112,19 @@ func onesComplement(i uint32, bitSize uint8) int32 {
 	var mask uint32 = 1 << (bitSize - 1)
 	if temp&mask == 0 {
 		// means the bit at `bitSize-1` (from left starting at 0) is 0
-		// which meas the result should be a positive value
+		// so the result should be a positive value
 		return int32(temp)
 	}
 
 	// means the bit at `bitSize-1` (from left starting at 0) is 1
-	// which meas the result should be a negative value
+	// so the result should be a negative value
 	t := temp ^ 0xffff
 	t = t << uint32(leftBitSize) >> uint32(leftBitSize)
 	return -int32(t)
 }
 
+// twosComplement returns the signed interger of the input number encoded with 2's complement.
+// The lowest significant 'bitSize' bits of the input number i is considered.
 func twosComplement(i uint32, bitSize uint8) int32 {
 	var leftBitSize uint8 = 32 - bitSize
 	var temp uint32 = i << uint32(leftBitSize) >> uint32(leftBitSize)
@@ -128,12 +132,12 @@ func twosComplement(i uint32, bitSize uint8) int32 {
 	var mask uint32 = 1 << (bitSize - 1)
 	if temp&mask == 0 {
 		// means the bit at `bitSize-1` (from left starting at 0) is 0
-		// which meas the result should be a positive value
+		// so the result should be a positive value
 		return int32(temp)
 	}
 
 	// means the bit at `bitSize-1` (from left starting at 0) is 1
-	// which meas the result should be a negative value
+	// so the result should be a negative value
 	t := temp ^ 0xffff + 1
 	t = t << uint32(leftBitSize) >> uint32(leftBitSize)
 	return -int32(t)
@@ -499,32 +503,6 @@ func packUint64L(i uint64, msg []byte, off int) (int, error) {
 	binary.LittleEndian.PutUint64(msg[off:], i)
 	off += 8
 	return off, nil
-}
-
-type formatValue struct {
-	format string
-	value  interface{}
-}
-
-func fv(format string, value interface{}) formatValue {
-	return formatValue{
-		format: format,
-		value:  value,
-	}
-}
-
-func formatValuesTable(formatValues []formatValue) string {
-	var format string
-	var values []interface{}
-	for k, v := range formatValues {
-		if k == 0 {
-			format += v.format
-		} else {
-			format += " | " + v.format
-		}
-		values = append(values, v.value)
-	}
-	return fmt.Sprintf(format, values...)
 }
 
 // 8421 BCD

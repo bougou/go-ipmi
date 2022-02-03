@@ -100,7 +100,7 @@ func NewCmdSELElist() *cobra.Command {
 		Use:   "elist",
 		Short: "elist",
 		Run: func(cmd *cobra.Command, args []string) {
-			sdrMap, err := client.GetSDRsMap(0)
+			sdrsMap, err := client.GetSDRsMap()
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSDRsMap failed, err: %s", err))
 			}
@@ -110,7 +110,7 @@ func NewCmdSELElist() *cobra.Command {
 				CheckErr(fmt.Errorf("GetSELInfo failed, err: %s", err))
 			}
 
-			fmt.Println(ipmi.FormatSELs(selEntries, sdrMap))
+			fmt.Println(ipmi.FormatSELs(selEntries, sdrsMap))
 		},
 	}
 	return cmd

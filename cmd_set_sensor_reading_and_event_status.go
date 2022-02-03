@@ -11,63 +11,7 @@ type SetSensorReadingAndEventStatusRequest struct {
 
 	SensorReading uint8
 
-	AssertionEvent_UNC_GoHigh bool
-	AssertionEvent_UNC_GoLow  bool
-	AssertionEvent_LNR_GoHigh bool
-	AssertionEvent_LNR_GoLow  bool
-	AssertionEvent_LC_GoHigh  bool
-	AssertionEvent_LC_GoLow   bool
-	AssertionEvent_LNC_GoHigh bool
-	AssertionEvent_LNC_GoLow  bool
-	AssertionEventState7      bool
-	AssertionEventState6      bool
-	AssertionEventState5      bool
-	AssertionEventState4      bool
-	AssertionEventState3      bool
-	AssertionEventState2      bool
-	AssertionEventState1      bool
-	AssertionEventState0      bool
-
-	AssertionEvent_UNR_GoHigh bool
-	AssertionEvent_UNR_GoLow  bool
-	AssertionEvent_UC_GoHigh  bool
-	AssertionEvent_UC_GoLow   bool
-	AssertionEventState14     bool
-	AssertionEventState13     bool
-	AssertionEventState12     bool
-	AssertionEventState11     bool
-	AssertionEventState10     bool
-	AssertionEventState9      bool
-	AssertionEventState8      bool
-
-	DeassertionEvent_UNC_GoHigh bool
-	DeassertionEvent_UNC_GoLow  bool
-	DeassertionEvent_LNR_GoHigh bool
-	DeassertionEvent_LNR_GoLow  bool
-	DeassertionEvent_LC_GoHigh  bool
-	DeassertionEvent_LC_GoLow   bool
-	DeassertionEvent_LNC_GoHigh bool
-	DeassertionEvent_LNC_GoLow  bool
-	DeassertionEventState7      bool
-	DeassertionEventState6      bool
-	DeassertionEventState5      bool
-	DeassertionEventState4      bool
-	DeassertionEventState3      bool
-	DeassertionEventState2      bool
-	DeassertionEventState1      bool
-	DeassertionEventState0      bool
-
-	DeassertionEvent_UNR_GoHigh bool
-	DeassertionEvent_UNR_GoLow  bool
-	DeassertionEvent_UC_GoHigh  bool
-	DeassertionEvent_UC_GoLow   bool
-	DeassertionEventState14     bool
-	DeassertionEventState13     bool
-	DeassertionEventState12     bool
-	DeassertionEventState11     bool
-	DeassertionEventState10     bool
-	DeassertionEventState9      bool
-	DeassertionEventState8      bool
+	SensorEventMasks
 
 	EventData1 uint8
 	EventData2 uint8

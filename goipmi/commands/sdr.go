@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -55,22 +54,34 @@ func parseStringToInt64(s string) (int64, error) {
 }
 
 func NewCmdSDRGet() *cobra.Command {
+	usage := `sdr get <sensorNumber> or <sensorName>, sensorName should be quoted if contains space`
+
 	cmd := &cobra.Command{
 		Use:   "get",
 		Short: "get",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) < 1 {
-				CheckErr(errors.New("no Sensor ID supplied"))
+				CheckErr(fmt.Errorf("no Sensor ID or Sensor Name supplied, usage: %s", usage))
 			}
+
+			var sdr *ipmi.SDR
+			var err error
+
 			id, err := parseStringToInt64(args[0])
 			if err != nil {
-				CheckErr(fmt.Errorf("invalid Sensor ID passed, err: %s", err))
+				// suppose args is sensor name
+				sdr, err = client.GetSDRBySensorName(args[0])
+				if err != nil {
+					CheckErr(fmt.Errorf("GetSDRBySensorName failed, err: %s", err))
+				}
+			} else {
+				sensorID := uint8(id)
+				sdr, err = client.GetSDRBySensorID(sensorID)
+				if err != nil {
+					CheckErr(fmt.Errorf("GetSDRBySensorID failed, err: %s", err))
+				}
 			}
-			sensorID := uint8(id)
-			sdr, err := client.GetSDRBySensorID(sensorID)
-			if err != nil {
-				CheckErr(fmt.Errorf("GetSDR failed, err: %s", err))
-			}
+
 			client.Debug("SDR", sdr)
 			fmt.Println(sdr)
 		},
@@ -84,29 +95,36 @@ func NewCmdSDRList() *cobra.Command {
 		Use:   "list",
 		Short: "list",
 		Run: func(cmd *cobra.Command, args []string) {
-			var recordType ipmi.SDRRecordType = 0
+			recordTypes := []ipmi.SDRRecordType{}
+
+			// default only get Full and Compacat SDR
+			if len(args) == 0 {
+				recordTypes = append(recordTypes, ipmi.SDRRecordTypeFullSensor, ipmi.SDRRecordTypeCompactSensor)
+			}
+
 			if len(args) >= 1 {
 				switch args[0] {
 				case "all":
+					// no filter, recordTypes is empty.
 				case "full":
-					recordType = ipmi.SDRRecordTypeFullSensor
+					recordTypes = append(recordTypes, ipmi.SDRRecordTypeFullSensor)
 				case "compact":
-					recordType = ipmi.SDRRecordTypeCompactSensor
+					recordTypes = append(recordTypes, ipmi.SDRRecordTypeCompactSensor)
 				case "event":
-					recordType = ipmi.SDRRecordTypeEventOnly
+					recordTypes = append(recordTypes, ipmi.SDRRecordTypeEventOnly)
 				case "mcloc":
-					recordType = ipmi.SDRRecordTypeManagementControllerDeviceLocator
+					recordTypes = append(recordTypes, ipmi.SDRRecordTypeManagementControllerDeviceLocator)
 				case "fru":
-					recordType = ipmi.SDRRecordTypeFRUDeviceLocator
+					recordTypes = append(recordTypes, ipmi.SDRRecordTypeFRUDeviceLocator)
 				case "generic":
-					recordType = ipmi.SDRRecordTypeGenericLocator
+					recordTypes = append(recordTypes, ipmi.SDRRecordTypeGenericLocator)
 				default:
 					CheckErr(fmt.Errorf("unkown supported record type (%s)", args[0]))
 					return
 				}
 			}
 
-			sdrs, err := client.GetSDRs(recordType)
+			sdrs, err := client.GetSDRs(recordTypes...)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSDRs failed, err: %s", err))
 			}

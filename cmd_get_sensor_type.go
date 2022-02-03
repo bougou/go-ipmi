@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-// GetSensorTypeRequest (31.2) command returns the number of entries in the SEL.
+// GetSensorTypeRequest (31.2)
 type GetSensorTypeRequest struct {
 	SensorNumber uint8
 }
@@ -43,12 +43,14 @@ func (res *GetSensorTypeResponse) Format() string {
 	return fmt.Sprintf(`Sensor Type                 : %s
 Event/Reading Type          : %#02x (%s)`,
 		res.SensorType,
-		res.EventReadingType, res.EventReadingType,
+		uint8(res.EventReadingType), res.EventReadingType,
 	)
 }
 
-func (c *Client) GetSensorType() (response *GetSensorTypeResponse, err error) {
-	request := &GetSensorTypeRequest{}
+func (c *Client) GetSensorType(sensorNumber uint8) (response *GetSensorTypeResponse, err error) {
+	request := &GetSensorTypeRequest{
+		SensorNumber: sensorNumber,
+	}
 	response = &GetSensorTypeResponse{}
 	err = c.Exchange(request, response)
 	return

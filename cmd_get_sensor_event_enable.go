@@ -1,71 +1,21 @@
 package ipmi
 
+import (
+	"fmt"
+	"strings"
+)
+
 // 35.11 Get Sensor Event Enable Command
 type GetSensorEventEnableRequest struct {
 	SensorNumber uint8
 }
 
+// For event , true means the event has enabled.
 type GetSensorEventEnableResponse struct {
-	AllEventMessagesDisabled bool
-	AllSensorScaningDisabled bool
+	EventMessagesDisabled bool
+	SensorScaningDisabled bool
 
-	AssertionEvent_UNC_GoHighEnabled bool
-	AssertionEvent_UNC_GoLowEnabled  bool
-	AssertionEvent_LNR_GoHighEnabled bool
-	AssertionEvent_LNR_GoLowEnabled  bool
-	AssertionEvent_LC_GoHighEnabled  bool
-	AssertionEvent_LC_GoLowEnabled   bool
-	AssertionEvent_LNC_GoHighEnabled bool
-	AssertionEvent_LNC_GoLowEnabled  bool
-	AssertionEventState7Enabled      bool
-	AssertionEventState6Enabled      bool
-	AssertionEventState5Enabled      bool
-	AssertionEventState4Enabled      bool
-	AssertionEventState3Enabled      bool
-	AssertionEventState2Enabled      bool
-	AssertionEventState1Enabled      bool
-	AssertionEventState0Enabled      bool
-
-	AssertionEvent_UNR_GoHighEnabled bool
-	AssertionEvent_UNR_GoLowEnabled  bool
-	AssertionEvent_UC_GoHighEnabled  bool
-	AssertionEvent_UC_GoLowEnabled   bool
-	AssertionEventState14Enabled     bool
-	AssertionEventState13Enabled     bool
-	AssertionEventState12Enabled     bool
-	AssertionEventState11Enabled     bool
-	AssertionEventState10Enabled     bool
-	AssertionEventState9Enabled      bool
-	AssertionEventState8Enabled      bool
-
-	DeassertionEvent_UNC_GoHighEnabled bool
-	DeassertionEvent_UNC_GoLowEnabled  bool
-	DeassertionEvent_LNR_GoHighEnabled bool
-	DeassertionEvent_LNR_GoLowEnabled  bool
-	DeassertionEvent_LC_GoHighEnabled  bool
-	DeassertionEvent_LC_GoLowEnabled   bool
-	DeassertionEvent_LNC_GoHighEnabled bool
-	DeassertionEvent_LNC_GoLowEnabled  bool
-	DeassertionEventState7Enabled      bool
-	DeassertionEventState6Enabled      bool
-	DeassertionEventState5Enabled      bool
-	DeassertionEventState4Enabled      bool
-	DeassertionEventState3Enabled      bool
-	DeassertionEventState2Enabled      bool
-	DeassertionEventState1Enabled      bool
-	DeassertionEventState0Enabled      bool
-
-	DeassertionEvent_UNR_GoHighEnabled bool
-	DeassertionEvent_UNR_GoLowEnabled  bool
-	DeassertionEvent_UC_GoHighEnabled  bool
-	DeassertionEvent_UC_GoLowEnabled   bool
-	DeassertionEventState14Enabled     bool
-	DeassertionEventState13Enabled     bool
-	DeassertionEventState12Enabled     bool
-	DeassertionEventState11Enabled     bool
-	DeassertionEventState10Enabled     bool
-	DeassertionEventState9Enabled      bool
-	DeassertionEventState8Enabled      bool
+	SensorEventMasks
 }
 
 func (req *GetSensorEventEnableRequest) Command() Command {
@@ -83,77 +33,77 @@ func (res *GetSensorEventEnableResponse) Unpack(msg []byte) error {
 		return ErrUnpackedDataTooShort
 	}
 	b1, _, _ := unpackUint8(msg, 0)
-	res.AllEventMessagesDisabled = !isBit7Set(b1)
-	res.AllSensorScaningDisabled = !isBit6Set(b1)
+	res.EventMessagesDisabled = !isBit7Set(b1)
+	res.SensorScaningDisabled = !isBit6Set(b1)
 
 	if len(msg) >= 2 {
 		b2, _, _ := unpackUint8(msg, 1)
-		res.AssertionEvent_UNC_GoHighEnabled = isBit7Set(b2)
-		res.AssertionEvent_UNC_GoLowEnabled = isBit6Set(b2)
-		res.AssertionEvent_LNR_GoHighEnabled = isBit5Set(b2)
-		res.AssertionEvent_LNR_GoLowEnabled = isBit4Set(b2)
-		res.AssertionEvent_LC_GoHighEnabled = isBit3Set(b2)
-		res.AssertionEvent_LC_GoLowEnabled = isBit2Set(b2)
-		res.AssertionEvent_LNC_GoHighEnabled = isBit1Set(b2)
-		res.AssertionEvent_LNC_GoLowEnabled = isBit0Set(b2)
-		res.AssertionEventState7Enabled = isBit7Set(b2)
-		res.AssertionEventState6Enabled = isBit6Set(b2)
-		res.AssertionEventState5Enabled = isBit5Set(b2)
-		res.AssertionEventState4Enabled = isBit4Set(b2)
-		res.AssertionEventState3Enabled = isBit3Set(b2)
-		res.AssertionEventState2Enabled = isBit2Set(b2)
-		res.AssertionEventState1Enabled = isBit1Set(b2)
-		res.AssertionEventState0Enabled = isBit0Set(b2)
+		res.SensorEvent_UNC_High_Assert = isBit7Set(b2)
+		res.SensorEvent_UNC_Low_Assert = isBit6Set(b2)
+		res.SensorEvent_LNR_High_Assert = isBit5Set(b2)
+		res.SensorEvent_LNR_Low_Assert = isBit4Set(b2)
+		res.SensorEvent_LCR_High_Assert = isBit3Set(b2)
+		res.SensorEvent_LCR_Low_Assert = isBit2Set(b2)
+		res.SensorEvent_LNC_High_Assert = isBit1Set(b2)
+		res.SensorEvent_LNC_Low_Assert = isBit0Set(b2)
+		res.SensorEvent_State_7_Assert = isBit7Set(b2)
+		res.SensorEvent_State_6_Assert = isBit6Set(b2)
+		res.SensorEvent_State_5_Assert = isBit5Set(b2)
+		res.SensorEvent_State_4_Assert = isBit4Set(b2)
+		res.SensorEvent_State_3_Assert = isBit3Set(b2)
+		res.SensorEvent_State_2_Assert = isBit2Set(b2)
+		res.SensorEvent_State_1_Assert = isBit1Set(b2)
+		res.SensorEvent_State_0_Assert = isBit0Set(b2)
 	}
 
 	if len(msg) >= 3 {
 		b3, _, _ := unpackUint8(msg, 2)
-		res.AssertionEvent_UNR_GoHighEnabled = isBit3Set(b3)
-		res.AssertionEvent_UNR_GoLowEnabled = isBit2Set(b3)
-		res.AssertionEvent_UC_GoHighEnabled = isBit1Set(b3)
-		res.AssertionEvent_UC_GoLowEnabled = isBit0Set(b3)
-		res.AssertionEventState14Enabled = isBit6Set(b3)
-		res.AssertionEventState13Enabled = isBit5Set(b3)
-		res.AssertionEventState12Enabled = isBit4Set(b3)
-		res.AssertionEventState11Enabled = isBit3Set(b3)
-		res.AssertionEventState10Enabled = isBit2Set(b3)
-		res.AssertionEventState9Enabled = isBit1Set(b3)
-		res.AssertionEventState8Enabled = isBit0Set(b3)
+		res.SensorEvent_UNR_High_Assert = isBit3Set(b3)
+		res.SensorEvent_UNR_Low_Assert = isBit2Set(b3)
+		res.SensorEvent_UCR_High_Assert = isBit1Set(b3)
+		res.SensorEvent_UCR_Low_Assert = isBit0Set(b3)
+		res.SensorEvent_State_14_Assert = isBit6Set(b3)
+		res.SensorEvent_State_13_Assert = isBit5Set(b3)
+		res.SensorEvent_State_12_Assert = isBit4Set(b3)
+		res.SensorEvent_State_11_Assert = isBit3Set(b3)
+		res.SensorEvent_State_10_Assert = isBit2Set(b3)
+		res.SensorEvent_State_9_Assert = isBit1Set(b3)
+		res.SensorEvent_State_8_Assert = isBit0Set(b3)
 	}
 
 	if len(msg) >= 4 {
 		b4, _, _ := unpackUint8(msg, 3)
-		res.DeassertionEvent_UNC_GoHighEnabled = isBit7Set(b4)
-		res.DeassertionEvent_UNC_GoLowEnabled = isBit6Set(b4)
-		res.DeassertionEvent_LNR_GoHighEnabled = isBit5Set(b4)
-		res.DeassertionEvent_LNR_GoLowEnabled = isBit4Set(b4)
-		res.DeassertionEvent_LC_GoHighEnabled = isBit3Set(b4)
-		res.DeassertionEvent_LC_GoLowEnabled = isBit2Set(b4)
-		res.DeassertionEvent_LNC_GoHighEnabled = isBit1Set(b4)
-		res.DeassertionEvent_LNC_GoLowEnabled = isBit0Set(b4)
-		res.DeassertionEventState7Enabled = isBit7Set(b4)
-		res.DeassertionEventState6Enabled = isBit6Set(b4)
-		res.DeassertionEventState5Enabled = isBit5Set(b4)
-		res.DeassertionEventState4Enabled = isBit4Set(b4)
-		res.DeassertionEventState3Enabled = isBit3Set(b4)
-		res.DeassertionEventState2Enabled = isBit2Set(b4)
-		res.DeassertionEventState1Enabled = isBit1Set(b4)
-		res.DeassertionEventState0Enabled = isBit0Set(b4)
+		res.SensorEvent_UNC_High_Deassert = isBit7Set(b4)
+		res.SensorEvent_UNC_Low_Deassert = isBit6Set(b4)
+		res.SensorEvent_LNR_High_Deassert = isBit5Set(b4)
+		res.SensorEvent_LNR_Low_Deassert = isBit4Set(b4)
+		res.SensorEvent_LCR_High_Deassert = isBit3Set(b4)
+		res.SensorEvent_LCR_Low_Deassert = isBit2Set(b4)
+		res.SensorEvent_LNC_High_Deassert = isBit1Set(b4)
+		res.SensorEvent_LNC_Low_Deassert = isBit0Set(b4)
+		res.SensorEvent_State_7_Deassert = isBit7Set(b4)
+		res.SensorEvent_State_6_Deassert = isBit6Set(b4)
+		res.SensorEvent_State_5_Deassert = isBit5Set(b4)
+		res.SensorEvent_State_4_Deassert = isBit4Set(b4)
+		res.SensorEvent_State_3_Deassert = isBit3Set(b4)
+		res.SensorEvent_State_2_Deassert = isBit2Set(b4)
+		res.SensorEvent_State_1_Deassert = isBit1Set(b4)
+		res.SensorEvent_State_0_Deassert = isBit0Set(b4)
 	}
 
 	if len(msg) >= 5 {
 		b5, _, _ := unpackUint8(msg, 4)
-		res.DeassertionEvent_UNR_GoHighEnabled = isBit3Set(b5)
-		res.DeassertionEvent_UNR_GoLowEnabled = isBit2Set(b5)
-		res.DeassertionEvent_UC_GoHighEnabled = isBit1Set(b5)
-		res.DeassertionEvent_UC_GoLowEnabled = isBit0Set(b5)
-		res.DeassertionEventState14Enabled = isBit6Set(b5)
-		res.DeassertionEventState13Enabled = isBit5Set(b5)
-		res.DeassertionEventState12Enabled = isBit4Set(b5)
-		res.DeassertionEventState11Enabled = isBit3Set(b5)
-		res.DeassertionEventState10Enabled = isBit2Set(b5)
-		res.DeassertionEventState9Enabled = isBit1Set(b5)
-		res.DeassertionEventState8Enabled = isBit0Set(b5)
+		res.SensorEvent_UNR_High_Deassert = isBit3Set(b5)
+		res.SensorEvent_UNR_Low_Deassert = isBit2Set(b5)
+		res.SensorEvent_UCR_High_Deassert = isBit1Set(b5)
+		res.SensorEvent_UCR_Low_Deassert = isBit0Set(b5)
+		res.SensorEvent_State_14_Deassert = isBit6Set(b5)
+		res.SensorEvent_State_13_Deassert = isBit5Set(b5)
+		res.SensorEvent_State_12_Deassert = isBit4Set(b5)
+		res.SensorEvent_State_11_Deassert = isBit3Set(b5)
+		res.SensorEvent_State_10_Deassert = isBit2Set(b5)
+		res.SensorEvent_State_9_Deassert = isBit1Set(b5)
+		res.SensorEvent_State_8_Deassert = isBit0Set(b5)
 	}
 
 	return nil
@@ -164,7 +114,29 @@ func (r *GetSensorEventEnableResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetSensorEventEnableResponse) Format() string {
-	return ""
+	all := res.SensorEventMasks.TrueEvents()
+	asserted := SensorEvents(all).FilterAssert()
+	deasserted := SensorEvents(all).FilterDeassert()
+
+	var assertedStr = []string{""}
+	var deassertedStr = []string{""}
+	for _, v := range asserted {
+		assertedStr = append(assertedStr, v.String())
+	}
+	for _, v := range deasserted {
+		deassertedStr = append(deassertedStr, v.String())
+	}
+
+	return fmt.Sprintf(`Event Messages Disabled   : %v
+Sensor Scanning Disabled  : %v
+Enabled Assert Event      : %s
+Enabled Desassert Event   : %s`,
+
+		res.EventMessagesDisabled,
+		res.SensorScaningDisabled,
+		strings.Join(assertedStr, "\n  - "),
+		strings.Join(deassertedStr, "\n - "),
+	)
 }
 
 func (c *Client) GetSensorEventEnable(sensorNumber uint8) (response *GetSensorEventEnableResponse, err error) {

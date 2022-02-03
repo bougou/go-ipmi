@@ -17,6 +17,70 @@ import "fmt"
 type EntityID uint8
 
 func (e EntityID) String() string {
+	// 43.14 Entity IDs
+	var entityIDMap = map[EntityID]string{
+		0x00: "unspecified",
+		0x01: "other",
+		0x02: "unspecified",
+		0x03: "processor",
+		0x04: "disk or disk bay", // 磁盘托架
+		0x05: "peripheral bay",   // 外围托架
+		0x06: "system management module",
+		0x07: "system board",
+		0x08: "memory module",
+		0x09: "processor module",
+		0x0a: "power supply",                    // DMI refers to this as a 'power unit', but it's used to represent a power supply
+		0x0b: "add-in card",                     // 附加卡
+		0x0c: "front panel board",               // 前面板
+		0x0d: "back panel board",                // 背板
+		0x0e: "power system board",              // 电源系统板
+		0x0f: "drive backplane",                 // 驱动器背板
+		0x10: "system internal expansion board", //
+		0x11: "other system board",
+		0x12: "processor board",
+		0x13: "power unit / power domain",
+		0x14: "power module / DC-to-DC converter",
+		0x15: "power management / power distribution board",
+		0x16: "chassis back panel board", // 机箱后面板
+		0x17: "system chassis",           //
+		0x18: "sub-chassis",
+		0x19: "other chassis board",
+		0x1a: "Disk Drive bay",
+		0x1b: "Peripheral bay",
+		0x1c: "Device bay",
+		0x1d: "fan / cooling device",
+		0x1e: "cooling unit / cooling domain",
+		0x1f: "cable / interconnect",
+		0x20: "memory device",
+		0x21: "System Management Softeware",
+		0x22: "System Firmware", // eg BIOS/EFI
+		0x23: "Operating System",
+		0x24: "system bus",
+		0x25: "Group",
+		0x26: "Remote (Out of Band) Management Communication Device",
+		0x27: "External Environment",
+		0x28: "battery",
+		0x29: "Processing blade",
+		0x2a: "Connectivity switch",
+		0x2b: "Processor/memory module",
+		0x2c: "I/O module",
+		0x2d: "Processor / IO module",
+		0x2e: "Management Controller Firmware",
+		0x2f: "IPMI Channel",
+		0x30: "PCI Bus",
+		0x31: "PCI Express Bus",
+		0x32: "SCSI Bus (parallel)",
+		0x33: "SATA / SAS bus",
+		0x34: "Processor / front-side bus",
+		0x35: "Real Time Clock (RTC)",
+		0x36: "System Firmware", // reserved. This value was previously a duplicate of 22h (System Firmware).
+		0x37: "air inlet",
+		0x38: "System Firmware", // reserved. This value was previously a duplicate of 22h (System Firmware).
+		0x40: "air inlet",       // This Entity ID value is equivalent to Entity ID 37h. It is provided for interoperability with the DCMI 1.0 specifications.
+		0x41: "processor",       // This Entity ID value is equivalent to Entity ID 03h (processor). It is provided for interoperability with the DCMI 1.0 specifications.
+		0x42: "system board",    // This Entity ID value is equivalent to Entity ID 07h (system board). It is provided for interoperability with the DCMI 1.0 specifications.
+	}
+
 	out, ok := entityIDMap[e]
 	if ok {
 		return out
@@ -38,77 +102,15 @@ func (e EntityID) String() string {
 	return fmt.Sprintf("reserved (#%#02x)", uint8(e))
 }
 
-// section 43.14
-var entityIDMap = map[EntityID]string{
-	0x00: "unspecified",
-	0x01: "other",
-	0x02: "unspecified",
-	0x03: "processor",
-	0x04: "disk or disk bay", // 磁盘托架
-	0x05: "peripheral bay",   // 外围托架
-	0x06: "system management module",
-	0x07: "system board",
-	0x08: "memory module",
-	0x09: "processor module",
-	0x0a: "power supply",                    // DMI refers to this as a 'power unit', but it's used to represent a power supply
-	0x0b: "add-in card",                     // 附加卡
-	0x0c: "front panel board",               // 前面板
-	0x0d: "back panel board",                // 背板
-	0x0e: "power system board",              // 电源系统板
-	0x0f: "drive backplane",                 // 驱动器背板
-	0x10: "system internal expansion board", //
-	0x11: "other system board",
-	0x12: "processor board",
-	0x13: "power unit / power domain",
-	0x14: "power module / DC-to-DC converter",
-	0x15: "power management / power distribution board",
-	0x16: "chassis back panel board", // 机箱后面板
-	0x17: "system chassis",           //
-	0x18: "sub-chassis",
-	0x19: "other chassis board",
-	0x1a: "Disk Drive bay",
-	0x1b: "Peripheral bay",
-	0x1c: "Device bay",
-	0x1d: "fan / cooling device",
-	0x1e: "cooling unit / cooling domain",
-	0x1f: "cable / interconnect",
-	0x20: "memory device",
-	0x21: "System Management Softeware",
-	0x22: "System Firmware", // eg BIOS/EFI
-	0x23: "Operating System",
-	0x24: "system bus",
-	0x25: "Group",
-	0x26: "Remote (Out of Band) Management Communication Device",
-	0x27: "External Environment",
-	0x28: "battery",
-	0x29: "Processing blade",
-	0x2a: "Connectivity switch",
-	0x2b: "Processor/memory module",
-	0x2c: "I/O module",
-	0x2d: "Processor / IO module",
-	0x2e: "Management Controller Firmware",
-	0x2f: "IPMI Channel",
-	0x30: "PCI Bus",
-	0x31: "PCI Express Bus",
-	0x32: "SCSI Bus (parallel)",
-	0x33: "SATA / SAS bus",
-	0x34: "Processor / front-side bus",
-	0x35: "Real Time Clock (RTC)",
-	0x36: "System Firmware", // reserved. This value was previously a duplicate of 22h (System Firmware).
-	0x37: "air inlet",
-	0x38: "System Firmware", // reserved. This value was previously a duplicate of 22h (System Firmware).
-	0x40: "air inlet",       // This Entity ID value is equivalent to Entity ID 37h. It is provided for interoperability with the DCMI 1.0 specifications.
-	0x41: "processor",       // This Entity ID value is equivalent to Entity ID 03h (processor). It is provided for interoperability with the DCMI 1.0 specifications.
-	0x42: "system board",    // This Entity ID value is equivalent to Entity ID 07h (system board). It is provided for interoperability with the DCMI 1.0 specifications.
-}
-
 // see: 39.1 System- and Device-relative Entity Instance Values
 //
 // Entity Instance values in the system-relative range are required to be unique for all entities with the same Entity ID in the system.
 //
 // Device-relative Entity Instance values are only required to be unique among all entities that have the same Entity ID within a given device (management controller).
 //
-// For example, management controller A and B could both have FAN entities that have and Entity Instance value of 60h.
+// For example, management controller A and B could both have FAN entities that have an Entity Instance value of 60h.
+//
+// EntityInstance only occupy 7 bits, range is 0x00 ~ 0x7f
 type EntityInstance uint8
 
 // 39.1 System- and Device-relative Entity Instance Values
@@ -130,12 +132,12 @@ func (e EntityInstance) Type() string {
 	return "'"
 }
 
-func canonicalEntiryString(entityID EntityID, entityInstance EntityInstance) string {
+func canonicalEntityString(entityID EntityID, entityInstance EntityInstance) string {
 	if isEntityInstanceSystemRelative(entityInstance) {
-		return fmt.Sprintf("System, %s %d", entityID.String(), entityInstance)
+		return fmt.Sprintf("System, %s, %d", entityID.String(), entityInstance)
 	}
 	if isEntityInstanceDeviceRelative(entityInstance) {
-		return fmt.Sprintf("Controller 1, %s %d", entityID.String(), entityInstance)
+		return fmt.Sprintf("Controller 1, %s, %d", entityID.String(), entityInstance)
 	}
 	return "Unkown"
 }

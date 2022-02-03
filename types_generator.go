@@ -1,8 +1,5 @@
 package ipmi
 
-// see: Intel System Event Log (SEL) Troubleshooting Guide Rev 3.4 September 2019 section 3.1
-type SensorNumber uint8
-
 // 5.4 Sensor Owner Identification
 // the "owner" of the sensor.
 // The combination of Sensor Owner ID and Sensor Number uniquely identify a sensor in the system.
@@ -88,3 +85,10 @@ const (
 	// The **Open IPMI driver** supports the ability to put semi-custom and custom events in the system event log if a panic occurs.
 	GeneratorLinuxKernelPanic GeneratorID = 0x0021
 )
+
+// see: Intel System Event Log (SEL) Troubleshooting Guide Rev 3.4 September 2019 section 3.1
+type SensorNumber uint8
+
+const SensorNumberReserved = 0xff
+
+type SDRMapBySensorNumber map[GeneratorID]map[SensorNumber]*SDR

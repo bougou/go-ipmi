@@ -1,5 +1,7 @@
 package ipmi
 
+import "fmt"
+
 // 35.3 Get Device SDR Command
 type GetDeviceSDRRequest struct {
 	ReservationID uint16
@@ -9,8 +11,8 @@ type GetDeviceSDRRequest struct {
 }
 
 type GetDeviceSDRResponse struct {
-	NexRecordID uint16
-	Data        []byte
+	NextRecordID uint16
+	RecordData   []byte
 }
 
 func (req *GetDeviceSDRRequest) Command() Command {
@@ -31,8 +33,8 @@ func (res *GetDeviceSDRResponse) Unpack(msg []byte) error {
 		return ErrUnpackedDataTooShort
 	}
 
-	res.NexRecordID, _, _ = unpackUint16L(msg, 0)
-	res.Data, _, _ = unpackBytes(msg, 2, len(msg)-2)
+	res.NextRecordID, _, _ = unpackUint16L(msg, 0)
+	res.RecordData, _, _ = unpackBytes(msg, 2, len(msg)-2)
 	return nil
 }
 
@@ -57,4 +59,66 @@ func (c *Client) GetDeviceSDR(recordID uint16) (response *GetDeviceSDRResponse, 
 	response = &GetDeviceSDRResponse{}
 	err = c.Exchange(request, response)
 	return
+}
+
+func (c *Client) GetDeviceSDRBySensorID(sensorNumber uint8) (*SDR, error) {
+	if SensorNumber(sensorNumber) == SensorNumberReserved {
+		return nil, fmt.Errorf("not valid sensorNumber, %#0x is reserved", sensorNumber)
+	}
+
+	var recordID uint16 = 0
+	for {
+		res, err := c.GetDeviceSDR(recordID)
+		if err != nil {
+			return nil, fmt.Errorf("GetDeviceSDR for recordID (%#0x) failed, err: %s", recordID, err)
+		}
+
+		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
+		if err != nil {
+			return nil, fmt.Errorf("ParseSDR for recordID (%#0x) failed, err: %s", recordID, err)
+		}
+		if uint8(sdr.SensorNumber()) == sensorNumber {
+			return sdr, nil
+		}
+
+		recordID = res.NextRecordID
+		if recordID == 0xffff {
+			break
+		}
+	}
+
+	return nil, fmt.Errorf("not found SDR for sensor id (%#0x)", sensorNumber)
+}
+
+func (c *Client) GetDeviceSDRs(recordTypes ...SDRRecordType) ([]*SDR, error) {
+	var out = make([]*SDR, 0)
+	var recordID uint16 = 0
+	for {
+		res, err := c.GetDeviceSDR(recordID)
+		if err != nil {
+			return nil, fmt.Errorf("GetDeviceSDR for recordID (%#0x) failed, err: %s", recordID, err)
+		}
+
+		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
+		if err != nil {
+			return nil, fmt.Errorf("ParseSDR for recordID (%#0x) failed, err: %s", recordID, err)
+		}
+
+		if len(recordTypes) == 0 {
+			out = append(out, sdr)
+		} else {
+			for _, v := range recordTypes {
+				if sdr.RecordHeader.RecordType == v {
+					out = append(out, sdr)
+					break
+				}
+			}
+		}
+
+		recordID = res.NextRecordID
+		if recordID == 0xffff {
+			break
+		}
+	}
+	return out, nil
 }

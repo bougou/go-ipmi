@@ -1,8 +1,10 @@
 package ipmi
 
 import (
+	"bytes"
 	"fmt"
-	"strings"
+
+	"github.com/olekukonko/tablewriter"
 )
 
 // 22.27 Get User Access Command
@@ -151,32 +153,33 @@ type User struct {
 }
 
 func FormatUsers(users []*User) string {
-	var lines []string
+	var buf = new(bytes.Buffer)
+	table := tablewriter.NewWriter(buf)
+	table.SetAutoWrapText(false)
 
-	headers := []formatValue{
-		fv("%-2s", "ID"),
-		fv("%-20s", "Name"),
-		fv("%-6s", "Callin"),
-		fv("%-9s", "Link Auth"),
-		fv("%-8s", "IPMI Msg"),
-		fv("%-18s", "Channel Priv Limit"),
+	headers := []string{
+		"ID",
+		"Name",
+		"Callin",
+		"Link Auth",
+		"IPMI Msg",
+		"Channel Priv Limit",
 	}
-
-	lines = append(lines, formatValuesTable(headers))
+	table.SetHeader(headers)
+	table.SetFooter(headers)
 
 	for _, user := range users {
-		content := []formatValue{
-			fv("%-2s", fmt.Sprintf("%d", user.ID)),
-			fv("%-20s", user.Name),
-			fv("%-6s", fmt.Sprintf("%v", user.Callin)),
-			fv("%-9s", fmt.Sprintf("%v", user.LinkAuthEnabled)),
-			fv("%-8s", fmt.Sprintf("%v", user.IPMIMessagingEnabled)),
-			fv("%-18s", user.MaxPrivLevel),
-		}
-		lines = append(lines, formatValuesTable(content))
+		table.Append([]string{
+			fmt.Sprintf("%d", user.ID),
+			user.Name,
+			fmt.Sprintf("%v", user.Callin),
+			fmt.Sprintf("%v", user.LinkAuthEnabled),
+			fmt.Sprintf("%v", user.IPMIMessagingEnabled),
+			user.MaxPrivLevel.String(),
+		})
 	}
 
-	lines = append(lines, formatValuesTable(headers))
+	table.Render()
 
-	return strings.Join(lines, "\n")
+	return buf.String()
 }

@@ -73,8 +73,8 @@ func (c *Client) GetSELEntry(reservationID uint16, recordID uint16) (response *G
 	return
 }
 
-// GetSELEntries return SEL records starting from the specified recordID.
-// Pass 0 means retrieve all SEL entries.
+// GetSELEntries return all SEL records starting from the specified recordID.
+// Pass 0 means retrieve all SEL entries starting from the first record.
 func (c *Client) GetSELEntries(startRecordID uint16) ([]*SEL, error) {
 	// Todo
 	// Notice, this extra GetSELInfo call is used to make sure the GetSELEntry works properly.

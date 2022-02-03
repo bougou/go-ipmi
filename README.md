@@ -55,8 +55,10 @@ but others are not. Like `ipmitool sdr list`, it's a loop of `GetSDR` IPMI comma
 
 So this library also implements some methods that are not IPMI commands defined
 in IPMI sepcification, but just some common helpers, like `GetSDRs` to get all SDRs.
+These methods are marked with an asterisk (*)` after the method name in the following docs.
 
-All IPMI commands implementation logic is almost same. See [Contributing](./CONTRIBUTING.md)
+The implementation logic of IPMI commands is almost same. See [Contributing](./CONTRIBUTING.md)
+
 > More commmands are ongoing ...
 
 ### IPM Device Global Commands
@@ -125,7 +127,7 @@ All IPMI commands implementation logic is almost same. See [Contributing](./CONT
 | EnableUser (*)                 | √      | user enable                  |
 | GetUsername                    | √      |
 | SetUserPassword                | √      | user set password            |
-| TestUserPassword(*)            | √      | user test                    |
+| TestUserPassword (*)           | √      | user test                    |
 | ActivatePayload                |        |
 | DeactivatePayload              |        |
 | GetPayloadActivationStatus     |        |
@@ -200,6 +202,9 @@ All IPMI commands implementation logic is almost same. See [Contributing](./CONT
 | SetSensorType                  | √      |
 | GetSensorType                  | √      |
 | SetSensorReadingAndEventStatus | √      |
+| GetSensors (*)                 | √      | sensor list                  |
+| GetSensorByID (*)              | √      |                              |
+| GetSensorByName (*)            | √      | sensor get                   |
 
 ### FRU Device Commands
 
@@ -217,8 +222,10 @@ All IPMI commands implementation logic is almost same. See [Contributing](./CONT
 | GetSDRRepoInfo         | √      | sdr info                     |
 | GetSDRRepoAllocInfo    | √      | sdr info                     |
 | ReserveSDRRepo         |        |
-| GetSDR                 | √      | sdr get                      |
-| GetSDRs (*)            | √      | sdr list/elist               |
+| GetSDR                 | √      |                              |
+| GetSDRs (*)            | √      |                              |
+| GetSDRBySensorID (*)   | √      |                              |
+| GetSDRBySensorName (*) | √      |
 | AddSDR                 |        |
 | PartialAddSDR          |        |
 | DeleteSDR              |        |
