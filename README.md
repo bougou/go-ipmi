@@ -246,7 +246,7 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | GetSELEntry         | √      |
 | AddSELEntry         | √      |
 | PartialAddSELEntry  |        |
-| DeleteSELEntry      |        |
+| DeleteSELEntry      | √      |
 | ClearSEL            | √      | sel clear                    |
 | GetSELTime          |        |
 | SetSELTime          |        |
