@@ -189,8 +189,8 @@ var (
 	CommandSetSELTime          = Command{ID: 0x49, NetFn: NetFnStorageRequest, Name: "Set SEL Time"}
 	CommandGetAuxLogStatus     = Command{ID: 0x5a, NetFn: NetFnStorageRequest, Name: "Get Auxiliary Log Status"}
 	CommandSetAuxLogStatus     = Command{ID: 0x5b, NetFn: NetFnStorageRequest, Name: "Set Auxiliary Log Status"}
-	CommandGetSELTimeUtcOffset = Command{ID: 0x5c, NetFn: NetFnStorageRequest, Name: "Get SEL Time UTC Offset"}
-	CommandSetSELTimeUtcOffset = Command{ID: 0x5d, NetFn: NetFnStorageRequest, Name: "Set SEL Time UTC Offset"}
+	CommandGetSELTimeUTCOffset = Command{ID: 0x5c, NetFn: NetFnStorageRequest, Name: "Get SEL Time UTC Offset"}
+	CommandSetSELTimeUTCOffset = Command{ID: 0x5d, NetFn: NetFnStorageRequest, Name: "Set SEL Time UTC Offset"}
 
 	// LAN Device Commands
 	CommandSetLanConfigParams = Command{ID: 0x01, NetFn: NetFnTransportRequest, Name: "Set LAN Configuration Parameters"}

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"math/rand"
 	"time"
 
@@ -141,6 +142,22 @@ func twosComplement(i uint32, bitSize uint8) int32 {
 	t := temp ^ 0xffff + 1
 	t = t << uint32(leftBitSize) >> uint32(leftBitSize)
 	return -int32(t)
+}
+
+func onesComplementEncode(i int32, bitSize uint8) uint32 {
+	if i >= 0 {
+		return uint32(i)
+	}
+	var total int32 = int32(math.Pow(2, float64(bitSize))) - 1
+	return uint32(total + i)
+}
+
+func twosComplementEncode(i int32, bitSize uint8) uint32 {
+	if i >= 0 {
+		return uint32(i)
+	}
+	var total int32 = int32(math.Pow(2, float64(bitSize)))
+	return uint32(total + i)
 }
 
 // The TCP/IP standard network byte order is big-endian.

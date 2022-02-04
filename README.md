@@ -252,8 +252,8 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | SetSELTime          |        |
 | GetAuxLogStatus     |        |
 | SetAuxLogStatus     |        |
-| GetSELTimeUtcOffset |        |
-| SetSELTimeUtcOffset |        |
+| GetSELTimeUTCOffset | √      |
+| SetSELTimeUTCOffset | √      |
 
 ### LAN Device Commands
 
