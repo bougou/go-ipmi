@@ -49,19 +49,37 @@ func NewCmdSensorDeviceSDRInfo() *cobra.Command {
 }
 
 func NewCmdSensorList() *cobra.Command {
+	var extended bool
+	var filterThreshold bool
+	var filterReadingValid bool
+
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "list",
 		Run: func(cmd *cobra.Command, args []string) {
 
-			sensors, err := client.GetSensors()
+			filterOptions := make([]ipmi.SensorFilterOption, 0)
+
+			if filterThreshold {
+				filterOptions = append(filterOptions, ipmi.SensorFilterOptionIsThreshold)
+			}
+
+			if filterReadingValid {
+				filterOptions = append(filterOptions, ipmi.SensorFilterOptionIsReadingValid)
+			}
+
+			sensors, err := client.GetSensors(filterOptions...)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSensors failed, err: %s", err))
 			}
 
-			fmt.Println(ipmi.FormatSensors(false, sensors...))
+			fmt.Println(ipmi.FormatSensors(extended, sensors...))
 		},
 	}
+
+	cmd.PersistentFlags().BoolVarP(&extended, "extended", "", false, "extended print")
+	cmd.PersistentFlags().BoolVarP(&filterThreshold, "threshold", "", false, "filter threshold sensor class")
+	cmd.PersistentFlags().BoolVarP(&filterReadingValid, "valid", "", false, "filter sensor that has valid reading")
 
 	return cmd
 }

@@ -2,8 +2,21 @@ package ipmi
 
 import "fmt"
 
-// GetSensors returns all sensors and their current readings and status.
-func (c *Client) GetSensors() ([]*Sensor, error) {
+type SensorFilterOption func(sensor *Sensor) bool
+
+func SensorFilterOptionIsThreshold(sensor *Sensor) bool {
+	return sensor.IsThreshold()
+}
+
+func SensorFilterOptionIsReadingValid(sensor *Sensor) bool {
+	return sensor.IsReadingValid()
+}
+
+// GetSensors returns all sensors with their current readings and status.
+// If there's no filter options, it returns all sensors.
+// If there exists filter options, it only returns the sensors those
+// passed ALL filter options (filter option function returns true)
+func (c *Client) GetSensors(filterOptions ...SensorFilterOption) ([]*Sensor, error) {
 	var out = make([]*Sensor, 0)
 
 	sdrs, err := c.GetSDRs(SDRRecordTypeFullSensor, SDRRecordTypeCompactSensor)
@@ -16,7 +29,18 @@ func (c *Client) GetSensors() ([]*Sensor, error) {
 		if err != nil {
 			return nil, fmt.Errorf("GetSensorFromSDR failed, err: %s", err)
 		}
-		out = append(out, sensor)
+
+		var choose bool = true
+		for _, filterOption := range filterOptions {
+			if !filterOption(sensor) {
+				choose = false
+				break
+			}
+		}
+
+		if choose {
+			out = append(out, sensor)
+		}
 	}
 
 	return out, nil
@@ -113,7 +137,7 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 		sensor.Raw = readingRes.AnalogReading
 		sensor.Value = ConvertReading(readingRes.AnalogReading, sensor.SensorUnit.AnalogDataFormat, sensor.Threshold.ReadingFactors, sensor.Threshold.LinearizationFunc)
 
-		sensor.scanningDisabled = readingRes.SensorScaningDisabled
+		sensor.scanningDisabled = readingRes.SensorScanningDisabled
 		sensor.readingUnavailable = readingRes.ReadingUnavailable
 		sensor.Threshold.ThresholdStatus = readingRes.ThresholdStatus()
 
@@ -126,10 +150,6 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 		// Sensor scanning disabled, no need to continue
 		c.Debug(fmt.Sprintf(":( Sensor [%s](%#02x) scanning disabled\n", sensor.Name, sensor.Number), "")
 		return sensor, nil
-	}
-
-	if !sensor.readingUnavailable {
-		sensor.ReadingValid = true
 	}
 
 	if !sensor.EventReadingType.IsThreshold() || !sensor.SensorUnit.IsAnalog() {

@@ -1207,168 +1207,169 @@ type SensorEventFlag struct {
 	SensorEvent_State_8_Deassert  bool
 }
 
-func (sensorEventMasks *SensorEventFlag) TrueEvents() []SensorEvent {
+// TrueEvents returns a slice of SensorEvent those are set to true in the SensorEventFlag.
+func (flag *SensorEventFlag) TrueEvents() []SensorEvent {
 	out := make([]SensorEvent, 0)
-	if sensorEventMasks.SensorEvent_UNC_High_Assert {
+	if flag.SensorEvent_UNC_High_Assert {
 		out = append(out, SensorEvent_UNC_High_Assert)
 	}
-	if sensorEventMasks.SensorEvent_UNC_Low_Assert {
+	if flag.SensorEvent_UNC_Low_Assert {
 		out = append(out, SensorEvent_UNC_Low_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_LNR_High_Assert {
+	if flag.SensorEvent_LNR_High_Assert {
 		out = append(out, SensorEvent_LNR_High_Assert)
 	}
-	if sensorEventMasks.SensorEvent_LNR_Low_Assert {
+	if flag.SensorEvent_LNR_Low_Assert {
 		out = append(out, SensorEvent_LNR_Low_Assert)
 	}
-	if sensorEventMasks.SensorEvent_LCR_High_Assert {
+	if flag.SensorEvent_LCR_High_Assert {
 		out = append(out, SensorEvent_LCR_High_Assert)
 	}
-	if sensorEventMasks.SensorEvent_LCR_Low_Assert {
+	if flag.SensorEvent_LCR_Low_Assert {
 		out = append(out, SensorEvent_LCR_Low_Assert)
 	}
-	if sensorEventMasks.SensorEvent_LNC_High_Assert {
+	if flag.SensorEvent_LNC_High_Assert {
 		out = append(out, SensorEvent_LNC_High_Assert)
 	}
-	if sensorEventMasks.SensorEvent_LNC_Low_Assert {
+	if flag.SensorEvent_LNC_Low_Assert {
 		out = append(out, SensorEvent_LNC_Low_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_7_Assert {
+	if flag.SensorEvent_State_7_Assert {
 		out = append(out, SensorEvent_State_7_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_6_Assert {
+	if flag.SensorEvent_State_6_Assert {
 		out = append(out, SensorEvent_State_6_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_5_Assert {
+	if flag.SensorEvent_State_5_Assert {
 		out = append(out, SensorEvent_State_5_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_4_Assert {
+	if flag.SensorEvent_State_4_Assert {
 		out = append(out, SensorEvent_State_4_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_3_Assert {
+	if flag.SensorEvent_State_3_Assert {
 		out = append(out, SensorEvent_State_3_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_2_Assert {
+	if flag.SensorEvent_State_2_Assert {
 		out = append(out, SensorEvent_State_2_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_1_Assert {
+	if flag.SensorEvent_State_1_Assert {
 		out = append(out, SensorEvent_State_1_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_0_Assert {
+	if flag.SensorEvent_State_0_Assert {
 		out = append(out, SensorEvent_State_0_Assert)
 	}
-	if sensorEventMasks.SensorEvent_UNR_High_Assert {
+	if flag.SensorEvent_UNR_High_Assert {
 		out = append(out, SensorEvent_UNR_High_Assert)
 	}
-	if sensorEventMasks.SensorEvent_UNR_Low_Assert {
+	if flag.SensorEvent_UNR_Low_Assert {
 		out = append(out, SensorEvent_UNR_Low_Assert)
 	}
-	if sensorEventMasks.SensorEvent_UCR_High_Assert {
+	if flag.SensorEvent_UCR_High_Assert {
 		out = append(out, SensorEvent_UCR_High_Assert)
 	}
-	if sensorEventMasks.SensorEvent_UCR_Low_Assert {
+	if flag.SensorEvent_UCR_Low_Assert {
 		out = append(out, SensorEvent_UCR_Low_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_14_Assert {
+	if flag.SensorEvent_State_14_Assert {
 		out = append(out, SensorEvent_State_14_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_13_Assert {
+	if flag.SensorEvent_State_13_Assert {
 		out = append(out, SensorEvent_State_13_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_12_Assert {
+	if flag.SensorEvent_State_12_Assert {
 		out = append(out, SensorEvent_State_12_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_11_Assert {
+	if flag.SensorEvent_State_11_Assert {
 		out = append(out, SensorEvent_State_11_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_10_Assert {
+	if flag.SensorEvent_State_10_Assert {
 		out = append(out, SensorEvent_State_10_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_9_Assert {
+	if flag.SensorEvent_State_9_Assert {
 		out = append(out, SensorEvent_State_9_Assert)
 	}
-	if sensorEventMasks.SensorEvent_State_8_Assert {
+	if flag.SensorEvent_State_8_Assert {
 		out = append(out, SensorEvent_State_8_Assert)
 	}
-	if sensorEventMasks.SensorEvent_UNC_High_Deassert {
+	if flag.SensorEvent_UNC_High_Deassert {
 		out = append(out, SensorEvent_UNC_High_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_UNC_Low_Deassert {
+	if flag.SensorEvent_UNC_Low_Deassert {
 		out = append(out, SensorEvent_UNC_Low_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_LNR_High_Deassert {
+	if flag.SensorEvent_LNR_High_Deassert {
 		out = append(out, SensorEvent_LNR_High_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_LNR_Low_Deassert {
+	if flag.SensorEvent_LNR_Low_Deassert {
 		out = append(out, SensorEvent_LNR_Low_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_LCR_High_Deassert {
+	if flag.SensorEvent_LCR_High_Deassert {
 		out = append(out, SensorEvent_LCR_High_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_LCR_Low_Deassert {
+	if flag.SensorEvent_LCR_Low_Deassert {
 		out = append(out, SensorEvent_LCR_Low_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_LNC_High_Deassert {
+	if flag.SensorEvent_LNC_High_Deassert {
 		out = append(out, SensorEvent_LNC_High_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_LNC_Low_Deassert {
+	if flag.SensorEvent_LNC_Low_Deassert {
 		out = append(out, SensorEvent_LNC_Low_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_7_Deassert {
+	if flag.SensorEvent_State_7_Deassert {
 		out = append(out, SensorEvent_State_7_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_6_Deassert {
+	if flag.SensorEvent_State_6_Deassert {
 		out = append(out, SensorEvent_State_6_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_5_Deassert {
+	if flag.SensorEvent_State_5_Deassert {
 		out = append(out, SensorEvent_State_5_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_4_Deassert {
+	if flag.SensorEvent_State_4_Deassert {
 		out = append(out, SensorEvent_State_4_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_3_Deassert {
+	if flag.SensorEvent_State_3_Deassert {
 		out = append(out, SensorEvent_State_3_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_2_Deassert {
+	if flag.SensorEvent_State_2_Deassert {
 		out = append(out, SensorEvent_State_2_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_1_Deassert {
+	if flag.SensorEvent_State_1_Deassert {
 		out = append(out, SensorEvent_State_1_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_0_Deassert {
+	if flag.SensorEvent_State_0_Deassert {
 		out = append(out, SensorEvent_State_0_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_UNR_High_Deassert {
+	if flag.SensorEvent_UNR_High_Deassert {
 		out = append(out, SensorEvent_UNR_High_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_UNR_Low_Deassert {
+	if flag.SensorEvent_UNR_Low_Deassert {
 		out = append(out, SensorEvent_UNR_Low_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_UCR_High_Deassert {
+	if flag.SensorEvent_UCR_High_Deassert {
 		out = append(out, SensorEvent_UCR_High_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_UCR_Low_Deassert {
+	if flag.SensorEvent_UCR_Low_Deassert {
 		out = append(out, SensorEvent_UCR_Low_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_14_Deassert {
+	if flag.SensorEvent_State_14_Deassert {
 		out = append(out, SensorEvent_State_14_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_13_Deassert {
+	if flag.SensorEvent_State_13_Deassert {
 		out = append(out, SensorEvent_State_13_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_12_Deassert {
+	if flag.SensorEvent_State_12_Deassert {
 		out = append(out, SensorEvent_State_12_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_11_Deassert {
+	if flag.SensorEvent_State_11_Deassert {
 		out = append(out, SensorEvent_State_11_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_10_Deassert {
+	if flag.SensorEvent_State_10_Deassert {
 		out = append(out, SensorEvent_State_10_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_9_Deassert {
+	if flag.SensorEvent_State_9_Deassert {
 		out = append(out, SensorEvent_State_9_Deassert)
 	}
-	if sensorEventMasks.SensorEvent_State_8_Deassert {
+	if flag.SensorEvent_State_8_Deassert {
 		out = append(out, SensorEvent_State_8_Deassert)
 	}
 	return out

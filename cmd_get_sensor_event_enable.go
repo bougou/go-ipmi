@@ -12,8 +12,8 @@ type GetSensorEventEnableRequest struct {
 
 // For event , true means the event has enabled.
 type GetSensorEventEnableResponse struct {
-	EventMessagesDisabled bool
-	SensorScaningDisabled bool
+	EventMessagesDisabled  bool
+	SensorScanningDisabled bool
 
 	SensorEventFlag
 }
@@ -34,7 +34,7 @@ func (res *GetSensorEventEnableResponse) Unpack(msg []byte) error {
 	}
 	b1, _, _ := unpackUint8(msg, 0)
 	res.EventMessagesDisabled = !isBit7Set(b1)
-	res.SensorScaningDisabled = !isBit6Set(b1)
+	res.SensorScanningDisabled = !isBit6Set(b1)
 
 	if len(msg) >= 2 {
 		b2, _, _ := unpackUint8(msg, 1)
@@ -133,7 +133,7 @@ Enabled Assert Event      : %s
 Enabled Desassert Event   : %s`,
 
 		res.EventMessagesDisabled,
-		res.SensorScaningDisabled,
+		res.SensorScanningDisabled,
 		strings.Join(assertedStr, "\n  - "),
 		strings.Join(deassertedStr, "\n - "),
 	)

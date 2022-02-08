@@ -18,7 +18,7 @@ import (
 type SensorClass string
 
 const (
-	SensorClassNotApplicable SensorClass = "n/a" // 不适用的
+	SensorClassNotApplicable SensorClass = "N/A" // 不适用的
 
 	SensorClassThreshold SensorClass = "threshold"
 
@@ -863,17 +863,9 @@ type Sensor struct {
 	SensorInitialization SensorInitialization
 	SensorCapabilitites  SensorCapabilitites
 
-	// To interpret all other values of Sensor, you must firstly determine wether Reading is valid or not.
-	// If ReadingValid is fase, it normally means the sensor device does not exist.
-	//
-	// Init to false
-	// If GetSensorReading command succeeds, update this field according to GetSensorReadingResponse
-	// If GetSensorReadingFactors failed, forcely set ReadingValid to false, even Reading is available.
-	ReadingValid       bool
 	scanningDisabled   bool // update by GetSensorReading
 	readingUnavailable bool // update by GetSensorReading
-
-	HasAnalogReading bool
+	HasAnalogReading   bool
 
 	// Raw reading value before conversion
 	Raw uint8
@@ -920,6 +912,7 @@ type Sensor struct {
 		optionalData1 uint8
 		optionalData2 uint8
 	}
+
 	OccuredEvents []SensorEvent
 }
 
@@ -943,14 +936,20 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 		"UNC",
 		"UCR",
 		"UNR",
-		"EventReadingType",
-		"AnalogDataFormat",
-		"ReadV",
-		"ScanD",
-		"ReadU",
-		"HasAR",
-		"DiscreteEvents",
 	}
+
+	if extended {
+		headers = append(headers, []string{
+			"EventReadingType",
+			"AnalogDataFormat",
+			"ReadV",
+			"ScanD",
+			"ReadU",
+			"HasAR",
+			"DiscreteEvents",
+		}...)
+	}
+
 	table.SetHeader(headers)
 	table.SetFooter(headers)
 
@@ -969,18 +968,23 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 			sensor.ThresholdStr(SensorThresholdType_UNC),
 			sensor.ThresholdStr(SensorThresholdType_UCR),
 			sensor.ThresholdStr(SensorThresholdType_UNR),
-			fmt.Sprintf("%s (%#02x)", sensor.EventReadingType.String(), uint8(sensor.EventReadingType)),
-			sensor.SensorUnit.AnalogDataFormat.String(),
-			fmt.Sprintf("%v", sensor.ReadingValid),
-			fmt.Sprintf("%v", sensor.scanningDisabled),
-			fmt.Sprintf("%v", sensor.readingUnavailable),
-			fmt.Sprintf("%v", sensor.HasAnalogReading),
 		}
 
-		if sensor.IsThreshold() {
-			content = append(content, "na")
-		} else {
-			content = append(content, fmt.Sprintf("%v", sensor.Discrete.ActiveStates.TrueEvents()))
+		if extended {
+			content = append(content, []string{
+				fmt.Sprintf("%s (%#02x)", sensor.EventReadingType.String(), uint8(sensor.EventReadingType)),
+				sensor.SensorUnit.AnalogDataFormat.String(),
+				fmt.Sprintf("%v", sensor.IsReadingValid()),
+				fmt.Sprintf("%v", sensor.scanningDisabled),
+				fmt.Sprintf("%v", sensor.readingUnavailable),
+				fmt.Sprintf("%v", sensor.HasAnalogReading),
+			}...)
+
+			if sensor.IsThreshold() {
+				content = append(content, "N/A")
+			} else {
+				content = append(content, fmt.Sprintf("%v", sensor.Discrete.ActiveStates.TrueEvents()))
+			}
 		}
 
 		table.Append(content)
@@ -999,8 +1003,28 @@ func (sensor *Sensor) Status() string {
 	return fmt.Sprintf("0x%02x%02x", sensor.Discrete.optionalData1, sensor.Discrete.optionalData2)
 }
 
+// IsThreshold returns whether the sensor is threshold sensor class or not.
 func (sensor *Sensor) IsThreshold() bool {
 	return sensor.EventReadingType.IsThreshold()
+}
+
+func (sensor *Sensor) IsReadingValid() bool {
+	return !sensor.readingUnavailable
+}
+
+func (sensor *Sensor) IsThresholdAndReadingValid() bool {
+	return sensor.IsThreshold() && sensor.IsReadingValid()
+}
+
+func (sensor *Sensor) ReadingStr() string {
+	if sensor.IsReadingValid() {
+		if sensor.IsThreshold() {
+			return fmt.Sprintf("%.3f", sensor.Value)
+		}
+		return fmt.Sprintf("%d", sensor.Raw)
+	}
+
+	return "N/A"
 }
 
 func (sensor *Sensor) IsThresholdReadable(thresholdType SensorThresholdType) bool {
@@ -1012,20 +1036,9 @@ func (sensor *Sensor) IsThresholdReadable(thresholdType SensorThresholdType) boo
 	return mask.IsThresholdReadable(thresholdType)
 }
 
-func (sensor *Sensor) ReadingStr() string {
-	if sensor.ReadingValid {
-		if sensor.IsThreshold() {
-			return fmt.Sprintf("%.3f", sensor.Value)
-		}
-		return fmt.Sprintf("%d", sensor.Raw)
-	}
-
-	return "na"
-}
-
 func (sensor *Sensor) ThresholdStr(thresholdType SensorThresholdType) string {
 	if !sensor.IsThresholdReadable(thresholdType) {
-		return "na"
+		return "N/A"
 	}
 
 	var value float64
