@@ -279,18 +279,18 @@ func (c *Client) generate_rakp2_authcode() ([]byte, error) {
 	case AuthAlgRAKP_HMAC_MD5:
 		// need to copy 16 bytes
 		if len(b) < 16 {
-			err = fmt.Errorf("cc")
+			err = fmt.Errorf("hmac md5 length should be at least 16 bytes")
 		}
 		out = b[0:16]
 	case AuthAlgRAKP_HMAC_SHA1:
 		// need to copy 20 bytes
 		if len(b) < 20 {
-			err = fmt.Errorf("cc")
+			err = fmt.Errorf("hmac sha1 length should be at least 20 bytes")
 		}
 		out = b[0:20]
 	case AuthAlgRAKP_HMAC_SHA256:
 		if len(b) < 32 {
-			err = fmt.Errorf("cc")
+			err = fmt.Errorf("hmac sha256 length should be at least 32 bytes")
 		}
 		out = b[0:32]
 	default:
@@ -298,7 +298,6 @@ func (c *Client) generate_rakp2_authcode() ([]byte, error) {
 	}
 
 	c.DebugBytes("rakp2 used authcode", out, 16)
-
 	return out, err
 }
 
