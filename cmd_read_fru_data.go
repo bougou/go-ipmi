@@ -63,3 +63,35 @@ func (c *Client) ReadFRUData(fruDeviceID uint8, readOffset uint16, readCount uin
 	err = c.Exchange(request, response)
 	return
 }
+
+func (c *Client) readFRUDataByLength(deviceID uint8, offset uint16, length uint16) ([]byte, error) {
+	var data []byte
+
+	for {
+		c.Debugf("read length: %d\n", length)
+		if length <= 0 {
+			break
+		}
+
+		var readCount uint8
+		if length <= 255 {
+			readCount = uint8(length)
+		} else {
+			readCount = 255
+		}
+		length -= uint16(readCount)
+		c.Debugf("left length: %d\n", length)
+
+		res, err := c.ReadFRUData(deviceID, offset, readCount)
+		if err != nil {
+			return nil, fmt.Errorf("ReadFRUData failed, err: %s", err)
+		}
+		c.Debug("", res.Format())
+		data = append(data, res.Data...)
+
+		// update offset
+		offset += uint16(readCount)
+	}
+
+	return data, nil
+}

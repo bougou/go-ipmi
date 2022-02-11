@@ -248,8 +248,8 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | PartialAddSELEntry  |        |
 | DeleteSELEntry      | √      |
 | ClearSEL            | √      | sel clear                    |
-| GetSELTime          |        |
-| SetSELTime          |        |
+| GetSELTime          | √      |
+| SetSELTime          | √      |
 | GetAuxLogStatus     |        |
 | SetAuxLogStatus     |        |
 | GetSELTimeUTCOffset | √      |

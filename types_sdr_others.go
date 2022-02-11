@@ -318,7 +318,7 @@ func parseSDRGenericLocator(data []byte, sdr *SDR) error {
 	s.DeviceAccessAddress, _, _ = unpackUint8(data, 5)
 
 	b, _, _ := unpackUint8(data, 6)
-	s.DeviceSlaveAddress = b >> 1
+	s.DeviceSlaveAddress = b
 
 	c, _, _ := unpackUint8(data, 7)
 	s.ChannelNumber = ((b & 0x01) << 4) | (c >> 5)
@@ -350,30 +350,78 @@ type SDRFRUDeviceLocator struct {
 	// Record KEY
 	//
 
-	// Slave address of controller used to access device. 0000000b if device is directly on IPMB.
+	// [7:1] - Slave address of controller used to access device. 0000000b if device is directly on IPMB.
 	// This field indicates whether the device is on a private bus or not.
 	DeviceAccessAddress uint8
 
-	FRUDeviceID        uint8 // For LOGICAL FRU DEVICE
-	DeviceSlaveAddress uint8 // For non-intelligent FRU device
+	// FRU Device ID / Device Slave Address
+	//
+	// For LOGICAL FRU DEVICE (accessed via FRU commands to mgmt. controller):
+	// [7:0] - Number identifying FRU device within given IPM Controller. FFh = reserved.
+	// The primary FRU device for a management controller is always device #0 at
+	// LUN 00b. The primary FRU device is not reported via this FRU Device Locator
+	// record - its presence is identified via the Device Capabilities field in the
+	// Management Controller Device Locator record.
+	//
+	// For non-intelligent FRU device:
+	// [7:1] - 7-bit I2C Slave Address[1] . This is relative to the bus the device is on. For
+	// devices on the IPMB, this is the slave address of the device on the IPMB. For
+	// devices on a private bus, this is the slave address of the device on the private
+	// bus.
+	// [0] - reserved
+	FRUDeviceID_SlaveAddress uint8
 
+	// [7] - logical/physical FRU device
+	// 0b = device is not a logical FRU Device
+	// 1b = device is logical FRU Device (accessed via FRU commands to mgmt. controller)
 	IsLogicalFRUDevice bool
-	AccessLUN          uint8
-	PrivateBusID       uint8
 
+	// [4:3] - LUN for Master Write-Read command or FRU Command. 00b if device is nonintelligent device directly on IPMB.
+	AccessLUN uint8
+
+	// [2:0] - Private bus ID if bus = Private.
+	// 000b if device directly on IPMB, or device is a logical FRU Device.
+	PrivateBusID uint8
+
+	// [7:4] - Channel number for management controller used to access device. 000b if
+	// device directly on the primary IPMB, or if controller is on the primary IPMB. Msbit for channel number is kept in next byte. (For IPMI v1.5. This byte position
+	// was reserved for IPMI v1.0.)
+	// [3:0] - reserved
 	ChannelNumber uint8
 
 	//
 	// RECORD BODY
 	//
 
-	DeviceType         uint8
+	DeviceType         DeviceType
 	DeviceTypeModifier uint8
 	FRUEntityID        uint8
 	FRUEntityInstance  uint8
 
 	DeviceIDTypeLength TypeLength
 	DeviceIDBytes      []byte // Short ID string for the FRU Device
+}
+
+// Table 38-1, FRU Device Locator Field Usage
+func (sdrFRU *SDRFRUDeviceLocator) Location() FRULocation {
+	if sdrFRU.DeviceAccessAddress == 0x00 {
+		// Use MasterWriteRead command to access FRU.
+		// FRUDeviceID_SlaveAddress (slave address Of SEEPROM on the IPMB)
+		return FRULocation_IPMB
+	}
+
+	if sdrFRU.IsLogicalFRUDevice {
+		// Use Read/WriteFRUData command to access FRU.
+		// DeviceAccessAddress (Slave Address of IPMB)
+		// FRUDeviceID_SlaveAddress
+		return FRULocation_MgmtController
+	}
+
+	// Use MasterWriteRead command to access FRU.
+	// DeviceAccessAddress (Slave Address of IPMB)
+	// PrivateBusID
+	// FRUDeviceID_SlaveAddress (Slave Address of SEEPROM on the Private Bus)
+	return FRULocation_PrivateBus
 }
 
 func parseSDRFRUDeviceLocator(data []byte, sdr *SDR) error {
@@ -386,11 +434,12 @@ func parseSDRFRUDeviceLocator(data []byte, sdr *SDR) error {
 	s := &SDRFRUDeviceLocator{}
 	sdr.FRUDeviceLocator = s
 
-	s.DeviceAccessAddress, _, _ = unpackUint8(data, 5)
+	b5, _, _ := unpackUint8(data, 5)
+	s.DeviceAccessAddress = b5
 
 	b7, _, _ := unpackUint8(data, 6)
-	s.FRUDeviceID = b7
-	s.DeviceSlaveAddress = b7 >> 1
+	// Todo
+	s.FRUDeviceID_SlaveAddress = b7
 
 	b8, _, _ := unpackUint8(data, 7)
 	s.IsLogicalFRUDevice = isBit7Set(b8)
@@ -400,19 +449,29 @@ func parseSDRFRUDeviceLocator(data []byte, sdr *SDR) error {
 	b9, _, _ := unpackUint8(data, 8)
 	s.ChannelNumber = b9 >> 4
 
-	s.DeviceType, _, _ = unpackUint8(data, 10)
+	deviceType, _, _ := unpackUint8(data, 10)
+	s.DeviceType = DeviceType(deviceType)
 	s.DeviceTypeModifier, _, _ = unpackUint8(data, 11)
 
 	s.FRUEntityID, _, _ = unpackUint8(data, 12)
 	s.FRUEntityInstance, _, _ = unpackUint8(data, 13)
 
+	// index 14 Reserved for OEM use.
+
 	typeLength, _, _ := unpackUint8(data, 15)
 	s.DeviceIDTypeLength = TypeLength(typeLength)
 
-	idStrLen := int(s.DeviceIDTypeLength.Length())
+	var idStrLen int
+	if s.DeviceIDTypeLength.TypeCode() == 0x00 {
+		// unspecified type
+		idStrLen = len(data) - minSize
+	} else {
+		idStrLen = int(s.DeviceIDTypeLength.Length())
+	}
 	if len(data) < minSize+idStrLen {
 		return fmt.Errorf("sdr (fru device) data must be longer than %d", minSize+idStrLen)
 	}
+
 	s.DeviceIDBytes, _, _ = unpackBytes(data, minSize, idStrLen)
 	return nil
 }
@@ -463,7 +522,7 @@ func parseSDRManagementControllerDeviceLocator(data []byte, sdr *SDR) error {
 	sdr.MgmtControllerDeviceLocator = s
 
 	b6, _, _ := unpackUint8(data, 5)
-	s.DeviceSlaveAddress = b6 >> 1
+	s.DeviceSlaveAddress = b6
 
 	b7, _, _ := unpackUint8(data, 6)
 	s.ChannelNumber = b7
@@ -539,7 +598,7 @@ func parseSDRManagementControllerConfirmation(data []byte, sdr *SDR) error {
 	sdr.MgmtControllerConfirmation = s
 
 	b6, _, _ := unpackUint8(data, 5)
-	s.DeviceSlaveAddress = b6 >> 1
+	s.DeviceSlaveAddress = b6
 
 	s.DeviceID, _, _ = unpackUint8(data, 6)
 
@@ -673,12 +732,17 @@ type SDRReserved struct {
 //      11111b = reserved.
 type TypeLength uint8
 
+func (tl TypeLength) String() string {
+	return fmt.Sprintf("%s / %d (%#02x)", tl.Type(), tl.Length(), uint8(tl))
+}
+
 func (tl TypeLength) Type() string {
-	typecode := (uint8(tl) & 0xc0) >> 6 // the highest 2 bits
+	typecode := tl.TypeCode()
+
 	var s string
 	switch typecode {
 	case 0:
-		s = "Unspecified"
+		s = "Binary"
 	case 1:
 		s = "BCD plus"
 	case 2:
@@ -690,17 +754,32 @@ func (tl TypeLength) Type() string {
 	return s
 }
 
+func (tl TypeLength) TypeCode() uint8 {
+	return (uint8(tl) & 0xc0) >> 6 // the highest 2 bits
+}
+
+// Length returns the length of bytes occupied that packed the chars.
+// But it is not the length of chars.
+// For BCD plus type, one byte packs two chars.
 func (tl TypeLength) Length() uint8 {
+	return uint8(tl) & 0x3f // the lowest 6 bits
+}
+
+// Size returns the length of chars.
+func (tl TypeLength) Size() uint8 {
 	typecode := (uint8(tl) & 0xc0) >> 6 // the highest 2 bits
-	l := uint8(tl) & 0x3f               // the lowest 6 bits
+	l := tl.Length()
 
 	var size uint8
 	switch typecode {
-	case 0: /* 00b: binary/unspecified */
-	case 1: /* 01b: BCD plus */
+	case 0: /* 00b: binary data */
+		size = l
+	case 1: /* 01b: BCD plus (binary-coded decimal) */
+		// one byte packs two chars
 		/* hex dump or BCD -> 2x length */
-		size = (l * 2)
+		size = l * 2
 	case 2: /* 10b: 6-bit ASCII packed */
+		// three bytes packs four chars
 		/* 4 chars per group of 1-3 bytes, round up to 4 bytes boundary */
 		size = (l/3 + 1) * 4
 	case 3: /* 11b: 8-bit ASCII + Latin 1 */
@@ -709,4 +788,84 @@ func (tl TypeLength) Length() uint8 {
 	}
 
 	return size
+}
+
+func (tl TypeLength) Chars(raw []byte) (chars []byte, err error) {
+	if len(raw) != int(tl.Length()) {
+		err = fmt.Errorf("passed raw not equal to length")
+		return
+	}
+
+	size := int(tl.Size())
+	chars = make([]byte, size)
+
+	switch tl.TypeCode() {
+	case 0: // Binary
+		for i := 0; i < size; i++ {
+			chars[i] = raw[i]
+		}
+
+	case 1: // BCD Plus
+		var bcdPlusChars = [16]byte{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ', '-', '.', ':', ',', '_'}
+
+		for i := 0; i < size; i++ {
+			var charIndex uint8
+			if i%2 == 0 {
+				charIndex = raw[i/2] >> 0 & 0x0f
+			} else {
+				charIndex = raw[i/2] >> 4
+			}
+			chars[i] = bcdPlusChars[charIndex]
+		}
+
+	case 2: // 6-bit ASCII
+		// every 3 bytes packs 4 chars.
+
+		// i holds index for raw
+		// j holds index for target data
+		for i, j := 0, 0; i < int(tl.Length()); i += 3 {
+			c1 := raw[i]
+			c2 := raw[i+1]
+			c3 := raw[i+2]
+
+			for k := 0; k < 4; k++ {
+				switch k {
+				case 0:
+					chars[j] = c1 & 0x3f
+				case 1:
+					chars[j] = (c1&0xc0)>>6 | (c2&0x0f)<<2
+				case 2:
+					chars[j] = (c2&0xf0)>>4 | (c3&0x03)<<4
+				case 3:
+					chars[j] = (c3 & 0xfc) >> 2
+				}
+				j++
+			}
+		}
+
+	case 3: // 8-bit ASCII
+		for i := 0; i < size; i++ {
+			chars[i] = raw[i]
+		}
+	}
+
+	return
+
+}
+func (tl TypeLength) CharsString(raw []byte) (str string, err error) {
+	chars, err := tl.Chars(raw)
+	if err != nil {
+		return "", fmt.Errorf("call Chars failed, err: %s", err)
+	}
+
+	switch tl.TypeCode() {
+	case 0: // Binary, print as hex
+		for _, v := range chars {
+			str += fmt.Sprintf("%02x", v)
+		}
+	default:
+		str = string(chars)
+	}
+
+	return str, nil
 }

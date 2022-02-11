@@ -10,8 +10,8 @@ type GetFRUInventoryAreaInfoRequest struct {
 }
 
 type GetFRUInventoryAreaInfoResponse struct {
-	FRUInventoryAreaSizeBytes uint16
-	DeviceAccessedByWords     bool // false means Device is accessed by Bytes
+	AreaSizeBytes         uint16
+	DeviceAccessedByWords bool // false means Device is accessed by Bytes
 }
 
 func (req *GetFRUInventoryAreaInfoRequest) Command() Command {
@@ -27,7 +27,7 @@ func (res *GetFRUInventoryAreaInfoResponse) Unpack(msg []byte) error {
 		return ErrUnpackedDataTooShort
 	}
 
-	res.FRUInventoryAreaSizeBytes, _, _ = unpackUint16L(msg, 0)
+	res.AreaSizeBytes, _, _ = unpackUint16L(msg, 0)
 	b, _, _ := unpackUint8(msg, 2)
 	res.DeviceAccessedByWords = isBit0Set(b)
 	return nil
@@ -38,9 +38,8 @@ func (r *GetFRUInventoryAreaInfoResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetFRUInventoryAreaInfoResponse) Format() string {
-	return fmt.Sprintf(`FRU Inventory area size : %d bytes
-Device is accessed by   : %s`,
-		res.FRUInventoryAreaSizeBytes,
+	return fmt.Sprintf(`fru.size = %d bytes (accessed by %s)`,
+		res.AreaSizeBytes,
 		formatBool(res.DeviceAccessedByWords, "words", "bytes"),
 	)
 }

@@ -29,7 +29,7 @@ func (req *MasterWriteReadRequest) Pack() []byte {
 		b = setBit0(b)
 	}
 	packUint8(b, out, 0)
-	packUint8(req.SlaveAddress<<1, out, 1)
+	packUint8(req.SlaveAddress, out, 1)
 	packUint8(req.ReadCount, out, 2)
 	packBytes(req.Data, out, 3)
 
