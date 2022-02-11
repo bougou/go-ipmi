@@ -91,6 +91,7 @@ func NewCmdSDRGet() *cobra.Command {
 }
 
 func NewCmdSDRList() *cobra.Command {
+	usage := `sdr list <all|full|compact|full|event|mcloc|fru|generic>`
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "list",
@@ -116,10 +117,18 @@ func NewCmdSDRList() *cobra.Command {
 					recordTypes = append(recordTypes, ipmi.SDRRecordTypeManagementControllerDeviceLocator)
 				case "fru":
 					recordTypes = append(recordTypes, ipmi.SDRRecordTypeFRUDeviceLocator)
+					sdrs, err := client.GetSDRs(recordTypes...)
+					if err != nil {
+						CheckErr(fmt.Errorf("GetSDRs failed, err: %s", err))
+					}
+
+					fmt.Println(ipmi.FormatSDRs_FRU(sdrs))
+					return
+
 				case "generic":
 					recordTypes = append(recordTypes, ipmi.SDRRecordTypeGenericLocator)
 				default:
-					CheckErr(fmt.Errorf("unkown supported record type (%s)", args[0]))
+					CheckErr(fmt.Errorf("unkown supported record type (%s), usage: %s", args[0], usage))
 					return
 				}
 			}

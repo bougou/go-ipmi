@@ -262,6 +262,68 @@ func ParseSDR(data []byte, nextRecordID uint16) (*SDR, error) {
 	return sdr, nil
 }
 
+// Format SDRs of FRU record type
+func FormatSDRs_FRU(records []*SDR) string {
+	var buf = new(bytes.Buffer)
+	table := tablewriter.NewWriter(buf)
+	table.SetAutoWrapText(false)
+
+	headers := []string{
+		"RecordID",
+		"RecordType",
+		"DeviceAccessAddr",
+		"FRUDeviceID",
+		"IsLogicFRU",
+		"AccessLUN",
+		"PrivateBusID",
+		"ChannelNumber",
+		"DeviceType",
+		"Modifier",
+		"FRUEntityID",
+		"FRUEntityInstance",
+		"TypeLength",
+		"DeiveName",
+	}
+	table.SetHeader(headers)
+	table.SetFooter(headers)
+
+	for _, sdr := range records {
+		if sdr == nil || sdr.RecordHeader == nil {
+			continue
+		}
+
+		recordID := sdr.RecordHeader.RecordID
+		recordType := sdr.RecordHeader.RecordType
+
+		switch recordType {
+		case SDRRecordTypeFRUDeviceLocator:
+			sdrFRU := sdr.FRUDeviceLocator
+			table.Append([]string{
+				fmt.Sprintf("%#02x", recordID),
+				fmt.Sprintf("%s (%#02x)", recordType.String(), uint8(recordType)),
+				fmt.Sprintf("%#02x", sdrFRU.DeviceAccessAddress),
+				fmt.Sprintf("%#02x", sdrFRU.FRUDeviceID_SlaveAddress),
+				fmt.Sprintf("%v", sdrFRU.IsLogicalFRUDevice),
+				fmt.Sprintf("%#02x", sdrFRU.AccessLUN),
+				fmt.Sprintf("%#02x", sdrFRU.PrivateBusID),
+				fmt.Sprintf("%#02x", sdrFRU.ChannelNumber),
+				fmt.Sprintf("%s (%#02x)", sdrFRU.DeviceType.String(), uint8(sdrFRU.DeviceType)),
+				fmt.Sprintf("%#02x", sdrFRU.DeviceTypeModifier),
+				fmt.Sprintf("%#02x", sdrFRU.FRUEntityID),
+				fmt.Sprintf("%#02x", sdrFRU.FRUEntityInstance),
+				sdrFRU.DeviceIDTypeLength.String(),
+				string(sdrFRU.DeviceIDBytes),
+			})
+		default:
+		}
+
+	}
+
+	table.Render()
+	return buf.String()
+
+}
+
 // FormatSDRs returns a table formatted string for print.
 func FormatSDRs(records []*SDR) string {
 	var buf = new(bytes.Buffer)
@@ -314,8 +376,6 @@ func FormatSDRs(records []*SDR) string {
 			eventReadingType = sdr.Compact.SensorEventReadingType
 
 		default:
-			// ignored the SDR
-			continue
 		}
 
 		table.Append([]string{
