@@ -34,7 +34,7 @@ func NewCmdMCInfo() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			res, err := client.GetDeviceID()
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSELInfo failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetDeviceID failed, err: %s", err))
 			}
 			fmt.Println(res.Format())
 		},

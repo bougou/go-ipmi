@@ -1,6 +1,14 @@
 package ipmi
 
+// 6.3 Channel Numbers
+// Only the channel number assignments for the primary IPMB and the System Interface are fixed,
+// the assignment of other channel numbers can vary on a per-platform basis
 type Channel uint8
+
+const (
+	ChannelPrimaryIPMB Channel = 0x0
+	ChannelSystem      Channel = 0xf
+)
 
 // 6.4 Channel Protocol Type
 type ChannelProtocol uint8
@@ -46,18 +54,18 @@ func (cp ChannelProtocol) String() string {
 type ChannelMedium uint8
 
 const (
-	ChannelMediumIPMB     ChannelMedium = 0x01
-	ChannelMediumICMBv10  ChannelMedium = 0x02
-	ChannelMediumICMBv09  ChannelMedium = 0x03
-	ChannelMediumLAN      ChannelMedium = 0x04
-	ChannelMediumSerial   ChannelMedium = 0x05
-	ChannelMediumOtherLAN ChannelMedium = 0x06
-	ChannelMediumSMBus    ChannelMedium = 0x07
-	ChannelMediumSMBusv10 ChannelMedium = 0x08
-	ChannelMediumSMBusv20 ChannelMedium = 0x09
-	ChannelMediumUSBv1    ChannelMedium = 0x0a
-	ChannelMediumUSBv2    ChannelMedium = 0x0b
-	ChannelMediumSystem   ChannelMedium = 0x0c
+	ChannelMediumIPMB            ChannelMedium = 0x01
+	ChannelMediumICMBv10         ChannelMedium = 0x02
+	ChannelMediumICMBv09         ChannelMedium = 0x03
+	ChannelMediumLAN             ChannelMedium = 0x04
+	ChannelMediumSerial          ChannelMedium = 0x05
+	ChannelMediumOtherLAN        ChannelMedium = 0x06
+	ChannelMediumSMBus           ChannelMedium = 0x07
+	ChannelMediumSMBusv10        ChannelMedium = 0x08
+	ChannelMediumSMBusv20        ChannelMedium = 0x09
+	ChannelMediumUSBv1           ChannelMedium = 0x0a
+	ChannelMediumUSBv2           ChannelMedium = 0x0b
+	ChannelMediumSystemInterface ChannelMedium = 0x0c
 )
 
 func (cp ChannelMedium) String() string {

@@ -1,6 +1,8 @@
 package ipmi
 
-import "testing"
+import (
+	"testing"
+)
 
 func Test_onesComplement(t *testing.T) {
 	// https://en.wikipedia.org/wiki/Ones%27_complement

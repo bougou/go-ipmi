@@ -15,13 +15,3 @@ const (
 	BMC_SA             uint8 = 0x20 // BMC's responder address
 	RemoteConsole_SWID uint8 = 0x81 // Remote Console Software ID
 )
-
-type IPMBRequest struct {
-	NetFn
-
-	LUN
-
-	Command
-
-	Channel
-}

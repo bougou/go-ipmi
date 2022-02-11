@@ -175,6 +175,22 @@ func (r *RmcpHeader) Unpack(msg []byte) error {
 	return nil
 }
 
+type MessageType uint8
+
+const (
+	MessageACKBit    uint8 = 0x80
+	MessageNormalBit uint8 = 0x00
+)
+
+const (
+	MessageTypeUndefined MessageType = 0x00
+	MessageTypePing      MessageType = 0x80
+	MessageTypeRMCPACK   MessageType = (0x80 | 6)
+	MessageTypeASF       MessageType = (0x00 | 6)
+	MessageTypeIPMI      MessageType = (0x00 | 7)
+	MessageTypeOEM       MessageType = (0x00 | 8)
+)
+
 // the ACK/Normal Bit and the Message Class combine to identify the type of
 // message under RMCP
 // see: Table 13-, Message Type Determination Under RMCP
@@ -216,22 +232,6 @@ func (mc MessageClass) NormalACKFlag() bool {
 	i := uint8(mc) & uint8(1) << 7
 	return i == uint8(1)<<7
 }
-
-type MessageType uint8
-
-const (
-	MessageACKBit    uint8 = 0x80
-	MessageNormalBit uint8 = 0x00
-)
-
-const (
-	MessageTypeUndefined MessageType = 0x00
-	MessageTypePing      MessageType = 0x80
-	MessageTypeRMCPACK   MessageType = (0x80 | 6)
-	MessageTypeASF       MessageType = (0x00 | 6)
-	MessageTypeIPMI      MessageType = (0x00 | 7)
-	MessageTypeOEM       MessageType = (0x00 | 8)
-)
 
 // 13.2.1 RMCP ACK Messages
 type RmcpAckMessage struct {
