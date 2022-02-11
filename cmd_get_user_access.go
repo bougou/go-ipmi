@@ -87,7 +87,15 @@ func (res *GetUserAccessResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetUserAccessResponse) Format() string {
-	return ""
+
+	return fmt.Sprintf(`Maximum IDs         : %d
+	Enabled User Count  : %d
+	Fixed Name Count    : %d
+	`,
+		res.MaxUsersIDCount,
+		res.EnabledUserIDsCount,
+		res.FixedNameUseIDsCount,
+	)
 }
 
 func (c *Client) GetUserAccess(channelNumber uint8, userID uint8) (response *GetUserAccessResponse, err error) {

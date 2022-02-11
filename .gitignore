@@ -38,3 +38,5 @@ _output
 *.out
 
 .DS_Store
+
+goipmitest

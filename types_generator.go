@@ -3,16 +3,18 @@ package ipmi
 // 5.4 Sensor Owner Identification
 // the "owner" of the sensor.
 // The combination of Sensor Owner ID and Sensor Number uniquely identify a sensor in the system.
-
 // the Sensor Data Record and SEL information must contain information to identify the "owner" of the sensor.
-
+//
 // For management controllers, a Slave Address and LUN identify the owner of a sensor on the IPMB.
-
+//
 // For system software, a Software ID identifies the owner of a sensor.
-
+//
 // These fields are used in Event Messages, where events from management controllers or the IPMB are identified by an eight-bit field where the upper 7-bits are the Slave Address or System Software ID.
+//
 // The least significant bit is a 0 if the value represents a Slave Address and a 1 if the value represents a System Software ID.
-
+// So all Software IDs are odd numbers (because the bit 0 is fixed to 1b),
+// and all slave addresses are even numbers (because bit 0 is fixed to 0b)
+//
 // 5.5 Software IDs (SWIDs)
 type SoftwareID uint8
 type SoftwareType string

@@ -11,6 +11,7 @@ type GetChassisCapabilitiesResponse struct {
 	ProvideFrontPanelLockout   bool
 	ProvideIntrusionSensor     bool
 
+	// Chassis FRU Device
 	FRUDeviceAddress uint8
 
 	SDRDeviceAddress uint8

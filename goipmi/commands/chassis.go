@@ -146,7 +146,7 @@ func NewCmdChassisCapabilities() *cobra.Command {
 	usage := "chassis cap Commands: get or set"
 
 	cmd := &cobra.Command{
-		Use:   "Get or set chassis capabilities",
+		Use:   "cap",
 		Short: "cap",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) == 0 {

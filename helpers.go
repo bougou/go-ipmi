@@ -12,27 +12,7 @@ import (
 	"github.com/kr/pretty"
 )
 
-// Debug pretty print any object
-func (c *Client) Debugf(format string, object ...interface{}) {
-	if !c.debug {
-		return
-	}
-	pretty.Printf(format, object...)
-}
-
-func (c *Client) Debug(header string, object interface{}) {
-	if !c.debug {
-		return
-	}
-	pretty.Printf("%s: \n%# v\n", header, object)
-}
-
-// DebugBytes print byte slices with a fixed width of bytes on each line.
-func (c *Client) DebugBytes(header string, data []byte, width int) {
-	if !c.debug {
-		return
-	}
-
+func debugBytes(header string, data []byte, width int) {
 	fmt.Printf("%s (%d bytes)\n", header, len(data))
 	for k, v := range data {
 		if k%width == 0 && k != 0 {
@@ -41,6 +21,37 @@ func (c *Client) DebugBytes(header string, data []byte, width int) {
 		fmt.Printf("%02x ", v)
 	}
 	fmt.Printf("\n")
+}
+
+// debugf pretty print any object
+func debugf(format string, object ...interface{}) {
+	pretty.Printf(format, object...)
+}
+
+func debug(header string, object interface{}) {
+	pretty.Printf("%s: \n%# v\n", header, object)
+}
+
+func (c *Client) Debugf(format string, object ...interface{}) {
+	if !c.debug {
+		return
+	}
+	debugf(format, object...)
+}
+
+func (c *Client) Debug(header string, object interface{}) {
+	if !c.debug {
+		return
+	}
+	debug(header, object)
+}
+
+// DebugBytes print byte slices with a fixed width of bytes on each line.
+func (c *Client) DebugBytes(header string, data []byte, width int) {
+	if !c.debug {
+		return
+	}
+	debugBytes(header, data, width)
 }
 
 // 37 Timestamp Format
@@ -523,6 +534,7 @@ func packUint64L(i uint64, msg []byte, off int) (int, error) {
 }
 
 // 8421 BCD
+// bcdUint8 decodes BCD encoded interger to normal unsigned interger.
 func bcdUint8(i uint8) uint8 {
 	msb4 := i >> 4
 	lsb4 := i & 0x0f

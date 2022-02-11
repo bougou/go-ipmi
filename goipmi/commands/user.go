@@ -78,15 +78,7 @@ func NewCmdUserSummary() *cobra.Command {
 			if err != nil {
 				CheckErr(fmt.Errorf("GetUserAccess failed, err: %s", err))
 			}
-
-			fmt.Printf(`Maximum IDs         : %d
-Enabled User Count  : %d
-Fixed Name Count    : %d
-`,
-				res.MaxUsersIDCount,
-				res.EnabledUserIDsCount,
-				res.FixedNameUseIDsCount,
-			)
+			fmt.Println(res.Format())
 		},
 	}
 	return cmd
