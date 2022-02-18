@@ -14,7 +14,7 @@ type GetChassisStatusResponse struct {
 	PowerFault         bool // fault detected in main power subsystem
 	InterLock          bool // chassis is presently shut down because a chassis	panel interlock switch is active
 	PowerOverload      bool // system shutdown because of power overload condition.
-	PowerIsOn          bool
+	PowerIsOn          bool // 系统电源：上电
 
 	// Last Power Event
 	LastPowerOnByCommand                   bool
@@ -26,10 +26,12 @@ type GetChassisStatusResponse struct {
 	// Last Power Event
 
 	// Misc. Chassis State
-	CollingFanFault         bool
-	DriveFault              bool
-	FrontPanelLockoutActive bool // (power off and reset via chassis push-buttons disabled. 前面板锁定)
-	ChassisIntrusionActive  bool
+	ChassisIdentifySupported bool
+	ChassisIdentifyState     ChassisIdentifyState
+	CollingFanFault          bool
+	DriveFault               bool
+	FrontPanelLockoutActive  bool // (power off and reset via chassis push-buttons disabled. 前面板锁定)
+	ChassisIntrusionActive   bool // 机箱入侵:（机箱盖被打开）
 
 	// Front Panel Button Capabilities and disable/enable status (Optional)
 	SleepButtonDisableAllowed      bool
@@ -42,14 +44,35 @@ type GetChassisStatusResponse struct {
 	PoweroffButtonDisabled         bool
 }
 
+type ChassisIdentifyState uint8
+
+const (
+	ChassisIdentifyStateOff          ChassisIdentifyState = 0
+	ChassisIdentifyStateTemporaryOn  ChassisIdentifyState = 1
+	ChassisIdentifyStateIndefiniteOn ChassisIdentifyState = 2
+)
+
+func (c ChassisIdentifyState) String() string {
+	m := map[ChassisIdentifyState]string{
+		0: "Off",
+		1: "Temporary (timed) On",
+		2: "Indefinite On",
+	}
+	s, ok := m[c]
+	if ok {
+		return s
+	}
+	return "reserved"
+}
+
 // PowerRestorePolicy
 // 通电开机策略
 type PowerRestorePolicy uint8
 
 const (
-	PowerRestorePolicyAlwaysOff PowerRestorePolicy = 0 // 保持下电
-	PowerRestorePolicyPrevious  PowerRestorePolicy = 1 // 与之前保持一致
-	PowerRestorePolicyAlwaysOn  PowerRestorePolicy = 2 // 保持上电
+	PowerRestorePolicyAlwaysOff PowerRestorePolicy = 0 // 保持下电（关机）
+	PowerRestorePolicyPrevious  PowerRestorePolicy = 1 // 与之前保持一致（恢复断电前状态）
+	PowerRestorePolicyAlwaysOn  PowerRestorePolicy = 2 // 保持上电（开机）
 )
 
 var SupportedPowerRestorePolicies = []string{
@@ -57,18 +80,14 @@ var SupportedPowerRestorePolicies = []string{
 }
 
 func (p PowerRestorePolicy) String() string {
-	switch p {
-	case 0:
-		// chassis stays powered off after AC/mains returns
-		return "always-off"
-	case 1:
-		// after AC returns, power is restored to the state that was in effect when AC/mains was lost
-		return "previous"
-	case 2:
-		// chassis always powers up after AC/mains returns
-		return "always-on"
-	case 3:
-		return "unkown"
+	m := map[PowerRestorePolicy]string{
+		0: "always-off", // chassis stays powered off after AC/mains returns
+		1: "previous",   // after AC returns, power is restored to the state that was in effect when AC/mains was lost
+		2: "always-on",  // chassis always powers up after AC/mains returns
+	}
+	s, ok := m[p]
+	if ok {
+		return s
 	}
 	return "unkown"
 }
@@ -108,6 +127,8 @@ func (res *GetChassisStatusResponse) Unpack(msg []byte) error {
 	res.ACFailed = isBit0Set(b2)
 
 	b3, _, _ := unpackUint8(msg, 2)
+	res.ChassisIdentifySupported = isBit6Set(b3)
+	res.ChassisIdentifyState = ChassisIdentifyState((b3 & 0x30) >> 4)
 	res.CollingFanFault = isBit3Set(b3)
 	res.DriveFault = isBit2Set(b3)
 	res.FrontPanelLockoutActive = isBit1Set(b3)

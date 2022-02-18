@@ -1,7 +1,7 @@
 package ipmi
 
 // 28.5 Chassis Identify Command
-// 定位
+// 用来定位设备，机箱定位 （机箱定位灯默认亮 interval 秒）
 type ChassisIdentifyRequest struct {
 	IdentifyInterval uint8
 	ForceIdentifyOn  bool
