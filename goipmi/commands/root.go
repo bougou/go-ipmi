@@ -32,7 +32,7 @@ func initClient() error {
 
 	switch intf {
 	case "", "open":
-		c, err := ipmi.NewOpenClient(0)
+		c, err := ipmi.NewOpenClient()
 		if err != nil {
 			return fmt.Errorf("create open client failed, err: %s", err)
 		}

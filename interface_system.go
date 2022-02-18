@@ -9,8 +9,20 @@ import (
 	"github.com/bougou/go-ipmi/open"
 )
 
-// connectOpen try to initialize the client by open the device of linux ipmi driver.
-func (c *Client) connectOpen(devnum int32) error {
+type openipmi struct {
+	myAddr         uint8
+	msgID          int64
+	targetAddr     uint8
+	targetChannel  uint8
+	targetIPMBAddr uint8
+	transitAddr    uint8
+	transitLUN     uint8
+
+	file *os.File // /dev/ipmi0
+}
+
+// ConnectOpen try to initialize the client by open the device of linux ipmi driver.
+func (c *Client) ConnectOpen(devnum int32) error {
 	// try the following devices
 	var (
 		ipmiDev1 string = fmt.Sprintf("/dev/ipmi%d", devnum)
@@ -52,6 +64,14 @@ func (c *Client) connectOpen(devnum int32) error {
 		return fmt.Errorf("ioctl failed, cloud not enable event receiver, err: %s", err)
 	}
 
+	return nil
+}
+
+// closeOpen closes the ipmi dev file.
+func (c *Client) closeOpen() error {
+	if err := c.openipmi.file.Close(); err != nil {
+		return fmt.Errorf("close open file failed, err: %s", err)
+	}
 	return nil
 }
 
