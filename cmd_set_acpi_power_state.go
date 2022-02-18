@@ -12,6 +12,7 @@ type SetACPIPowerStateResponse struct {
 	// empty
 }
 
+// see: https://en.wikipedia.org/wiki/Advanced_Configuration_and_Power_Interface#Global_states
 type SystemPowerState uint8
 
 const (
@@ -34,14 +35,14 @@ const (
 
 func (s SystemPowerState) String() string {
 	m := map[SystemPowerState]string{
-		0x00: "S0G0, working",
+		0x00: "S0/G0, working",
 		0x01: "S1, hardware context maintained, typically equates to processor/chip set clocks stopped",
 		0x02: "S2, typically equates to stopped clocks with processor/cache context lost",
-		0x03: "s3，typically equates to suspend-to-RAM",
+		0x03: "S3, typically equates to suspend-to-RAM",
 		0x04: "S4, typically equates to suspend-to-disk",
 		0x05: "S5/G2, soft off",
 		0x06: "S4/S5, sent when message source canno differentiate between S4 and S5",
-		0x07: "G2, mechanical off",
+		0x07: "G3, mechanical off",
 		0x08: "sleeping, sleeping - cannot differentiate between S1-S3",
 		0x09: "G1 sleeping, sleeping - cannot differentiate between S1-S4",
 		0x0a: "override, S5 entered by override",

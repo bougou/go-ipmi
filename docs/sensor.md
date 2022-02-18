@@ -3,7 +3,7 @@
 
 Prochot: PROCessor HOT
 
-現在很多筆記本廠家都引入了一種名叫BD PROCHOT(Bi-directional processor hot)的功能來解決高端GPU和CPU的發熱問題。其核心原理就是在獨立GPU工作的時候，當CPU溫度超過某一閾值，就自動關閉睿頻或是降頻以達到減少發熱、節省功耗的目的。
+現在很多筆記本廠家都引入了一種名叫BD PROCHOT(Bi-directional processor hot)的功能來解決高端GPU和CPU的發熱問題。其核心原理就是在獨立GPU工作的時候,當CPU溫度超過某一閾值,就自動關閉睿頻或是降頻以達到減少發熱、節省功耗的目的。
 
 > https://www.reddit.com/r/pcmasterrace/comments/39wmrw/throttlestop_prochot_and_you/
 >

@@ -74,7 +74,7 @@ type SDRFull struct {
 	NormalMaxSpecified      bool
 	NormalMinSpecified      bool
 
-	// 额定值，标称值
+	// 额定值,标称值
 	// Given as a raw value. Must be converted to units-based value using the y=Mx+B
 	// formula. 1's or 2's complement signed or unsigned per flag bits in Sensor Units 1
 	//
