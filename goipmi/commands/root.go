@@ -30,11 +30,22 @@ func initClient() error {
 		fmt.Printf("BuildAt: %s\n", BuildAt)
 	}
 
-	c, err := ipmi.NewClient(host, port, username, password)
-	if err != nil {
-		return fmt.Errorf("create client failed, err: %s", err)
+	switch intf {
+	case "", "open":
+		c, err := ipmi.NewOpenClient(0)
+		if err != nil {
+			return fmt.Errorf("create open client failed, err: %s", err)
+		}
+		client = c
+
+	case "lan", "lanplus":
+		c, err := ipmi.NewClient(host, port, username, password)
+		if err != nil {
+			return fmt.Errorf("create lan or lanplus client failed, err: %s", err)
+		}
+		client = c
+
 	}
-	client = c
 
 	client.WithDebug(debug)
 	client.WithInterface(ipmi.Interface(intf))
@@ -73,7 +84,7 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 623, "port")
 	rootCmd.PersistentFlags().StringVarP(&username, "user", "U", "", "username")
 	rootCmd.PersistentFlags().StringVarP(&password, "pass", "P", "", "password")
-	rootCmd.PersistentFlags().StringVarP(&intf, "interface", "I", "lanplus", "interface")
+	rootCmd.PersistentFlags().StringVarP(&intf, "interface", "I", "open", "interface, supported (open,lan,lanplus)")
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug")
 	rootCmd.PersistentFlags().BoolVarP(&showVersion, "version", "V", false, "version")
 

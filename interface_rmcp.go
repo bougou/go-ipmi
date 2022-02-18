@@ -1,6 +1,8 @@
 package ipmi
 
 import (
+	"bytes"
+	"context"
 	"crypto/md5"
 	"encoding/binary"
 	"fmt"
@@ -690,4 +692,33 @@ func (c *Client) ParseRmcpResponse(msg []byte, response Response) error {
 	}
 
 	return nil
+}
+
+func (c *Client) exchangeLAN(request Request, response Response) error {
+	c.Debug(">> Command Request", request)
+
+	rmcp, err := c.BuildRmcpRequest(request)
+	if err != nil {
+		return fmt.Errorf("build RMCP+ request msg failed, err: %s", err)
+	}
+	c.Debug(">>>>>> RMCP Request", rmcp)
+	sent := rmcp.Pack()
+	c.DebugBytes("sent", sent, 16)
+
+	ctx := context.Background()
+	recv, err := c.udpClient.Exchange(ctx, bytes.NewReader(sent))
+	if err != nil {
+		return fmt.Errorf("client udp exchange msg failed, err: %s", err)
+	}
+	c.DebugBytes("recv", recv, 16)
+
+	if err := c.ParseRmcpResponse(recv, response); err != nil {
+		// Warn, must directly return err.
+		// The error returned by ParseRmcpResponse might be of *ResponseError type.
+		return err
+	}
+
+	c.Debug("<< Commmand Response", response)
+	return nil
+
 }

@@ -1,9 +1,8 @@
 package ipmi
 
 import (
-	"bytes"
-	"context"
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -12,6 +11,7 @@ type Interface string
 const (
 	InterfaceLan     Interface = "lan"
 	InterfaceLanplus Interface = "lanplus"
+	InterfaceOpen    Interface = "open"
 
 	DefaultExchangeTimeoutSec int = 20
 	DefaultBufferSize         int = 1024
@@ -26,6 +26,8 @@ type Client struct {
 
 	debug bool
 
+	openipmi *openipmi
+
 	// this flags controls which IPMI version (1.5 or 2.0) be used by Client to send Request
 	v20 bool
 
@@ -36,6 +38,33 @@ type Client struct {
 	udpClient  *UDPClient
 	timeout    time.Duration
 	bufferSize int
+}
+
+type openipmi struct {
+	myAddr         uint8
+	msgID          int64
+	targetAddr     uint8
+	targetChannel  uint8
+	targetIPMBAddr uint8
+	transitAddr    uint8
+	transitLUN     uint8
+
+	file *os.File // /dev/ipmi0
+}
+
+func NewOpenClient(myAddr uint8) (*Client, error) {
+	if myAddr == 0 {
+		myAddr = BMC_SA
+	}
+
+	return &Client{
+		Interface: "open",
+
+		openipmi: &openipmi{
+			myAddr:     myAddr,
+			targetAddr: myAddr,
+		},
+	}, nil
 }
 
 func NewClient(host string, port int, user string, pass string) (*Client, error) {
@@ -110,6 +139,7 @@ func (c *Client) SessionPrivilegeLevel() PrivilegeLevel {
 	return c.session.v20.maxPrivilegeLevel
 }
 
+// Connect connects to the bmc by specified Interface.
 func (c *Client) Connect() error {
 	// Optional RMCP Ping/Pong mechanism
 	// pongRes, err := c.RmcpPing()
@@ -120,20 +150,25 @@ func (c *Client) Connect() error {
 	// 	return fmt.Errorf("ipmi not supported")
 	// }
 
-	if c.Interface == "" {
+	switch c.Interface {
+	case "":
 		return c.ConnectAuto()
-	}
 
-	if c.Interface == InterfaceLanplus {
+	case InterfaceLanplus:
 		c.v20 = true
 		return c.Connect20()
-	}
-	if c.Interface == InterfaceLan {
+
+	case InterfaceLan:
 		c.v20 = false
 		return c.Connect15()
-	}
 
-	return fmt.Errorf("not supported interface (lan or lanplus)")
+	case InterfaceOpen:
+		var devnum int32 = 0
+		return c.connectOpen(devnum)
+
+	default:
+		return fmt.Errorf("not supported interface, supported: lan,lanplus,open")
+	}
 }
 
 // 13.14
@@ -247,52 +282,46 @@ func (c *Client) ConnectAuto() error {
 }
 
 func (c *Client) Close() error {
-	var sessionID uint32
-	if c.v20 {
-		sessionID = c.session.v20.bmcSessionID
-	} else {
-		sessionID = c.session.v15.sessionID
-	}
+	switch c.Interface {
+	case "", InterfaceOpen:
+		if err := c.openipmi.file.Close(); err != nil {
+			return fmt.Errorf("close open file failed, err: %s", err)
+		}
 
-	request := &CloseSessionRequest{
-		SessionID: sessionID,
-	}
-	if _, err := c.CloseSession(request); err != nil {
-		return fmt.Errorf("CloseSession failed, err: %s", err)
-	}
+	case InterfaceLan, InterfaceLanplus:
+		var sessionID uint32
+		if c.v20 {
+			sessionID = c.session.v20.bmcSessionID
+		} else {
+			sessionID = c.session.v15.sessionID
+		}
 
-	if err := c.udpClient.Close(); err != nil {
-		return fmt.Errorf("close udp connection failed, err: %s", err)
+		request := &CloseSessionRequest{
+			SessionID: sessionID,
+		}
+		if _, err := c.CloseSession(request); err != nil {
+			return fmt.Errorf("CloseSession failed, err: %s", err)
+		}
+
+		if err := c.udpClient.Close(); err != nil {
+			return fmt.Errorf("close udp connection failed, err: %s", err)
+		}
+
 	}
 
 	return nil
 }
 
 func (c *Client) Exchange(request Request, response Response) error {
-	c.Debug(">> Command Request", request)
+	switch c.Interface {
+	case "", InterfaceOpen:
+		return c.exchangeOpen(request, response)
 
-	rmcp, err := c.BuildRmcpRequest(request)
-	if err != nil {
-		return fmt.Errorf("build RMCP+ request msg failed, err: %s", err)
-	}
-	c.Debug(">>>>>> RMCP Request", rmcp)
-	sent := rmcp.Pack()
-	c.DebugBytes("sent", sent, 16)
+	case InterfaceLan, InterfaceLanplus:
+		return c.exchangeLAN(request, response)
 
-	ctx := context.Background()
-	recv, err := c.udpClient.Exchange(ctx, bytes.NewReader(sent))
-	if err != nil {
-		return fmt.Errorf("client udp exchange msg failed, err: %s", err)
-	}
-	c.DebugBytes("recv", recv, 16)
-
-	if err := c.ParseRmcpResponse(recv, response); err != nil {
-		// Warn, must directly return err.
-		// The error returned by ParseRmcpResponse might be of *ResponseError type.
-		return err
 	}
 
-	c.Debug("<< Commmand Response", response)
 	return nil
 }
 
