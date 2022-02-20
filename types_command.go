@@ -212,9 +212,9 @@ var (
 	CommandSetUserCallbackOptions = Command{ID: 0x1a, NetFn: NetFnTransportRequest, Name: "Set User Callback Options"}
 	CommandGetUserCallbackOptions = Command{ID: 0x1b, NetFn: NetFnTransportRequest, Name: "Get User Callback Options"}
 	CommandSetSerialRoutingMux    = Command{ID: 0x1c, NetFn: NetFnTransportRequest, Name: "Set Serial Routing Mux"}
-	CommandSolActivating          = Command{ID: 0x20, NetFn: NetFnTransportRequest, Name: "SOL Activating"}
-	CommandGetSolConfigParams     = Command{ID: 0x21, NetFn: NetFnTransportRequest, Name: "Set SOL Configuration Parameters"}
-	CommandSetSolConfigParams     = Command{ID: 0x22, NetFn: NetFnTransportRequest, Name: "Get SOL Configuration Parameters"}
+	CommandSOLActivating          = Command{ID: 0x20, NetFn: NetFnTransportRequest, Name: "SOL Activating"}
+	CommandSetSOLConfigParams     = Command{ID: 0x21, NetFn: NetFnTransportRequest, Name: "Set SOL Configuration Parameters"}
+	CommandGetSOLConfigParams     = Command{ID: 0x22, NetFn: NetFnTransportRequest, Name: "Get SOL Configuration Parameters"}
 
 	// Command Forwarding Commands
 	CommandFowarded        = Command{ID: 0x30, NetFn: NetFnTransportRequest, Name: "Forwarded Command"}
