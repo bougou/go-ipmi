@@ -76,11 +76,11 @@ func (bop *BootOptionParameter) Pack(paramSelecotr BootOptionParameterSelector) 
 	return nil
 }
 
-func ParseBootOptionParameterData(paramSelecotr BootOptionParameterSelector, paramData []byte) (*BootOptionParameter, error) {
+func ParseBootOptionParameterData(paramSelector BootOptionParameterSelector, paramData []byte) (*BootOptionParameter, error) {
 	bop := &BootOptionParameter{}
 
 	var err error
-	switch paramSelecotr {
+	switch paramSelector {
 	case BOPS_SetInProgressState:
 		var tmp uint8
 		p := (*BOP_SetInProgressState)(&tmp)
@@ -151,7 +151,7 @@ func ParseBootOptionParameterData(paramSelecotr BootOptionParameterSelector, par
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("unpack paramData for paramSelector (%d) failed, err: %s", paramSelecotr, err)
+		return nil, fmt.Errorf("unpack paramData for paramSelector (%d) failed, err: %s", paramSelector, err)
 	}
 	return bop, nil
 }
