@@ -63,7 +63,7 @@ const (
 	SensorTypeMemory                       SensorType = 0x0c
 	SensorTypeDriveSlot                    SensorType = 0x0d
 	SensorTypePostMemoryResize             SensorType = 0x0e
-	SensorTypeSystemFirmware               SensorType = 0x0f
+	SensorTypeSystemFirmwareProgress       SensorType = 0x0f
 	SensorTypeEventLoggingDisabled         SensorType = 0x10
 	SensorTypeWatchdog1                    SensorType = 0x11
 	SensorTypeSystemEvent                  SensorType = 0x12
@@ -84,7 +84,7 @@ const (
 	SensorTypeSlotConnector                SensorType = 0x21
 	SensorTypeSystemACPIPowerState         SensorType = 0x22
 	SensorTypeWatchdog2                    SensorType = 0x23
-	SensorTypePlatormAlert                 SensorType = 0x24
+	SensorTypePlatformAlert                SensorType = 0x24
 	SensorTypeEntityPresence               SensorType = 0x25
 	SensorTypeMonitorASIC                  SensorType = 0x26
 	SensorTypeLAN                          SensorType = 0x27

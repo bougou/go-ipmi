@@ -146,6 +146,10 @@ func (sel *SELStandard) EventString() string {
 	return sel.EventReadingType.EventString(sel.SensorType, sel.SensorNumber, sel.EventData)
 }
 
+func (sel *SELStandard) EventSeverity() EventSeverity {
+	return sel.EventReadingType.EventSeverity(sel.SensorType, sel.SensorNumber, sel.EventData, sel.EventDir)
+}
+
 func parseSELDefault(msg []byte, sel *SEL) error {
 	if len(msg) < 16 {
 		return ErrUnpackedDataTooShort
@@ -246,6 +250,7 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 		"EventReadingType",
 		"EventDescription",
 		"EventDir",
+		"EventSeverity",
 		"EventData",
 	}
 	if elistMode {
@@ -275,6 +280,7 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 				s.EventReadingType.String(),
 				s.EventString(),
 				s.EventDir.String(),
+				string(s.EventSeverity()),
 				s.EventData.String(),
 			}
 
