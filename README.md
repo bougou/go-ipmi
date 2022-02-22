@@ -89,9 +89,9 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 
 | Method             | Status | corresponding ipmitool usage |
 | ------------------ | ------ | ---------------------------- |
-| ResetWatchdogTimer |        |
-| SetWatchdogTimer   |        |
-| GetWatchdogTimer   |        |
+| ResetWatchdogTimer | √      | mc watchdog reset            |
+| SetWatchdogTimer   | √      |
+| GetWatchdogTimer   | √      | mc watchdog get              |
 
 ### BMC Device and Messaging Commands
 
@@ -281,9 +281,10 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | SetUserCallbackOptions |        |
 | GetUserCallbackOptions |        |
 | SetSerialRoutingMux    |        |
-| SolActivating          |        |
-| GetSolConfigParams     |        |
-| SetSolConfigParams     |        |
+| SOLActivating          | √      |
+| GetSOLConfigParams     | √      |
+| SetSOLConfigParams     | √      |
+| SOLInfo                | √      | sol info                     |
 
 ### Command Forwarding Commands
 

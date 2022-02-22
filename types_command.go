@@ -8,13 +8,19 @@ type Command struct {
 }
 
 type Request interface {
+	// Pack encodes the object to data bytes
 	Pack() []byte
+	// Command return the IPMI command info (NetFn/Cmd).
+	// All IPMI specification specified commands are already predefined in this file.
 	Command() Command
 }
 
 type Response interface {
+	// Unpack decodes the object from data bytes
 	Unpack(data []byte) error
+	// CompletionCodes returns a map of command-specific completion codes
 	CompletionCodes() map[uint8]string
+	// Format return a formatted human friendly string
 	Format() string
 }
 
