@@ -64,12 +64,12 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 ### IPM Device Global Commands
 
 
-| Method                             | Status | corresponding ipmitool usage |
-| ---------------------------------- | ------ | ---------------------------- |
-| GetDeviceID                        | √      | mc info                      |
-| ColdReset                          | √      | mc reset cold                |
-| WarmReset                          | √      | mc reset warm                |
-| GetSelfTestResults                 | √      | mc selftest                  |
+| Method                             | Status | corresponding ipmitool usage  |
+| ---------------------------------- | ------ | ----------------------------- |
+| GetDeviceID                        | √      | mc info                       |
+| ColdReset                          | √      | mc reset cold                 |
+| WarmReset                          | √      | mc reset warm                 |
+| GetSelfTestResults                 | √      | mc selftest, chassis selftest |
 | ManufacturingTestOn                | √      |
 | SetACPIPowerState                  | √      |
 | GetACPIPowerState                  | √      |
@@ -148,7 +148,7 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | Method                 | Status | corresponding ipmitool usage                 |
 | ---------------------- | ------ | -------------------------------------------- |
 | GetChassisCapabilities | √      |
-| GetChassisStatus       | √      | chassis status                               |
+| GetChassisStatus       | √      | chassis status, chassis power status         |
 | ChassisControl         | √      | chassis power on/off/cycle/reset/diag/soft   |
 | ChassisReset           |        |
 | ChassisIdentify        | √      | chassis identify                             |
@@ -159,7 +159,7 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | GetSystemBootOptions   | √      |
 | SetFrontPanelEnables   | √      |
 | SetPowerCycleInterval  | √      |
-| GetPOHCounter          |        |
+| GetPOHCounter          | √      | chassis poh                                  |
 
 ### Event Commands
 

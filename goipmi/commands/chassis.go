@@ -29,6 +29,7 @@ func NewCmdChassis() *cobra.Command {
 	cmd.AddCommand(NewCmdChassisCapabilities())
 	cmd.AddCommand(NewCmdChassisRestartCause())
 	cmd.AddCommand(NewCmdChassisBootParam())
+	cmd.AddCommand(NewCmdChassisPoh())
 
 	return cmd
 }
@@ -231,6 +232,21 @@ bootparam set bootflag <device> [options=...]
 				fmt.Println(res.Format())
 			}
 
+		},
+	}
+	return cmd
+}
+
+func NewCmdChassisPoh() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "poh",
+		Short: "poh",
+		Run: func(cmd *cobra.Command, args []string) {
+			res, err := client.GetPOHCounter()
+			if err != nil {
+				CheckErr(fmt.Errorf("GetSystemRestartCause failed, err: %s", err))
+			}
+			fmt.Println(res.Format())
 		},
 	}
 	return cmd
