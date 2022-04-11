@@ -164,11 +164,11 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 
 ### Event Commands
 
-| Method           | Status | corresponding ipmitool usage |
-| ---------------- | ------ | ---------------------------- |
-| SetEventReceiver |        |
-| GetEventReceiver |        |
-| EventMessage     |        |
+| Method               | Status | corresponding ipmitool usage |
+| -------------------- | ------ | ---------------------------- |
+| SetEventReceiver     | √      |
+| GetEventReceiver     | √      |
+| PlatformEventMessage | √      |
 
 ### PEF and Alerting Commands
 

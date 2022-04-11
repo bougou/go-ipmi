@@ -130,9 +130,9 @@ var (
 	CommandGetPOHCounter          = Command{ID: 0x0f, NetFn: NetFnChassisRequest, Name: "Get POH Counter"}
 
 	// Event Commands
-	CommandSetEventReceiver = Command{ID: 0x00, NetFn: NetFnSensorEventRequest, Name: "Set Event Receiver"}
-	CommandGetEventReceiver = Command{ID: 0x01, NetFn: NetFnSensorEventRequest, Name: "Get Event Receiver"}
-	CommandEventMessage     = Command{ID: 0x02, NetFn: NetFnSensorEventRequest, Name: "Platform Event (Event Message)"} // 03h -0fh unassigned
+	CommandSetEventReceiver     = Command{ID: 0x00, NetFn: NetFnSensorEventRequest, Name: "Set Event Receiver"}
+	CommandGetEventReceiver     = Command{ID: 0x01, NetFn: NetFnSensorEventRequest, Name: "Get Event Receiver"}
+	CommandPlatformEventMessage = Command{ID: 0x02, NetFn: NetFnSensorEventRequest, Name: "Platform Event (Event Message)"} // 03h -0fh unassigned
 
 	// PEF and Alerting Commands
 	CommandGetPefCapabilities      = Command{ID: 0x10, NetFn: NetFnSensorEventRequest, Name: "Get PEF Capabilities"}
