@@ -135,14 +135,14 @@ var (
 	CommandPlatformEventMessage = Command{ID: 0x02, NetFn: NetFnSensorEventRequest, Name: "Platform Event (Event Message)"} // 03h -0fh unassigned
 
 	// PEF and Alerting Commands
-	CommandGetPefCapabilities      = Command{ID: 0x10, NetFn: NetFnSensorEventRequest, Name: "Get PEF Capabilities"}
-	CommandArmPefPostponeTimer     = Command{ID: 0x11, NetFn: NetFnSensorEventRequest, Name: "Arm PEF Postpone Timer"}
-	CommandSetPefConfigParameters  = Command{ID: 0x12, NetFn: NetFnSensorEventRequest, Name: "Set PEF Configuration Parameters"}
-	CommandGetPefConfigParameters  = Command{ID: 0x13, NetFn: NetFnSensorEventRequest, Name: "Get PEF Configuration Parameters"}
+	CommandGetPEFCapabilities      = Command{ID: 0x10, NetFn: NetFnSensorEventRequest, Name: "Get PEF Capabilities"}
+	CommandArmPEFPostponeTimer     = Command{ID: 0x11, NetFn: NetFnSensorEventRequest, Name: "Arm PEF Postpone Timer"}
+	CommandSetPEFConfigParameters  = Command{ID: 0x12, NetFn: NetFnSensorEventRequest, Name: "Set PEF Configuration Parameters"}
+	CommandGetPEFConfigParameters  = Command{ID: 0x13, NetFn: NetFnSensorEventRequest, Name: "Get PEF Configuration Parameters"}
 	CommandSetLastProcessedEventId = Command{ID: 0x14, NetFn: NetFnSensorEventRequest, Name: "Set Last Processed Event ID"}
 	CommandGetLastProcessedEventId = Command{ID: 0x15, NetFn: NetFnSensorEventRequest, Name: "Get Last Processed Event ID"}
 	CommandAlertImmediate          = Command{ID: 0x16, NetFn: NetFnSensorEventRequest, Name: "Alert Immediate"}
-	CommandPetAck                  = Command{ID: 0x17, NetFn: NetFnSensorEventRequest, Name: "PET Acknowledge"}
+	CommandPEFAck                  = Command{ID: 0x17, NetFn: NetFnSensorEventRequest, Name: "PET Acknowledge"}
 
 	// Sensor Device Commands
 	CommandGetDeviceSDRInfo               = Command{ID: 0x20, NetFn: NetFnSensorEventRequest, Name: "Get Device SDR Info"}

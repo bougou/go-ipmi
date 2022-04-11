@@ -174,14 +174,14 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 
 | Method                  | Status | corresponding ipmitool usage |
 | ----------------------- | ------ | ---------------------------- |
-| GetPefCapabilities      |        |
-| ArmPefPostponeTimer     |        |
-| SetPefConfigParameters  |        |
-| GetPefConfigParameters  |        |
+| GetPEFCapabilities      | √      | pef capabilities             |
+| ArmPEFPostponeTimer     |        |
+| SetPEFConfigParameters  |        |
+| GetPEFConfigParameters  |        |
 | SetLastProcessedEventId |        |
 | GetLastProcessedEventId |        |
 | AlertImmediate          |        |
-| PetAck                  |        |
+| PEFAck                  |        |
 
 ### Sensor Device Commands
 

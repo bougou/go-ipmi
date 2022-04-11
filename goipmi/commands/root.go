@@ -101,6 +101,7 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.AddCommand(NewCmdSensor())
 	rootCmd.AddCommand(NewCmdFRU())
 	rootCmd.AddCommand(NewCmdSOL())
+	rootCmd.AddCommand(NewCmdPEF())
 
 	rootCmd.SilenceUsage = true
 	rootCmd.SilenceErrors = true
