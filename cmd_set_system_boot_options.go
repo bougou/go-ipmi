@@ -2,7 +2,6 @@ package ipmi
 
 // 28.12 Set System Boot Options Command
 type SetSystemBootOptionsRequest struct {
-
 	// Thus, the BMC will automatically clear a 'boot flags valid bit' if
 	// a system restart is not initiated by a Chassis Control command
 	// within 60 seconds +/- 10% of the valid flag being set.
@@ -11,8 +10,11 @@ type SetSystemBootOptionsRequest struct {
 	// are not triggered by a System Control command.
 	//
 	// This default behavior can be temporarily overridden using the 'BMC boot flag valid bit clearing' parameter.
+	// [7] - 1b = mark parameter invalid / locked
+	// 0b = mark parameter valid / unlocked
 	MarkParameterInvalid bool
-	ParameterSelector    BootOptionParameterSelector
+	// [6:0] - boot option parameter selector
+	ParameterSelector BootOptionParameterSelector
 
 	BootOptionParameter BootOptionParameter
 }

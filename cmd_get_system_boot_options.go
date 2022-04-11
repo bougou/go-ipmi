@@ -14,11 +14,16 @@ type GetSystemBootOptionsRequest struct {
 type GetSystemBootOptionsResponse struct {
 	ParameterVersion uint8
 
-	ParameterValid    bool
+	// [7] - 1b = mark parameter invalid / locked
+	// 0b = mark parameter valid / unlocked
+	ParameterInValid bool
+	// [6:0] - boot option parameter selector
 	ParameterSelector BootOptionParameterSelector
 
+	parameterData []byte // origin parameter data
+
+	// parameterData is automatically parsed to BootOptionParameter
 	BootOptionParameter *BootOptionParameter
-	parameterData       []byte // origin parameter data
 }
 
 func (req *GetSystemBootOptionsRequest) Pack() []byte {
@@ -45,7 +50,7 @@ func (res *GetSystemBootOptionsResponse) Unpack(msg []byte) error {
 	}
 	res.ParameterVersion, _, _ = unpackUint8(msg, 0)
 	b, _, _ := unpackUint8(msg, 1)
-	res.ParameterValid = isBit7Set(b)
+	res.ParameterInValid = isBit7Set(b)
 	res.ParameterSelector = BootOptionParameterSelector(b & 0x7f) // clear bit 7
 
 	if len(msg) > 2 {
@@ -64,11 +69,11 @@ func (res *GetSystemBootOptionsResponse) Unpack(msg []byte) error {
 
 func (res *GetSystemBootOptionsResponse) Format() string {
 	return fmt.Sprintf(`Boot parameter version: %d
-Boot parameter 0 is %s
+Boot parameter %d is %s
 Boot parameter data: %02x
 %s`,
 		res.ParameterVersion,
-		formatBool(res.ParameterValid, "valid/unlocked", "invalid/locked"),
+		res.ParameterSelector, formatBool(res.ParameterInValid, "invalid/locked", "valid/unlocked"),
 		res.parameterData,
 		res.BootOptionParameter.Format(res.ParameterSelector))
 }

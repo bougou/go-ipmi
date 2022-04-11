@@ -1,11 +1,14 @@
 package ipmi
 
 import (
+	"bytes"
 	"fmt"
+	"strings"
 	"time"
 )
 
 // Table 28-14, Boot Option Parameters
+// You should fill ONLY one field at one time.
 type BootOptionParameter struct {
 	SetInProgressState       *BOP_SetInProgressState
 	ServicePartitionSelector *BOP_ServicePartitionSelector
@@ -158,6 +161,13 @@ func ParseBootOptionParameterData(paramSelector BootOptionParameterSelector, par
 
 type BOP_SetInProgressState uint8
 
+const (
+	SetInProgressState_SetComplete   BOP_SetInProgressState = 0
+	SetInProgressState_SetInProgress BOP_SetInProgressState = 1
+	SetInProgressState_CommitWrite   BOP_SetInProgressState = 2
+	SetInProgressState_Reserved      BOP_SetInProgressState = 3
+)
+
 func (p *BOP_SetInProgressState) Unpack(paramData []byte) error {
 	if len(paramData) != 1 {
 		return fmt.Errorf("the parameter data length must be 1 byte")
@@ -304,9 +314,17 @@ func (p *BOP_BMCBootFlagValidBitClear) Unpack(parameterData []byte) error {
 	return nil
 }
 
-type BOP_BootInfoAcknowledge struct {
-	WriteMask uint8
+type BootInfoAcknowledgeBy uint8
 
+const (
+	BootInfoAcknowledgeByBIOSPOST           BootInfoAcknowledgeBy = 1 << 0
+	BootInfoAcknowledgeByOSLoader           BootInfoAcknowledgeBy = 1 << 1
+	BootInfoAcknowledgeByOSServicePartition BootInfoAcknowledgeBy = 1 << 2
+	BootInfoAcknowledgeBySMS                BootInfoAcknowledgeBy = 1 << 3
+	BootInfoAcknowledgeByOEM                BootInfoAcknowledgeBy = 1 << 4
+)
+
+type BOP_BootInfoAcknowledge struct {
 	// The boot initiator should typically write FFh to this parameter prior to initiating the boot.
 	// The boot initiator may write 0 s if it wants to intentionally direct a given party to ignore the
 	// boot info.
@@ -344,25 +362,32 @@ func (p *BOP_BootInfoAcknowledge) Format() string {
 
 func (p *BOP_BootInfoAcknowledge) Pack() []byte {
 	var out = make([]byte, 2)
-	packUint8(p.WriteMask, out, 0)
 
-	var b uint8
+	var b uint8 = 0x00
+	var b1 uint8 = 0xe0 // bit 7,6,5 is reserved, write s 1b
+
 	if p.ByOEM {
 		b = setBit4(b)
+		b1 = setBit4(b1)
 	}
 	if p.BySMS {
-		b = setBit4(b)
+		b = setBit3(b)
+		b1 = setBit3(b1)
 	}
 	if p.ByOSServicePartition {
-		b = setBit4(b)
+		b = setBit2(b)
+		b1 = setBit2(b1)
 	}
 	if p.ByOSLoader {
-		b = setBit4(b)
+		b = setBit1(b)
+		b1 = setBit1(b1)
 	}
 	if p.ByBIOSPOST {
-		b = setBit4(b)
+		b = setBit0(b)
+		b1 = setBit0(b1)
 	}
-	packUint8(b, out, 1)
+	packUint8(b, out, 0)
+	packUint8(b1, out, 1)
 	return out
 }
 
@@ -370,8 +395,6 @@ func (p *BOP_BootInfoAcknowledge) Unpack(parameterData []byte) error {
 	if len(parameterData) != 2 {
 		return fmt.Errorf("the parameter data length must be 2 bytes")
 	}
-
-	p.WriteMask, _, _ = unpackUint8(parameterData, 0)
 
 	b, _, _ := unpackUint8(parameterData, 1)
 	p.ByOEM = isBit4Set(b)
@@ -383,9 +406,16 @@ func (p *BOP_BootInfoAcknowledge) Unpack(parameterData []byte) error {
 }
 
 type BOP_BootFlags struct {
+	// 1b = boot flags valid.
+	// The bit should be set to indicate that valid flag data is present.
+	// This bit may be automatically cleared based on the boot flag valid bit clearing parameter, above.
 	BootFlagsValid bool
-	Persist        bool // or else applied to next boot only
-	BIOSBootType   BIOSBootType
+	// 0b = options apply to next boot only.
+	// 1b = options requested to be persistent for all future boots (i.e. requests BIOS to change its boot settings)
+	Persist bool
+	// 0b = "PC compatible" boot (legacy)
+	// 1b = Extensible Firmware Interface Boot (EFI)
+	BIOSBootType BIOSBootType
 
 	CMOSClear          bool
 	LockKeyboard       bool
@@ -542,7 +572,98 @@ func (p *BOP_BootFlags) Format() string {
 	return s
 }
 
+func (bootFlags *BOP_BootFlags) OptionsHelp() string {
+	supportedOptions := []struct {
+		name string
+		help string
+	}{
+		{"help", "print help message"},
+		{"valid", "Boot flags valid"},
+		{"persistent", "Changes are persistent for all future boots"},
+		{"efiboot", "Extensible Firmware Interface Boot (EFI)"},
+		{"clear-cmos", "CMOS clear"},
+		{"lockkbd", "Lock Keyboard"},
+		{"screenblank", "Screen Blank"},
+		{"lockoutreset", "Lock out Resetbuttons"},
+		{"lockout_power", "Lock out (power off/sleep request) via Power Button"},
+		{"verbose=default", "Request quiet BIOS display"},
+		{"verbose=no", "Request quiet BIOS display"},
+		{"verbose=yes", "Request verbose BIOS display"},
+		{"force_pet", "Force progress event traps"},
+		{"upw_bypass", "User password bypass"},
+		{"lockout_sleep", "Log Out Sleep Button"},
+		{"cons_redirect=default", "Console redirection occurs per BIOS configuration setting"},
+		{"cons_redirect=skip", "Suppress (skip) console redirection if enabled"},
+		{"cons_redirect=enable", "Suppress (skip) console redirection if enabled"},
+	}
+
+	var buf bytes.Buffer
+	buf.WriteString("Legal options settings are:\n")
+	for _, o := range supportedOptions {
+		buf.WriteString(fmt.Sprintf("  %-22s : %s\n", o.name, o.help))
+	}
+
+	return buf.String()
+}
+
+func (bootFlags *BOP_BootFlags) ParseFromOptionsStr(optionsStr string) error {
+	options := strings.Split(optionsStr, ",")
+	return bootFlags.ParseFromOptions(options)
+}
+
+func (bootFlags *BOP_BootFlags) ParseFromOptions(options []string) error {
+	for _, option := range options {
+		switch option {
+		case "valid":
+			bootFlags.BootFlagsValid = true
+		case "persistent":
+			bootFlags.Persist = true
+		case "efiboot":
+			bootFlags.BIOSBootType = BIOSBootTypeEFI
+		case "clear-cmos":
+			bootFlags.CMOSClear = true
+		case "lockkbd":
+			bootFlags.LockKeyboard = true
+		case "screenblank":
+			bootFlags.ScreenBlank = true
+		case "lockoutreset":
+			bootFlags.LockoutResetButton = true
+		case "lockout_power":
+			bootFlags.LockoutPowerOff = true
+		case "verbose=default":
+			bootFlags.BIOSVerbosity = BIOSVerbosityDefault
+		case "verbose=no":
+			bootFlags.BIOSVerbosity = BIOSVerbosityQuiet
+		case "verbose=yes":
+			bootFlags.BIOSVerbosity = BIOSVerbosityVerbose
+		case "force_pet":
+			bootFlags.ForceProgressEventTraps = true
+		case "upw_bypass":
+			bootFlags.BypassUserPassword = true
+		case "lockout_sleep":
+			bootFlags.LockoutSleepButton = true
+		case "cons_redirect=default":
+			bootFlags.ConsoleRedirectionControl = ConsoleRedirectionControl_Default
+		case "cons_redirect=skip":
+			bootFlags.ConsoleRedirectionControl = ConsoleRedirectionControl_Skip
+		case "cons_redirect=enable":
+			bootFlags.ConsoleRedirectionControl = ConsoleRedirectionControl_Enable
+		default:
+			return fmt.Errorf("unsupported boot flag option, supported options: \n%s", bootFlags.OptionsHelp())
+		}
+	}
+
+	return nil
+
+}
+
 type BIOSVerbosity uint8 // only 2 bits, occupied 0-3
+
+const (
+	BIOSVerbosityDefault BIOSVerbosity = 0
+	BIOSVerbosityQuiet   BIOSVerbosity = 1
+	BIOSVerbosityVerbose BIOSVerbosity = 2
+)
 
 func (v BIOSVerbosity) String() string {
 	switch v {
@@ -620,6 +741,12 @@ func (s BootDeviceSelector) String() string {
 }
 
 type ConsoleRedirectionControl uint8
+
+const (
+	ConsoleRedirectionControl_Default ConsoleRedirectionControl = 0
+	ConsoleRedirectionControl_Skip    ConsoleRedirectionControl = 1
+	ConsoleRedirectionControl_Enable  ConsoleRedirectionControl = 2
+)
 
 func (c ConsoleRedirectionControl) String() string {
 	switch c {

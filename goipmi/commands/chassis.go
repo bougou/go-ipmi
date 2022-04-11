@@ -3,7 +3,6 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/bougou/go-ipmi"
@@ -29,6 +28,7 @@ func NewCmdChassis() *cobra.Command {
 	cmd.AddCommand(NewCmdChassisCapabilities())
 	cmd.AddCommand(NewCmdChassisRestartCause())
 	cmd.AddCommand(NewCmdChassisBootParam())
+	cmd.AddCommand(NewCmdChassisBootdev())
 	cmd.AddCommand(NewCmdChassisPoh())
 
 	return cmd
@@ -51,15 +51,19 @@ func NewCmdChassisStatus() *cobra.Command {
 
 func NewCmdChassisPolicy() *cobra.Command {
 	usage := `chassis policy <state>
-list        : return supported policies
-always-on   : turn on when power is restored
-previous    : return to previous state when power is restored
-always-off  : stay off after power is restored`
+  list        : return supported policies
+  always-on   : turn on when power is restored
+  previous    : return to previous state when power is restored
+  always-off  : stay off after power is restored`
 
 	cmd := &cobra.Command{
 		Use:   "policy",
 		Short: "policy",
 		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) == 0 {
+				fmt.Println(usage)
+			}
+
 			if len(args) >= 1 {
 				switch args[0] {
 				case "list":
@@ -189,6 +193,15 @@ func NewCmdChassisRestartCause() *cobra.Command {
 
 func NewCmdChassisBootParam() *cobra.Command {
 	usage := `bootparam get <param #>
+available param #
+  0 : Set In Progress (volatile)
+	1 : service partition selector (semi-volatile)
+	2 : service partition scan (non-volatile)
+	3 : BMC boot flag valid bit clearing (semi-volatile)
+	4 : boot info acknowledge (semi-volatile)
+	5 : boot flags (semi-volatile)
+	6 : boot initiator info (semi-volatile)
+	7 : boot initiator mailbox (semi-volatile)
 bootparam set bootflag <device> [options=...]
  Legal devices are:
   none        : No override
@@ -220,7 +233,7 @@ bootparam set bootflag <device> [options=...]
 			switch args[0] {
 			case "get":
 				parameterSelector := args[1]
-				i, err := strconv.Atoi(parameterSelector)
+				i, err := parseStringToInt64(parameterSelector)
 				if err != nil {
 					CheckErr(fmt.Errorf("param # must be a valid interger in range (0-127), err: %s", err))
 				}
@@ -249,5 +262,84 @@ func NewCmdChassisPoh() *cobra.Command {
 			fmt.Println(res.Format())
 		},
 	}
+	return cmd
+}
+
+func NewCmdChassisBootdev() *cobra.Command {
+	usage := `bootdev <device> [clear-cmos=yes|no]
+bootdev <device> [options=help,...]
+  none  : Do not change boot device order
+  pxe   : Force PXE boot
+  disk  : Force boot from default Hard-drive
+  safe  : Force boot from default Hard-drive, request Safe Mode
+  diag  : Force boot from Diagnostic Partition
+  cdrom : Force boot from CD/DVD
+  bios  : Force boot into BIOS Setup
+  floppy: Force boot from Floppy/primary removable media`
+
+	cmd := &cobra.Command{
+		Use:   "bootdev",
+		Short: "bootdev",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				fmt.Println(usage)
+				return
+			}
+
+			var dev ipmi.BootDeviceSelector
+			switch args[0] {
+			case "none":
+				dev = ipmi.BootDeviceSelectorNoOverride
+			case "pxe":
+				dev = ipmi.BootDeviceSelectorForcePXE
+			case "disk":
+				dev = ipmi.BootDeviceSelectorForceHardDrive
+			case "safe":
+				dev = ipmi.BootDeviceSelectorForceHardDriveSafe
+			case "diag":
+				dev = ipmi.BootDeviceSelectorForceDiagnosticPartition
+			case "cdrom":
+				dev = ipmi.BootDeviceSelectorForceCDROM
+			case "floppy":
+				dev = ipmi.BootDeviceSelectorForceFloppy
+			case "bios":
+				dev = ipmi.BootDeviceSelectorForceBIOSSetup
+			default:
+				return
+			}
+			bootFlags := &ipmi.BOP_BootFlags{
+				BootDeviceSelector: dev,
+			}
+
+			if len(args) > 1 {
+				var optionsStr string
+
+				if args[1] == "clear-cmos=yes" {
+					optionsStr = "clear-cmos"
+				} else if strings.HasPrefix(args[1], "options=") {
+					optionsStr = strings.TrimPrefix(args[1], "options=")
+				}
+
+				options := strings.Split(optionsStr, ",")
+				for _, option := range options {
+					if option == "help" {
+						fmt.Println(bootFlags.OptionsHelp())
+						return
+					}
+				}
+				if err := bootFlags.ParseFromOptions(options); err != nil {
+					CheckErr(fmt.Errorf("ParseFromOptions failed, err: %s", err))
+					return
+				}
+			}
+
+			if err := client.SetBootParamBootFlags(bootFlags); err != nil {
+				CheckErr(fmt.Errorf("SetBootParamBootFlags failed, err: %s", err))
+			}
+
+			fmt.Printf("Set Boot Device to %s\n", args[0])
+		},
+	}
+
 	return cmd
 }

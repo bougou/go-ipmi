@@ -59,7 +59,7 @@ func (res *GetChassisCapabilitiesResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetChassisCapabilitiesResponse) Format() string {
-	return ""
+	return "todo"
 }
 
 func (c *Client) GetChassisCapabilities() (response *GetChassisCapabilitiesResponse, err error) {

@@ -145,21 +145,22 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 
 ### Chassis Device Commands
 
-| Method                 | Status | corresponding ipmitool usage                 |
-| ---------------------- | ------ | -------------------------------------------- |
-| GetChassisCapabilities | √      |
-| GetChassisStatus       | √      | chassis status, chassis power status         |
-| ChassisControl         | √      | chassis power on/off/cycle/reset/diag/soft   |
-| ChassisReset           |        |
-| ChassisIdentify        | √      | chassis identify                             |
-| SetChassisCapabilities | √      |
-| SetPowerRestorePolicy  | √      | chassis policy always-on/previous/always-off |
-| GetSystemRestartCause  | √      | chassis restart_cause                        |
-| SetSystemBootOptions   | √      |
-| GetSystemBootOptions   | √      |
-| SetFrontPanelEnables   | √      |
-| SetPowerCycleInterval  | √      |
-| GetPOHCounter          | √      | chassis poh                                  |
+| Method                    | Status | corresponding ipmitool usage                      |
+| ------------------------- | ------ | ------------------------------------------------- |
+| GetChassisCapabilities    | √      |
+| GetChassisStatus          | √      | chassis status, chassis power status              |
+| ChassisControl            | √      | chassis power on/off/cycle/reset/diag/soft        |
+| ChassisReset              |        |
+| ChassisIdentify           | √      | chassis identify                                  |
+| SetChassisCapabilities    | √      |
+| SetPowerRestorePolicy     | √      | chassis policy list/always-on/previous/always-off |
+| GetSystemRestartCause     | √      | chassis restart_cause                             |
+| SetSystemBootOptions      | √      | chassis bootparam set                             |
+| SetBootParamBootFlags (*) | √      | chassis bootdev                                   |
+| GetSystemBootOptions      | √      | chassis bootparam get                             |
+| SetFrontPanelEnables      | √      |
+| SetPowerCycleInterval     | √      |
+| GetPOHCounter             | √      | chassis poh                                       |
 
 ### Event Commands
 
