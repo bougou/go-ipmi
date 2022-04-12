@@ -64,228 +64,228 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 ### IPM Device Global Commands
 
 
-| Method                             | Status | corresponding ipmitool usage  |
-| ---------------------------------- | ------ | ----------------------------- |
-| GetDeviceID                        | √      | mc info                       |
-| ColdReset                          | √      | mc reset cold                 |
-| WarmReset                          | √      | mc reset warm                 |
-| GetSelfTestResults                 | √      | mc selftest, chassis selftest |
-| ManufacturingTestOn                | √      |
-| SetACPIPowerState                  | √      |
-| GetACPIPowerState                  | √      |
-| GetDeviceGUID                      | √      |
-| GetNetFnSupport                    | √      |
-| GetCommandSupport                  | √      |
-| GetCommandSubfunctionSupport       |        |
-| GetConfigurableCommands            | √      |
-| GetConfigurableCommandSubfunctions |        |
-| SetCommandEnables                  |        |
-| GetCommandEnables                  | √      |
-| GetCommandSubfunctionsEnables      | √      |
-| GetSubfunctionsEnables             |        |
-| GetOEMNetFnIanaSupport             |        |
+| Method                             | Status  | corresponding ipmitool usage  |
+| ---------------------------------- | ------- | ----------------------------- |
+| GetDeviceID                        | &check; | mc info                       |
+| ColdReset                          | &check; | mc reset cold                 |
+| WarmReset                          | &check; | mc reset warm                 |
+| GetSelfTestResults                 | &check; | mc selftest, chassis selftest |
+| ManufacturingTestOn                | &check; |
+| SetACPIPowerState                  | &check; |
+| GetACPIPowerState                  | &check; |
+| GetDeviceGUID                      | &check; |
+| GetNetFnSupport                    | &check; |
+| GetCommandSupport                  | &check; |
+| GetCommandSubfunctionSupport       |         |
+| GetConfigurableCommands            | &check; |
+| GetConfigurableCommandSubfunctions |         |
+| SetCommandEnables                  |         |
+| GetCommandEnables                  | &check; |
+| GetCommandSubfunctionsEnables      | &check; |
+| GetSubfunctionsEnables             |         |
+| GetOEMNetFnIanaSupport             |         |
 
 ### BMC Watchdog Timer Commands
 
-| Method             | Status | corresponding ipmitool usage |
-| ------------------ | ------ | ---------------------------- |
-| ResetWatchdogTimer | √      | mc watchdog reset            |
-| SetWatchdogTimer   | √      |
-| GetWatchdogTimer   | √      | mc watchdog get              |
+| Method             | Status  | corresponding ipmitool usage |
+| ------------------ | ------- | ---------------------------- |
+| ResetWatchdogTimer | &check; | mc watchdog reset            |
+| SetWatchdogTimer   | &check; |
+| GetWatchdogTimer   | &check; | mc watchdog get              |
 
 ### BMC Device and Messaging Commands
 
-| Method                         | Status | corresponding ipmitool usage |
-| ------------------------------ | ------ | ---------------------------- |
-| SetBMCGlobalEnables            | √      |
-| GetBMCGlobalEnables            | √      |
-| ClearMessageFlags              | √      |
-| GetMessageFlags                | √      |
-| EnableMessageChannelReceive    | √      |
-| GetMessage                     | √      |
-| SendMessage                    | √      |
-| ReadEventMessageBuffer         | √      |
-| GetBTInterfaceCapabilities     |        |
-| GetSystemGUID                  | √      | mc guid                      |
-| SetSystemInfoParameters        |        |
-| GetSystemInfoParameters        |        |
-| GetChannelAuthCapabilities     | √      |
-| GetSessionChallenge            | √      |
-| ActivateSession                | √      |
-| SetSessionPrivilegeLevel       | √      |
-| CloseSession                   | √      |
-| GetSessionInfo                 | √      | session info                 |
-| GetAuthCode                    | √      |
-| SetChannelAccess               | √      | channel setaccess            |
-| GetChannelAccess               | √      | channel info/getaccess       |
-| GetChannelInfo                 | √      | channel info                 |
-| SetUserAccess                  | √      |
-| GetUserAccess                  | √      | user summary                 |
-| GetUsers (*)                   | √      | user list                    |
-| SetUsername                    | √      | user set name                |
-| DisableUser (*)                | √      | user disable                 |
-| EnableUser (*)                 | √      | user enable                  |
-| GetUsername                    | √      |
-| SetUserPassword                | √      | user set password            |
-| TestUserPassword (*)           | √      | user test                    |
-| ActivatePayload                |        |
-| DeactivatePayload              |        |
-| GetPayloadActivationStatus     |        |
-| GetPayloadInstanceInfo         |        |
-| SetUserPayloadAccess           |        |
-| GetUserPayloadAccess           |        |
-| GetChannelPayloadSupport       |        |
-| GetChannelPayloadVersion       |        |
-| GetChannelOEMPayloadInfo       |        |
-| MasterWriteRead                |        |
-| GetChannelCipherSuites         | √      |
-| SuspendOrResumeEncryption      |        |
-| SetChannelCipherSuites         |        |
-| GetSystemInterfaceCapabilities | √      |
+| Method                         | Status  | corresponding ipmitool usage |
+| ------------------------------ | ------- | ---------------------------- |
+| SetBMCGlobalEnables            | &check; |
+| GetBMCGlobalEnables            | &check; |
+| ClearMessageFlags              | &check; |
+| GetMessageFlags                | &check; |
+| EnableMessageChannelReceive    | &check; |
+| GetMessage                     | &check; |
+| SendMessage                    | &check; |
+| ReadEventMessageBuffer         | &check; |
+| GetBTInterfaceCapabilities     |         |
+| GetSystemGUID                  | &check; | mc guid                      |
+| SetSystemInfoParameters        |         |
+| GetSystemInfoParameters        |         |
+| GetChannelAuthCapabilities     | &check; |
+| GetSessionChallenge            | &check; |
+| ActivateSession                | &check; |
+| SetSessionPrivilegeLevel       | &check; |
+| CloseSession                   | &check; |
+| GetSessionInfo                 | &check; | session info                 |
+| GetAuthCode                    | &check; |
+| SetChannelAccess               | &check; | channel setaccess            |
+| GetChannelAccess               | &check; | channel info/getaccess       |
+| GetChannelInfo                 | &check; | channel info                 |
+| SetUserAccess                  | &check; |
+| GetUserAccess                  | &check; | user summary                 |
+| GetUsers (*)                   | &check; | user list                    |
+| SetUsername                    | &check; | user set name                |
+| DisableUser (*)                | &check; | user disable                 |
+| EnableUser (*)                 | &check; | user enable                  |
+| GetUsername                    | &check; |
+| SetUserPassword                | &check; | user set password            |
+| TestUserPassword (*)           | &check; | user test                    |
+| ActivatePayload                |         |
+| DeactivatePayload              |         |
+| GetPayloadActivationStatus     |         |
+| GetPayloadInstanceInfo         |         |
+| SetUserPayloadAccess           |         |
+| GetUserPayloadAccess           |         |
+| GetChannelPayloadSupport       |         |
+| GetChannelPayloadVersion       |         |
+| GetChannelOEMPayloadInfo       |         |
+| MasterWriteRead                |         |
+| GetChannelCipherSuites         | &check; |
+| SuspendOrResumeEncryption      |         |
+| SetChannelCipherSuites         |         |
+| GetSystemInterfaceCapabilities | &check; |
 
 ### Chassis Device Commands
 
-| Method                    | Status | corresponding ipmitool usage                      |
-| ------------------------- | ------ | ------------------------------------------------- |
-| GetChassisCapabilities    | √      |
-| GetChassisStatus          | √      | chassis status, chassis power status              |
-| ChassisControl            | √      | chassis power on/off/cycle/reset/diag/soft        |
-| ChassisReset              |        |
-| ChassisIdentify           | √      | chassis identify                                  |
-| SetChassisCapabilities    | √      |
-| SetPowerRestorePolicy     | √      | chassis policy list/always-on/previous/always-off |
-| GetSystemRestartCause     | √      | chassis restart_cause                             |
-| SetSystemBootOptions      | √      | chassis bootparam set                             |
-| SetBootParamBootFlags (*) | √      | chassis bootdev                                   |
-| GetSystemBootOptions      | √      | chassis bootparam get                             |
-| SetFrontPanelEnables      | √      |
-| SetPowerCycleInterval     | √      |
-| GetPOHCounter             | √      | chassis poh                                       |
+| Method                    | Status  | corresponding ipmitool usage                      |
+| ------------------------- | ------- | ------------------------------------------------- |
+| GetChassisCapabilities    | &check; |
+| GetChassisStatus          | &check; | chassis status, chassis power status              |
+| ChassisControl            | &check; | chassis power on/off/cycle/reset/diag/soft        |
+| ChassisReset              | &check; |
+| ChassisIdentify           | &check; | chassis identify                                  |
+| SetChassisCapabilities    | &check; |
+| SetPowerRestorePolicy     | &check; | chassis policy list/always-on/previous/always-off |
+| GetSystemRestartCause     | &check; | chassis restart_cause                             |
+| SetSystemBootOptions      | &check; | chassis bootparam set                             |
+| SetBootParamBootFlags (*) | &check; | chassis bootdev                                   |
+| GetSystemBootOptions      | &check; | chassis bootparam get                             |
+| SetFrontPanelEnables      | &check; |
+| SetPowerCycleInterval     | &check; |
+| GetPOHCounter             | &check; | chassis poh                                       |
 
 ### Event Commands
 
-| Method               | Status | corresponding ipmitool usage |
-| -------------------- | ------ | ---------------------------- |
-| SetEventReceiver     | √      |
-| GetEventReceiver     | √      |
-| PlatformEventMessage | √      |
+| Method               | Status  | corresponding ipmitool usage |
+| -------------------- | ------- | ---------------------------- |
+| SetEventReceiver     | &check; |
+| GetEventReceiver     | &check; |
+| PlatformEventMessage | &check; |
 
 ### PEF and Alerting Commands
 
-| Method                  | Status | corresponding ipmitool usage |
-| ----------------------- | ------ | ---------------------------- |
-| GetPEFCapabilities      | √      | pef capabilities             |
-| ArmPEFPostponeTimer     |        |
-| SetPEFConfigParameters  |        |
-| GetPEFConfigParameters  |        |
-| SetLastProcessedEventId |        |
-| GetLastProcessedEventId |        |
-| AlertImmediate          |        |
-| PEFAck                  |        |
+| Method                  | Status  | corresponding ipmitool usage |
+| ----------------------- | ------- | ---------------------------- |
+| GetPEFCapabilities      | &check; | pef capabilities             |
+| ArmPEFPostponeTimer     |         |
+| SetPEFConfigParameters  |         |
+| GetPEFConfigParameters  |         |
+| SetLastProcessedEventId |         |
+| GetLastProcessedEventId |         |
+| AlertImmediate          |         |
+| PEFAck                  |         |
 
 ### Sensor Device Commands
 
-| Method                         | Status | corresponding ipmitool usage |
-| ------------------------------ | ------ | ---------------------------- |
-| GetDeviceSDRInfo               | √      |
-| GetDeviceSDR                   | √      |
-| ReserveDeviceSDRRepo           | √      |
-| GetSensorReadingFactors        | √      |
-| SetSensorHysteresis            | √      |
-| GetSensorHysteresis            | √      |
-| SetSensorThresholds            | √      |
-| GetSensorThresholds            | √      |
-| SetSensorEventEnable           |        |
-| GetSensorEventEnable           | √      |
-| RearmSensorEvents              |        |
-| GetSensorEventStatus           | √      |
-| GetSensorReading               | √      |
-| SetSensorType                  | √      |
-| GetSensorType                  | √      |
-| SetSensorReadingAndEventStatus | √      |
-| GetSensors (*)                 | √      | sensor list                  |
-| GetSensorByID (*)              | √      |                              |
-| GetSensorByName (*)            | √      | sensor get                   |
+| Method                         | Status  | corresponding ipmitool usage |
+| ------------------------------ | ------- | ---------------------------- |
+| GetDeviceSDRInfo               | &check; |
+| GetDeviceSDR                   | &check; |
+| ReserveDeviceSDRRepo           | &check; |
+| GetSensorReadingFactors        | &check; |
+| SetSensorHysteresis            | &check; |
+| GetSensorHysteresis            | &check; |
+| SetSensorThresholds            | &check; |
+| GetSensorThresholds            | &check; |
+| SetSensorEventEnable           |         |
+| GetSensorEventEnable           | &check; |
+| RearmSensorEvents              |         |
+| GetSensorEventStatus           | &check; |
+| GetSensorReading               | &check; |
+| SetSensorType                  | &check; |
+| GetSensorType                  | &check; |
+| SetSensorReadingAndEventStatus | &check; |
+| GetSensors (*)                 | &check; | sensor list                  |
+| GetSensorByID (*)              | &check; |                              |
+| GetSensorByName (*)            | &check; | sensor get                   |
 
 ### FRU Device Commands
 
-| Method                  | Status | corresponding ipmitool usage |
-| ----------------------- | ------ | ---------------------------- |
-| GetFRUInventoryAreaInfo | √      |
-| ReadFRUData             | √      |
-| WriteFRUData            | √      |
+| Method                  | Status  | corresponding ipmitool usage |
+| ----------------------- | ------- | ---------------------------- |
+| GetFRUInventoryAreaInfo | &check; |
+| ReadFRUData             | &check; |
+| WriteFRUData            | &check; |
 
 
 ### SDR Device Commands
 
-| Method                 | Status | corresponding ipmitool usage |
-| ---------------------- | ------ | ---------------------------- |
-| GetSDRRepoInfo         | √      | sdr info                     |
-| GetSDRRepoAllocInfo    | √      | sdr info                     |
-| ReserveSDRRepo         |        |
-| GetSDR                 | √      |                              |
-| GetSDRs (*)            | √      |                              |
-| GetSDRBySensorID (*)   | √      |                              |
-| GetSDRBySensorName (*) | √      |
-| AddSDR                 |        |
-| PartialAddSDR          |        |
-| DeleteSDR              |        |
-| ClearSDRRepo           |        |
-| GetSDRRepoTime         |        |
-| SetSDRRepoTime         |        |
-| EnterSDRRepoUpateMode  |        |
-| ExitSDRRepoUpdateMode  |        |
-| RunInitializationAgent |        |
+| Method                 | Status  | corresponding ipmitool usage |
+| ---------------------- | ------- | ---------------------------- |
+| GetSDRRepoInfo         | &check; | sdr info                     |
+| GetSDRRepoAllocInfo    | &check; | sdr info                     |
+| ReserveSDRRepo         |         |
+| GetSDR                 | &check; |                              |
+| GetSDRs (*)            | &check; |                              |
+| GetSDRBySensorID (*)   | &check; |                              |
+| GetSDRBySensorName (*) | &check; |
+| AddSDR                 |         |
+| PartialAddSDR          |         |
+| DeleteSDR              |         |
+| ClearSDRRepo           |         |
+| GetSDRRepoTime         |         |
+| SetSDRRepoTime         |         |
+| EnterSDRRepoUpateMode  |         |
+| ExitSDRRepoUpdateMode  |         |
+| RunInitializationAgent |         |
 
 ### SEL Device Commands
 
-| Method              | Status | corresponding ipmitool usage |
-| ------------------- | ------ | ---------------------------- |
-| GetSELInfo          | √      | sel info                     |
-| GetSELAllocInfo     | √      | sel info                     |
-| ReserveSEL          | √      |
-| GetSELEntry         | √      |
-| AddSELEntry         | √      |
-| PartialAddSELEntry  |        |
-| DeleteSELEntry      | √      |
-| ClearSEL            | √      | sel clear                    |
-| GetSELTime          | √      |
-| SetSELTime          | √      |
-| GetAuxLogStatus     |        |
-| SetAuxLogStatus     |        |
-| GetSELTimeUTCOffset | √      |
-| SetSELTimeUTCOffset | √      |
+| Method              | Status  | corresponding ipmitool usage |
+| ------------------- | ------- | ---------------------------- |
+| GetSELInfo          | &check; | sel info                     |
+| GetSELAllocInfo     | &check; | sel info                     |
+| ReserveSEL          | &check; |
+| GetSELEntry         | &check; |
+| AddSELEntry         | &check; |
+| PartialAddSELEntry  |         |
+| DeleteSELEntry      | &check; |
+| ClearSEL            | &check; | sel clear                    |
+| GetSELTime          | &check; |
+| SetSELTime          | &check; |
+| GetAuxLogStatus     |         |
+| SetAuxLogStatus     |         |
+| GetSELTimeUTCOffset | &check; |
+| SetSELTimeUTCOffset | &check; |
 
 ### LAN Device Commands
 
-| Method             | Status | corresponding ipmitool usage |
-| ------------------ | ------ | ---------------------------- |
-| SetLanConfigParams |        |
-| GetLanConfigParams | √      |
-| SuspendARPs        | √      |
-| GetIpStatistics    | √      |
+| Method             | Status  | corresponding ipmitool usage |
+| ------------------ | ------- | ---------------------------- |
+| SetLanConfigParams |         |
+| GetLanConfigParams | &check; |
+| SuspendARPs        | &check; |
+| GetIpStatistics    | &check; |
 
 ### Serial/Modem Device Commands
 
-| Method                 | Status | corresponding ipmitool usage |
-| ---------------------- | ------ | ---------------------------- |
-| SetSerialConfig        |        |
-| GetSerialConfig        |        |
-| SetSerialMux           |        |
-| GetTapResponseCodes    |        |
-| SetPPPTransmitData     |        |
-| GetPPPTransmitData     |        |
-| SendPPPPacket          |        |
-| GetPPPReceiveData      |        |
-| SerialConnectionActive |        |
-| Callback               |        |
-| SetUserCallbackOptions |        |
-| GetUserCallbackOptions |        |
-| SetSerialRoutingMux    |        |
-| SOLActivating          | √      |
-| GetSOLConfigParams     | √      |
-| SetSOLConfigParams     | √      |
-| SOLInfo                | √      | sol info                     |
+| Method                 | Status  | corresponding ipmitool usage |
+| ---------------------- | ------- | ---------------------------- |
+| SetSerialConfig        |         |
+| GetSerialConfig        |         |
+| SetSerialMux           |         |
+| GetTapResponseCodes    |         |
+| SetPPPTransmitData     |         |
+| GetPPPTransmitData     |         |
+| SendPPPPacket          |         |
+| GetPPPReceiveData      |         |
+| SerialConnectionActive |         |
+| Callback               |         |
+| SetUserCallbackOptions |         |
+| GetUserCallbackOptions |         |
+| SetSerialRoutingMux    |         |
+| SOLActivating          | &check; |
+| GetSOLConfigParams     | &check; |
+| SetSOLConfigParams     | &check; |
+| SOLInfo                | &check; | sol info                     |
 
 ### Command Forwarding Commands
 
