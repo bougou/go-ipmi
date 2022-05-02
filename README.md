@@ -17,6 +17,8 @@ func main() {
 	password := "123456"
 
 	client, err := ipmi.NewClient(host, port, username, password)
+	// Support local mode client if runs directly on linux
+	// client, err := ipmi.NewOpenClient()
 	if err != nil {
 		panic(err)
 	}
