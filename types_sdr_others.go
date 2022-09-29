@@ -720,6 +720,8 @@ type SDRReserved struct {
 // 43.15 Type/Length Byte Format
 //
 //  7:6 00 = Unicode
+//           00b define a Unicode string in the IPMI specification,
+//           whereas they specify a binary field in the Platform Management FRU specification.
 //      01 = BCD plus (see below)
 //      10 = 6-bit ASCII, packed
 //      11 = 8-bit ASCII + Latin 1.
@@ -727,13 +729,15 @@ type SDRReserved struct {
 //          Therefore, the length (number of data bytes) will be >1 if data is present,
 //          0 if data is not present. A length of 1 is reserved.
 //  5 reserved.
+//     	the bit 5 is reserved in the IPMI specification type/length byte,
+//      where it is part of the length field in the Platform Management FRU specification
 //  4:0 length of following data, in characters.
 //      00000b indicates 'none following'.
 //      11111b = reserved.
 type TypeLength uint8
 
 func (tl TypeLength) String() string {
-	return fmt.Sprintf("%s / %d (%#02x)", tl.Type(), tl.Length(), uint8(tl))
+	return fmt.Sprintf("Byte: (%#02x) / Type: (%s) / Length: %d / Size: %d / ", uint8(tl), tl.Type(), tl.Length(), tl.Size())
 }
 
 func (tl TypeLength) Type() string {
@@ -767,7 +771,7 @@ func (tl TypeLength) Length() uint8 {
 
 // Size returns the length of chars.
 func (tl TypeLength) Size() uint8 {
-	typecode := (uint8(tl) & 0xc0) >> 6 // the highest 2 bits
+	typecode := tl.TypeCode()
 	l := tl.Length()
 
 	var size uint8
@@ -790,6 +794,7 @@ func (tl TypeLength) Size() uint8 {
 	return size
 }
 
+// Chars decodes the raw bytes to ASCII chars according to the encoding type code of TypeLength
 func (tl TypeLength) Chars(raw []byte) (chars []byte, err error) {
 	if len(raw) != int(tl.Length()) {
 		err = fmt.Errorf("passed raw not equal to length")
@@ -800,12 +805,12 @@ func (tl TypeLength) Chars(raw []byte) (chars []byte, err error) {
 	chars = make([]byte, size)
 
 	switch tl.TypeCode() {
-	case 0: // Binary
+	case 0: // 00b - Binary
 		for i := 0; i < size; i++ {
 			chars[i] = raw[i]
 		}
 
-	case 1: // BCD Plus
+	case 1: // 01b - BCD Plus
 		var bcdPlusChars = [16]byte{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ', '-', '.', ':', ',', '_'}
 
 		for i := 0; i < size; i++ {
@@ -818,7 +823,14 @@ func (tl TypeLength) Chars(raw []byte) (chars []byte, err error) {
 			chars[i] = bcdPlusChars[charIndex]
 		}
 
-	case 2: // 6-bit ASCII
+	case 2: // 10b - 6-bit ASCII
+		// 6-bit ASCII definition
+		var ascci6bit = [64]byte{
+			' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
+			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?',
+			'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+			'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', ']', '^', '_',
+		}
 		// every 3 bytes packs 4 chars.
 
 		// i holds index for raw
@@ -829,43 +841,27 @@ func (tl TypeLength) Chars(raw []byte) (chars []byte, err error) {
 			c3 := raw[i+2]
 
 			for k := 0; k < 4; k++ {
+				var idx byte
 				switch k {
 				case 0:
-					chars[j] = c1 & 0x3f
+					idx = c1 & 0x3f
 				case 1:
-					chars[j] = (c1&0xc0)>>6 | (c2&0x0f)<<2
+					idx = (c1&0xc0)>>6 | (c2&0x0f)<<2
 				case 2:
-					chars[j] = (c2&0xf0)>>4 | (c3&0x03)<<4
+					idx = (c2&0xf0)>>4 | (c3&0x03)<<4
 				case 3:
-					chars[j] = (c3 & 0xfc) >> 2
+					idx = (c3 & 0xfc) >> 2
 				}
+				chars[j] = ascci6bit[idx]
 				j++
 			}
 		}
 
-	case 3: // 8-bit ASCII
+	case 3: // 11b - 8-bit ASCII
 		for i := 0; i < size; i++ {
 			chars[i] = raw[i]
 		}
 	}
 
 	return
-
-}
-func (tl TypeLength) CharsString(raw []byte) (str string, err error) {
-	chars, err := tl.Chars(raw)
-	if err != nil {
-		return "", fmt.Errorf("call Chars failed, err: %s", err)
-	}
-
-	switch tl.TypeCode() {
-	case 0: // Binary, print as hex
-		for _, v := range chars {
-			str += fmt.Sprintf("%02x", v)
-		}
-	default:
-		str = string(chars)
-	}
-
-	return str, nil
 }
