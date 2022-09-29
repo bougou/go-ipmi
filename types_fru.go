@@ -24,11 +24,14 @@ const (
 )
 
 type FRU struct {
-	deviceID         uint8
-	deviceName       string
-	deviceNotPresent bool
+	deviceID               uint8
+	deviceName             string
+	deviceNotPresent       bool
+	deviceNotPresentReason string
 
-	CommandHeader   *FRUCommonHeader
+	// FRU/17. FRU Information Layout
+
+	CommonHeader    *FRUCommonHeader
 	InternalUseArea *FRUInternalUseArea
 	ChassisInfoArea *FRUChassisInfoArea
 	BoardInfoArea   *FRUBoardInfoArea
@@ -92,9 +95,15 @@ func (fru *FRU) String() string {
 	return buf.String()
 }
 
-// The offset unit in wire is in multiples of 8 bytes, offset value 0x0 indicates that this area is not present.
-// 8. Common Header Format
-// 17. FRU Information Layout
+// FRUCommonHeader is mandatory for all FRU Information Device implementations.
+// It holds version information for the overall information format specification
+// and offsets to the other information areas.
+//
+// The other areas may or may not be present based on the application of the device.
+// The offset unit in wire is in multiples of 8 bytes, offset value 0x0 indicates
+// that this area is not present.
+//
+// ref: FRU/8. Common Header Format
 type FRUCommonHeader struct {
 	FormatVersion        uint8
 	InternalOffset8B     uint8
@@ -161,11 +170,24 @@ Offset MultiRecord : %#02x`,
 	)
 }
 
+// FRUInternalUseArea provides private, implementation-specific information storage
+// for other devices that exist on the same FRU as the FRU Information Device.
+//
+// The Internal Use Area is usually used to provide private non-volatile storage
+// for a management controller.
+//
+// see: FRU/9. Internal Use Area Format
 type FRUInternalUseArea struct {
 	FormatVersion uint8
 	Data          []byte
 }
 
+// FRUChassisInfoArea is used to hold Serial Number, Part Number, and other
+// information about the system chassis. A system can have multiple FRU
+// Information Devices within a chassis, but only one device should provide
+// the Chassis Info Area.
+//
+// see: FRU/10. Chassis Info Area Format
 type FRUChassisInfoArea struct {
 	FormatVersion          uint8
 	Length8B               uint8
@@ -301,7 +323,16 @@ func (chassisSecurityStatus ChassisSecurityStatus) String() string {
 	return ""
 }
 
-// fru: 11. Board Info Area Format
+// FRUBoardInfoArea provides Serial Number, Part Number, and other information about
+// the board that the FRU Information Device is located on.
+// The name 'Board Info Area' is somewhat a misnomer, because the usage is not
+// restricted to just circuit boards. This area is also typically used to
+// provide FRU information for any replaceable entities, boards, or sub-assemblies
+// that are not sold as standalone products separate from other components.
+// For example, individual boards from a board set, or a sub-chassis or backplane
+// that's part of a larger chassis.1
+//
+// see: FRU/11. Board Info Area Format
 type FRUBoardInfoArea struct {
 	FormatVersion          uint8
 	Length8B               uint8
@@ -400,6 +431,13 @@ func (boardType BoardType) String() string {
 	return ""
 }
 
+// The Product Info Area is present if the FRU itself is a separate product.
+// This is typically seen when the FRU is an add-in card, sub-assembly, or
+// a power supply from a separate vendor, etc.
+// When this area is provided in the FRU Information Device that contains the
+// Chassis Info Area, the product info is for the overall system, as initially manufactured.
+//
+// see: FRU/12. Product Info Area Format
 type FRUProductInfoArea struct {
 	FormatVersion          uint8
 	Length8B               uint8
@@ -482,6 +520,11 @@ func (fruProduct *FRUProductInfoArea) Unpack(msg []byte) error {
 	return nil
 }
 
+// The MultiRecord Info Area provides a region that holds one or more records
+// where the type and format of the information is specified in the individual
+// headers for the records.
+//
+// see: FRU/16. MultiRecord Area
 type FRUMultiRecord struct {
 	RecordType FRURecordType // used to identify the information contained in the record
 
@@ -524,7 +567,7 @@ func (fruMultiRecord *FRUMultiRecord) Unpack(msg []byte) error {
 	fruMultiRecord.RecordChecksum = msg[3]
 	fruMultiRecord.HeaderChecksum = msg[4]
 
-	dataLen := int(fruMultiRecord.RecordLength) - 5
+	dataLen := int(fruMultiRecord.RecordLength)
 	fruMultiRecord.RecordData, _, _ = unpackBytes(msg, 5, dataLen)
 
 	return nil
@@ -911,7 +954,15 @@ func getFRUTypeLengthField(fruData []byte, offset uint16) (nextOffset uint16, ty
 
 	dataStart := int(offset) + 1
 	dataEnd := dataStart + int(length)
-	fieldData = fruData[dataStart:dataEnd]
+
+	fieldDataRaw := fruData[dataStart:dataEnd]
+
+	fieldData, err = typeLength.Chars(fieldDataRaw)
+	if err != nil {
+		err = fmt.Errorf("get chars from typelength failed, err: %s", err)
+		return
+	}
+
 	nextOffset = offset + uint16(length) + 1
 	return
 }

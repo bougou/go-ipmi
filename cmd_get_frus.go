@@ -1,13 +1,7 @@
 package ipmi
 
 import (
-	"errors"
 	"fmt"
-)
-
-var (
-	ErrFRUInventoryRecordNotExist = fmt.Errorf("FRU inventory record not exist") // cc (0xcb) response of GetFRUInventoryAreaInfo command
-	ErrFRUDataNotExist            = fmt.Errorf("FRU data not exist")             // cc (0xcb) response of ReadFRUData command
 )
 
 // GetFRUData return all data bytes, the data size is firstly determined by
@@ -32,12 +26,8 @@ func (c *Client) GetFRUData(deviceID uint8) ([]byte, error) {
 	return data, nil
 }
 
-// GetFRU return FRU for the specified deviceID, deviceName is not a must, pass empty string if not known.
-//
-// If error is returned, you SHOULD check whether the error is
-// ErrFRUInventoryRecordNotExist or ErrFRUDataNotExist or others.
-// If error equals to ErrFRUInventoryRecordNotExist or ErrFRUDataNotExist, then
-// the returned fru is still a valid FRU struct with the deviceNotPresent field set to true.
+// GetFRU return FRU for the specified deviceID.
+// The deviceName is not a must, pass empty string if not known.
 func (c *Client) GetFRU(deviceID uint8, deviceName string) (*FRU, error) {
 	c.Debugf("GetFRU device name (%s) id (%#02x)\n", deviceName, deviceID)
 
@@ -50,8 +40,9 @@ func (c *Client) GetFRU(deviceID uint8, deviceName string) (*FRU, error) {
 	if err != nil {
 		if resErr, ok := err.(*ResponseError); ok {
 			if resErr.CompletionCode() == CompletionCodeRequestedDataNotPresent {
-				// Notice, still return fru
-				return fru, ErrFRUInventoryRecordNotExist
+				fru.deviceNotPresent = true
+				fru.deviceNotPresentReason = "InventoryRecordNotExist"
+				return fru, nil
 			}
 		}
 		return nil, fmt.Errorf("GetFRUInventoryAreaInfo failed, err: %s", err)
@@ -66,9 +57,15 @@ func (c *Client) GetFRU(deviceID uint8, deviceName string) (*FRU, error) {
 	readFRURes, err := c.ReadFRUData(deviceID, 0, FRUCommonHeaderSize)
 	if err != nil {
 		if resErr, ok := err.(*ResponseError); ok {
-			if resErr.CompletionCode() == CompletionCodeRequestedDataNotPresent {
-				// Notice, still return fru
-				return fru, ErrFRUDataNotExist
+			switch resErr.CompletionCode() {
+			case CompletionCodeRequestedDataNotPresent:
+				fru.deviceNotPresent = true
+				fru.deviceNotPresentReason = "DataNotPresent"
+				return fru, nil
+			case CompletionCodeProcessTimeout:
+				fru.deviceNotPresent = true
+				fru.deviceNotPresentReason = "Timeout"
+				return fru, nil
 			}
 		}
 		return nil, fmt.Errorf("ReadFRUData failed, err: %s", err)
@@ -81,37 +78,52 @@ func (c *Client) GetFRU(deviceID uint8, deviceName string) (*FRU, error) {
 	if fruHeader.FormatVersion != FRUFormatVersion {
 		return nil, fmt.Errorf("unkown FRU header version %#02x", fruHeader.FormatVersion)
 	}
-	fru.CommandHeader = fruHeader
+	c.Debug("FRU Common Header", fruHeader)
+	c.Debugf("%s\n\n", fruHeader.String())
+	fru.CommonHeader = fruHeader
 
 	if fruHeader.ChassisOffset8B != 0 {
+		offset := uint16(fruHeader.ChassisOffset8B) * 8
+		c.Debugf("Get FRU Area Chassis, offset (%d)\n", offset)
 		fruChassis, err := c.GetFRUAreaChassis(deviceID, uint16(fruHeader.ChassisOffset8B)*8)
 		if err != nil {
 			return nil, fmt.Errorf("GetFRUAreaChassis failed, err: %s", err)
 		}
+
+		c.Debug("FRU Area Chassis", fruChassis)
 		fru.ChassisInfoArea = fruChassis
 	}
 
 	if fruHeader.BoardOffset8B != 0 {
-		fruBoard, err := c.GetFRUAreaBoard(deviceID, uint16(fruHeader.BoardOffset8B)*8)
+		offset := uint16(fruHeader.BoardOffset8B) * 8
+		c.Debugf("Get FRU Area Board, offset (%d)\n", offset)
+		fruBoard, err := c.GetFRUAreaBoard(deviceID, offset)
 		if err != nil {
 			return nil, fmt.Errorf("GetFRUAreaBoard failed, err: %s", err)
 		}
+		c.Debug("FRU Area Board", fruBoard)
 		fru.BoardInfoArea = fruBoard
 	}
 
 	if fruHeader.ProductOffset8B != 0 {
-		fruProduct, err := c.GetFRUAreaProduct(deviceID, uint16(fruHeader.ProductOffset8B)*8)
+		offset := uint16(fruHeader.ProductOffset8B) * 8
+		c.Debugf("Get FRU Area Product, offset (%d)\n", offset)
+		fruProduct, err := c.GetFRUAreaProduct(deviceID, offset)
 		if err != nil {
 			return nil, fmt.Errorf("GetFRUAreaProduct failed, err: %s", err)
 		}
+		c.Debug("FRU Area Product", fruProduct)
 		fru.ProductInfoArea = fruProduct
 	}
 
 	if fruHeader.MultiRecordsOffset8B != 0 {
-		fruMultiRecords, err := c.GetFRUAreaMultiRecords(deviceID, uint16(fruHeader.MultiRecordsOffset8B)*8)
+		offset := uint16(fruHeader.MultiRecordsOffset8B) * 8
+		c.Debugf("Get FRU Area Multi Records, offset (%d)\n", offset)
+		fruMultiRecords, err := c.GetFRUAreaMultiRecords(deviceID, offset)
 		if err != nil {
 			return nil, fmt.Errorf("GetFRUAreaMultiRecord failed, err: %s", err)
 		}
+		c.Debug("FRU Area MultiRecords", fruMultiRecords)
 		fru.MultiRecords = fruMultiRecords
 	}
 
@@ -133,13 +145,7 @@ func (c *Client) GetFRUs() ([]*FRU, error) {
 		var deviceID uint8 = 0x00
 		fru, err := c.GetFRU(deviceID, "Builtin FRU")
 		if err != nil {
-			if errors.Is(err, ErrFRUInventoryRecordNotExist) || errors.Is(err, ErrFRUDataNotExist) {
-				if fru != nil {
-					fru.deviceNotPresent = true
-				}
-			} else {
-				return nil, fmt.Errorf("GetFRU device id (%#02x) failed, err: %s", deviceID, err)
-			}
+			return nil, fmt.Errorf("GetFRU device id (%#02x) failed, err: %s", deviceID, err)
 		}
 		frus = append(frus, fru)
 	}
@@ -178,13 +184,7 @@ func (c *Client) GetFRUs() ([]*FRU, error) {
 			case 0x00, 0x02:
 				fru, err := c.GetFRU(deviceID, deviceName)
 				if err != nil {
-					if errors.Is(err, ErrFRUInventoryRecordNotExist) || errors.Is(err, ErrFRUDataNotExist) {
-						if fru != nil {
-							fru.deviceNotPresent = true
-						}
-					} else {
-						return nil, fmt.Errorf("GetFRU sdr device id (%#02x) failed, err: %s", deviceID, err)
-					}
+					return nil, fmt.Errorf("GetFRU sdr device id (%#02x) failed, err: %s", deviceID, err)
 				}
 				frus = append(frus, fru)
 
@@ -281,15 +281,20 @@ func (c *Client) GetFRUAreaMultiRecords(deviceID uint8, offset uint16) ([]*FRUMu
 	records := make([]*FRUMultiRecord, 0)
 
 	for {
-		// read enough (3 bytes) to check the length of each record
-		res, err := c.ReadFRUData(deviceID, offset, 3)
+		// read enough (5 bytes) to check the length of each record
+		// For a MultiRecord, the first 5 bytes contains the Record Header,
+		// and the third byte holds the data length.
+		//
+		// see: FRU/16.1 Record Header
+		res, err := c.ReadFRUData(deviceID, offset, 5)
 		if err != nil {
 			return nil, fmt.Errorf("ReadFRUData failed, err: %s", err)
 		}
 		length := uint16(res.Data[2])
 
 		// now read full data for this record
-		data, err := c.readFRUDataByLength(deviceID, offset, length)
+		recordSize := 5 + length // Record Header + Data Length
+		data, err := c.readFRUDataByLength(deviceID, offset, recordSize)
 		if err != nil {
 			return nil, fmt.Errorf("ReadFRUDataAll failed, err: %s", err)
 		}
@@ -299,14 +304,15 @@ func (c *Client) GetFRUAreaMultiRecords(deviceID uint8, offset uint16) ([]*FRUMu
 		if err := record.Unpack(data); err != nil {
 			return nil, fmt.Errorf("unpack fru multi record failed, err: %s", err)
 		}
+		c.Debug("Multi record", record)
 		records = append(records, record)
+
+		// update offset for the next record
+		offset += uint16(5 + record.RecordLength)
 
 		if record.EndOfList {
 			break
 		}
-
-		// update offset for the next record
-		offset += uint16(record.RecordLength)
 	}
 
 	return records, nil

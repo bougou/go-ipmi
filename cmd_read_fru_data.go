@@ -64,34 +64,70 @@ func (c *Client) ReadFRUData(fruDeviceID uint8, readOffset uint16, readCount uin
 	return
 }
 
+// readFRUDataByLength reads FRU Data in loop until reaches the specified data length
 func (c *Client) readFRUDataByLength(deviceID uint8, offset uint16, length uint16) ([]byte, error) {
 	var data []byte
+	c.Debugf("Read FRU Data by Length, offset: (%d), length: (%d)\n", offset, length)
 
 	for {
-		c.Debugf("read length: %d\n", length)
 		if length <= 0 {
 			break
 		}
 
-		var readCount uint8
-		if length <= 255 {
-			readCount = uint8(length)
-		} else {
-			readCount = 255
-		}
-		length -= uint16(readCount)
-		c.Debugf("left length: %d\n", length)
-
-		res, err := c.ReadFRUData(deviceID, offset, readCount)
+		res, err := c.tryReadFRUData(deviceID, offset, length)
 		if err != nil {
-			return nil, fmt.Errorf("ReadFRUData failed, err: %s", err)
+			return nil, fmt.Errorf("tryReadFRUData failed, err: %s", err)
 		}
 		c.Debug("", res.Format())
 		data = append(data, res.Data...)
 
+		length -= uint16(res.CountReturned)
+		c.Debugf("left length: %d\n", length)
+
 		// update offset
-		offset += uint16(readCount)
+		offset += uint16(res.CountReturned)
 	}
 
 	return data, nil
+}
+
+// tryReadFRUData will try to read FRU data with a read count which starts with
+// the minimal number of the specified length and the hard-coded 32, if the
+// ReadFRUData failed, it try another request with a decreased read count.
+func (c *Client) tryReadFRUData(deviceID uint8, readOffset uint16, length uint16) (response *ReadFRUDataResponse, err error) {
+	var readCount uint8 = 32
+	if length <= uint16(readCount) {
+		readCount = uint8(length)
+	}
+
+	for {
+		if readCount <= 0 {
+			return nil, fmt.Errorf("nothing to read")
+		}
+
+		c.Debugf("Try Read FRU Data, offset: (%d), count: (%d)\n", readOffset, readCount)
+		res, err := c.ReadFRUData(deviceID, readOffset, readCount)
+		if err == nil {
+			return res, nil
+		}
+
+		resErr, ok := err.(*ResponseError)
+		if !ok {
+			return nil, fmt.Errorf("ReadFRUData failed, err: %s", err)
+		}
+
+		cc := resErr.CompletionCode()
+		if readFRUDataLength2Big(cc) {
+			readCount -= 1
+			continue
+		} else {
+			return nil, fmt.Errorf("ReadFRUData failed, err: %s", err)
+		}
+	}
+}
+
+func readFRUDataLength2Big(cc CompletionCode) bool {
+	return cc == CompletionCodeRequestDataLengthInvalid ||
+		cc == CompletionCodeRequestDataLengthLimitExceeded ||
+		cc == CompletionCodeCannotReturnRequestedDataBytes
 }
