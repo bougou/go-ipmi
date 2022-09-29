@@ -216,6 +216,8 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | GetFRUInventoryAreaInfo | &check; |
 | ReadFRUData             | &check; |
 | WriteFRUData            | &check; |
+| GetFRU (*)              | &check; | fru print                    |
+| GetFRUs (*)             | &check; | fru print                    |
 
 
 ### SDR Device Commands
