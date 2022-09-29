@@ -80,8 +80,7 @@ func (c *Client) exchangeOpen(request Request, response Response) error {
 
 	} else {
 		// otherwise use system interface
-		c.Debugf("Sending request [%s] (%#02x) to System Interface\n", request.Command().Name, request.Command().ID)
-
+		c.Debugf("\nSending request [%s] (%#02x) to System Interface\n", request.Command().Name, request.Command().ID)
 	}
 
 	recv, err := c.openSendRequest(request)
@@ -90,6 +89,7 @@ func (c *Client) exchangeOpen(request Request, response Response) error {
 	}
 
 	c.DebugBytes("recv data", recv, 16)
+	c.Debugf("\n\n")
 
 	// recv[0] is cc
 	if len(recv) < 1 {

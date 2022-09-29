@@ -44,7 +44,7 @@ func (res *GetFRUInventoryAreaInfoResponse) Format() string {
 	)
 }
 
-// This command returns the present reading of the POH (Power-On Hours) counter, plus the number of counts per hour.
+// This command returns overall the size of the FRU Inventory Area in this device, in bytes.
 func (c *Client) GetFRUInventoryAreaInfo(fruDeviceID uint8) (response *GetFRUInventoryAreaInfoResponse, err error) {
 	request := &GetFRUInventoryAreaInfoRequest{
 		FRUDeviceID: fruDeviceID,

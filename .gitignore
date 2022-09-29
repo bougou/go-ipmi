@@ -40,3 +40,6 @@ _output
 .DS_Store
 
 goipmitest
+
+# asdf
+.tool-versions

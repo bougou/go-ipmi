@@ -29,7 +29,11 @@ func debugf(format string, object ...interface{}) {
 }
 
 func debug(header string, object interface{}) {
-	pretty.Printf("%s: \n%# v\n", header, object)
+	if header == "" {
+		pretty.Printf("%# v\n", object)
+	} else {
+		pretty.Printf("%s: \n%# v\n", header, object)
+	}
 }
 
 func (c *Client) Debugf(format string, object ...interface{}) {
