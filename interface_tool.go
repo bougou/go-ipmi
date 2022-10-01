@@ -5,7 +5,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os/exec"
+	"regexp"
+	"strconv"
 	"strings"
+)
+
+var (
+	toolError = regexp.MustCompile(`^Unable to send RAW command \(channel=0x(?P<channel>[0-9a-fA-F]+) netfn=0x(?P<netfn>[0-9a-fA-F]+) lun=0x(?P<lun>[0-9a-fA-F]+) cmd=0x(?P<cmd>[0-9a-fA-F]+) rsp=0x(?P<rsp>[0-9a-fA-F]+)\): (?P<message>.*)`)
 )
 
 // ConnectTool try to initialize the client.
@@ -40,6 +46,19 @@ func (c *Client) exchangeTool(request Request, response Response) error {
 
 	err := cmd.Run()
 	if err != nil {
+		if bytes.HasPrefix(stderr.Bytes(), []byte("Unable to send RAW command")) {
+			submatches := toolError.FindSubmatch(stderr.Bytes())
+			if len(submatches) == 7 && len(submatches[5]) == 2 {
+				code, err := strconv.ParseUint(string(submatches[5]), 16, 0)
+				if err != nil {
+					return fmt.Errorf("CompletionCode parse failed, err: %s", err)
+				}
+				return &ResponseError{
+					completionCode: CompletionCode(uint8(code)),
+					description:    fmt.Sprintf("Raw command failed, err: %s", string(submatches[6])),
+				}
+			}
+		}
 		return fmt.Errorf("ipmitool run failed, err: %s", err)
 	}
 
