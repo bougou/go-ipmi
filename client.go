@@ -11,6 +11,7 @@ const (
 	InterfaceLan     Interface = "lan"
 	InterfaceLanplus Interface = "lanplus"
 	InterfaceOpen    Interface = "open"
+	InterfaceTool    Interface = "tool"
 
 	DefaultExchangeTimeoutSec int = 20
 	DefaultBufferSize         int = 1024
@@ -46,6 +47,14 @@ func NewOpenClient() (*Client, error) {
 			myAddr:     myAddr,
 			targetAddr: myAddr,
 		},
+	}, nil
+}
+
+func NewToolClient(path string) (*Client, error) {
+
+	return &Client{
+		Host:      path,
+		Interface: "tool",
 	}, nil
 }
 
@@ -137,6 +146,10 @@ func (c *Client) Connect() error {
 		var devnum int32 = 0
 		return c.ConnectOpen(devnum)
 
+	case InterfaceTool:
+		var devnum int32 = 0
+		return c.ConnectTool(devnum)
+
 	case InterfaceLanplus:
 		c.v20 = true
 		return c.Connect20()
@@ -155,6 +168,9 @@ func (c *Client) Close() error {
 	case "", InterfaceOpen:
 		return c.closeOpen()
 
+	case InterfaceTool:
+		return c.closeTool()
+
 	case InterfaceLan, InterfaceLanplus:
 		return c.closeLAN()
 	}
@@ -166,6 +182,9 @@ func (c *Client) Exchange(request Request, response Response) error {
 	switch c.Interface {
 	case "", InterfaceOpen:
 		return c.exchangeOpen(request, response)
+
+	case InterfaceTool:
+		return c.exchangeTool(request, response)
 
 	case InterfaceLan, InterfaceLanplus:
 		return c.exchangeLAN(request, response)
