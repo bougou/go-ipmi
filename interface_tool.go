@@ -44,7 +44,10 @@ func (c *Client) exchangeTool(request Request, response Response) error {
 	}
 
 	output := stdout.String()
-	resp := rawDecode(strings.TrimSpace(output))
+	resp, err := rawDecode(strings.TrimSpace(output))
+	if err != nil {
+		return fmt.Errorf("decode response failed, err: %s", err)
+	}
 	if err := response.Unpack(resp); err != nil {
 		return fmt.Errorf("unpack response failed, err: %s", err)
 	}
@@ -52,23 +55,23 @@ func (c *Client) exchangeTool(request Request, response Response) error {
 	return nil
 }
 
-func rawDecode(data string) []byte {
+func rawDecode(data string) ([]byte, error) {
 	var buf bytes.Buffer
 
 	data = strings.ReplaceAll(data, "\n", "")
 	for _, s := range strings.Split(data, " ") {
 		b, err := hex.DecodeString(s)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 
 		_, err = buf.Write(b)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 	}
 
-	return buf.Bytes()
+	return buf.Bytes(), nil
 }
 
 func rawEncode(data []byte) []string {
