@@ -55,6 +55,7 @@ func (c *Client) exchangeTool(request Request, response Response) error {
 func rawDecode(data string) []byte {
 	var buf bytes.Buffer
 
+	data = strings.ReplaceAll(data, "\n", "")
 	for _, s := range strings.Split(data, " ") {
 		b, err := hex.DecodeString(s)
 		if err != nil {
