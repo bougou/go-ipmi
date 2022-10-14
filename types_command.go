@@ -266,4 +266,7 @@ var (
 
 	// Other Bridge Commands
 	CommandErrorReport = Command{ID: 0xff, NetFn: NetFnBridgeRequest, Name: "Error Report (optional)"}
+
+	// Vendor Specific Commands
+	CommandGetSupermicroBiosVersion = Command{ID: 0xAC, NetFn: NetFnOEMSupermicroRequest, Name: "Get Supermicro BIOS Version"}
 )

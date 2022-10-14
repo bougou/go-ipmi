@@ -33,4 +33,6 @@ const (
 
 	// 30h-3Fh controller specific
 	// Vendor specific (16 Network Functions [8 pairs]).
+
+	NetFnOEMSupermicroRequest NetFn = 0x30
 )
