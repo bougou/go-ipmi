@@ -1,5 +1,7 @@
 package ipmi
 
+import "fmt"
+
 // 28.12 Set System Boot Options Command
 type SetSystemBootOptionsRequest struct {
 	// Thus, the BMC will automatically clear a 'boot flags valid bit' if
@@ -69,4 +71,26 @@ func (c *Client) SetSystemBootOptions(request *SetSystemBootOptionsRequest) (res
 	response = &SetSystemBootOptionsResponse{}
 	err = c.Exchange(request, response)
 	return
+}
+
+// SetBootDevice set the boot device for next boot.
+// persist of false means it applies to next boot only.
+// persist of true means this setting is persistent for all future boots.
+func (c *Client) SetBootDevice(bootDeviceSelector BootDeviceSelector, bootType BIOSBootType, persist bool) error {
+	req := &SetSystemBootOptionsRequest{
+		MarkParameterInvalid: false,
+		ParameterSelector:    BOPS_BootFlags,
+		BootOptionParameter: BootOptionParameter{
+			BootFlags: &BOP_BootFlags{
+				BootFlagsValid:     true,
+				Persist:            persist,
+				BIOSBootType:       bootType,
+				BootDeviceSelector: bootDeviceSelector,
+			},
+		},
+	}
+	if _, err := c.SetSystemBootOptions(req); err != nil {
+		return fmt.Errorf("SetSystemBootOptions failed, err: %s", err)
+	}
+	return nil
 }

@@ -235,7 +235,7 @@ bootparam set bootflag <device> [options=...]
 				parameterSelector := args[1]
 				i, err := parseStringToInt64(parameterSelector)
 				if err != nil {
-					CheckErr(fmt.Errorf("param # must be a valid interger in range (0-127), err: %s", err))
+					CheckErr(fmt.Errorf("param %s must be a valid interger in range (0-127), err: %s", parameterSelector, err))
 				}
 
 				res, err := client.GetSystemBootOptions(ipmi.BootOptionParameterSelector(i))
@@ -243,8 +243,55 @@ bootparam set bootflag <device> [options=...]
 					CheckErr(fmt.Errorf("GetSystemBootOptions failed, err: %s", err))
 				}
 				fmt.Println(res.Format())
-			}
 
+			case "set":
+				if len(args) < 3 {
+					fmt.Println(usage)
+					return
+				}
+
+				parameterSelector := args[1]
+				// currently only support set bootflag
+				if parameterSelector != "bootflag" {
+					fmt.Println(usage)
+					return
+				}
+
+				var f = func(bootDevice string) ipmi.BootDeviceSelector {
+					m := map[string]ipmi.BootDeviceSelector{
+						"none":        ipmi.BootDeviceSelectorNoOverride,
+						"force_pxe":   ipmi.BootDeviceSelectorForcePXE,
+						"force_disk":  ipmi.BootDeviceSelectorForceHardDrive,
+						"force_safe":  ipmi.BootDeviceSelectorForceHardDriveSafe,
+						"force_diag":  ipmi.BootDeviceSelectorForceDiagnosticPartition,
+						"force_cdrom": ipmi.BootDeviceSelectorForceCDROM,
+						"force_bios":  ipmi.BootDeviceSelectorForceBIOSSetup,
+					}
+					if s, ok := m[bootDevice]; ok {
+						return s
+					}
+					return ipmi.BootDeviceSelectorNoOverride
+				}
+				bootDeviceSelector := f(args[2])
+
+				request := &ipmi.SetSystemBootOptionsRequest{
+					MarkParameterInvalid: false,
+					ParameterSelector:    ipmi.BOPS_BootFlags,
+					BootOptionParameter: ipmi.BootOptionParameter{
+						BootFlags: &ipmi.BOP_BootFlags{
+							BootFlagsValid:     true,
+							Persist:            false,
+							BIOSBootType:       ipmi.BIOSBootTypeLegacy,
+							BootDeviceSelector: bootDeviceSelector,
+						},
+					},
+				}
+				res, err := client.SetSystemBootOptions(request)
+				if err != nil {
+					CheckErr(fmt.Errorf("SetSystemBootOptions failed, err: %s", err))
+				}
+				fmt.Println(res.Format())
+			}
 		},
 	}
 	return cmd
