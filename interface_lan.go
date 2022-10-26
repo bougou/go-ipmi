@@ -6,6 +6,7 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"fmt"
+	"time"
 )
 
 const (
@@ -837,6 +838,10 @@ func (c *Client) Connect15() error {
 		return fmt.Errorf("SetSessionPrivilegeLevel failed, err: %s", err)
 	}
 
+	go func() {
+		c.keepSessionAlive(30)
+	}()
+
 	return nil
 
 }
@@ -878,6 +883,10 @@ func (c *Client) Connect20() error {
 	if err != nil {
 		return fmt.Errorf("SetSessionPrivilegeLevel failed, err: %s", err)
 	}
+
+	go func() {
+		c.keepSessionAlive(30)
+	}()
 
 	return nil
 }
@@ -932,5 +941,19 @@ func (c *Client) closeLAN() error {
 		return fmt.Errorf("close udp connection failed, err: %s", err)
 	}
 
+	return nil
+}
+
+// 6.12.15 Session Inactivity Timeouts
+func (c *Client) keepSessionAlive(intervalSec int) error {
+	var period = time.Duration(intervalSec) * time.Second
+	ticker := time.NewTicker(period)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		if _, err := c.GetCurrentSessionInfo(); err != nil {
+			return fmt.Errorf("keepSessionAlive failed, GetCurrentSessionInfo failed, err: %s", err)
+		}
+	}
 	return nil
 }

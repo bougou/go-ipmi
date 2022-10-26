@@ -150,3 +150,12 @@ func (c *Client) GetSessionInfo(request *GetSessionInfoRequest) (response *GetSe
 	err = c.Exchange(request, response)
 	return
 }
+
+func (c *Client) GetCurrentSessionInfo() (response *GetSessionInfoResponse, err error) {
+	request := &GetSessionInfoRequest{
+		SessionIndex: 0x00,
+	}
+	response = &GetSessionInfoResponse{}
+	err = c.Exchange(request, response)
+	return
+}
