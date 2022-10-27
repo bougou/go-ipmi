@@ -1,10 +1,5 @@
 package open
 
-import (
-	"fmt"
-	"syscall"
-)
-
 // see: https://github.com/torvalds/linux/blob/master/arch/alpha/include/uapi/asm/ioctl.h
 
 const (
@@ -82,12 +77,4 @@ func IOC_NR(nr uintptr) uintptr {
 // IOC_SIZE is used to decode SIZE from nr
 func IOC_SIZE(nr uintptr) uintptr {
 	return (((nr) >> IOC_SIZESHIFT) & IOC_SIZEMASK)
-}
-
-func IOCTL(fd, name, data uintptr) error {
-	_, _, ep := syscall.Syscall(syscall.SYS_IOCTL, fd, name, data)
-	if ep != 0 {
-		return fmt.Errorf("syscall err: (%#02x) %s", uint8(ep), syscall.Errno(ep))
-	}
-	return nil
 }
