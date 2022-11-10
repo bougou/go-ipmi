@@ -50,6 +50,9 @@ func NewOpenClient() (*Client, error) {
 	}, nil
 }
 
+// NewToolClient creates an IPMI client based ipmitool.
+// You should pass the file path of ipmitool binary or path of a wrapper script
+// that would be executed.
 func NewToolClient(path string) (*Client, error) {
 
 	return &Client{

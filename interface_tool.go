@@ -44,6 +44,7 @@ func (c *Client) exchangeTool(request Request, response Response) error {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
+	c.Debugf(">>> Run cmd: \n>>> %s\n", cmd.String())
 	err := cmd.Run()
 	if err != nil {
 		if bytes.HasPrefix(stderr.Bytes(), []byte("Unable to send RAW command")) {

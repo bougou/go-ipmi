@@ -23,6 +23,8 @@ type openipmi struct {
 
 // ConnectOpen try to initialize the client by open the device of linux ipmi driver.
 func (c *Client) ConnectOpen(devnum int32) error {
+	c.Debugf("Using ipmi device %d\n", devnum)
+
 	// try the following devices
 	var (
 		ipmiDev1 string = fmt.Sprintf("/dev/ipmi%d", devnum)
@@ -30,27 +32,22 @@ func (c *Client) ConnectOpen(devnum int32) error {
 		ipmiDev3 string = fmt.Sprintf("/dev/ipmidev/%d", devnum)
 	)
 
-	c.Debugf("Using ipmi device %d\n", devnum)
 	var file *os.File
-	if f, err := os.OpenFile(ipmiDev1, os.O_RDWR, 0); err != nil {
-		c.Debugf("can not open ipmi dev (%s), err: %s", ipmiDev1, err)
-		if f, err := os.OpenFile(ipmiDev2, os.O_RDWR, 0); err == nil {
-			c.Debugf("can not open ipmi dev (%s), err: %s", ipmiDev2, err)
-			if f, err := os.OpenFile(ipmiDev3, os.O_RDWR, 0); err != nil {
-				c.Debugf("can not open ipmi dev (%s), err: %s", ipmiDev3, err)
-				return fmt.Errorf("can not open ipmi dev")
-			} else {
-				file = f
-				c.Debugf("opened ipmi dev file: %v\n", ipmiDev3)
-			}
+	var tryOpenFile = func(ipmiDev string) {
+		if file != nil {
+			return
+		}
+		if f, err := os.OpenFile(ipmiDev, os.O_RDWR, 0); err != nil {
+			c.Debugf("can not open ipmi dev (%s), err: %s\n", ipmiDev, err)
 		} else {
 			file = f
-			c.Debugf("opened ipmi dev file: %v\n", ipmiDev2)
+			c.Debugf("opened ipmi dev file: %v\n", ipmiDev)
 		}
-	} else {
-		file = f
-		c.Debugf("opened ipmi dev file: %v\n", ipmiDev1)
 	}
+	tryOpenFile(ipmiDev1)
+	tryOpenFile(ipmiDev2)
+	tryOpenFile(ipmiDev3)
+
 	if file == nil {
 		return fmt.Errorf("ipmi dev file not opened")
 	}

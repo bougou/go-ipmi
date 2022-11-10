@@ -57,7 +57,7 @@ but others are not. Like `ipmitool sdr list`, it's a loop of `GetSDR` IPMI comma
 
 So this library also implements some methods that are not IPMI commands defined
 in IPMI sepcification, but just some common helpers, like `GetSDRs` to get all SDRs.
-These methods are marked with an asterisk (*)` after the method name in the following docs.
+These methods are marked with an asterisk `(*)` after the method name in the following docs.
 
 The implementation logic of IPMI commands is almost same. See [Contributing](./CONTRIBUTING.md)
 

@@ -44,7 +44,12 @@ func initClient() error {
 			return fmt.Errorf("create lan or lanplus client failed, err: %s", err)
 		}
 		client = c
-
+	case "tool":
+		c, err := ipmi.NewToolClient(host)
+		if err != nil {
+			return fmt.Errorf("create client based on ipmitool (%s) failed, err: %s", host, err)
+		}
+		client = c
 	}
 
 	client.WithDebug(debug)
