@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bougou/go-ipmi"
+	"github.com/xstp/go-ipmi"
+
 	"github.com/spf13/cobra"
 )
 

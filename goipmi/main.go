@@ -4,13 +4,16 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bougou/go-ipmi/goipmi/commands"
+	"github.com/xstp/go-ipmi/goipmi/commands"
 )
 
 func main() {
 	rootCmd := commands.NewRootCommand()
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, err := fmt.Fprintln(os.Stderr, err)
+		if err != nil {
+			return
+		}
 		os.Exit(1)
 	}
 }

@@ -2,8 +2,8 @@ package commands
 
 import (
 	"fmt"
+	"github.com/xstp/go-ipmi"
 
-	"github.com/bougou/go-ipmi"
 	"github.com/spf13/cobra"
 )
 
