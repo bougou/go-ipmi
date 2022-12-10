@@ -14,7 +14,7 @@ const (
 	PayloadTypeOEM  PayloadType = 0x02
 
 	// Session Setup Payload Types
-	// used to identify payloads that are for session setup messages specified by the IPMI specifications
+	// used to identify payloads that are for Session setup messages specified by the IPMI specifications
 
 	PayloadTypeRmcpOpenSessionRequest  PayloadType = 0x10
 	PayloadTypeRmcpOpenSessionResponse PayloadType = 0x11

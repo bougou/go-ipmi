@@ -7,10 +7,10 @@ import (
 
 // 22.20 Get Session Info Command
 type GetSessionInfoRequest struct {
-	// 00h = Return info for active session associated with session this command was received over.
-	// N = get info for Nth active session
-	// FEh = Look up session info according to Session Handle passed in this request.
-	// FFh = Look up session info according to Session ID passed in this request.
+	// 00h = Return info for active Session associated with Session this command was received over.
+	// N = get info for Nth active Session
+	// FEh = Look up Session info according to Session Handle passed in this request.
+	// FFh = Look up Session info according to Session ID passed in this request.
 	SessionIndex uint8
 
 	SessionHandle uint8
@@ -19,7 +19,7 @@ type GetSessionInfoRequest struct {
 }
 
 type GetSessionInfoResponse struct {
-	SessionHandle          uint8 // Session Handle presently assigned to active session.
+	SessionHandle          uint8 // Session Handle presently assigned to active Session.
 	PossbileActiveSessions uint8 // This value reflects the number of possible entries (slots) in the sessions table.
 	CurrentActiveSessions  uint8 // Number of currently active sessions on all channels on this controller
 
@@ -121,12 +121,12 @@ func (res *GetSessionInfoResponse) Format() string {
 		sessionType = "IPMIv2/RMCP+"
 	}
 
-	return fmt.Sprintf(`session handle                : %d
+	return fmt.Sprintf(`Session handle                : %d
 slot count                    : %d
 active sessions               : %d
 user id                       : %d
 privilege level               : %s
-session type                  : %s
+Session type                  : %s
 channel number                : %#02x
 console ip                    : %s
 console mac                   : %s

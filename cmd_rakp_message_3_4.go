@@ -13,7 +13,7 @@ type RAKPMessage3 struct {
 	// Identifies the status of the previous message.
 	RmcpStatusCode uint8
 
-	// The Managed System's Session ID for this session, returned by the managed system on the previous RMCP+ Open Session Response message.
+	// The Managed System's Session ID for this Session, returned by the managed system on the previous RMCP+ Open Session Response message.
 	ManagedSystemSessionID uint32
 
 	// An integrity check value over the relevant items specified by the RAKP
@@ -99,27 +99,27 @@ func (res *RAKPMessage4) Format() string {
 
 // authAlg is used to parse the returned RAKPMessage4 message
 func (c *Client) RAKPMessage3() (response *RAKPMessage4, err error) {
-	// create session integrity key
+	// create Session integrity key
 	sik, err := c.generate_sik()
 	if err != nil {
 		err = fmt.Errorf("generate sik failed, err: %s", err)
 		return
 	}
-	c.session.v20.sik = sik
+	c.Session.v20.sik = sik
 
 	k1, err := c.generate_k1()
 	if err != nil {
 		err = fmt.Errorf("generate k1 failed, err: %s", err)
 		return
 	}
-	c.session.v20.k1 = k1
+	c.Session.v20.k1 = k1
 
 	k2, err := c.generate_k2()
 	if err != nil {
 		err = fmt.Errorf("generate k2 failed, err: %s", err)
 		return
 	}
-	c.session.v20.k2 = k2
+	c.Session.v20.k2 = k2
 
 	authCode, err := c.generate_rakp3_authcode()
 	if err != nil {
@@ -128,15 +128,15 @@ func (c *Client) RAKPMessage3() (response *RAKPMessage4, err error) {
 
 	request := &RAKPMessage3{
 		MessageTag:                    0,
-		RmcpStatusCode:                c.session.v20.rakp2ReturnCode,
-		ManagedSystemSessionID:        c.session.v20.bmcSessionID,
+		RmcpStatusCode:                c.Session.v20.rakp2ReturnCode,
+		ManagedSystemSessionID:        c.Session.v20.bmcSessionID,
 		KeyExchangeAuthenticationCode: authCode,
 	}
 
 	response = &RAKPMessage4{
-		authAlg: c.session.v20.authAlg,
+		authAlg: c.Session.v20.authAlg,
 	}
-	c.session.v20.state = SessionStateRakp3Sent
+	c.Session.v20.state = SessionStateRakp3Sent
 
 	err = c.Exchange(request, response)
 	if err != nil {
@@ -147,7 +147,7 @@ func (c *Client) RAKPMessage3() (response *RAKPMessage4, err error) {
 		return nil, fmt.Errorf("validate rakp4 failed, err: %s", err)
 	}
 
-	c.session.v20.state = SessionStateActive
+	c.Session.v20.state = SessionStateActive
 
 	return response, nil
 }
@@ -157,8 +157,8 @@ func (c *Client) ValidateRAKP4(response *RAKPMessage4) (bool, error) {
 		return false, fmt.Errorf("rakp4 status code not ok, %x", response.RmcpStatusCode)
 	}
 	// verify
-	if c.session.v20.consoleSessionID != response.MgmtConsoleSessionID {
-		return false, fmt.Errorf("session not activated")
+	if c.Session.v20.consoleSessionID != response.MgmtConsoleSessionID {
+		return false, fmt.Errorf("Session not activated")
 	}
 
 	authCode, err := c.generate_rakp4_authcode()

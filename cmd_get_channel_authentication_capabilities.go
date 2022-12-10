@@ -51,7 +51,7 @@ type GetChannelAuthenticationCapabilitiesResponse struct {
 	// [4] - Per-message Authentication status
 	// 0b = Per-message Authentication is enabled.
 	// 1b = Per-message Authentication is disabled.
-	// Authentication Type "none" accepted for packets to the BMC after the session has been activated.
+	// Authentication Type "none" accepted for packets to the BMC after the Session has been activated.
 	PerMessageAuthenticationDisabled bool
 	// [3] - User Level Authentication status
 	// 0b = User Level Authentication is enabled.
@@ -170,7 +170,7 @@ func (res *GetChannelAuthenticationCapabilitiesResponse) Format() string {
 //
 // This command is sent in unauthenticated (clear) format.
 //
-// When activating a session, the privilege level passed in this command will
+// When activating a Session, the privilege level passed in this command will
 // normally be the same Requested Maximum Privilege level that will be used
 // for a subsequent Activate Session command.
 func (c *Client) GetChannelAuthenticationCapabilities(channelNumber uint8, privilegeLevel PrivilegeLevel) (response *GetChannelAuthenticationCapabilitiesResponse, err error) {
@@ -181,7 +181,7 @@ func (c *Client) GetChannelAuthenticationCapabilities(channelNumber uint8, privi
 	}
 
 	// todo
-	c.session.v15.maxPrivilegeLevel = privilegeLevel
+	c.Session.v15.maxPrivilegeLevel = privilegeLevel
 
 	response = &GetChannelAuthenticationCapabilitiesResponse{}
 	err = c.Exchange(request, response)
@@ -189,7 +189,7 @@ func (c *Client) GetChannelAuthenticationCapabilities(channelNumber uint8, privi
 		return
 	}
 
-	c.session.authType = response.chooseAuthType()
+	c.Session.authType = response.chooseAuthType()
 
 	return
 }

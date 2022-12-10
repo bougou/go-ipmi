@@ -11,7 +11,7 @@ const IPMI_RAKP1_MESSAGE_SIZE = 44
 type RAKPMessage1 struct {
 	MessageTag uint8
 
-	// The Managed System's Session ID for this session, returned by the Managed System on the
+	// The Managed System's Session ID for this Session, returned by the Managed System on the
 	// previous RMCP+ Open Session Response message.
 	ManagedSystemSessionID uint32
 
@@ -77,7 +77,7 @@ func (r *RAKPMessage1) Pack() []byte {
 }
 
 // the combination of RequestedMaximumPrivilegeLevel and NameOnlyLookup field
-// The whole byte should be stored to client session for computing auth code of rakp2
+// The whole byte should be stored to client Session for computing auth code of rakp2
 func (r *RAKPMessage1) Role() uint8 {
 	privilegeLevel := uint8(r.RequestedMaximumPrivilegeLevel)
 	if r.NameOnlyLookup {
@@ -134,8 +134,8 @@ func (res *RAKPMessage2) Format() string {
 
 // ValidateRAKP2 validates RAKPMessage2 returned by BMC.
 func (c *Client) ValidateRAKP2(rakp2 *RAKPMessage2) (bool, error) {
-	if c.session.v20.consoleSessionID != rakp2.RemoteConsoleSessionID {
-		return false, fmt.Errorf("session id not matched, cached console session id: %x, rapk2 returned session id: %x", c.session.v20.consoleSessionID, rakp2.RemoteConsoleSessionID)
+	if c.Session.v20.consoleSessionID != rakp2.RemoteConsoleSessionID {
+		return false, fmt.Errorf("Session id not matched, cached console Session id: %x, rapk2 returned Session id: %x", c.Session.v20.consoleSessionID, rakp2.RemoteConsoleSessionID)
 	}
 
 	// rakp2 authcode is valid
@@ -154,25 +154,25 @@ func (c *Client) ValidateRAKP2(rakp2 *RAKPMessage2) (bool, error) {
 
 func (c *Client) RAKPMessage1() (response *RAKPMessage2, err error) {
 
-	c.session.v20.consoleRand = array16(randomBytes(16))
-	c.DebugBytes("console generate console random number", c.session.v20.consoleRand[:], 16)
+	c.Session.v20.consoleRand = array16(randomBytes(16))
+	c.DebugBytes("console generate console random number", c.Session.v20.consoleRand[:], 16)
 
 	request := &RAKPMessage1{
 		MessageTag:                     0,
-		ManagedSystemSessionID:         c.session.v20.bmcSessionID, // set by previous RMCP+ Open Session Request
-		RemoteConsoleRandomNumber:      c.session.v20.consoleRand,
-		RequestedMaximumPrivilegeLevel: c.session.v20.maxPrivilegeLevel,
+		ManagedSystemSessionID:         c.Session.v20.bmcSessionID, // set by previous RMCP+ Open Session Request
+		RemoteConsoleRandomNumber:      c.Session.v20.consoleRand,
+		RequestedMaximumPrivilegeLevel: c.Session.v20.maxPrivilegeLevel,
 		NameOnlyLookup:                 true,
 		UsernameLength:                 uint8(len(c.Username)),
 		Username:                       []byte(c.Username),
 	}
 
-	c.session.v20.role = request.Role()
+	c.Session.v20.role = request.Role()
 
 	response = &RAKPMessage2{
-		authAlg: c.session.v20.authAlg,
+		authAlg: c.Session.v20.authAlg,
 	}
-	c.session.v20.state = SessionStateRakp1Sent
+	c.Session.v20.state = SessionStateRakp1Sent
 
 	err = c.Exchange(request, response)
 	if err != nil {
@@ -180,16 +180,16 @@ func (c *Client) RAKPMessage1() (response *RAKPMessage2, err error) {
 	}
 
 	// the following fields must be set before generate_sik/generate_k1/generate_k2
-	c.session.v20.rakp2ReturnCode = response.RmcpStatusCode
-	c.session.v20.bmcGUID = response.ManagedSystemGUID
-	c.session.v20.bmcRand = response.ManagedSystemRandomNumber // will be used in rakp3 to generate authCode
+	c.Session.v20.rakp2ReturnCode = response.RmcpStatusCode
+	c.Session.v20.bmcGUID = response.ManagedSystemGUID
+	c.Session.v20.bmcRand = response.ManagedSystemRandomNumber // will be used in rakp3 to generate authCode
 
 	if _, err = c.ValidateRAKP2(response); err != nil {
 		err = fmt.Errorf("validate rakp2 message failed, err: %s", err)
 		return
 	}
 
-	c.session.v20.state = SessionStateRakp2Received
+	c.Session.v20.state = SessionStateRakp2Received
 
 	return
 }

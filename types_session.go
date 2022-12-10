@@ -28,29 +28,29 @@ const (
 // SessionHeader15 for IPMI 1.5
 // see 22.12, Table 13.
 //
-// Whether the session header fields are present in a packet is based on
+// Whether the Session header fields are present in a packet is based on
 // whether the channel is specified as supporting multiple sessions or not.
-// In addition, which session fields are present is based on the authentication type.
-// Single-session connections and session-less channels do not include session header fields.
+// In addition, which Session fields are present is based on the authentication type.
+// Single-Session connections and Session-less channels do not include Session header fields.
 //
 // Session header fields are present on all packets where the channel and
 // connection mode is specified as supporting multiple sessions, even if
-// the particular implementation only supports one session.
+// the particular implementation only supports one Session.
 //
-// Note that the command tables do not show the session header fields except for the
+// Note that the command tables do not show the Session header fields except for the
 // Get Channel Authentication Capabilities, Get Session Challenge, and Activate Session commands.
-// However, they are still required for all commands on a multi-session connection.
+// However, they are still required for all commands on a multi-Session connection.
 type SessionHeader15 struct {
 	// For IPMI 1.5, it's value is 00h, 01h, 02h, 04h, 05h
 	AuthType AuthType
 
 	// For IPMI v2.0 RMCP+ there are separate sequence numbers tracked for authenticated and unauthenticated packets.
-	// 0000_0000h is used for packets that are sent outside of a session.
+	// 0000_0000h is used for packets that are sent outside of a Session.
 	Sequence uint32
 
 	SessionID uint32
 
-	// The Authentication Code field in the session header may or may not be present based on the Authentication Type. The authentication code field is absent whenever the Authentication Type is NONE. Whether the authentication code field is present or not when the Authentication Type = OEM is dependent on the OEM identified in the Get Channel Authentication Capabilities command.
+	// The Authentication Code field in the Session header may or may not be present based on the Authentication Type. The authentication code field is absent whenever the Authentication Type is NONE. Whether the authentication code field is present or not when the Authentication Type = OEM is dependent on the OEM identified in the Get Channel Authentication Capabilities command.
 	//
 	// 16 bytes, not present when Authentication Type set to none
 	AuthCode []byte // IPMI 1.5
@@ -148,7 +148,7 @@ type SessionHeader20 struct {
 	SessionID uint32
 
 	// For IPMI v2.0 RMCP+ there are separate sequence numbers tracked for authenticated and unauthenticated packets.
-	// 0000_0000h is used for packets that are sent outside of a session.
+	// 0000_0000h is used for packets that are sent outside of a Session.
 	Sequence uint32
 
 	// Payload length in bytes. 1-based.
@@ -293,7 +293,7 @@ type SessionTrailer struct {
 	// Reserved in IPMI v2.0. Set to 07h for RMCP+ packets defined in this specification.
 	NextHeader uint8
 
-	// For IPMI v2.0 (RMCP+) if this field is present, then it is calculated according to the Integrity Algorithm that was negotiated during the session open process. See Table 13-, Integrity Algorithm Numbers.
+	// For IPMI v2.0 (RMCP+) if this field is present, then it is calculated according to the Integrity Algorithm that was negotiated during the Session open process. See Table 13-, Integrity Algorithm Numbers.
 	// This field is absent when the packet is unauthenticated.
 	AuthCode []byte // Integrity Data
 }
@@ -338,14 +338,14 @@ func (c *Client) genSession15(rawPayload []byte) (*Session15, error) {
 		PayloadLength: uint8(len(rawPayload)),
 	}
 
-	if c.session.v15.preSession || c.session.v15.active {
-		sessionHeader.AuthType = c.session.authType
-		sessionHeader.SessionID = c.session.v15.sessionID
+	if c.Session.v15.preSession || c.Session.v15.active {
+		sessionHeader.AuthType = c.Session.authType
+		sessionHeader.SessionID = c.Session.v15.sessionID
 	}
 
-	if c.session.v15.active {
-		c.session.v15.inSeq += 1
-		sessionHeader.Sequence = c.session.v15.inSeq
+	if c.Session.v15.active {
+		c.Session.v15.inSeq += 1
+		sessionHeader.Sequence = c.Session.v15.inSeq
 	}
 
 	if sessionHeader.AuthType != AuthTypeNone {
@@ -373,21 +373,21 @@ func (c *Client) genSession20(payloadType PayloadType, rawPayload []byte) (*Sess
 		PayloadLength:        0, // PayloadLength would be updated later after encryption if necessary.
 	}
 
-	if c.session.v20.state == SessionStateActive {
+	if c.Session.v20.state == SessionStateActive {
 		sessionHeader.PayloadAuthenticated = true
 		sessionHeader.PayloadEncrypted = true
-		sessionHeader.SessionID = c.session.v20.bmcSessionID // use bmc session id
+		sessionHeader.SessionID = c.Session.v20.bmcSessionID // use bmc Session id
 
-		c.session.v20.sequence += 1
-		sessionHeader.Sequence = c.session.v20.sequence
+		c.Session.v20.sequence += 1
+		sessionHeader.Sequence = c.Session.v20.sequence
 	}
 
 	//
 	// Session Payload
 	//
 	sessionPayload := rawPayload
-	if c.session.v20.state == SessionStateActive && sessionHeader.PayloadEncrypted {
-		e, err := c.encryptPlayload(rawPayload, nil)
+	if c.Session.v20.state == SessionStateActive && sessionHeader.PayloadEncrypted {
+		e, err := c.encryptPayload(rawPayload, nil)
 		if err != nil {
 			return nil, fmt.Errorf("encrypt payload failed, err: %s", err)
 		}

@@ -1,6 +1,6 @@
 package ipmi
 
-// see 22.21
+// GetAuthCodeRequest see 22.21
 //
 // This command is used to send a block of data to the BMC, whereupon the BMC will
 // return a hash of the data together concatenated with the internally stored password for the given channel and user

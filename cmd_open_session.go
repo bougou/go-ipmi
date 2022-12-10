@@ -80,7 +80,7 @@ func (res *OpenSessionResponse) Unpack(data []byte) error {
 
 	// If the previous message generated an error, then only the Status Code, Reserved, and Remote Console Session ID fields are returned.
 	// See Table 13-, RMCP+ and RAKP Message Status Codes.
-	// The session establishment in progress is discarded at the BMC, and the
+	// The Session establishment in progress is discarded at the BMC, and the
 	// remote console will need to start over with a new Open Session Request message.
 	// (Since the BMC has not yet delivered a Managed System Session ID to the remote console,
 	// it shouldn't be carrying any state information from the prior Open Session Request,
@@ -130,11 +130,11 @@ func (c *Client) OpenSession() (response *OpenSessionResponse, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("get cipher suite for id %0x failed, err: %s", bestSuiteID, err)
 	}
-	c.session.v20.requestedAuthAlg = authAlg
-	c.session.v20.requestedIntegrityAlg = integrityAlg
-	c.session.v20.requestedEncryptAlg = cryptAlg
+	c.Session.v20.requestedAuthAlg = authAlg
+	c.Session.v20.requestedIntegrityAlg = integrityAlg
+	c.Session.v20.requestedEncryptAlg = cryptAlg
 
-	// Choose our session ID for easy recognition in the packet dump
+	// Choose our Session ID for easy recognition in the packet dump
 	var remoteConsoleSessionID uint32 = 0xa0a1a2a3
 
 	request := &OpenSessionRequest{
@@ -144,23 +144,23 @@ func (c *Client) OpenSession() (response *OpenSessionResponse, err error) {
 		AuthenticationPayload: AuthenticationPayload{
 			PayloadType:   0x00, // 0 means authentication algorithm
 			PayloadLength: 8,
-			AuthAlg:       uint8(c.session.v20.requestedAuthAlg),
+			AuthAlg:       uint8(c.Session.v20.requestedAuthAlg),
 		},
 		IntegrityPayload: IntegrityPayload{
 			PayloadType:   0x01, // 1 means integrity algorithm
 			PayloadLength: 8,
-			IntegrityAlg:  uint8(c.session.v20.requestedIntegrityAlg),
+			IntegrityAlg:  uint8(c.Session.v20.requestedIntegrityAlg),
 		},
 		ConfidentialityPayload: ConfidentialityPayload{
 			PayloadType:   0x02, // 2 means confidentiality algorithm
 			PayloadLength: 8,
-			CryptAlg:      uint8(c.session.v20.requestedEncryptAlg),
+			CryptAlg:      uint8(c.Session.v20.requestedEncryptAlg),
 		},
 	}
 
 	response = &OpenSessionResponse{}
 
-	c.session.v20.state = SessionStateOpenSessionSent
+	c.Session.v20.state = SessionStateOpenSessionSent
 
 	err = c.Exchange(request, response)
 	if err != nil {
@@ -174,14 +174,14 @@ func (c *Client) OpenSession() (response *OpenSessionResponse, err error) {
 		return
 	}
 
-	c.session.v20.state = SessionStateOpenSessionReceived
+	c.Session.v20.state = SessionStateOpenSessionReceived
 
-	c.session.v20.authAlg = AuthAlg(response.AuthAlg)
-	c.session.v20.integrityAlg = IntegrityAlg(response.IntegrityAlg)
-	c.session.v20.cryptAlg = CryptAlg(response.CryptAlg)
-	c.session.v20.maxPrivilegeLevel = PrivilegeLevel(response.MaximumPrivilegeLevel)
-	c.session.v20.consoleSessionID = response.RemoteConsoleSessionID
-	c.session.v20.bmcSessionID = response.ManagedSystemSessionID
+	c.Session.v20.authAlg = AuthAlg(response.AuthAlg)
+	c.Session.v20.integrityAlg = IntegrityAlg(response.IntegrityAlg)
+	c.Session.v20.cryptAlg = CryptAlg(response.CryptAlg)
+	c.Session.v20.maxPrivilegeLevel = PrivilegeLevel(response.MaximumPrivilegeLevel)
+	c.Session.v20.consoleSessionID = response.RemoteConsoleSessionID
+	c.Session.v20.bmcSessionID = response.ManagedSystemSessionID
 
 	return
 }
@@ -282,7 +282,7 @@ const (
 func (r RakpStatus) String() string {
 	m := map[RakpStatus]string{
 		0x00: "No errors",
-		0x01: "Insufficient resources to create a session",
+		0x01: "Insufficient resources to create a Session",
 		0x02: "Invalid Session ID",
 		0x03: "Invalid payload type",
 		0x04: "Invalid authentication algorithm",
@@ -292,7 +292,7 @@ func (r RakpStatus) String() string {
 		0x08: "Inactive Session ID",
 		0x09: "Invalid role",
 		0x0a: "Unauthorized role or privilege level requested",
-		0x0b: "Insufficient resources to create a session at the requested role",
+		0x0b: "Insufficient resources to create a Session at the requested role",
 		0x0c: "Invalid name length",
 		0x0d: "Unauthorized name",
 		0x0e: "Unauthorized GUID",

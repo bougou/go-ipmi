@@ -27,7 +27,7 @@ type Client struct {
 	debug bool
 
 	openipmi *openipmi
-	session  *session
+	Session  *session
 
 	// this flags controls which IPMI version (1.5 or 2.0) be used by Client to send Request
 	v20 bool
@@ -85,7 +85,7 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 		timeout:    time.Second * time.Duration(DefaultExchangeTimeoutSec),
 		bufferSize: DefaultBufferSize,
 
-		session: &session{
+		Session: &session{
 			// IPMI Request Sequence, start from 1
 			ipmiSeq: 1,
 			v20: v20{
@@ -130,7 +130,7 @@ func (c *Client) WithBufferSize(bufferSize int) *Client {
 }
 
 func (c *Client) SessionPrivilegeLevel() PrivilegeLevel {
-	return c.session.v20.maxPrivilegeLevel
+	return c.Session.v20.maxPrivilegeLevel
 }
 
 // Connect connects to the bmc by specified Interface.

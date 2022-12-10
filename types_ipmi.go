@@ -152,16 +152,16 @@ func (c *Client) BuildIPMIRequest(reqCmd Request) (*IPMIRequest, error) {
 
 		RequesterAddr: RemoteConsole_SWID,
 
-		RequesterSequence: c.session.ipmiSeq,
+		RequesterSequence: c.Session.ipmiSeq,
 		RequesterLUN:      0x00,
 
 		Command:     reqCmd.Command().ID,
 		CommandData: reqCmd.Pack(),
 	}
 
-	c.session.ipmiSeq += 1
-	if c.session.ipmiSeq > IPMIRequesterSequenceMax {
-		c.session.ipmiSeq = 1
+	c.Session.ipmiSeq += 1
+	if c.Session.ipmiSeq > IPMIRequesterSequenceMax {
+		c.Session.ipmiSeq = 1
 	}
 
 	ipmiReq.ComputeChecksum()

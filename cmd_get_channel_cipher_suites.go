@@ -52,7 +52,7 @@ func (res *GetChannelCipherSuitesResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
 
-// This command can be executed prior to establishing a session with the BMC.
+// This command can be executed prior to establishing a Session with the BMC.
 // The command is used to look up what authentication, integrity, and confidentiality algorithms are supported.
 // The algorithms are used in combination as 'Cipher Suites'.
 // This command only applies to implementations that support IPMI v2.0/RMCP+ sessions.
