@@ -316,7 +316,7 @@ func (c *Client) BuildRmcpRequest(reqCmd Request) (*Rmcp, error) {
 	}
 
 	// IPMI 2.0
-	if c.v20 {
+	if c.V20 {
 		session20, err := c.genSession20(payloadType, rawPayload)
 		if err != nil {
 			return nil, fmt.Errorf("genSession20 failed, err: %s", err)
@@ -399,10 +399,10 @@ func (c *Client) genSessionTrailer(sessionHeader []byte, sessionPayload []byte) 
 
 // the input data only represents the serialized ipmi msg request bytes.
 // the output bytes contains the
-//  - Confidentiality Header (clear text)
-//  - Encrypted Payload.
-//    - the cipher text of both rawPayload
-//    - padded Confidentiality Trailer.
+//   - Confidentiality Header (clear text)
+//   - Encrypted Payload.
+//   - the cipher text of both rawPayload
+//   - padded Confidentiality Trailer.
 func (c *Client) encryptPlayload(rawPayload []byte, iv []byte) ([]byte, error) {
 
 	switch c.session.v20.cryptAlg {
@@ -846,7 +846,7 @@ func (c *Client) Connect15() error {
 
 }
 
-// see 13.15 IPMI v2.0/RMCP+ Session Activation
+// Connect20 see 13.15 IPMI v2.0/RMCP+ Session Activation
 func (c *Client) Connect20() error {
 	var (
 		err error
@@ -855,7 +855,7 @@ func (c *Client) Connect20() error {
 		// Eh = retrieve information for channel this request was issued on
 		channelNumber uint8 = 0x0e
 
-		privilegeLevel PrivilegeLevel = PrivilegeLevelAdministrator
+		privilegeLevel = PrivilegeLevelAdministrator
 	)
 
 	_, err = c.GetChannelAuthenticationCapabilities(channelNumber, privilegeLevel)
@@ -906,13 +906,13 @@ func (c *Client) ConnectAuto() error {
 	)
 
 	// force use IPMI v1.5 first
-	c.v20 = false
+	c.V20 = false
 	cap, err := c.GetChannelAuthenticationCapabilities(channelNumber, privilegeLevel)
 	if err != nil {
 		return fmt.Errorf("cmd: Get Channel Authentication Capabilities failed, err: %s", err)
 	}
 	if cap.SupportIPMIv20 {
-		c.v20 = true
+		c.V20 = true
 		return c.Connect20()
 	}
 	if cap.SupportIPMIv15 {
@@ -924,7 +924,7 @@ func (c *Client) ConnectAuto() error {
 // closeLAN closes session used in LAN communication.
 func (c *Client) closeLAN() error {
 	var sessionID uint32
-	if c.v20 {
+	if c.V20 {
 		sessionID = c.session.v20.bmcSessionID
 	} else {
 		sessionID = c.session.v15.sessionID
