@@ -6,7 +6,7 @@ import (
 	"os"
 	"unsafe"
 
-	"github.com/bougou/go-ipmi/open"
+	"github.com/xstp/go-ipmi/open"
 )
 
 type openipmi struct {

@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 
-	"github.com/bougou/go-ipmi/utils/md2"
+	"github.com/xstp/go-ipmi/utils/md2"
 )
 
 // 22.17.1 AuthCode Algorithms
