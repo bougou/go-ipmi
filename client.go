@@ -30,7 +30,7 @@ type Client struct {
 	session  *session
 
 	// this flags controls which IPMI version (1.5 or 2.0) be used by Client to send Request
-	V20 bool
+	v20 bool
 
 	udpClient  *UDPClient
 	timeout    time.Duration
@@ -81,7 +81,7 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 		Password:  pass,
 		Interface: "",
 
-		V20:        true,
+		v20:        true,
 		timeout:    time.Second * time.Duration(DefaultExchangeTimeoutSec),
 		bufferSize: DefaultBufferSize,
 
@@ -154,11 +154,11 @@ func (c *Client) Connect() error {
 		return c.ConnectTool(devnum)
 
 	case InterfaceLanplus:
-		c.V20 = true
+		c.v20 = true
 		return c.Connect20()
 
 	case InterfaceLan:
-		c.V20 = false
+		c.v20 = false
 		return c.Connect15()
 
 	default:
