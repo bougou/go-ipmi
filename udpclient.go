@@ -131,6 +131,12 @@ func (c *UDPClient) Exchange(ctx context.Context, reader io.Reader) ([]byte, err
 		recvChan <- nRead
 	}()
 
+	defer func() {
+		if r := recover(); r != nil {
+			doneChan <- fmt.Errorf("panic occurred: %v", r)
+		}
+	}()
+
 	select {
 	case <-ctx.Done():
 		return nil, fmt.Errorf("canceled from caller")
