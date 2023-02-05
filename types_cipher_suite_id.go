@@ -125,8 +125,8 @@ func findBestCipherSuite() uint8 {
 	// suite is 17. So if SHA256 is available, we should try to use that,
 	// otherwise, fall back to 3.
 	// var cipherSuitesOrder = []byte{
-	// 	CipherSuiteID17,
-	// 	CipherSuiteID3,
+	// CipherSuiteID17,
+	// CipherSuiteID3,
 	// }
 
 	// supportedCipherSuites = c.GetChannelCipherSuite

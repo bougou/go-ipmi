@@ -3,7 +3,8 @@
 Each command defined in the IPMI specification is a pair of request/response messages.
 These IPMI commands are implemented as methods of the `ipmi.Client` struct in this library.
 
-`ipmitool` as example, some `ipmitool` cmdline are realized by calling just one underlying IPMI command, but many others are not. Like `ipmitool sdr list`, it's a loop of `GetSDR` IPMI command.
+`ipmitool` as example, some `ipmitool` cmdline are realized by calling just one underlying IPMI command,
+but many others are not. Like `ipmitool sdr list`, it's a loop of `GetSDR` IPMI command.
 
 So this library also implements some methods that are not IPMI commands defined
 in IPMI sepcification, but just some common helpers, like `GetSDRs` to get all SDRs.
@@ -43,4 +44,25 @@ Calling `Exchange` method of `ipmi.Client` will fullfil all other complex underl
 
 ## ipmi.Request interface
 
+```go
+type Request interface {
+	// Pack encodes the object to data bytes
+	Pack() []byte
+	// Command return the IPMI command info (NetFn/Cmd).
+	// All IPMI specification specified commands are already predefined in this file.
+	Command() Command
+}
+
+```
 ## ipmi.Response interface
+
+```go
+type Response interface {
+	// Unpack decodes the object from data bytes
+	Unpack(data []byte) error
+	// CompletionCodes returns a map of command-specific completion codes
+	CompletionCodes() map[uint8]string
+	// Format return a formatted human friendly string
+	Format() string
+}
+```

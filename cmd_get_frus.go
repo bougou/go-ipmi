@@ -189,7 +189,7 @@ func (c *Client) GetFRUs() ([]*FRU, error) {
 				frus = append(frus, fru)
 
 			case 0x01:
-				// 	*   0x01 = DIMM Memory ID
+				// *   0x01 = DIMM Memory ID
 				fruData, err := c.GetFRUData(deviceID)
 				if err != nil {
 					return nil, fmt.Errorf("GetFRUData failed, err: %s", err)

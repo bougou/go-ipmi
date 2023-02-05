@@ -729,7 +729,7 @@ type SDRReserved struct {
 //          Therefore, the length (number of data bytes) will be >1 if data is present,
 //          0 if data is not present. A length of 1 is reserved.
 //  5 reserved.
-//     	the bit 5 is reserved in the IPMI specification type/length byte,
+//      the bit 5 is reserved in the IPMI specification type/length byte,
 //      where it is part of the length field in the Platform Management FRU specification
 //  4:0 length of following data, in characters.
 //      00000b indicates 'none following'.

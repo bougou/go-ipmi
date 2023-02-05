@@ -14,9 +14,9 @@ import (
 // generate_hmac generates message authentication code.
 // Currently supported algorithms are: "md5", "sha1", "sha256"
 //
-// 	hmac, hash-based message authentication code
-// 	mac, message authentication code
-// 	md, message digest
+// hmac, hash-based message authentication code
+// mac, message authentication code
+// md, message digest
 func generate_hmac(alg string, data []byte, key []byte) ([]byte, error) {
 	switch alg {
 	case "md5":

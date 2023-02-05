@@ -651,7 +651,7 @@ type FRURecordTypePowerSupply struct {
 	// This field should be written as zero and ignored if the
 	// predictive failure pin of the power supply is not supported.
 	//
-	// 	0x00 Predictive fail pin indicates pass/fail
+	//  0x00 Predictive fail pin indicates pass/fail
 	//  0x01 - 0xFF Lower threshold to indicate predictive failure (Rotations per second)
 	PredictiveFailTachometerLowerThreshold uint8 // RPS
 }
