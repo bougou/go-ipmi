@@ -1,3 +1,7 @@
+<meta name="author" content="Bougou">
+<meta name="description" content="Go IPMI library">
+<meta name="keywords" content="ipmi, go, golang, bmc">
+
 # go-ipmi
 
 go-ipmi is a pure golang native IPMI library. It DOES NOT wraps `ipmitool`.
