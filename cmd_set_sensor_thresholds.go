@@ -75,6 +75,25 @@ func (res *SetSensorThresholdsResponse) Format() string {
 	return ""
 }
 
+// SetSensorThresholds is to set the specified threshold for the given sensor.
+// Note that the application issuing this command is responsible for ensuring that
+// thresholds for a sensor are set in the proper order (e.g. that
+// the upper critical threshold is set higher than the upper non-critical threshold)
+//
+//	Upper Non Recoverable area
+//	-----------------UNR threshold
+//	Upper Critical area
+//	-----------------UCR threshold
+//	Upper Non Critical area
+//	-----------------UNC threshold
+//	OK area
+//	-----------------LNC threshold
+//	Lower Non Critical area
+//	-----------------LCR threshold
+//	Lower Critical area
+//	-----------------LNR threshold
+//	Lower NonRecoverable area
+//
 // This command provides a mechanism for setting the hysteresis values associated
 // with the thresholds of a sensor that has threshold based event generation.
 func (c *Client) SetSensorThresholds(request *SetSensorThresholdsRequest) (response *SetSensorThresholdsResponse, err error) {

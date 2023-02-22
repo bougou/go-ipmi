@@ -789,11 +789,11 @@ func AnalogValue(raw uint8, format SensorAnalogUnitFormat) int32 {
 //
 // see: 36.3 Sensor Reading Conversion Formula
 //
-//  INPUT: raw (unsigned)
-//    -- APPLY: analogDataFormat
-//      --> GOT: analog (signed)
-//        -- APPLY: factors/linearization
-//          --> GOT: converted (float64)
+//	INPUT: raw (unsigned)
+//	  -- APPLY: analogDataFormat
+//	    --> GOT: analog (signed)
+//	      -- APPLY: factors/linearization
+//	        --> GOT: converted (float64)
 func ConvertReading(raw uint8, analogDataFormat SensorAnalogUnitFormat, factors ReadingFactors, linearizationFunc LinearizationFunc) float64 {
 	// y = L[(Mx + (B * 10^B_Exp) ) * 10^R_Exp ] units
 
@@ -814,7 +814,6 @@ func ConvertReading(raw uint8, analogDataFormat SensorAnalogUnitFormat, factors 
 // ConvertSensorHysteresis converts raw sensor hysterresis value to real value in the desired units for the sensor.
 //
 // see: 36.3 Sensor Reading Conversion Formula
-//
 func ConvertSensorHysteresis(raw uint8, analogDataFormat SensorAnalogUnitFormat, factors ReadingFactors, linearizationFunc LinearizationFunc) float64 {
 	// y = L[(Mx + (B * 10^B_Exp) ) * 10^R_Exp ] units
 
@@ -930,9 +929,9 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 		"Reading",
 		"Unit",
 		"Status",
-		"LNC",
-		"LCR",
 		"LNR",
+		"LCR",
+		"LNC",
 		"UNC",
 		"UCR",
 		"UNR",
@@ -962,9 +961,9 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 			sensor.ReadingStr(),
 			sensor.SensorUnit.String(),
 			sensor.Status(),
-			sensor.ThresholdStr(SensorThresholdType_LNC),
-			sensor.ThresholdStr(SensorThresholdType_LCR),
 			sensor.ThresholdStr(SensorThresholdType_LNR),
+			sensor.ThresholdStr(SensorThresholdType_LCR),
+			sensor.ThresholdStr(SensorThresholdType_LNC),
 			sensor.ThresholdStr(SensorThresholdType_UNC),
 			sensor.ThresholdStr(SensorThresholdType_UCR),
 			sensor.ThresholdStr(SensorThresholdType_UNR),

@@ -114,6 +114,8 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 		return nil, fmt.Errorf("only support Full or Compact SDR record type, input is %s", sdr.RecordHeader.RecordType)
 	}
 
+	c.Debug("Sensor brief", sensor)
+
 	c.Debug("Get Sensor", fmt.Sprintf("Sensor Name: %s, Sensor Number: %#02x\n", sensor.Name, sensor.Number))
 
 	readingRes, err := c.GetSensorReading(sensor.Number)
@@ -122,7 +124,7 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 			cc := resErr.CompletionCode()
 			if cc == CompletionCodeRequestedDataNotPresent || cc == CompletionCodeIllegalCommand {
 				// above completion codes CAN be ignored
-				// it normally means the sensor device does not exist.
+				// it normally means the sensor device does not exist or the sensor device does not recognize the IPMI command
 				c.Debug(fmt.Sprintf("GetSensorReading for sensor %#02x failed", sensor.Number), err)
 				return sensor, nil
 			} else {
@@ -153,11 +155,11 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 	}
 
 	if !sensor.EventReadingType.IsThreshold() || !sensor.SensorUnit.IsAnalog() {
-		if err := c.setSensorDiscrete(sensor); err != nil {
+		if err := c.fillSensorDiscrete(sensor); err != nil {
 			return nil, fmt.Errorf("setSensorDiscrete failed, err: %s", err)
 		}
 	} else {
-		if err := c.setSensorThreshold(sensor); err != nil {
+		if err := c.fillSensorThreshold(sensor); err != nil {
 			return nil, fmt.Errorf("setSensorThreshold failed, err: %s", err)
 		}
 	}
@@ -165,8 +167,8 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 	return sensor, nil
 }
 
-// setSensorDiscrete retrieves sensor attributes for discrete sensors.
-func (c *Client) setSensorDiscrete(sensor *Sensor) error {
+// fillSensorDiscrete retrieves and fills extra sensor attributes for given discrete sensor.
+func (c *Client) fillSensorDiscrete(sensor *Sensor) error {
 	statusRes, err := c.GetSensorEventStatus(sensor.Number)
 	if err != nil {
 		return fmt.Errorf("GetSensorEventStatus for sensor %#02x failed, err: %s", sensor.Number, err)
@@ -175,8 +177,8 @@ func (c *Client) setSensorDiscrete(sensor *Sensor) error {
 	return nil
 }
 
-// setSensorThreshold retrieves sensor attributes for threshold sensors.
-func (c *Client) setSensorThreshold(sensor *Sensor) error {
+// fillSensorThreshold retrieves and fills sensor attributes for given threshold sensor.
+func (c *Client) fillSensorThreshold(sensor *Sensor) error {
 	if sensor.SDRRecordType != SDRRecordTypeFullSensor {
 		return nil
 	}
@@ -186,42 +188,59 @@ func (c *Client) setSensorThreshold(sensor *Sensor) error {
 	if sensor.Threshold.LinearizationFunc.IsNonLinear() {
 		factorsRes, err := c.GetSensorReadingFactors(sensor.Number, sensor.Raw)
 		if err != nil {
-			return fmt.Errorf("GetSensorReadingFactors for sensor %#02x failed, err: %s", sensor.Number, err)
+			respErr, ok := err.(*ResponseError)
+			if ok && respErr.CompletionCode() == CompletionCodeIllegalCommand {
+				c.Debug("error can be ignored", respErr.CompletionCode())
+			} else {
+				return fmt.Errorf("GetSensorReadingFactors for sensor %#02x failed, err: %s", sensor.Number, err)
+			}
+		} else {
+			sensor.Threshold.ReadingFactors = factorsRes.ReadingFactors
 		}
-		sensor.Threshold.ReadingFactors = factorsRes.ReadingFactors
 	}
 
 	thesholdRes, err := c.GetSensorThresholds(sensor.Number)
 	if err != nil {
-		return fmt.Errorf("GetSensorThresholds for sensor %#02x failed, err: %s", sensor.Number, err)
+		respErr, ok := err.(*ResponseError)
+		if ok && respErr.CompletionCode() == CompletionCodeIllegalCommand {
+			c.Debug("err can be ignored", respErr.CompletionCode())
+		} else {
+			return fmt.Errorf("GetSensorThresholds for sensor %#02x failed, err: %s", sensor.Number, err)
+		}
+	} else {
+		sensor.Threshold.Mask.UNR.Readable = thesholdRes.UNR_Readable
+		sensor.Threshold.Mask.UCR.Readable = thesholdRes.UCR_Readable
+		sensor.Threshold.Mask.UNC.Readable = thesholdRes.UNC_Readable
+		sensor.Threshold.Mask.LNR.Readable = thesholdRes.LNR_Readable
+		sensor.Threshold.Mask.LCR.Readable = thesholdRes.LCR_Readable
+		sensor.Threshold.Mask.LNC.Readable = thesholdRes.LNC_Readable
+		sensor.Threshold.LNC_Raw = thesholdRes.LNC_Raw
+		sensor.Threshold.LCR_Raw = thesholdRes.LCR_Raw
+		sensor.Threshold.LNR_Raw = thesholdRes.LNR_Raw
+		sensor.Threshold.UNC_Raw = thesholdRes.UNC_Raw
+		sensor.Threshold.UCR_Raw = thesholdRes.UCR_Raw
+		sensor.Threshold.UNR_Raw = thesholdRes.UNR_Raw
+		sensor.Threshold.LNC = sensor.ConvertReading(thesholdRes.LNC_Raw)
+		sensor.Threshold.LCR = sensor.ConvertReading(thesholdRes.LCR_Raw)
+		sensor.Threshold.LNR = sensor.ConvertReading(thesholdRes.LNR_Raw)
+		sensor.Threshold.UNC = sensor.ConvertReading(thesholdRes.UNC_Raw)
+		sensor.Threshold.UCR = sensor.ConvertReading(thesholdRes.UCR_Raw)
+		sensor.Threshold.UNR = sensor.ConvertReading(thesholdRes.UNR_Raw)
 	}
-	sensor.Threshold.Mask.UNR.Readable = thesholdRes.UNR_Readable
-	sensor.Threshold.Mask.UCR.Readable = thesholdRes.UCR_Readable
-	sensor.Threshold.Mask.UNC.Readable = thesholdRes.UNC_Readable
-	sensor.Threshold.Mask.LNR.Readable = thesholdRes.LNR_Readable
-	sensor.Threshold.Mask.LCR.Readable = thesholdRes.LCR_Readable
-	sensor.Threshold.Mask.LNC.Readable = thesholdRes.LNC_Readable
-	sensor.Threshold.LNC_Raw = thesholdRes.LNC_Raw
-	sensor.Threshold.LCR_Raw = thesholdRes.LCR_Raw
-	sensor.Threshold.LNR_Raw = thesholdRes.LNR_Raw
-	sensor.Threshold.UNC_Raw = thesholdRes.UNC_Raw
-	sensor.Threshold.UCR_Raw = thesholdRes.UCR_Raw
-	sensor.Threshold.UNR_Raw = thesholdRes.UNR_Raw
-	sensor.Threshold.LNC = sensor.ConvertReading(thesholdRes.LNC_Raw)
-	sensor.Threshold.LCR = sensor.ConvertReading(thesholdRes.LCR_Raw)
-	sensor.Threshold.LNR = sensor.ConvertReading(thesholdRes.LNR_Raw)
-	sensor.Threshold.UNC = sensor.ConvertReading(thesholdRes.UNC_Raw)
-	sensor.Threshold.UCR = sensor.ConvertReading(thesholdRes.UCR_Raw)
-	sensor.Threshold.UNR = sensor.ConvertReading(thesholdRes.UNR_Raw)
 
 	hysteresisRes, err := c.GetSensorHysteresis(sensor.Number)
 	if err != nil {
-		return fmt.Errorf("GetSensorHysteresis for sensor %#02x failed, err: %s", sensor.Number, err)
+		respErr, ok := err.(*ResponseError)
+		if ok && respErr.CompletionCode() == CompletionCodeIllegalCommand {
+			c.Debug("err can be ignored", respErr.CompletionCode())
+		} else {
+			return fmt.Errorf("GetSensorHysteresis for sensor %#02x failed, err: %s", sensor.Number, err)
+		}
+	} else {
+		sensor.Threshold.PositiveHysteresisRaw = hysteresisRes.PositiveRaw
+		sensor.Threshold.NegativeHysteresisRaw = hysteresisRes.NegativeRaw
+		sensor.Threshold.PositiveHysteresis = sensor.ConvertSensorHysteresis(hysteresisRes.PositiveRaw)
+		sensor.Threshold.NegativeHysteresis = sensor.ConvertSensorHysteresis(hysteresisRes.NegativeRaw)
 	}
-	sensor.Threshold.PositiveHysteresisRaw = hysteresisRes.PositiveRaw
-	sensor.Threshold.NegativeHysteresisRaw = hysteresisRes.NegativeRaw
-	sensor.Threshold.PositiveHysteresis = sensor.ConvertSensorHysteresis(hysteresisRes.PositiveRaw)
-	sensor.Threshold.NegativeHysteresis = sensor.ConvertSensorHysteresis(hysteresisRes.NegativeRaw)
-
 	return nil
 }
