@@ -7,6 +7,8 @@ import (
 	"net"
 	"strconv"
 	"time"
+
+	"golang.org/x/net/proxy"
 )
 
 // UDPClient exposes some common methods for communicating with UDP target addr.
@@ -16,10 +18,11 @@ type UDPClient struct {
 	// Target Port
 	Port int
 
+	proxy      proxy.Dialer
 	timeout    time.Duration
 	bufferSize int
 
-	conn *net.UDPConn
+	conn net.Conn
 }
 
 func NewUDPClient(host string, port int) *UDPClient {
@@ -35,17 +38,30 @@ func (c *UDPClient) initConn() error {
 		return nil
 	}
 
-	remoteAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", c.Host, c.Port))
-	if err != nil {
-		return fmt.Errorf("resolve addr failed, err: %s", err)
-	}
-	conn, err := net.DialUDP("udp", nil, remoteAddr)
-	if err != nil {
-		return fmt.Errorf("dial failed, err: %s", err)
+	if c.proxy != nil {
+		conn, err := c.proxy.Dial("udp", fmt.Sprintf("%s:%d", c.Host, c.Port))
+		if err != nil {
+			return fmt.Errorf("proxy dail failed, err: %s", err)
+		}
+		c.conn = conn
+	} else {
+		remoteAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", c.Host, c.Port))
+		if err != nil {
+			return fmt.Errorf("resolve addr failed, err: %s", err)
+		}
+		conn, err := net.DialUDP("udp", nil, remoteAddr)
+		if err != nil {
+			return fmt.Errorf("dial failed, err: %s", err)
+		}
+		c.conn = conn
 	}
 
-	c.conn = conn
 	return nil
+}
+
+func (c *UDPClient) SetProxy(proxy proxy.Dialer) *UDPClient {
+	c.proxy = proxy
+	return c
 }
 
 func (c *UDPClient) SetTimeout(timeout time.Duration) *UDPClient {

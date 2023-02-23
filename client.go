@@ -3,6 +3,8 @@ package ipmi
 import (
 	"fmt"
 	"time"
+
+	"golang.org/x/net/proxy"
 )
 
 type Interface string
@@ -114,6 +116,11 @@ func (c *Client) WithInterface(intf Interface) *Client {
 
 func (c *Client) WithDebug(debug bool) *Client {
 	c.debug = debug
+	return c
+}
+
+func (c *Client) WithUDPProxy(proxy proxy.Dialer) *Client {
+	c.udpClient.SetProxy(proxy)
 	return c
 }
 
