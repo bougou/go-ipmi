@@ -144,6 +144,9 @@ func (res *IPMIResponse) Unpack(msg []byte) error {
 // BuildIPMIRequest creates IPMIRequest for a Command Request.
 // It also fills the Checksum1 and Checksum2 fields of IPMIRequest.
 func (c *Client) BuildIPMIRequest(reqCmd Request) (*IPMIRequest, error) {
+	c.lock()
+	defer c.unlock()
+
 	ipmiReq := &IPMIRequest{
 		ResponderAddr: BMC_SA,
 
@@ -170,6 +173,11 @@ func (c *Client) BuildIPMIRequest(reqCmd Request) (*IPMIRequest, error) {
 }
 
 // AllCC returns all possible completion codes for the specified response.
+// i.e.:
+//
+//	the generic completion codes for all impi cmd response
+//	+
+//	the specific completion codes for specified cmd response.
 func AllCC(response Response) map[uint8]string {
 	out := map[uint8]string{}
 	for k, v := range CC {

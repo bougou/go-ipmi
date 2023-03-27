@@ -332,6 +332,9 @@ const (
 )
 
 func (c *Client) genSession15(rawPayload []byte) (*Session15, error) {
+	c.lock()
+	defer c.unlock()
+
 	sessionHeader := &SessionHeader15{
 		AuthType:      AuthTypeNone,
 		Sequence:      0,
@@ -362,6 +365,9 @@ func (c *Client) genSession15(rawPayload []byte) (*Session15, error) {
 }
 
 func (c *Client) genSession20(payloadType PayloadType, rawPayload []byte) (*Session20, error) {
+	c.lock()
+	defer c.unlock()
+
 	//
 	// Session Header
 	//

@@ -2,6 +2,7 @@ package ipmi
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"golang.org/x/net/proxy"
@@ -37,6 +38,8 @@ type Client struct {
 	udpClient  *UDPClient
 	timeout    time.Duration
 	bufferSize int
+
+	l sync.Mutex
 }
 
 func NewOpenClient() (*Client, error) {
@@ -202,4 +205,12 @@ func (c *Client) Exchange(request Request, response Response) error {
 	}
 
 	return nil
+}
+
+func (c *Client) lock() {
+	c.l.Lock()
+}
+
+func (c *Client) unlock() {
+	c.l.Unlock()
 }
