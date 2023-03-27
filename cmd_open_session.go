@@ -14,8 +14,11 @@ type OpenSessionRequest struct {
 
 // 13.18 RMCP+ Open Session Response
 type OpenSessionResponse struct {
-	MessageTag             uint8
-	RmcpStatusCode         uint8
+	// The BMC returns the Message Tag value that was passed by the remote console in the Open Session Request message.
+	MessageTag uint8
+	// Identifies the status of the previous message.
+	// If the previous message generated an error, then only the Status Code, Reserved, and Remote Console Session ID fields are returned.
+	RmcpStatusCode         RmcpStatusCode
 	MaximumPrivilegeLevel  uint8
 	RemoteConsoleSessionID uint32
 	ManagedSystemSessionID uint32
@@ -73,7 +76,8 @@ func (res *OpenSessionResponse) Unpack(data []byte) error {
 	}
 
 	res.MessageTag, _, _ = unpackUint8(data, 0)
-	res.RmcpStatusCode, _, _ = unpackUint8(data, 1)
+	b1, _, _ := unpackUint8(data, 1)
+	res.RmcpStatusCode = RmcpStatusCode(b1)
 	res.MaximumPrivilegeLevel, _, _ = unpackUint8(data, 2)
 	// reserved
 	res.RemoteConsoleSessionID, _, _ = unpackUint32L(data, 4)
@@ -85,7 +89,7 @@ func (res *OpenSessionResponse) Unpack(data []byte) error {
 	// (Since the BMC has not yet delivered a Managed System Session ID to the remote console,
 	// it shouldn't be carrying any state information from the prior Open Session Request,
 	// but if it has, that state should be discarded.)
-	if res.RmcpStatusCode != uint8(RakpStatusNoErrors) {
+	if res.RmcpStatusCode != RmcpStatusCodeNoErrors {
 		return nil
 	}
 
@@ -114,7 +118,7 @@ func (res *OpenSessionResponse) Format() string {
   Negotiated integrity algorithm     : %#02x %s
   Negotiated encryption algorithm    : %#02x %s`,
 		res.MessageTag,
-		res.RmcpStatusCode, RakpStatus(res.RmcpStatusCode),
+		res.RmcpStatusCode, RmcpStatusCode(res.RmcpStatusCode),
 		res.MaximumPrivilegeLevel, PrivilegeLevel(res.MaximumPrivilegeLevel),
 		res.RemoteConsoleSessionID,
 		res.ManagedSystemSessionID,
@@ -169,8 +173,8 @@ func (c *Client) OpenSession() (response *OpenSessionResponse, err error) {
 
 	c.Debug("OPEN SESSION RESPONSE", response.Format())
 
-	if response.RmcpStatusCode != uint8(RakpStatusNoErrors) {
-		err = fmt.Errorf("rakp status code error: %x", response.RmcpStatusCode)
+	if response.RmcpStatusCode != RmcpStatusCodeNoErrors {
+		err = fmt.Errorf("rakp status code error: (%#02x) %s", uint8(response.RmcpStatusCode), response.RmcpStatusCode)
 		return
 	}
 
@@ -250,60 +254,4 @@ func (p *ConfidentialityPayload) Unpack(msg []byte) error {
 	p.CryptAlg, _, _ = unpackUint8(msg, 4)
 	// 3 bytes serverd
 	return nil
-}
-
-// 13.24 RMCP+ and RAKP Message Status Codes
-type RakpStatus uint8
-
-const (
-	RakpStatusNoErrors                        RakpStatus = 0x00
-	RakpStatusInsufficientResourcesForSession RakpStatus = 0x01
-	RakpStatusInvalidSessionID                RakpStatus = 0x02
-	RakpStatusInvalidPayloadType              RakpStatus = 0x03
-	RakpStatusInvalidAuthAlgorithm            RakpStatus = 0x04
-	RakpStatusInvalidIntegrityAlgorithm       RakpStatus = 0x05
-	RakpStatusNoMatchingAuthenticationPayload RakpStatus = 0x06
-	RakpStatusNoMatchingIntegrityPayload      RakpStatus = 0x07
-	RakpStatusInactiveSessionID               RakpStatus = 0x08
-	RakpStatusInvalidRole                     RakpStatus = 0x09
-	RakpStatusUnauthorizedRoleForRequested    RakpStatus = 0x0a
-	RakpStatusInsufficientResourcesForRole    RakpStatus = 0x0b
-	RakpStatusInvalidNameLength               RakpStatus = 0x0c
-	RakpStatusUnauthorizedName                RakpStatus = 0x0d
-	RakpStatusUnauthorizedGUID                RakpStatus = 0x0e
-	RakpStatusInvalidIntegrityCheckValue      RakpStatus = 0x0f
-	RakpStatusInvalidConfidentialityAlgorithm RakpStatus = 0x10
-	RakpStatusNoCipherSuiteMatch              RakpStatus = 0x11
-	RakpStatusIllegalParameter                RakpStatus = 0x12
-
-	// 13h-FFh Reserved for future definition by this specification
-)
-
-func (r RakpStatus) String() string {
-	m := map[RakpStatus]string{
-		0x00: "No errors",
-		0x01: "Insufficient resources to create a session",
-		0x02: "Invalid Session ID",
-		0x03: "Invalid payload type",
-		0x04: "Invalid authentication algorithm",
-		0x05: "Invalid integrity algorithm",
-		0x06: "No matching authentication payload",
-		0x07: "No matching integrity payload",
-		0x08: "Inactive Session ID",
-		0x09: "Invalid role",
-		0x0a: "Unauthorized role or privilege level requested",
-		0x0b: "Insufficient resources to create a session at the requested role",
-		0x0c: "Invalid name length",
-		0x0d: "Unauthorized name",
-		0x0e: "Unauthorized GUID",
-		0x0f: "Invalid integrity check value",
-		0x10: "Invalid confidentiality algorithm",
-		0x11: "No Cipher Suite match with proposed security algorithms",
-		0x12: "Illegal or unrecognized parameter",
-	}
-	s, ok := m[r]
-	if ok {
-		return s
-	}
-	return ""
 }

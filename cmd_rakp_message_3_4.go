@@ -11,7 +11,7 @@ type RAKPMessage3 struct {
 	MessageTag uint8
 
 	// Identifies the status of the previous message.
-	RmcpStatusCode uint8
+	RmcpStatusCode RmcpStatusCode
 
 	// The Managed System's Session ID for this session, returned by the managed system on the previous RMCP+ Open Session Response message.
 	ManagedSystemSessionID uint32
@@ -29,7 +29,7 @@ type RAKPMessage4 struct {
 
 	MessageTag uint8
 
-	RmcpStatusCode uint8
+	RmcpStatusCode RmcpStatusCode
 
 	MgmtConsoleSessionID uint32
 
@@ -54,7 +54,7 @@ func (req *RAKPMessage3) Command() Command {
 func (req *RAKPMessage3) Pack() []byte {
 	var msg = make([]byte, 8+len(req.KeyExchangeAuthenticationCode))
 	packUint8(req.MessageTag, msg, 0)
-	packUint8(req.RmcpStatusCode, msg, 1)
+	packUint8(uint8(req.RmcpStatusCode), msg, 1)
 	packUint16(0, msg, 2) // reserved
 	packUint32L(req.ManagedSystemSessionID, msg, 4)
 	packBytes(req.KeyExchangeAuthenticationCode, msg, 8)
@@ -82,7 +82,8 @@ func (res *RAKPMessage4) Unpack(msg []byte) error {
 	}
 
 	res.MessageTag, _, _ = unpackUint8(msg, 0)
-	res.RmcpStatusCode, _, _ = unpackUint8(msg, 1)
+	b1, _, _ := unpackUint8(msg, 1)
+	res.RmcpStatusCode = RmcpStatusCode(b1)
 	res.MgmtConsoleSessionID, _, _ = unpackUint32L(msg, 4)
 	res.IntegrityCheckValue, _, _ = unpackBytes(msg, 8, authCodeLen)
 	return nil
@@ -128,7 +129,7 @@ func (c *Client) RAKPMessage3() (response *RAKPMessage4, err error) {
 
 	request := &RAKPMessage3{
 		MessageTag:                    0,
-		RmcpStatusCode:                c.session.v20.rakp2ReturnCode,
+		RmcpStatusCode:                RmcpStatusCode(c.session.v20.rakp2ReturnCode),
 		ManagedSystemSessionID:        c.session.v20.bmcSessionID,
 		KeyExchangeAuthenticationCode: authCode,
 	}
@@ -153,7 +154,7 @@ func (c *Client) RAKPMessage3() (response *RAKPMessage4, err error) {
 }
 
 func (c *Client) ValidateRAKP4(response *RAKPMessage4) (bool, error) {
-	if response.RmcpStatusCode != uint8(RakpStatusNoErrors) {
+	if response.RmcpStatusCode != RmcpStatusCodeNoErrors {
 		return false, fmt.Errorf("rakp4 status code not ok, %x", response.RmcpStatusCode)
 	}
 	// verify

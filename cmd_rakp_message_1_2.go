@@ -36,7 +36,7 @@ type RAKPMessage2 struct {
 
 	MessageTag uint8
 
-	RmcpStatusCode uint8
+	RmcpStatusCode RmcpStatusCode
 
 	// The Remote Console Session ID specified by the RMCP+ Open Session Request message associated with this response.
 	RemoteConsoleSessionID uint32
@@ -92,11 +92,11 @@ func (res *RAKPMessage2) Unpack(msg []byte) error {
 	}
 
 	res.MessageTag = msg[0]
-	res.RmcpStatusCode = msg[1]
+	res.RmcpStatusCode = RmcpStatusCode(msg[1])
 	// 2 bytes reserved
 	res.RemoteConsoleSessionID, _, _ = unpackUint32L(msg, 4)
 
-	if res.RmcpStatusCode != uint8(RakpStatusNoErrors) {
+	if res.RmcpStatusCode != RmcpStatusCodeNoErrors {
 		return fmt.Errorf("the return status of rakp2 has error: %v", res.RmcpStatusCode)
 	}
 
@@ -180,7 +180,7 @@ func (c *Client) RAKPMessage1() (response *RAKPMessage2, err error) {
 	}
 
 	// the following fields must be set before generate_sik/generate_k1/generate_k2
-	c.session.v20.rakp2ReturnCode = response.RmcpStatusCode
+	c.session.v20.rakp2ReturnCode = uint8(response.RmcpStatusCode)
 	c.session.v20.bmcGUID = response.ManagedSystemGUID
 	c.session.v20.bmcRand = response.ManagedSystemRandomNumber // will be used in rakp3 to generate authCode
 
