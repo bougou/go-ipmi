@@ -143,10 +143,11 @@ func (sdr *SDR) SensorName() string {
 }
 
 // Determine if sensor has an analog reading
-// Todo, logic is not clear.
 func (sdr *SDR) HasAnalogReading() bool {
-	// Only Full sensors can return analog values.
-	// Compact sensors can't return analog values
+
+	// Only Full sensors can return analog values, Compact sensors can't return analog values.
+	// But not all Full sensors return analog values.
+
 	if sdr.RecordHeader.RecordType != SDRRecordTypeFullSensor {
 		return false
 	}
@@ -155,39 +156,7 @@ func (sdr *SDR) HasAnalogReading() bool {
 		return false
 	}
 
-	/*
-	 * Per the IPMI Specification:
-	 *	Only Full Threshold sensors are identified as providing
-	 *	analog readings.
-	 *
-	 * But... HP didn't interpret this as meaning that "Only Threshold
-	 *        Sensors" can provide analog readings.  So, HP packed analog
-	 *        readings into some of their non-Threshold Sensor.   There is
-	 *	  nothing that explicitly prohibits this in the spec, so if
-	 *	  an Analog reading is available in a Non-Threshold sensor and
-	 *	  there are units specified for identifying the reading then
-	 *	  we do an analog conversion even though the sensor is
-	 *	  non-Threshold.   To be safe, we provide this extension for
-	 *	  HP.
-	 *
-	 */
-
-	if sdr.Full.SensorEventReadingType.IsThreshold() {
-		// for threshold sensors
-		return true
-	}
-
-	// for non-threshold sensors
-
-	if !sdr.Full.SensorUnit.IsAnalog() {
-		return false
-	}
-
-	// for non-threshold sensors, but the analog data format indicates analog.
-	// this rarely exists, except HP.
-	// Todo
-
-	return false
+	return sdr.Full.HasAnalogReading()
 }
 
 // ParseSDR parses raw SDR record data to SDR struct.
@@ -513,9 +482,9 @@ type Mask_Discrete struct {
 }
 
 // Mask holds
-//  - Assertion Event Mask / Lower Threshold Reading Mask
-//  - Deassertion Event Mask / Upper Threshold Reading Mask
-//  - Discrete Reading Mask / Settable Threshold Mask, Readable Threshold Mask
+//   - Assertion Event Mask / Lower Threshold Reading Mask
+//   - Deassertion Event Mask / Upper Threshold Reading Mask
+//   - Discrete Reading Mask / Settable Threshold Mask, Readable Threshold Mask
 //
 // Used in Full and Compact SDR
 type Mask struct {
@@ -859,4 +828,28 @@ type SensorInitialization struct {
 	EventGenerationEnabled bool
 	// 0b = sensor scanning disabled, 1b = sensor scanning enabled
 	SensorScanningEnabled bool
+}
+
+// enhanceSDR will fill extra data for SDR
+func (c *Client) enhanceSDR(sdr *SDR) error {
+	if sdr == nil {
+		return nil
+	}
+
+	sensor, err := c.sdrToSensor(sdr)
+	if err != nil {
+		return fmt.Errorf("sdrToSensor failed, err: %s", err)
+	}
+
+	switch sdr.RecordHeader.RecordType {
+	case SDRRecordTypeFullSensor:
+		sdr.Full.SensorValue = sensor.Value
+		sdr.Full.SensorStatus = sensor.Status()
+
+	case SDRRecordTypeCompactSensor:
+		sdr.Compact.SensorValue = sensor.Value
+		sdr.Compact.SensorStatus = sensor.Status()
+
+	}
+	return nil
 }

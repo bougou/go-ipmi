@@ -68,21 +68,25 @@ func (c *Client) GetSDRBySensorID(sensorNumber uint8) (*SDR, error) {
 	for {
 		res, err := c.GetSDR(recordID)
 		if err != nil {
-			return nil, fmt.Errorf("GetSDRCondtionally failed, err: %s", err)
+			return nil, fmt.Errorf("GetSDR failed, err: %s", err)
 		}
 		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
 		if err != nil {
 			return nil, fmt.Errorf("ParseSDR failed, err: %s", err)
 		}
 
-		if uint8(sdr.SensorNumber()) == sensorNumber {
-			return sdr, nil
+		if uint8(sdr.SensorNumber()) != sensorNumber {
+			recordID = sdr.NextRecordID
+			if recordID == 0xffff {
+				break
+			}
+			continue
 		}
 
-		recordID = sdr.NextRecordID
-		if recordID == 0xffff {
-			break
+		if err := c.enhanceSDR(sdr); err != nil {
+			return sdr, fmt.Errorf("enhanceSDR failed, err: %s", err)
 		}
+		return sdr, nil
 	}
 
 	return nil, fmt.Errorf("not found SDR for sensor id (%#0x)", sensorNumber)
@@ -93,21 +97,25 @@ func (c *Client) GetSDRBySensorName(sensorName string) (*SDR, error) {
 	for {
 		res, err := c.GetSDR(recordID)
 		if err != nil {
-			return nil, fmt.Errorf("GetSDRCondtionally failed, err: %s", err)
+			return nil, fmt.Errorf("GetSDR failed, err: %s", err)
 		}
 		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
 		if err != nil {
 			return nil, fmt.Errorf("ParseSDR failed, err: %s", err)
 		}
 
-		if sdr.SensorName() == sensorName {
-			return sdr, nil
+		if sdr.SensorName() != sensorName {
+			recordID = sdr.NextRecordID
+			if recordID == 0xffff {
+				break
+			}
+			continue
 		}
 
-		recordID = sdr.NextRecordID
-		if recordID == 0xffff {
-			break
+		if err := c.enhanceSDR(sdr); err != nil {
+			return sdr, fmt.Errorf("enhanceSDR failed, err: %s", err)
 		}
+		return sdr, nil
 	}
 
 	return nil, fmt.Errorf("not found SDR for sensor name (%#0x)", sensorName)

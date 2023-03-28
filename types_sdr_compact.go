@@ -38,6 +38,13 @@ type SDRCompact struct {
 
 	SensorUnit SensorUnit
 
+	// SensorValue is not stored in SDR intrinsically, this field is set by `enhanceSDR`
+	// It is fetched by IPMI command GetSensorReading and aligned/converted to SensorUnit based.
+	SensorValue float64
+
+	// SensorStatus is not stored in SDR intrinsically, this field is set by `enhanceSDR`
+	SensorStatus string
+
 	// Sensor Direction. Indicates whether the sensor is monitoring an input or
 	// output relative to the given Entity. E.g. if the sensor is monitoring a
 	// current, this can be used to specify whether it is an input voltage or an
@@ -78,7 +85,8 @@ func (compact *SDRCompact) String() string {
 Generator             : %d
 Entity ID             : %d.%d (%s)
 Sensor Type (%s) : %s (%#02x)
-Sensor Reading        : 0
+Sensor Reading        : %.3f %s
+Sensor Status         : %s
 Sensor Initialization :
   Settable            : %v
   Scanning            : %v
@@ -105,6 +113,8 @@ Negative Hysteresis   : %#02x`,
 		compact.GeneratorID,
 		uint8(compact.SensorEntityID), uint8(compact.SensorEntityInstance), compact.SensorEntityID.String(),
 		compact.SensorEventReadingType.SensorClass(), compact.SensorType.String(), uint8(compact.SensorType),
+		compact.SensorValue, compact.SensorUnit,
+		compact.SensorStatus,
 		compact.SensorInitialization.Settable,
 		compact.SensorInitialization.InitScanning,
 		compact.SensorInitialization.InitEvents,

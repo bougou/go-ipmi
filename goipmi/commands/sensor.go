@@ -300,7 +300,7 @@ sensor reading-factors get <sensor_number>
 				}
 				fmt.Println(res0.Format())
 
-				res, err := client.GetSensorReadingFactors(sensorNumber, res0.AnalogReading)
+				res, err := client.GetSensorReadingFactors(sensorNumber, res0.Reading)
 				if err != nil {
 					CheckErr(fmt.Errorf("GetSensorReadingFactors failed, err: %s", err))
 				}
@@ -315,10 +315,19 @@ sensor reading-factors get <sensor_number>
 }
 
 func NewCmdSensorDetail() *cobra.Command {
+	usage := `
+sensor detail <sensor_number>
+	`
+
 	cmd := &cobra.Command{
 		Use:   "detail",
 		Short: "detail",
 		Run: func(cmd *cobra.Command, args []string) {
+
+			if len(args) < 1 {
+				CheckErr(fmt.Errorf("usage: %s", usage))
+			}
+
 			var sensorNumber uint8
 
 			if len(args) >= 1 {

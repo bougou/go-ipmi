@@ -15,6 +15,8 @@ import (
 // (oem is a special case of discrete)
 //
 // A sensor can return either an analog or discrete readings. Sensor events can be discrete or threshold-based.
+// Valid sensorclass string values are:
+// "N/A", "threshold", "discrete", "oem"
 type SensorClass string
 
 const (
@@ -915,6 +917,19 @@ type Sensor struct {
 	OccuredEvents []SensorEvent
 }
 
+func (s *Sensor) String() string {
+	return fmt.Sprintf(
+		fmt.Sprintf("Sensor ID              : %s (%#02x)\n", s.Name, s.Number) +
+			fmt.Sprintf(" Sensor Type (%s) : %s (%#02x)\n", string(s.EventReadingType.SensorClass()), s.SensorType.String(), uint8(s.SensorType)) +
+			fmt.Sprintf(" Sensor Number        : %#02x\n", s.Number) +
+			fmt.Sprintf(" Sensor Name          : %s\n", s.Name) +
+			fmt.Sprintf(" Sensor Reading (raw) : %d\n", s.Raw) +
+			fmt.Sprintf(" Sensor Value         : %.3f %s\n", s.Value, s.SensorUnit) +
+			fmt.Sprintf(" Sensor Status        : %s\n", s.Status()),
+	)
+}
+
+// FormatSensors return a string of table printed for sensors
 func FormatSensors(extended bool, sensors ...*Sensor) string {
 
 	var buf = new(bytes.Buffer)
@@ -1059,17 +1074,28 @@ func (sensor *Sensor) ThresholdStr(thresholdType SensorThresholdType) string {
 	return fmt.Sprintf("%.3f", value)
 }
 
-// ConvertReading converts raw sensor reading or raw sensor threshold value to real value in the desired units for the sensor.
+// ConvertReading converts raw discrete-sensor reading or raw threshold-sensor value to real value in the desired units for the sensor.
+//
+// This function can also be applied on raw threshold setting (UNR,UCR,NNC,LNC,LCR,LNR) values.
 func (sensor *Sensor) ConvertReading(raw uint8) float64 {
-	return ConvertReading(raw, sensor.SensorUnit.AnalogDataFormat, sensor.Threshold.ReadingFactors, sensor.Threshold.LinearizationFunc)
+	if sensor.HasAnalogReading {
+		return ConvertReading(raw, sensor.SensorUnit.AnalogDataFormat, sensor.Threshold.ReadingFactors, sensor.Threshold.LinearizationFunc)
+	}
+	return float64(raw)
 }
 
 func (sensor *Sensor) ConvertSensorHysteresis(raw uint8) float64 {
-	return ConvertSensorHysteresis(raw, sensor.SensorUnit.AnalogDataFormat, sensor.Threshold.ReadingFactors, sensor.Threshold.LinearizationFunc)
+	if sensor.HasAnalogReading {
+		return ConvertSensorHysteresis(raw, sensor.SensorUnit.AnalogDataFormat, sensor.Threshold.ReadingFactors, sensor.Threshold.LinearizationFunc)
+	}
+	return float64(raw)
 }
 
 func (sensor *Sensor) ConvertSensorTolerance(raw uint8) float64 {
-	return ConvertSensorTolerance(raw, sensor.SensorUnit.AnalogDataFormat, sensor.Threshold.ReadingFactors, sensor.Threshold.LinearizationFunc)
+	if sensor.HasAnalogReading {
+		return ConvertSensorTolerance(raw, sensor.SensorUnit.AnalogDataFormat, sensor.Threshold.ReadingFactors, sensor.Threshold.LinearizationFunc)
+	}
+	return float64(raw)
 }
 
 func (sensor *Sensor) HysteresisStr(raw uint8) string {

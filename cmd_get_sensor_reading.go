@@ -12,7 +12,8 @@ type GetSensorReadingRequest struct {
 }
 
 type GetSensorReadingResponse struct {
-	AnalogReading uint8 // reading byte. Ignore on read if sensor does not return an numeric (analog) reading
+	// reading byte. Ignore on read if sensor does not return an numeric (analog) reading
+	Reading uint8
 
 	EventMessagesDisabled  bool
 	SensorScanningDisabled bool
@@ -48,7 +49,7 @@ func (res *GetSensorReadingResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
 		return ErrUnpackedDataTooShort
 	}
-	res.AnalogReading, _, _ = unpackUint8(msg, 0)
+	res.Reading, _, _ = unpackUint8(msg, 0)
 
 	b1, _, _ := unpackUint8(msg, 1)
 	res.EventMessagesDisabled = !isBit7Set(b1)
@@ -131,7 +132,7 @@ Reading Unavailable    : %v
 Threshold Status       : %s
 Discrete Events        : %v
 `,
-		res.AnalogReading,
+		res.Reading,
 		res.EventMessagesDisabled,
 		res.SensorScanningDisabled,
 		res.ReadingUnavailable,

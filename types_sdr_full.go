@@ -44,6 +44,13 @@ type SDRFull struct {
 
 	SensorUnit SensorUnit
 
+	// Note, SensorValue is not stored in SDR intrinsically, this field is set by `enhanceSDR`
+	// It is fetched by IPMI command GetSensorReading and aligned/converted to SensorUnit based.
+	SensorValue float64
+
+	// Note, SensorStatus is not stored in SDR intrinsically, this field is set by `enhanceSDR`
+	SensorStatus string
+
 	EntityInstanceSharing uint8
 
 	// see: 36.3 Sensor Reading Conversion Formula
@@ -70,11 +77,12 @@ type SDRFull struct {
 	SensorDirection uint8
 
 	// Analog Flags
+
 	NominalReadingSpecified bool
 	NormalMaxSpecified      bool
 	NormalMinSpecified      bool
 
-	// 额定值,标称值
+	// 额定值, 标称值
 	// Given as a raw value. Must be converted to units-based value using the y=Mx+B
 	// formula. 1's or 2's complement signed or unsigned per flag bits in Sensor Units 1
 	//
@@ -136,32 +144,39 @@ type SDRFull struct {
 
 // ConvertReading converts raw sensor reading or raw sensor threshold value to real value in the desired units for the sensor.
 func (full *SDRFull) ConvertReading(raw uint8) float64 {
-	return ConvertReading(raw, full.SensorUnit.AnalogDataFormat, full.ReadingFactors, full.LinearizationFunc)
+	if full.HasAnalogReading() {
+		return ConvertReading(raw, full.SensorUnit.AnalogDataFormat, full.ReadingFactors, full.LinearizationFunc)
+	}
+	return float64(raw)
 }
 
 // ConvertSensorHysteresis converts raw sensor hysteresis value to real value in the desired units for the sensor.
 func (full *SDRFull) ConvertSensorHysteresis(raw uint8) float64 {
-	return ConvertSensorHysteresis(raw, full.SensorUnit.AnalogDataFormat, full.ReadingFactors, full.LinearizationFunc)
+	if full.HasAnalogReading() {
+		return ConvertSensorHysteresis(raw, full.SensorUnit.AnalogDataFormat, full.ReadingFactors, full.LinearizationFunc)
+	}
+	return float64(raw)
 }
 
 // ConvertSensorTolerance converts raw sensor tolerance value to real value in the desired units for the sensor.
 func (full *SDRFull) ConvertSensorTolerance(raw uint8) float64 {
-	return ConvertSensorTolerance(raw, full.SensorUnit.AnalogDataFormat, full.ReadingFactors, full.LinearizationFunc)
+	if full.HasAnalogReading() {
+		return ConvertSensorTolerance(raw, full.SensorUnit.AnalogDataFormat, full.ReadingFactors, full.LinearizationFunc)
+	}
+	return float64(raw)
 }
 
 func (full *SDRFull) ReadingStr(raw uint8, valid bool) string {
-	if !full.SensorUnit.IsAnalog() {
-		if valid {
-			return fmt.Sprintf("%#02x", raw)
-		}
+	if !valid {
 		return "unspecified"
 	}
 
-	value := full.ConvertReading(raw)
-	if valid {
-		return fmt.Sprintf("%#02x/%.3f", raw, value)
+	if !full.SensorUnit.IsAnalog() {
+		return fmt.Sprintf("%#02x", raw)
 	}
-	return "unspecified"
+
+	value := full.ConvertReading(raw)
+	return fmt.Sprintf("%#02x/%.3f", raw, value)
 }
 
 func (full *SDRFull) ReadingMaxStr() string {
@@ -269,7 +284,8 @@ func (full *SDRFull) String() string {
 Generator             : %#02x
 Entity ID             : %d.%d (%s)
 Sensor Type (%s)      : %s (%#02x)
-Sensor Reading        : 0 (+/- %d) %s
+Sensor Reading        : %.4f (+/- %d) %s
+Sensor Status         : %s
 Sensor Initialization :
   Settable            : %v
   Scanning            : %v
@@ -310,7 +326,8 @@ Reading Factors       : %s`,
 		full.GeneratorID,
 		uint8(full.SensorEntityID), uint8(full.SensorEntityInstance), full.SensorEntityID.String(),
 		full.SensorEventReadingType.SensorClass(), full.SensorType.String(), uint8(full.SensorType),
-		full.ReadingFactors.Tolerance, full.SensorUnit,
+		full.SensorValue, full.ReadingFactors.Tolerance, full.SensorUnit,
+		full.SensorStatus,
 		full.SensorInitialization.Settable,
 		full.SensorInitialization.InitScanning,
 		full.SensorInitialization.InitEvents,
@@ -481,4 +498,41 @@ func parseSDRFullSensor(data []byte, sdr *SDR) error {
 	s.IDStringBytes, _, _ = unpackBytes(data, minSize, idStrLen)
 
 	return nil
+}
+
+func (full *SDRFull) HasAnalogReading() bool {
+	// Todo, logic is not clear.
+	/*
+	 * Per the IPMI Specification:
+	 *	Only Full Threshold sensors are identified as providing
+	 *	analog readings.
+	 *
+	 * But... HP didn't interpret this as meaning that "Only Threshold
+	 *        Sensors" can provide analog readings.  So, HP packed analog
+	 *        readings into some of their non-Threshold Sensor.   There is
+	 *	  nothing that explicitly prohibits this in the spec, so if
+	 *	  an Analog reading is available in a Non-Threshold sensor and
+	 *	  there are units specified for identifying the reading then
+	 *	  we do an analog conversion even though the sensor is
+	 *	  non-Threshold.   To be safe, we provide this extension for
+	 *	  HP.
+	 *
+	 */
+
+	if full.SensorEventReadingType.IsThreshold() {
+		// for threshold sensors
+		return true
+	}
+
+	// for non-threshold sensors
+
+	if full.SensorUnit.IsAnalog() {
+		return false
+	}
+
+	// for non-threshold sensors, but the analog data format indicates analog.
+	// this rarely exists, except HP.
+	// Todo
+
+	return false
 }
