@@ -50,6 +50,9 @@ type v20 struct {
 	state    SessionState
 	sequence uint32 // session sequence number
 
+	// the cipher suite used during OpenSessionRequest
+	cipherSuiteID CipherSuiteID
+
 	// filled by RmcpOpenSessionRequest
 	requestedAuthAlg      AuthAlg
 	requestedIntegrityAlg IntegrityAlg

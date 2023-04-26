@@ -94,7 +94,8 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 			// IPMI Request Sequence, start from 1
 			ipmiSeq: 1,
 			v20: v20{
-				state: SessionStatePreSession,
+				state:         SessionStatePreSession,
+				cipherSuiteID: CipherSuiteIDReserved,
 			},
 			v15: v15{
 				active: false,
@@ -136,6 +137,16 @@ func (c *Client) WithTimeout(timeout time.Duration) *Client {
 func (c *Client) WithBufferSize(bufferSize int) *Client {
 	c.bufferSize = bufferSize
 	c.udpClient.bufferSize = bufferSize
+	return c
+}
+
+// WithCipherSuiteID sets a custom cipher suite which is used during OpenSession command.
+// It is only valid for client with IPMI lanplus interface.
+// For the cutsom cipherSuiteID to take effect, you must call WithCipherSuiteID before calling Connect method.
+func (c *Client) WithCipherSuiteID(cipherSuiteID CipherSuiteID) *Client {
+	if c.session != nil {
+		c.session.v20.cipherSuiteID = cipherSuiteID
+	}
 	return c
 }
 

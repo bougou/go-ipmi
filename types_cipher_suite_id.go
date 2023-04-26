@@ -4,27 +4,27 @@ package ipmi
 type CipherSuiteID uint8
 
 const (
-	CipherSuiteID0        uint8 = 0
-	CipherSuiteID1        uint8 = 1
-	CipherSuiteID2        uint8 = 2
-	CipherSuiteID3        uint8 = 3
-	CipherSuiteID4        uint8 = 4
-	CipherSuiteID5        uint8 = 5
-	CipherSuiteID6        uint8 = 6
-	CipherSuiteID7        uint8 = 7
-	CipherSuiteID8        uint8 = 8
-	CipherSuiteID9        uint8 = 9
-	CipherSuiteID10       uint8 = 10
-	CipherSuiteID11       uint8 = 11
-	CipherSuiteID12       uint8 = 12
-	CipherSuiteID13       uint8 = 13
-	CipherSuiteID14       uint8 = 14
-	CipherSuiteID15       uint8 = 15
-	CipherSuiteID16       uint8 = 16
-	CipherSuiteID17       uint8 = 17
-	CipherSuiteID18       uint8 = 18
-	CipherSuiteID19       uint8 = 19
-	CipherSuiteIDReserved uint8 = 0xff
+	CipherSuiteID0        CipherSuiteID = 0
+	CipherSuiteID1        CipherSuiteID = 1
+	CipherSuiteID2        CipherSuiteID = 2
+	CipherSuiteID3        CipherSuiteID = 3
+	CipherSuiteID4        CipherSuiteID = 4
+	CipherSuiteID5        CipherSuiteID = 5
+	CipherSuiteID6        CipherSuiteID = 6
+	CipherSuiteID7        CipherSuiteID = 7
+	CipherSuiteID8        CipherSuiteID = 8
+	CipherSuiteID9        CipherSuiteID = 9
+	CipherSuiteID10       CipherSuiteID = 10
+	CipherSuiteID11       CipherSuiteID = 11
+	CipherSuiteID12       CipherSuiteID = 12
+	CipherSuiteID13       CipherSuiteID = 13
+	CipherSuiteID14       CipherSuiteID = 14
+	CipherSuiteID15       CipherSuiteID = 15
+	CipherSuiteID16       CipherSuiteID = 16
+	CipherSuiteID17       CipherSuiteID = 17
+	CipherSuiteID18       CipherSuiteID = 18
+	CipherSuiteID19       CipherSuiteID = 19
+	CipherSuiteIDReserved CipherSuiteID = 0xff
 )
 
 const (
@@ -42,7 +42,7 @@ const (
 )
 
 // getCipherSuiteAlgorithms returns AuthAlg, IntegrityAlg and CryptAlg of the specified cipherSuiteID.
-func getCipherSuiteAlgorithms(cipherSuiteID uint8) (authAlg AuthAlg, integrity IntegrityAlg, encryptionAlg CryptAlg, err error) {
+func getCipherSuiteAlgorithms(cipherSuiteID CipherSuiteID) (authAlg AuthAlg, integrity IntegrityAlg, encryptionAlg CryptAlg, err error) {
 	switch cipherSuiteID {
 	case CipherSuiteID0:
 		return AuthAlgRAKP_None, IntegrityAlg_None, CryptAlg_None, nil
@@ -109,7 +109,7 @@ type CipherSuiteRecord struct {
 	CryptAlgs     []uint8 // Tag bits: [7:6]=10b
 }
 
-func findBestCipherSuite() uint8 {
+func findBestCipherSuite() CipherSuiteID {
 	var bestSuite = CipherSuiteIDReserved
 
 	// Todo
