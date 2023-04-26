@@ -20,6 +20,8 @@ func NewCmdPEF() *cobra.Command {
 		},
 	}
 	cmd.AddCommand(NewCmdPEFCapabilities())
+	cmd.AddCommand(NewCmdPEFStatus())
+	cmd.AddCommand(NewCmdPEFInfo())
 
 	return cmd
 }
@@ -35,6 +37,39 @@ func NewCmdPEFCapabilities() *cobra.Command {
 			}
 
 			fmt.Println(res.Format())
+		},
+	}
+	return cmd
+}
+
+func NewCmdPEFStatus() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "status",
+		Short: "status",
+		Run: func(cmd *cobra.Command, args []string) {
+			res, err := client.GetLastProcessedEventId()
+			if err != nil {
+				CheckErr(fmt.Errorf("GetLastProcessedEventId failed, err: %s", err))
+			}
+
+			fmt.Println(res.Format())
+		},
+	}
+	return cmd
+}
+
+// Reports PEF capabilities + System GUID
+func NewCmdPEFInfo() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "info",
+		Short: "info",
+		Run: func(cmd *cobra.Command, args []string) {
+			systemGUID, err := client.GetPEFConfigSystemUUID()
+			if err != nil {
+				CheckErr(fmt.Errorf("GetPEFConfigSystemUUID failed, err: %s", err))
+			}
+
+			fmt.Println(systemGUID)
 		},
 	}
 	return cmd

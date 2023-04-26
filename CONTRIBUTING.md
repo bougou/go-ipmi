@@ -66,3 +66,11 @@ type Response interface {
 	Format() string
 }
 ```
+
+## IPMI Command Request
+
+## IPMI Command Response
+
+- Define necessary fields per IPMI specification
+- DON'T define completion code in Response struct.
+- If there is no command-specific completion codes, just return an empty map for `CompletionCodes()` method.

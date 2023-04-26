@@ -2,8 +2,6 @@ package ipmi
 
 import (
 	"fmt"
-
-	"github.com/google/uuid"
 )
 
 // 20.8 Get Device GUID Command
@@ -38,14 +36,9 @@ func (res *GetDeviceGUIDResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetDeviceGUIDResponse) Format() string {
-
-	uuidRFC4122MSB := make([]byte, 16)
-	for i := 0; i < 16; i++ {
-		uuidRFC4122MSB[i] = res.GUID[:][15-i]
-	}
-	u, err := uuid.FromBytes(uuidRFC4122MSB)
+	u, err := ParseGUID(res.GUID[:])
 	if err != nil {
-		return "Invalid UUID Bytes"
+		return ""
 	}
 
 	return fmt.Sprintf(`GUID: %s`, u.String())
