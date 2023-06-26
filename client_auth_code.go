@@ -354,7 +354,7 @@ func (c *Client) generate_rakp4_authcode() ([]byte, error) {
 	hmacKey := c.session.v20.sik
 	c.DebugBytes("rakp4 auth code key", hmacKey, 16)
 
-	b, err := generate_auth_hmac(AuthAlg(c.session.v20.integrityAlg), input, hmacKey)
+	b, err := generate_auth_hmac(c.session.v20.integrityAlg, input, hmacKey)
 	if err != nil {
 		return nil, fmt.Errorf("generate hmac failed, err: %s", err)
 	}

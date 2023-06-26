@@ -48,22 +48,37 @@ func generate_hmac(alg string, data []byte, key []byte) ([]byte, error) {
 	}
 }
 
-func generate_auth_hmac(authAlg AuthAlg, data []byte, key []byte) ([]byte, error) {
-	switch authAlg {
-	case AuthAlgRAKP_None:
+func generate_auth_hmac(authAlg interface{}, data []byte, key []byte) ([]byte, error) {
+	algorithm := ""
+	switch authAlg.(type) {
+	case AuthAlg:
+		switch authAlg {
+		case AuthAlgRAKP_HMAC_SHA1:
+			algorithm = "sha1"
+		case AuthAlgRAKP_HMAC_MD5:
+			algorithm = "md5"
+		case AuthAlgRAKP_HMAC_SHA256:
+			algorithm = "sha256"
+		default:
+			return nil, fmt.Errorf("not support for authentication algorithm %x", authAlg)
+		}
+	case IntegrityAlg:
+		switch authAlg {
+		case IntegrityAlg_HMAC_SHA1_96:
+			algorithm = "sha1"
+		case IntegrityAlg_HMAC_MD5_128:
+			algorithm = "md5"
+		case IntegrityAlg_HMAC_SHA256_128:
+			algorithm = "sha256"
+		default:
+			return nil, fmt.Errorf("not support for integrity algorithm %x", authAlg)
+		}
+	}
+
+	if len(algorithm) == 0 {
 		return []byte{}, nil
-
-	case AuthAlgRAKP_HMAC_MD5:
-		return generate_hmac("md5", data, key)
-
-	case AuthAlgRAKP_HMAC_SHA1:
-		return generate_hmac("sha1", data, key)
-
-	case AuthAlgRAKP_HMAC_SHA256:
-		return generate_hmac("sha256", data, key)
-
-	default:
-		return nil, fmt.Errorf("not support for authentication algorithm %x", authAlg)
+	} else {
+		return generate_hmac(algorithm, data, key)
 	}
 }
 
