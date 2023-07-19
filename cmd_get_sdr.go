@@ -46,8 +46,14 @@ func (res *GetSDRResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
 
-// GetSDR returns raw SDR record.
-func (c *Client) GetSDR(recordID uint16) (response *GetSDRResponse, err error) {
+func (c *Client) GetSDR(request *GetSDRRequest) (response *GetSDRResponse, err error) {
+	response = &GetSDRResponse{}
+	err = c.Exchange(request, response)
+	return
+}
+
+// GetSDRByRecordID returns raw SDR record.
+func (c *Client) GetSDRByRecordID(recordID uint16) (response *GetSDRResponse, err error) {
 	request := &GetSDRRequest{
 		ReservationID: 0,
 		RecordID:      recordID,
@@ -66,7 +72,7 @@ func (c *Client) GetSDRBySensorID(sensorNumber uint8) (*SDR, error) {
 
 	var recordID uint16 = 0
 	for {
-		res, err := c.GetSDR(recordID)
+		res, err := c.GetSDRByRecordID(recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSDR failed, err: %s", err)
 		}
@@ -95,7 +101,7 @@ func (c *Client) GetSDRBySensorID(sensorNumber uint8) (*SDR, error) {
 func (c *Client) GetSDRBySensorName(sensorName string) (*SDR, error) {
 	var recordID uint16 = 0
 	for {
-		res, err := c.GetSDR(recordID)
+		res, err := c.GetSDRByRecordID(recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSDR failed, err: %s", err)
 		}
@@ -128,7 +134,7 @@ func (c *Client) GetSDRs(recordTypes ...SDRRecordType) ([]*SDR, error) {
 	var recordID uint16 = 0
 	var out = make([]*SDR, 0)
 	for {
-		res, err := c.GetSDR(recordID)
+		res, err := c.GetSDRByRecordID(recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %s", recordID, err)
 		}
@@ -165,7 +171,7 @@ func (c *Client) GetSDRsMap() (SDRMapBySensorNumber, error) {
 
 	var recordID uint16 = 0
 	for {
-		res, err := c.GetSDR(recordID)
+		res, err := c.GetSDRByRecordID(recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %s", recordID, err)
 		}
