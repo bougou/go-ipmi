@@ -74,7 +74,7 @@ func (c *Client) GetSDRBySensorID(sensorNumber uint8) (*SDR, error) {
 	for {
 		res, err := c.GetSDRByRecordID(recordID)
 		if err != nil {
-			return nil, fmt.Errorf("GetSDR failed, err: %s", err)
+			return nil, fmt.Errorf("GetSDRByRecordID failed for recordID (%#02x), err: %s", recordID, err)
 		}
 		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
 		if err != nil {
@@ -103,7 +103,7 @@ func (c *Client) GetSDRBySensorName(sensorName string) (*SDR, error) {
 	for {
 		res, err := c.GetSDRByRecordID(recordID)
 		if err != nil {
-			return nil, fmt.Errorf("GetSDR failed, err: %s", err)
+			return nil, fmt.Errorf("GetSDRByRecordID failed for recordID (%#02x), err: %s", recordID, err)
 		}
 		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
 		if err != nil {

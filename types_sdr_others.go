@@ -70,7 +70,7 @@ func parseSDREventOnly(data []byte, sdr *SDR) error {
 	const SDREventOnlyMinSize int = 17
 	minSize := SDREventOnlyMinSize
 	if len(data) < minSize {
-		return fmt.Errorf("sdr (event-only) data must be longer than %d", minSize)
+		return fmt.Errorf("sdr (event-only) data length (%d) must be >= %d", len(data), minSize)
 	}
 
 	s := &SDREventOnly{}
@@ -100,7 +100,7 @@ func parseSDREventOnly(data []byte, sdr *SDR) error {
 
 	idStrLen := int(s.IDStringTypeLength.Length())
 	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (event-only) data must be longer than %d", minSize+idStrLen)
+		return fmt.Errorf("sdr (event-only) data length (%d) must be >= %d", len(data), minSize+idStrLen)
 	}
 	s.IDStringBytes, _, _ = unpackBytes(data, minSize, idStrLen)
 	return nil
@@ -149,7 +149,7 @@ type SDREntityAssociation struct {
 func parseSDREntityAssociation(data []byte, sdr *SDR) error {
 	const SDREntityAssociationSize int = 16
 	if len(data) < SDREntityAssociationSize {
-		return fmt.Errorf("sdr (entity association) data must be longer than %d", SDREntityAssociationSize)
+		return fmt.Errorf("sdr (entity association) data length (%d) must be >= %d", len(data), SDREntityAssociationSize)
 	}
 
 	s := &SDREntityAssociation{}
@@ -230,7 +230,7 @@ type SDRDeviceRelative struct {
 func parseSDRDeviceRelativeEntityAssociation(data []byte, sdr *SDR) error {
 	const SDRDeviceRelativeEntityAssociationSize = 32
 	if len(data) < SDRDeviceRelativeEntityAssociationSize {
-		return fmt.Errorf("sdr (device-relative entity association) data must be longer than %d", SDRDeviceRelativeEntityAssociationSize)
+		return fmt.Errorf("sdr (device-relative entity association) data length (%d) must be >= %d", len(data), SDRDeviceRelativeEntityAssociationSize)
 	}
 
 	s := &SDRDeviceRelative{}
@@ -309,7 +309,7 @@ func parseSDRGenericLocator(data []byte, sdr *SDR) error {
 	minSize := SDRGenericLocatorMinSize
 
 	if len(data) < minSize {
-		return fmt.Errorf("sdr (generic-locator) data must be longer than %d", minSize)
+		return fmt.Errorf("sdr (generic-locator) data length (%d) must be >= %d", len(data), minSize)
 	}
 
 	s := &SDRGenericDeviceLocator{}
@@ -337,7 +337,7 @@ func parseSDRGenericLocator(data []byte, sdr *SDR) error {
 
 	idStrLen := int(s.DeviceIDTypeLength.Length())
 	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (generic-locator) data must be longer than %d", minSize+idStrLen)
+		return fmt.Errorf("sdr (generic-locator) data length (%d) must be >= %d", len(data), minSize+idStrLen)
 	}
 	s.DeviceIDString, _, _ = unpackBytes(data, minSize, idStrLen)
 	return nil
@@ -428,7 +428,7 @@ func parseSDRFRUDeviceLocator(data []byte, sdr *SDR) error {
 	const SDRFRUDeviceLocatorMinSize = 16 // plus the ID String Bytes (optional 16 bytes maximum)
 	minSize := SDRFRUDeviceLocatorMinSize
 	if len(data) < minSize {
-		return fmt.Errorf("sdr (fru device) data must be longer than %d", minSize)
+		return fmt.Errorf("sdr (fru device) data length (%d) must be >= %d", len(data), minSize)
 	}
 
 	s := &SDRFRUDeviceLocator{}
@@ -469,7 +469,7 @@ func parseSDRFRUDeviceLocator(data []byte, sdr *SDR) error {
 		idStrLen = int(s.DeviceIDTypeLength.Length())
 	}
 	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (fru device) data must be longer than %d", minSize+idStrLen)
+		return fmt.Errorf("sdr (fru device) data length (%d) must be >= %d", len(data), minSize+idStrLen)
 	}
 
 	s.DeviceIDBytes, _, _ = unpackBytes(data, minSize, idStrLen)
@@ -515,7 +515,7 @@ func parseSDRManagementControllerDeviceLocator(data []byte, sdr *SDR) error {
 	minSize := SDRManagementControllerDeviceLocatorMinSize
 
 	if len(data) < minSize {
-		return fmt.Errorf("sdr (mgmt controller device locator) data must be longer than %d", minSize)
+		return fmt.Errorf("sdr (mgmt controller device locator) data length (%d) must be >= %d", len(data), minSize)
 	}
 
 	s := &SDRMgmtControllerDeviceLocator{}
@@ -551,7 +551,7 @@ func parseSDRManagementControllerDeviceLocator(data []byte, sdr *SDR) error {
 
 	idStrLen := int(s.DeviceIDTypeLength.Length())
 	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (mgmt controller device locator) data must be longer than %d", minSize+idStrLen)
+		return fmt.Errorf("sdr (mgmt controller device locator) data length (%d) must be >= %d", len(data), minSize+idStrLen)
 	}
 	s.DeviceIDBytes, _, _ = unpackBytes(data, minSize, idStrLen)
 	return nil
@@ -591,7 +591,7 @@ func parseSDRManagementControllerConfirmation(data []byte, sdr *SDR) error {
 	const SDRManagementControllerConfirmationSize = 32
 	minSize := SDRManagementControllerConfirmationSize
 	if len(data) < minSize {
-		return fmt.Errorf("sdr (mgmt controller confirmation) data must be longer than %d", minSize)
+		return fmt.Errorf("sdr (mgmt controller confirmation) data length (%d) must be >= %d", len(data), minSize)
 	}
 
 	s := &SDRMgmtControllerConfirmation{}
@@ -663,7 +663,7 @@ func parseSDRBMCMessageChannelInfo(data []byte, sdr *SDR) error {
 	const SDRBMCMessageChannelInfoSize = 16
 	minSize := SDRBMCMessageChannelInfoSize
 	if len(data) < minSize {
-		return fmt.Errorf("sdr (bmc message channel info) data must be longer than %d", minSize)
+		return fmt.Errorf("sdr (bmc message channel info) data length (%d) must be >= %d", len(data), minSize)
 	}
 
 	s := &SDRBMCChannelInfo{}
@@ -702,7 +702,7 @@ func parseSDROEM(data []byte, sdr *SDR) error {
 	const SDROEMMaxSize = 64 // OEM defined records are limited to a maximum of 64 bytes, including the header
 
 	if len(data) < SDROEMMinSize {
-		return fmt.Errorf("sdr (bmc message channel info) data must be longer than %d", SDROEMMinSize)
+		return fmt.Errorf("sdr (bmc message channel info) data length (%d) must be >= %d", len(data), SDROEMMinSize)
 	}
 
 	s := &SDROEM{}
@@ -719,21 +719,21 @@ type SDRReserved struct {
 
 // 43.15 Type/Length Byte Format
 //
-//  7:6 00 = Unicode
-//           00b define a Unicode string in the IPMI specification,
-//           whereas they specify a binary field in the Platform Management FRU specification.
-//      01 = BCD plus (see below)
-//      10 = 6-bit ASCII, packed
-//      11 = 8-bit ASCII + Latin 1.
-//          At least two bytes of data must be present when this type is used.
-//          Therefore, the length (number of data bytes) will be >1 if data is present,
-//          0 if data is not present. A length of 1 is reserved.
-//  5 reserved.
-//      the bit 5 is reserved in the IPMI specification type/length byte,
-//      where it is part of the length field in the Platform Management FRU specification
-//  4:0 length of following data, in characters.
-//      00000b indicates 'none following'.
-//      11111b = reserved.
+//	7:6 00 = Unicode
+//	         00b define a Unicode string in the IPMI specification,
+//	         whereas they specify a binary field in the Platform Management FRU specification.
+//	    01 = BCD plus (see below)
+//	    10 = 6-bit ASCII, packed
+//	    11 = 8-bit ASCII + Latin 1.
+//	        At least two bytes of data must be present when this type is used.
+//	        Therefore, the length (number of data bytes) will be >1 if data is present,
+//	        0 if data is not present. A length of 1 is reserved.
+//	5 reserved.
+//	    the bit 5 is reserved in the IPMI specification type/length byte,
+//	    where it is part of the length field in the Platform Management FRU specification
+//	4:0 length of following data, in characters.
+//	    00000b indicates 'none following'.
+//	    11111b = reserved.
 type TypeLength uint8
 
 func (tl TypeLength) String() string {

@@ -167,7 +167,7 @@ func ParseSDR(data []byte, nextRecordID uint16) (*SDR, error) {
 
 	sdrHeader := &SDRHeader{}
 	if len(data) < SDRRecordHeaderSize {
-		return nil, fmt.Errorf("sdr data must be longer than %d", SDRRecordHeaderSize)
+		return nil, fmt.Errorf("sdr data length (%d) must be >= %d, data: %v", len(data), SDRRecordHeaderSize, bytesForPrint(data))
 	}
 
 	sdrHeader.RecordID, _, _ = unpackUint16L(data, 0)
