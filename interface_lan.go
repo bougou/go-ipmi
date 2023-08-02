@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"log"
 )
 
 const (
@@ -144,9 +146,21 @@ func (c *Client) exchangeLAN(request Request, response Response) error {
 	c.DebugBytes("sent", sent, 16)
 
 	ctx := context.Background()
-	recv, err := c.udpClient.Exchange(ctx, bytes.NewReader(sent))
-	if err != nil {
-		return fmt.Errorf("client udp exchange msg failed, err: %s", err)
+
+	var recvErr error
+	var recv []byte
+	for i := 0; i < 4; i++ {
+		_recv, err := c.udpClient.Exchange(ctx, bytes.NewReader(sent))
+		if err != nil {
+			recvErr = fmt.Errorf("client udp exchange msg failed (#%d), err: %s", i, err)
+			continue
+		}
+		recvErr = nil
+		recv = _recv
+		break
+	}
+	if recvErr != nil {
+		return recvErr
 	}
 	c.DebugBytes("recv", recv, 16)
 
@@ -197,7 +211,10 @@ func (c *Client) Connect15() error {
 	}
 
 	go func() {
-		c.keepSessionAlive(30)
+		if err := c.keepSessionAlive(30); err != nil {
+			log.Printf("keep lan session alive failed, err: %s\n", err)
+		}
+		fmt.Print("no longer to keep session alive")
 	}()
 
 	return nil
@@ -243,7 +260,11 @@ func (c *Client) Connect20() error {
 	}
 
 	go func() {
-		c.keepSessionAlive(30)
+		if err := c.keepSessionAlive(30); err != nil {
+			log.Printf("keep lanplus session alive failed, err: %s\n", err)
+		}
+
+		fmt.Print("no longer to keep session alive")
 	}()
 
 	return nil
@@ -310,7 +331,7 @@ func (c *Client) keepSessionAlive(intervalSec int) error {
 
 	for range ticker.C {
 		if _, err := c.GetCurrentSessionInfo(); err != nil {
-			return fmt.Errorf("keepSessionAlive failed, GetCurrentSessionInfo failed, err: %s", err)
+			return fmt.Errorf("GetCurrentSessionInfo failed, err: %s", err)
 		}
 	}
 	return nil

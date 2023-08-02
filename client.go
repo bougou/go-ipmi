@@ -35,9 +35,9 @@ type Client struct {
 	// this flags controls which IPMI version (1.5 or 2.0) be used by Client to send Request
 	v20 bool
 
-	udpClient  *UDPClient
-	timeout    time.Duration
-	bufferSize int
+	udpClient *UDPClient
+	// timeout    time.Duration
+	// bufferSize int
 
 	l sync.Mutex
 }
@@ -86,9 +86,9 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 		Password:  pass,
 		Interface: "",
 
-		v20:        true,
-		timeout:    time.Second * time.Duration(DefaultExchangeTimeoutSec),
-		bufferSize: DefaultBufferSize,
+		v20: true,
+		// timeout:    time.Second * time.Duration(DefaultExchangeTimeoutSec),
+		// bufferSize: DefaultBufferSize,
 
 		session: &session{
 			// IPMI Request Sequence, start from 1
@@ -106,8 +106,8 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 	c.udpClient = &UDPClient{
 		Host:       host,
 		Port:       port,
-		timeout:    c.timeout,
-		bufferSize: c.bufferSize,
+		timeout:    time.Second * time.Duration(DefaultExchangeTimeoutSec),
+		bufferSize: DefaultBufferSize,
 	}
 
 	return c, nil
@@ -123,19 +123,20 @@ func (c *Client) WithDebug(debug bool) *Client {
 	return c
 }
 
+// WithUDPProxy set proxy for udp conn
 func (c *Client) WithUDPProxy(proxy proxy.Dialer) *Client {
 	c.udpClient.SetProxy(proxy)
 	return c
 }
 
+// WithTimeout set timeout for udp conn
 func (c *Client) WithTimeout(timeout time.Duration) *Client {
-	c.timeout = timeout
 	c.udpClient.timeout = timeout
 	return c
 }
 
+// WithBufferSize set buffersize for udp conn
 func (c *Client) WithBufferSize(bufferSize int) *Client {
-	c.bufferSize = bufferSize
 	c.udpClient.bufferSize = bufferSize
 	return c
 }
