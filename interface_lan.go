@@ -5,8 +5,6 @@ import (
 	"context"
 	"fmt"
 	"time"
-
-	"log"
 )
 
 const (
@@ -210,15 +208,9 @@ func (c *Client) Connect15() error {
 		return fmt.Errorf("SetSessionPrivilegeLevel failed, err: %s", err)
 	}
 
-	go func() {
-		if err := c.keepSessionAlive(30); err != nil {
-			log.Printf("keep lan session alive failed, err: %s\n", err)
-		}
-		fmt.Print("no longer to keep session alive")
-	}()
+	go c.keepSessionAlive(30)
 
 	return nil
-
 }
 
 // see 13.15 IPMI v2.0/RMCP+ Session Activation
@@ -259,13 +251,7 @@ func (c *Client) Connect20() error {
 		return fmt.Errorf("SetSessionPrivilegeLevel failed, err: %s", err)
 	}
 
-	go func() {
-		if err := c.keepSessionAlive(30); err != nil {
-			log.Printf("keep lanplus session alive failed, err: %s\n", err)
-		}
-
-		fmt.Print("no longer to keep session alive")
-	}()
+	go c.keepSessionAlive(30)
 
 	return nil
 }
@@ -331,8 +317,13 @@ func (c *Client) keepSessionAlive(intervalSec int) error {
 
 	for range ticker.C {
 		if _, err := c.GetCurrentSessionInfo(); err != nil {
-			return fmt.Errorf("GetCurrentSessionInfo failed, err: %s", err)
+			c.Debugf("GetCurrentSessionInfo failed, err: %s", err)
+			c.Debugf("Try to re-connect\n")
+			if err := c.Connect20(); err != nil {
+				c.Debugf("Failed to re-connect, err: %s", err)
+			}
 		}
 	}
+
 	return nil
 }

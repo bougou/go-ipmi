@@ -8,6 +8,7 @@ import (
 )
 
 // 43. Sensor Data Record Formats
+// SDRRecordType is A number representing the type of the record.
 type SDRRecordType uint8
 
 const (

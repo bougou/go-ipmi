@@ -77,6 +77,9 @@ func (c *Client) GetSDRBySensorID(sensorNumber uint8) (*SDR, error) {
 			return nil, fmt.Errorf("GetSDRByRecordID failed for recordID (%#02x), err: %s", recordID, err)
 		}
 		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
+		if err == nil {
+			fmt.Printf("ParseSDR succeeded, recordID (%#02x), nextRecordID (%#02x)\n", recordID, res.NextRecordID)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("ParseSDR failed, err: %s", err)
 		}
