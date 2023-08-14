@@ -145,21 +145,13 @@ func (c *Client) exchangeLAN(request Request, response Response) error {
 
 	ctx := context.Background()
 
-	var recvErr error
 	var recv []byte
-	for i := 0; i < 4; i++ {
-		_recv, err := c.udpClient.Exchange(ctx, bytes.NewReader(sent))
-		if err != nil {
-			recvErr = fmt.Errorf("client udp exchange msg failed (#%d), err: %s", i, err)
-			continue
-		}
-		recvErr = nil
-		recv = _recv
-		break
+
+	recv, err = c.udpClient.Exchange(ctx, bytes.NewReader(sent))
+	if err != nil {
+		return fmt.Errorf("client udp exchange msg failed), err: %s", err)
 	}
-	if recvErr != nil {
-		return recvErr
-	}
+
 	c.DebugBytes("recv", recv, 16)
 
 	if err := c.ParseRmcpResponse(recv, response); err != nil {
@@ -316,11 +308,19 @@ func (c *Client) keepSessionAlive(intervalSec int) error {
 	defer ticker.Stop()
 
 	for range ticker.C {
+		timeNow := time.Now().Format(time.RFC3339)
+		fmt.Println("Try to get current session info", timeNow)
 		if _, err := c.GetCurrentSessionInfo(); err != nil {
-			c.Debugf("GetCurrentSessionInfo failed, err: %s", err)
-			c.Debugf("Try to re-connect\n")
-			if err := c.Connect20(); err != nil {
-				c.Debugf("Failed to re-connect, err: %s", err)
+			fmt.Printf("GetCurrentSessionInfo failed, err: %s\n", err)
+
+			fmt.Printf("Try to re-connect\n")
+
+			if err := c.Close(); err != nil {
+				fmt.Printf("close old client failed, err: %s\n", err)
+			}
+
+			if err := c.Connect(); err != nil {
+				fmt.Printf("connect client failed, err: %s\n", err)
 			}
 		}
 	}

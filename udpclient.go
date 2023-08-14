@@ -38,6 +38,8 @@ func (c *UDPClient) InitConn() error {
 		return nil
 	}
 
+	fmt.Println("conn is nil, building conn")
+
 	if c.proxy != nil {
 		conn, err := c.proxy.Dial("udp", fmt.Sprintf("%s:%d", c.Host, c.Port))
 		if err != nil {
@@ -101,7 +103,13 @@ func (c *UDPClient) Close() error {
 	if c.conn == nil {
 		return nil
 	}
-	return c.conn.Close()
+
+	if err := c.conn.Close(); err != nil {
+		return fmt.Errorf("close udp conn failed, err: %s", err)
+	}
+
+	c.conn = nil
+	return nil
 }
 
 // Exchange performs a synchronous UDP query.
@@ -129,7 +137,7 @@ func (c *UDPClient) Exchange(ctx context.Context, reader io.Reader) ([]byte, err
 			return
 		}
 
-		// Set a deadline for the ReadOperation so that we don't
+		// Set a deadline for the Read operation so that we don't
 		// wait forever for a server that might not respond on
 		// a resonable amount of time.
 		deadline := time.Now().Add(c.timeout)
