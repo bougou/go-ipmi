@@ -32,7 +32,7 @@ func main() {
 	// client.WithDebug(true)
 
 	// you can set interface type, enum range: open/lan/lanplus/tool, default open
-	// client.Interface = "lanplus"
+	// client.WithInterface(ipmi.InterfaceLanplus)
 
 	// Connect will create an authenticated session for you.
 	if err := client.Connect(); err != nil {
