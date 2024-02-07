@@ -31,6 +31,9 @@ func main() {
 	// you can optionally open debug switch
 	// client.WithDebug(true)
 
+	// you can set interface type, enum range: open/lan/lanplus/tool, default open
+	// client.Interface = "lanplus"
+
 	// Connect will create an authenticated session for you.
 	if err := client.Connect(); err != nil {
 		panic(err)
