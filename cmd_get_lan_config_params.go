@@ -47,7 +47,13 @@ func (res *GetLanConfigParamsResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetLanConfigParamsResponse) Format() string {
-	return ""
+	out := `
+ParameterVersion:      %d
+ConfigData:            %v
+Length of Config Data: %d
+`
+
+	return fmt.Sprintf(out, res.ParameterVersion, res.ConfigData, len(res.ConfigData))
 }
 
 func (c *Client) GetLanConfigParams(channelNumber uint8, paramSelector LanParamSelector) (response *GetLanConfigParamsResponse, err error) {
