@@ -21,7 +21,7 @@ func NewCmdChannel() *cobra.Command {
 		},
 	}
 	cmd.AddCommand(NewCmdChannelInfo())
-	cmd.AddCommand(NewCMdChannelGetCiphers())
+	cmd.AddCommand(NewCmdChannelGetCiphers())
 
 	return cmd
 }
@@ -72,7 +72,7 @@ func NewCmdChannelInfo() *cobra.Command {
 	return cmd
 }
 
-func NewCMdChannelGetCiphers() *cobra.Command {
+func NewCmdChannelGetCiphers() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "getciphers",
 		Short: "getciphers",
