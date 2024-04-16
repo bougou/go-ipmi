@@ -274,6 +274,7 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | ------------------ | ------- | ---------------------------- |
 | SetLanConfigParams |         |
 | GetLanConfigParams | &check; |
+| GetLanConfig (*)   | &check; | lan print                    |
 | SuspendARPs        | &check; |
 | GetIpStatistics    | &check; |
 
