@@ -66,6 +66,7 @@ func (c *Client) GetLanConfigParams(channelNumber uint8, paramSelector LanParamS
 	return
 }
 
+// GetLanConfig will fetch all Lan informations.
 func (c *Client) GetLanConfig(channelNumber uint8) (*LanConfig, error) {
 	lanConfig := &LanConfig{}
 
@@ -95,7 +96,7 @@ func (c *Client) GetLanConfig(channelNumber uint8) (*LanConfig, error) {
 			}
 		}
 
-		if err := parseLanConfig(lanConfig, paramSelector, res.ConfigData); err != nil {
+		if err := FillLanConfig(lanConfig, paramSelector, res.ConfigData); err != nil {
 			return nil, fmt.Errorf("get lan config param (%s) failed, err: %s", paramSelector, err)
 		}
 	}
@@ -103,7 +104,8 @@ func (c *Client) GetLanConfig(channelNumber uint8) (*LanConfig, error) {
 	return lanConfig, nil
 }
 
-func parseLanConfig(lanConfig *LanConfig, paramSelector LanParamSelector, paramData []byte) error {
+// FillLanConfig will set the corresponding field of lanConfig according to paramSelector and paramData.
+func FillLanConfig(lanConfig *LanConfig, paramSelector LanParamSelector, paramData []byte) error {
 	var lanParam LanParam
 	for _, v := range LanParams {
 		if v.Selector == paramSelector {
