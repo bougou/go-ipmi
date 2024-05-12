@@ -831,31 +831,36 @@ func (tl TypeLength) Chars(raw []byte) (chars []byte, err error) {
 			'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
 			'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', ']', '^', '_',
 		}
-		// every 3 bytes packs 4 chars.
 
-		// i holds index for raw
-		// j holds index for target data
-		for i, j := 0, 0; i < int(tl.Length()); i += 3 {
-			c1 := raw[i]
-			c2 := raw[i+1]
-			c3 := raw[i+2]
+		var leftover byte
+		var s []byte
 
-			for k := 0; k < 4; k++ {
-				var idx byte
-				switch k {
-				case 0:
-					idx = c1 & 0x3f
-				case 1:
-					idx = (c1&0xc0)>>6 | (c2&0x0f)<<2
-				case 2:
-					idx = (c2&0xf0)>>4 | (c3&0x03)<<4
-				case 3:
-					idx = (c3 & 0xfc) >> 2
-				}
-				chars[j] = ascci6bit[idx]
-				j++
+		for i := 0; i < len(raw); i++ {
+			// every 3 bytes pack 4 chars, so we can calculate
+			// character positions in a byte based on the remainder of division by 3.
+			switch i % 3 {
+			case 0:
+				idx := raw[i] & 0x3f            // 6 right bits are an index of one char
+				leftover = (raw[i] & 0xc0) >> 6 // 2 left bits are leftovers
+
+				s = append(s, ascci6bit[idx])
+			case 1:
+				idx := leftover | (raw[i]&0x0f)<<2 // index of one char is 2-bit leftover as prefix plus 4 right bits
+				leftover = (raw[i] & 0xf0) >> 4    // 4 left bits are leftovers
+
+				s = append(s, ascci6bit[idx])
+			case 2:
+				idx := (raw[i]&0x03)<<4 | leftover // index of one char is 2 right bits plus 4-bit leftover as suffix
+				leftover = 0                       // cleanup leftover calculation
+
+				s = append(s, ascci6bit[idx])
+
+				idx = (raw[i] & 0xfc) >> 2 // 6 left bits are an index of one char
+				s = append(s, ascci6bit[idx])
 			}
 		}
+
+		chars = s
 
 	case 3: // 11b - 8-bit ASCII
 		for i := 0; i < size; i++ {
