@@ -115,7 +115,7 @@ type EntityInstance uint8
 
 // 39.1 System- and Device-relative Entity Instance Values
 func isEntityInstanceSystemRelative(e EntityInstance) bool {
-	return e >= 0x00 && e <= 0x5f
+	return e <= 0x5f
 }
 
 func isEntityInstanceDeviceRelative(e EntityInstance) bool {

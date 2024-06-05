@@ -107,15 +107,16 @@ func array16(s []byte) [16]byte {
 }
 
 func randomUint32() uint32 {
-	rand.Seed(time.Now().Unix())
-	return rand.Uint32()
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+
+	return r.Uint32()
 }
 
 func randomBytes(n int) []byte {
-	rand.Seed(time.Now().Unix())
+	r := rand.New(rand.NewSource(time.Now().Unix()))
 
 	b := make([]byte, n)
-	rand.Read(b)
+	r.Read(b)
 	return b
 }
 

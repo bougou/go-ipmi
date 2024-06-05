@@ -26,7 +26,7 @@ type GetChannelInfoResponse struct {
 type InterruptType uint8
 
 func (typ InterruptType) String() string {
-	if typ >= 0x00 && typ <= 0x0f {
+	if typ <= 0x0f {
 		return fmt.Sprintf("IRQ %d", uint8(typ))
 	}
 	if typ >= 0x10 && typ <= 0x13 {

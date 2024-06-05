@@ -28,12 +28,12 @@ const (
 )
 
 // The SELRecordType can be categorized into 3 ranges according to the SELRecordType value.
-//  - 00h - BFh -> standard
-//  - C0h - DFh -> timestamped OEM
-//  - E0h - FFh -> none-timestamped OEM
+//   - 00h - BFh -> standard
+//   - C0h - DFh -> timestamped OEM
+//   - E0h - FFh -> none-timestamped OEM
 func (typ SELRecordType) Range() SELRecordTypeRange {
 	t := uint8(typ)
-	if t >= 0x00 && t <= 0xbf {
+	if t <= 0xbf {
 		return SELRecordTypeRangeStandard
 	}
 
@@ -49,6 +49,7 @@ func (typ SELRecordType) String() string {
 	return string(typ.Range())
 }
 
+// Event direction
 type EventDir bool
 
 const (
