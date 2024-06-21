@@ -83,6 +83,7 @@ func (fru *FRU) String() string {
 	if fru.ProductInfoArea != nil {
 		buf.WriteString(fmt.Sprintf("  Product Mfg          : %s\n", fru.ProductInfoArea.Manufacturer))
 		buf.WriteString(fmt.Sprintf("  Product Name         : %s\n", fru.ProductInfoArea.Name))
+		buf.WriteString(fmt.Sprintf("  Product Version      : %s\n", fru.ProductInfoArea.Version))
 		buf.WriteString(fmt.Sprintf("  Product Part Number  : %s\n", fru.ProductInfoArea.PartModel))
 		buf.WriteString(fmt.Sprintf("  Product Serial       : %s\n", fru.ProductInfoArea.SerialNumber))
 		for _, v := range fru.ProductInfoArea.Custom {

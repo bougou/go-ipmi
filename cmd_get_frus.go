@@ -82,10 +82,9 @@ func (c *Client) GetFRU(deviceID uint8, deviceName string) (*FRU, error) {
 	c.Debugf("%s\n\n", fruHeader.String())
 	fru.CommonHeader = fruHeader
 
-	if fruHeader.ChassisOffset8B != 0 {
-		offset := uint16(fruHeader.ChassisOffset8B) * 8
+	if offset := uint16(fruHeader.ChassisOffset8B) * 8; offset > 0 && offset < fruAreaInfoRes.AreaSizeBytes {
 		c.Debugf("Get FRU Area Chassis, offset (%d)\n", offset)
-		fruChassis, err := c.GetFRUAreaChassis(deviceID, uint16(fruHeader.ChassisOffset8B)*8)
+		fruChassis, err := c.GetFRUAreaChassis(deviceID, offset)
 		if err != nil {
 			return nil, fmt.Errorf("GetFRUAreaChassis failed, err: %s", err)
 		}
@@ -94,8 +93,7 @@ func (c *Client) GetFRU(deviceID uint8, deviceName string) (*FRU, error) {
 		fru.ChassisInfoArea = fruChassis
 	}
 
-	if fruHeader.BoardOffset8B != 0 {
-		offset := uint16(fruHeader.BoardOffset8B) * 8
+	if offset := uint16(fruHeader.BoardOffset8B) * 8; offset > 0 && offset < fruAreaInfoRes.AreaSizeBytes {
 		c.Debugf("Get FRU Area Board, offset (%d)\n", offset)
 		fruBoard, err := c.GetFRUAreaBoard(deviceID, offset)
 		if err != nil {
@@ -105,8 +103,7 @@ func (c *Client) GetFRU(deviceID uint8, deviceName string) (*FRU, error) {
 		fru.BoardInfoArea = fruBoard
 	}
 
-	if fruHeader.ProductOffset8B != 0 {
-		offset := uint16(fruHeader.ProductOffset8B) * 8
+	if offset := uint16(fruHeader.ProductOffset8B) * 8; offset > 0 && offset < fruAreaInfoRes.AreaSizeBytes {
 		c.Debugf("Get FRU Area Product, offset (%d)\n", offset)
 		fruProduct, err := c.GetFRUAreaProduct(deviceID, offset)
 		if err != nil {
@@ -116,8 +113,7 @@ func (c *Client) GetFRU(deviceID uint8, deviceName string) (*FRU, error) {
 		fru.ProductInfoArea = fruProduct
 	}
 
-	if fruHeader.MultiRecordsOffset8B != 0 {
-		offset := uint16(fruHeader.MultiRecordsOffset8B) * 8
+	if offset := uint16(fruHeader.MultiRecordsOffset8B) * 8; offset > 0 && offset < fruAreaInfoRes.AreaSizeBytes {
 		c.Debugf("Get FRU Area Multi Records, offset (%d)\n", offset)
 		fruMultiRecords, err := c.GetFRUAreaMultiRecords(deviceID, offset)
 		if err != nil {
