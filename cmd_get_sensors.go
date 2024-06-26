@@ -159,7 +159,7 @@ func (c *Client) fillSensorReading(sensor *Sensor) error {
 	sensor.Value = sensor.ConvertReading(readingRes.Reading)
 
 	sensor.scanningDisabled = readingRes.SensorScanningDisabled
-	sensor.readingUnavailable = readingRes.ReadingUnavailable
+	sensor.readingAvailable = !readingRes.ReadingUnavailable
 	sensor.Threshold.ThresholdStatus = readingRes.ThresholdStatus()
 
 	sensor.Discrete.ActiveStates = readingRes.ActiveStates

@@ -864,9 +864,9 @@ type Sensor struct {
 	SensorInitialization SensorInitialization
 	SensorCapabilitites  SensorCapabilitites
 
-	scanningDisabled   bool // update by GetSensorReading
-	readingUnavailable bool // update by GetSensorReading
-	HasAnalogReading   bool
+	scanningDisabled bool // update by GetSensorReading
+	readingAvailable bool // update by GetSensorReading
+	HasAnalogReading bool
 
 	// Raw reading value before conversion
 	Raw uint8
@@ -990,7 +990,7 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 				sensor.SensorUnit.AnalogDataFormat.String(),
 				fmt.Sprintf("%v", sensor.IsReadingValid()),
 				fmt.Sprintf("%v", sensor.scanningDisabled),
-				fmt.Sprintf("%v", sensor.readingUnavailable),
+				fmt.Sprintf("%v", !sensor.readingAvailable),
 				fmt.Sprintf("%v", sensor.HasAnalogReading),
 			}...)
 
@@ -1023,7 +1023,7 @@ func (sensor *Sensor) IsThreshold() bool {
 }
 
 func (sensor *Sensor) IsReadingValid() bool {
-	return !sensor.readingUnavailable
+	return sensor.readingAvailable
 }
 
 func (sensor *Sensor) IsThresholdAndReadingValid() bool {
