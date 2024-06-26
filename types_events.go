@@ -1596,7 +1596,7 @@ var SensorSpecificEvents = map[SensorType]map[uint8]Event{
 	},
 	SensorTypeBattery: {
 		0x00: {
-			EventName:           "FRU failure",
+			EventName:           "battery low (predictive failure)",
 			AssertionSeverity:   EventSeverityWarning,
 			DeassertionSeverity: EventSeverityWarning,
 		},
