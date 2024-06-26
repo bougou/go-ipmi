@@ -173,6 +173,10 @@ func (c *Client) fillSensorReading(sensor *Sensor) error {
 func (c *Client) fillSensorDiscrete(sensor *Sensor) error {
 	statusRes, err := c.GetSensorEventStatus(sensor.Number)
 	if err != nil {
+		if _canSafelyIgnoredResponseError(err) {
+			c.Debug(fmt.Sprintf("GetSensorEventStatus for sensor %#02x failed but skipped", sensor.Number), err)
+			return nil
+		}
 		return fmt.Errorf("GetSensorEventStatus for sensor %#02x failed, err: %s", sensor.Number, err)
 	}
 	sensor.OccuredEvents = statusRes.SensorEventFlag.TrueEvents()
