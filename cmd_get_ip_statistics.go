@@ -82,9 +82,9 @@ UDP Proxy Packet Dropped  : %d`,
 	)
 }
 
-func (c *Client) GetIPStatistics(channelNubmer uint8, clearAllStatistics bool) (response *GetIPStatisticsResponse, err error) {
+func (c *Client) GetIPStatistics(channelNumber uint8, clearAllStatistics bool) (response *GetIPStatisticsResponse, err error) {
 	request := &GetIPStatisticsRequest{
-		ChannelNumber:      channelNubmer,
+		ChannelNumber:      channelNumber,
 		ClearAllStatistics: clearAllStatistics,
 	}
 	response = &GetIPStatisticsResponse{}

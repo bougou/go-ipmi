@@ -35,8 +35,8 @@ const (
 	// OEM Parameters, 96:127
 )
 
-func (bop *BootOptionParameter) Format(paramSelecotr BootOptionParameterSelector) string {
-	switch paramSelecotr {
+func (bop *BootOptionParameter) Format(paramSelector BootOptionParameterSelector) string {
+	switch paramSelector {
 	case BOPS_SetInProgressState:
 		return fmt.Sprintf(" Set In Progress : %s", bop.SetInProgressState.Format())
 	case BOPS_ServicePartitionSelector:
@@ -57,8 +57,8 @@ func (bop *BootOptionParameter) Format(paramSelecotr BootOptionParameterSelector
 	return ""
 }
 
-func (bop *BootOptionParameter) Pack(paramSelecotr BootOptionParameterSelector) []byte {
-	switch paramSelecotr {
+func (bop *BootOptionParameter) Pack(paramSelector BootOptionParameterSelector) []byte {
+	switch paramSelector {
 	case BOPS_SetInProgressState:
 		return bop.SetInProgressState.Pack()
 	case BOPS_ServicePartitionSelector:
@@ -185,7 +185,7 @@ func (p BOP_SetInProgressState) Format() string {
 	case 0:
 		return "set complete"
 	case 1:
-		return "set in progess"
+		return "set in progress"
 	case 2:
 		return "commit write"
 	}
@@ -210,7 +210,7 @@ func (p *BOP_ServicePartitionSelector) Unpack(paramData []byte) error {
 func (p BOP_ServicePartitionSelector) Format() string {
 	switch p {
 	case 0:
-		return "unspecfied"
+		return "unspecified"
 	default:
 		return fmt.Sprintf("%#02x", p)
 	}
@@ -233,7 +233,7 @@ func (p *BOP_ServicePartitionScan) Unpack(paramData []byte) error {
 func (p BOP_ServicePartitionScan) Format() string {
 	var s string
 	if isBit1Set(uint8(p)) {
-		s += "   - Request BIOS to casn\n"
+		s += "   - Request BIOS to scan\n"
 	}
 	if isBit0Set(uint8(p)) {
 		s += "   - Service Partition Discoverd"

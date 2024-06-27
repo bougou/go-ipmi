@@ -7,7 +7,7 @@ type GetSystemInterfaceCapabilitiesRequest struct {
 
 type GetSystemInterfaceCapabilitiesResponse struct {
 	// For System Interface Type = SSIF
-	TranscationSupportMask uint8
+	TransactionSupportMask uint8
 	PECSupported           bool
 	SSIFVersion            uint8
 	InputMessageSizeBytes  uint8
@@ -42,7 +42,7 @@ func (res *GetSystemInterfaceCapabilitiesResponse) Unpack(msg []byte) error {
 
 	// For System Interface Type = SSIF:
 	b, _, _ := unpackUint8(msg, 1)
-	res.TranscationSupportMask = b >> 6
+	res.TransactionSupportMask = b >> 6
 	res.PECSupported = isBit3Set(b)
 	res.SSIFVersion = b & 0x07
 	res.InputMessageSizeBytes, _, _ = unpackUint8(msg, 2)

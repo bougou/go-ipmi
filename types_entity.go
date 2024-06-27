@@ -52,7 +52,7 @@ func (e EntityID) String() string {
 		0x1e: "cooling unit / cooling domain",
 		0x1f: "cable / interconnect",
 		0x20: "memory device",
-		0x21: "System Management Softeware",
+		0x21: "System Management Software",
 		0x22: "System Firmware", // eg BIOS/EFI
 		0x23: "Operating System",
 		0x24: "system bus",
@@ -139,7 +139,7 @@ func canonicalEntityString(entityID EntityID, entityInstance EntityInstance) str
 	if isEntityInstanceDeviceRelative(entityInstance) {
 		return fmt.Sprintf("Controller 1, %s, %d", entityID.String(), entityInstance)
 	}
-	return "Unkown"
+	return "unknown"
 }
 
 // 43.13 Device Type Codes
@@ -150,7 +150,7 @@ type DeviceType uint16
 
 func (d DeviceType) String() string {
 	// IPMB/I2C Device Type Codes
-	// EEPROM,或写作E2PROM,全称电子式可擦除可编程只读存储器 （英语：Electrically-Erasable Programmable Read-Only Memory）,是一种可以通过电子方式多次复写的半导体存储设备。
+	// EEPROM,或写作E2PROM, 全称电子式可擦除可编程只读存储器 （英语：Electrically-Erasable Programmable Read-Only Memory）,是一种可以通过电子方式多次复写的半导体存储设备。
 	var deviceTypeMap = map[DeviceType]string{
 		0x00: "Reserved",
 		0x01: "Reserved",
@@ -165,7 +165,7 @@ func (d DeviceType) String() string {
 		// 00h = unspecified
 		// 01h = DIMM Memory ID
 		// 02h = IPMI FRU Inventory
-		// 03h = System Processor Cartridge FRU / PIROM
+		// 03h = System Processor Cartridge FRU / PIROM (processor information ROM)
 		// (processor information ROM)
 		// all other = reserved
 		0x08: "EEPROM, 24C01",

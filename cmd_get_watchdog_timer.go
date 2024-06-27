@@ -19,9 +19,9 @@ type GetWatchdogTimerResponse struct {
 	TimerIsStarted bool
 	TimerUse       TimerUse
 
-	PreTimeoutInterrupt  PreTimeoutInterrupt
-	TimeoutAction        TimeoutAction
-	PreTimeoutIntevalSec uint8
+	PreTimeoutInterrupt   PreTimeoutInterrupt
+	TimeoutAction         TimeoutAction
+	PreTimeoutIntervalSec uint8
 
 	ExpirationFlags  uint8
 	InitialCountdown uint16
@@ -40,7 +40,7 @@ func (res *GetWatchdogTimerResponse) Unpack(msg []byte) error {
 	res.PreTimeoutInterrupt = PreTimeoutInterrupt((0x70 & msg[1]) >> 4)
 	res.TimeoutAction = TimeoutAction(0x07 & msg[1])
 
-	res.PreTimeoutIntevalSec = msg[2]
+	res.PreTimeoutIntervalSec = msg[2]
 	res.ExpirationFlags = msg[3]
 	res.InitialCountdown, _, _ = unpackUint16L(msg, 4)
 	res.PresentCountdown, _, _ = unpackUint16L(msg, 6)
@@ -63,7 +63,7 @@ Present Countdown:      %d sec`,
 		res.TimerUse, uint8(res.TimerUse),
 		formatBool(res.TimerIsStarted, "Started", "Stopped"),
 		res.TimeoutAction, uint8(res.TimeoutAction),
-		res.PreTimeoutIntevalSec,
+		res.PreTimeoutIntervalSec,
 		res.ExpirationFlags,
 		res.InitialCountdown,
 		res.PresentCountdown,
@@ -80,10 +80,10 @@ func (c *Client) GetWatchdogTimer() (response *GetWatchdogTimerResponse, err err
 type TimerUse uint8
 
 const (
-	TimerUseBIOSFRB2 TimerUse = 0x01
-	TimerUseBIOSPOST TimerUse = 0x02
+	TimerUseBIOSFRB2 TimerUse = 0x01 // BIOS/FRB2
+	TimerUseBIOSPOST TimerUse = 0x02 // BIOS/POST
 	TimerUseOSLoad   TimerUse = 0x03
-	TimerUseSMSOS    TimerUse = 0x04
+	TimerUseSMSOS    TimerUse = 0x04 // SMS/OS
 	TimerUseOEM      TimerUse = 0x05
 )
 

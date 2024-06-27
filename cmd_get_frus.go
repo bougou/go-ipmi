@@ -76,7 +76,7 @@ func (c *Client) GetFRU(deviceID uint8, deviceName string) (*FRU, error) {
 		return nil, fmt.Errorf("unpack fru data failed, err: %s", err)
 	}
 	if fruHeader.FormatVersion != FRUFormatVersion {
-		return nil, fmt.Errorf("unkown FRU header version %#02x", fruHeader.FormatVersion)
+		return nil, fmt.Errorf("unknown FRU header version %#02x", fruHeader.FormatVersion)
 	}
 	c.Debug("FRU Common Header", fruHeader)
 	c.Debugf("%s\n\n", fruHeader.String())

@@ -7,7 +7,7 @@ These IPMI commands are implemented as methods of the `ipmi.Client` struct in th
 but many others are not. Like `ipmitool sdr list`, it's a loop of `GetSDR` IPMI command.
 
 So this library also implements some methods that are not IPMI commands defined
-in IPMI sepcification, but just some common helpers, like `GetSDRs` to get all SDRs.
+in IPMI specification, but just some common helpers, like `GetSDRs` to get all SDRs.
 
 ## IPMI Command Guideline
 
@@ -27,7 +27,7 @@ func (c *Client) DoSomething(request *DoSomethingRequest) (response *DoSomething
 }
 ```
 
-or, you can pass some plain parametes, and construct the `DoSomethingRequest` in method body, like:
+or, you can pass some plain parameters, and construct the `DoSomethingRequest` in method body, like:
 
 ```go
 func (c *Client) DoSomething(param1 string, param2 string) (response *DoSomethingResponse, err error) {

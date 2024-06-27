@@ -98,7 +98,7 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 		sensor.SensorType = sdr.Full.SensorType
 		sensor.EventReadingType = sdr.Full.SensorEventReadingType
 		sensor.SensorInitialization = sdr.Full.SensorInitialization
-		sensor.SensorCapabilitites = sdr.Full.SensorCapabilitites
+		sensor.SensorCapabilities = sdr.Full.SensorCapabilities
 
 		sensor.Threshold.LinearizationFunc = sdr.Full.LinearizationFunc
 		sensor.Threshold.ReadingFactors = sdr.Full.ReadingFactors
@@ -110,7 +110,7 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 		sensor.SensorType = sdr.Compact.SensorType
 		sensor.EventReadingType = sdr.Compact.SensorEventReadingType
 		sensor.SensorInitialization = sdr.Compact.SensorInitialization
-		sensor.SensorCapabilitites = sdr.Compact.SensorCapabilitites
+		sensor.SensorCapabilities = sdr.Compact.SensorCapabilities
 
 	default:
 		return nil, fmt.Errorf("only support Full or Compact SDR record type, input is %s", sdr.RecordHeader.RecordType)
@@ -179,7 +179,7 @@ func (c *Client) fillSensorDiscrete(sensor *Sensor) error {
 		}
 		return fmt.Errorf("GetSensorEventStatus for sensor %#02x failed, err: %s", sensor.Number, err)
 	}
-	sensor.OccuredEvents = statusRes.SensorEventFlag.TrueEvents()
+	sensor.OccurredEvents = statusRes.SensorEventFlag.TrueEvents()
 	return nil
 }
 
@@ -203,7 +203,7 @@ func (c *Client) fillSensorThreshold(sensor *Sensor) error {
 		sensor.Threshold.ReadingFactors = factorsRes.ReadingFactors
 	}
 
-	thesholdRes, err := c.GetSensorThresholds(sensor.Number)
+	thresholdRes, err := c.GetSensorThresholds(sensor.Number)
 	if err != nil {
 		if _canSafelyIgnoredResponseError(err) {
 			c.Debug(fmt.Sprintf("GetSensorThresholds for sensor %#02x failed but skipped", sensor.Number), err)
@@ -211,24 +211,24 @@ func (c *Client) fillSensorThreshold(sensor *Sensor) error {
 		}
 		return fmt.Errorf("GetSensorThresholds for sensor %#02x failed, err: %s", sensor.Number, err)
 	}
-	sensor.Threshold.Mask.UNR.Readable = thesholdRes.UNR_Readable
-	sensor.Threshold.Mask.UCR.Readable = thesholdRes.UCR_Readable
-	sensor.Threshold.Mask.UNC.Readable = thesholdRes.UNC_Readable
-	sensor.Threshold.Mask.LNR.Readable = thesholdRes.LNR_Readable
-	sensor.Threshold.Mask.LCR.Readable = thesholdRes.LCR_Readable
-	sensor.Threshold.Mask.LNC.Readable = thesholdRes.LNC_Readable
-	sensor.Threshold.LNC_Raw = thesholdRes.LNC_Raw
-	sensor.Threshold.LCR_Raw = thesholdRes.LCR_Raw
-	sensor.Threshold.LNR_Raw = thesholdRes.LNR_Raw
-	sensor.Threshold.UNC_Raw = thesholdRes.UNC_Raw
-	sensor.Threshold.UCR_Raw = thesholdRes.UCR_Raw
-	sensor.Threshold.UNR_Raw = thesholdRes.UNR_Raw
-	sensor.Threshold.LNC = sensor.ConvertReading(thesholdRes.LNC_Raw)
-	sensor.Threshold.LCR = sensor.ConvertReading(thesholdRes.LCR_Raw)
-	sensor.Threshold.LNR = sensor.ConvertReading(thesholdRes.LNR_Raw)
-	sensor.Threshold.UNC = sensor.ConvertReading(thesholdRes.UNC_Raw)
-	sensor.Threshold.UCR = sensor.ConvertReading(thesholdRes.UCR_Raw)
-	sensor.Threshold.UNR = sensor.ConvertReading(thesholdRes.UNR_Raw)
+	sensor.Threshold.Mask.UNR.Readable = thresholdRes.UNR_Readable
+	sensor.Threshold.Mask.UCR.Readable = thresholdRes.UCR_Readable
+	sensor.Threshold.Mask.UNC.Readable = thresholdRes.UNC_Readable
+	sensor.Threshold.Mask.LNR.Readable = thresholdRes.LNR_Readable
+	sensor.Threshold.Mask.LCR.Readable = thresholdRes.LCR_Readable
+	sensor.Threshold.Mask.LNC.Readable = thresholdRes.LNC_Readable
+	sensor.Threshold.LNC_Raw = thresholdRes.LNC_Raw
+	sensor.Threshold.LCR_Raw = thresholdRes.LCR_Raw
+	sensor.Threshold.LNR_Raw = thresholdRes.LNR_Raw
+	sensor.Threshold.UNC_Raw = thresholdRes.UNC_Raw
+	sensor.Threshold.UCR_Raw = thresholdRes.UCR_Raw
+	sensor.Threshold.UNR_Raw = thresholdRes.UNR_Raw
+	sensor.Threshold.LNC = sensor.ConvertReading(thresholdRes.LNC_Raw)
+	sensor.Threshold.LCR = sensor.ConvertReading(thresholdRes.LCR_Raw)
+	sensor.Threshold.LNR = sensor.ConvertReading(thresholdRes.LNR_Raw)
+	sensor.Threshold.UNC = sensor.ConvertReading(thresholdRes.UNC_Raw)
+	sensor.Threshold.UCR = sensor.ConvertReading(thresholdRes.UCR_Raw)
+	sensor.Threshold.UNR = sensor.ConvertReading(thresholdRes.UNR_Raw)
 
 	hysteresisRes, err := c.GetSensorHysteresis(sensor.Number)
 	if err != nil {

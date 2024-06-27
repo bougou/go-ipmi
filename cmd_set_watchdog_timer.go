@@ -6,9 +6,9 @@ type SetWatchdogTimerRequest struct {
 	DontStopTimer bool
 	TimerUse      TimerUse
 
-	PreTimeoutInterrupt  PreTimeoutInterrupt
-	TimeoutAction        TimeoutAction
-	PreTimeoutIntevalSec uint8
+	PreTimeoutInterrupt   PreTimeoutInterrupt
+	TimeoutAction         TimeoutAction
+	PreTimeoutIntervalSec uint8
 
 	ExpirationFlags  uint8
 	InitialCountdown uint16
@@ -33,7 +33,7 @@ func (req *SetWatchdogTimerRequest) Pack() []byte {
 	b1 |= uint8(req.PreTimeoutInterrupt) << 4
 	packUint8(b1, out, 1)
 
-	packUint8(req.PreTimeoutIntevalSec, out, 2)
+	packUint8(req.PreTimeoutIntervalSec, out, 2)
 	packUint8(req.ExpirationFlags, out, 3)
 	packUint16L(req.InitialCountdown, out, 4)
 

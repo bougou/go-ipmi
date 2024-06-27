@@ -24,7 +24,7 @@ const (
 	NetFnTransportRequest    NetFn = 0x0c
 	NetFnTransportResponse   NetFn = 0x0d
 
-	// Reserverd  0E - 2B
+	// Reserved  0E - 2B
 
 	NetFnGroupExtensionRequest  NetFn = 0x2c
 	NetFnGroupExtensionResponse NetFn = 0x2d

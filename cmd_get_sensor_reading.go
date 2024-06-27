@@ -26,7 +26,7 @@ type GetSensorReadingResponse struct {
 	Above_UNC bool // at or above UNC threshold
 	Below_LNR bool // at or below LNR threshold
 	Below_LCR bool // at or below LCR threshold
-	Below_LNC bool // at or below LNC threhsold
+	Below_LNC bool // at or below LNC threshold
 
 	// see 42.1 It is possible for a discrete sensor to have more than one state active at a time
 	ActiveStates Mask_DiscreteEvent

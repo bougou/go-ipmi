@@ -5,12 +5,12 @@ type GetMessageFlagsRequest struct {
 }
 
 type GetMessageFlagsResponse struct {
-	OEM2Avaiable                        bool
-	OEM1Avaiable                        bool
-	OEM0Avaiable                        bool
+	OEM2Available                       bool
+	OEM1Available                       bool
+	OEM0Available                       bool
 	WatchdogPreTimeoutInterruptOccurred bool
 	EventMessageBufferFull              bool
-	ReceiveMessageQueueAvaiable         bool // One or more messages ready for reading from Receive Message Queue
+	ReceiveMessageQueueAvailable        bool // One or more messages ready for reading from Receive Message Queue
 }
 
 func (req *GetMessageFlagsRequest) Command() Command {
@@ -27,12 +27,12 @@ func (res *GetMessageFlagsResponse) Unpack(msg []byte) error {
 	}
 
 	b, _, _ := unpackUint8(msg, 0)
-	res.OEM2Avaiable = isBit7Set(b)
-	res.OEM1Avaiable = isBit6Set(b)
-	res.OEM0Avaiable = isBit5Set(b)
+	res.OEM2Available = isBit7Set(b)
+	res.OEM1Available = isBit6Set(b)
+	res.OEM0Available = isBit5Set(b)
 	res.WatchdogPreTimeoutInterruptOccurred = isBit3Set(b)
 	res.EventMessageBufferFull = isBit1Set(b)
-	res.ReceiveMessageQueueAvaiable = isBit0Set(b)
+	res.ReceiveMessageQueueAvailable = isBit0Set(b)
 	return nil
 }
 

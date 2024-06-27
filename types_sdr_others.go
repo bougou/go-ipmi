@@ -121,7 +121,7 @@ type SDREntityAssociation struct {
 	// [6] - Record Link
 	//       0b = no linked Entity Association records
 	//       1b = linked Entity Association records exist
-	LinkedEntityAssiactionExist bool
+	LinkedEntityAssociationExist bool
 	// [5] - 0b = Container entity and contained entities can be assumed absent
 	//            if presence sensor for container entity cannot be accessed.
 	//            This value is also used if the entity does not have a presence sensor.
@@ -131,19 +131,19 @@ type SDREntityAssociation struct {
 	//            presence sensor can still report that the container entity is absent.
 	PresenceSensorAlwaysAccessible bool
 
-	ContaineredEntity1ID       uint8
-	ContaineredEntity1Instance uint8
+	ContainedEntity1ID       uint8
+	ContainedEntity1Instance uint8
 
 	//
 	// RECORD BODY
 	//
 
-	ContaineredEntity2ID       uint8
-	ContaineredEntity2Instance uint8
-	ContaineredEntity3ID       uint8
-	ContaineredEntity3Instance uint8
-	ContaineredEntity4ID       uint8
-	ContaineredEntity4Instance uint8
+	ContainedEntity2ID       uint8
+	ContainedEntity2Instance uint8
+	ContainedEntity3ID       uint8
+	ContainedEntity3Instance uint8
+	ContainedEntity4ID       uint8
+	ContainedEntity4Instance uint8
 }
 
 func parseSDREntityAssociation(data []byte, sdr *SDR) error {
@@ -160,17 +160,17 @@ func parseSDREntityAssociation(data []byte, sdr *SDR) error {
 
 	flag, _, _ := unpackUint8(data, 7)
 	s.ContainedEntitiesAsRange = isBit7Set(flag)
-	s.LinkedEntityAssiactionExist = isBit6Set(flag)
+	s.LinkedEntityAssociationExist = isBit6Set(flag)
 	s.PresenceSensorAlwaysAccessible = isBit5Set(flag)
 
-	s.ContaineredEntity1ID, _, _ = unpackUint8(data, 8)
-	s.ContaineredEntity1Instance, _, _ = unpackUint8(data, 9)
-	s.ContaineredEntity2ID, _, _ = unpackUint8(data, 10)
-	s.ContaineredEntity2Instance, _, _ = unpackUint8(data, 11)
-	s.ContaineredEntity3ID, _, _ = unpackUint8(data, 12)
-	s.ContaineredEntity3Instance, _, _ = unpackUint8(data, 13)
-	s.ContaineredEntity4ID, _, _ = unpackUint8(data, 14)
-	s.ContaineredEntity4Instance, _, _ = unpackUint8(data, 15)
+	s.ContainedEntity1ID, _, _ = unpackUint8(data, 8)
+	s.ContainedEntity1Instance, _, _ = unpackUint8(data, 9)
+	s.ContainedEntity2ID, _, _ = unpackUint8(data, 10)
+	s.ContainedEntity2Instance, _, _ = unpackUint8(data, 11)
+	s.ContainedEntity3ID, _, _ = unpackUint8(data, 12)
+	s.ContainedEntity3Instance, _, _ = unpackUint8(data, 13)
+	s.ContainedEntity4ID, _, _ = unpackUint8(data, 14)
+	s.ContainedEntity4Instance, _, _ = unpackUint8(data, 15)
 
 	return nil
 }
@@ -192,7 +192,7 @@ type SDRDeviceRelative struct {
 	// [6] - Record Link
 	//       0b = no linked Entity Association records
 	//       1b = linked Entity Association records exist
-	LinkedEntityAssiactionExist bool
+	LinkedEntityAssociationExist bool
 	// [5] - 0b = Container entity and contained entities can be assumed absent
 	//            if presence sensor for container entity cannot be accessed.
 	//            This value is also used if the entity does not have a presence sensor.
@@ -202,29 +202,29 @@ type SDRDeviceRelative struct {
 	//            presence sensor can still report that the container entity is absent.
 	PresenceSensorAlwaysAccessible bool
 
-	ContaineredEntity1DeviceAddress uint8
-	ContaineredEntity1DeviceChannel uint8
-	ContaineredEntity1ID            uint8
-	ContaineredEntity1Instance      uint8
+	ContainedEntity1DeviceAddress uint8
+	ContainedEntity1DeviceChannel uint8
+	ContainedEntity1ID            uint8
+	ContainedEntity1Instance      uint8
 
 	//
 	// RECORD BODY
 	//
 
-	ContaineredEntity2DeviceAddress uint8
-	ContaineredEntity2DeviceChannel uint8
-	ContaineredEntity2ID            uint8
-	ContaineredEntity2Instance      uint8
+	ContainedEntity2DeviceAddress uint8
+	ContainedEntity2DeviceChannel uint8
+	ContainedEntity2ID            uint8
+	ContainedEntity2Instance      uint8
 
-	ContaineredEntity3DeviceAddress uint8
-	ContaineredEntity3DeviceChannel uint8
-	ContaineredEntity3ID            uint8
-	ContaineredEntity3Instance      uint8
+	ContainedEntity3DeviceAddress uint8
+	ContainedEntity3DeviceChannel uint8
+	ContainedEntity3ID            uint8
+	ContainedEntity3Instance      uint8
 
-	ContaineredEntity4DeviceAddress uint8
-	ContaineredEntity4DeviceChannel uint8
-	ContaineredEntity4ID            uint8
-	ContaineredEntity4Instance      uint8
+	ContainedEntity4DeviceAddress uint8
+	ContainedEntity4DeviceChannel uint8
+	ContainedEntity4ID            uint8
+	ContainedEntity4Instance      uint8
 }
 
 func parseSDRDeviceRelativeEntityAssociation(data []byte, sdr *SDR) error {
@@ -243,28 +243,28 @@ func parseSDRDeviceRelativeEntityAssociation(data []byte, sdr *SDR) error {
 
 	flag, _, _ := unpackUint8(data, 9)
 	s.ContainedEntitiesAsRange = isBit7Set(flag)
-	s.LinkedEntityAssiactionExist = isBit6Set(flag)
+	s.LinkedEntityAssociationExist = isBit6Set(flag)
 	s.PresenceSensorAlwaysAccessible = isBit5Set(flag)
 
-	s.ContaineredEntity1DeviceAddress, _, _ = unpackUint8(data, 10)
-	s.ContaineredEntity1DeviceChannel, _, _ = unpackUint8(data, 11)
-	s.ContaineredEntity1ID, _, _ = unpackUint8(data, 12)
-	s.ContaineredEntity1Instance, _, _ = unpackUint8(data, 13)
+	s.ContainedEntity1DeviceAddress, _, _ = unpackUint8(data, 10)
+	s.ContainedEntity1DeviceChannel, _, _ = unpackUint8(data, 11)
+	s.ContainedEntity1ID, _, _ = unpackUint8(data, 12)
+	s.ContainedEntity1Instance, _, _ = unpackUint8(data, 13)
 
-	s.ContaineredEntity2DeviceAddress, _, _ = unpackUint8(data, 14)
-	s.ContaineredEntity2DeviceChannel, _, _ = unpackUint8(data, 15)
-	s.ContaineredEntity2ID, _, _ = unpackUint8(data, 16)
-	s.ContaineredEntity2Instance, _, _ = unpackUint8(data, 17)
+	s.ContainedEntity2DeviceAddress, _, _ = unpackUint8(data, 14)
+	s.ContainedEntity2DeviceChannel, _, _ = unpackUint8(data, 15)
+	s.ContainedEntity2ID, _, _ = unpackUint8(data, 16)
+	s.ContainedEntity2Instance, _, _ = unpackUint8(data, 17)
 
-	s.ContaineredEntity3DeviceAddress, _, _ = unpackUint8(data, 18)
-	s.ContaineredEntity3DeviceChannel, _, _ = unpackUint8(data, 19)
-	s.ContaineredEntity3ID, _, _ = unpackUint8(data, 20)
-	s.ContaineredEntity3Instance, _, _ = unpackUint8(data, 21)
+	s.ContainedEntity3DeviceAddress, _, _ = unpackUint8(data, 18)
+	s.ContainedEntity3DeviceChannel, _, _ = unpackUint8(data, 19)
+	s.ContainedEntity3ID, _, _ = unpackUint8(data, 20)
+	s.ContainedEntity3Instance, _, _ = unpackUint8(data, 21)
 
-	s.ContaineredEntity4DeviceAddress, _, _ = unpackUint8(data, 22)
-	s.ContaineredEntity4DeviceChannel, _, _ = unpackUint8(data, 23)
-	s.ContaineredEntity4ID, _, _ = unpackUint8(data, 24)
-	s.ContaineredEntity4Instance, _, _ = unpackUint8(data, 25)
+	s.ContainedEntity4DeviceAddress, _, _ = unpackUint8(data, 22)
+	s.ContainedEntity4DeviceChannel, _, _ = unpackUint8(data, 23)
+	s.ContainedEntity4ID, _, _ = unpackUint8(data, 24)
+	s.ContainedEntity4Instance, _, _ = unpackUint8(data, 25)
 
 	unpackBytes(data, 26, 6) // last 6 bytes reserved
 	return nil
@@ -376,7 +376,7 @@ type SDRFRUDeviceLocator struct {
 	// 1b = device is logical FRU Device (accessed via FRU commands to mgmt. controller)
 	IsLogicalFRUDevice bool
 
-	// [4:3] - LUN for Master Write-Read command or FRU Command. 00b if device is nonintelligent device directly on IPMB.
+	// [4:3] - LUN for Master Write-Read command or FRU Command. 00b if device is non-intelligent device directly on IPMB.
 	AccessLUN uint8
 
 	// [2:0] - Private bus ID if bus = Private.
@@ -719,21 +719,21 @@ type SDRReserved struct {
 
 // 43.15 Type/Length Byte Format
 //
-//  7:6 00 = Unicode
-//           00b define a Unicode string in the IPMI specification,
-//           whereas they specify a binary field in the Platform Management FRU specification.
-//      01 = BCD plus (see below)
-//      10 = 6-bit ASCII, packed
-//      11 = 8-bit ASCII + Latin 1.
-//          At least two bytes of data must be present when this type is used.
-//          Therefore, the length (number of data bytes) will be >1 if data is present,
-//          0 if data is not present. A length of 1 is reserved.
-//  5 reserved.
-//      the bit 5 is reserved in the IPMI specification type/length byte,
-//      where it is part of the length field in the Platform Management FRU specification
-//  4:0 length of following data, in characters.
-//      00000b indicates 'none following'.
-//      11111b = reserved.
+//	7:6 00 = Unicode
+//	         00b define a Unicode string in the IPMI specification,
+//	         whereas they specify a binary field in the Platform Management FRU specification.
+//	    01 = BCD plus (see below)
+//	    10 = 6-bit ASCII, packed
+//	    11 = 8-bit ASCII + Latin 1.
+//	        At least two bytes of data must be present when this type is used.
+//	        Therefore, the length (number of data bytes) will be >1 if data is present,
+//	        0 if data is not present. A length of 1 is reserved.
+//	5 reserved.
+//	    the bit 5 is reserved in the IPMI specification type/length byte,
+//	    where it is part of the length field in the Platform Management FRU specification
+//	4:0 length of following data, in characters.
+//	    00000b indicates 'none following'.
+//	    11111b = reserved.
 type TypeLength uint8
 
 func (tl TypeLength) String() string {
@@ -825,7 +825,7 @@ func (tl TypeLength) Chars(raw []byte) (chars []byte, err error) {
 
 	case 2: // 10b - 6-bit ASCII
 		// 6-bit ASCII definition
-		var ascci6bit = [64]byte{
+		var ascii6bit = [64]byte{
 			' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?',
 			'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
@@ -843,20 +843,20 @@ func (tl TypeLength) Chars(raw []byte) (chars []byte, err error) {
 				idx := raw[i] & 0x3f            // 6 right bits are an index of one char
 				leftover = (raw[i] & 0xc0) >> 6 // 2 left bits are leftovers
 
-				s = append(s, ascci6bit[idx])
+				s = append(s, ascii6bit[idx])
 			case 1:
 				idx := leftover | (raw[i]&0x0f)<<2 // index of one char is 2-bit leftover as prefix plus 4 right bits
 				leftover = (raw[i] & 0xf0) >> 4    // 4 left bits are leftovers
 
-				s = append(s, ascci6bit[idx])
+				s = append(s, ascii6bit[idx])
 			case 2:
 				idx := (raw[i]&0x03)<<4 | leftover // index of one char is 2 right bits plus 4-bit leftover as suffix
 				leftover = 0                       // cleanup leftover calculation
 
-				s = append(s, ascci6bit[idx])
+				s = append(s, ascii6bit[idx])
 
 				idx = (raw[i] & 0xfc) >> 2 // 6 left bits are an index of one char
-				s = append(s, ascci6bit[idx])
+				s = append(s, ascii6bit[idx])
 			}
 		}
 

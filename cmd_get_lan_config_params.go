@@ -66,7 +66,7 @@ func (c *Client) GetLanConfigParams(channelNumber uint8, paramSelector LanParamS
 	return
 }
 
-// GetLanConfig will fetch all Lan informations.
+// GetLanConfig will fetch all Lan information.
 func (c *Client) GetLanConfig(channelNumber uint8) (*LanConfig, error) {
 	lanConfig := &LanConfig{}
 
@@ -197,7 +197,7 @@ func FillLanConfig(lanConfig *LanConfig, paramSelector LanParamSelector, paramDa
 			GratuitousARPEnabled: isBit0Set(paramData[0]),
 		}
 
-	case LanParam_GratuituousARPInterval:
+	case LanParam_GratuitousARPInterval:
 		// Gratuitous ARP interval in 500 millisecond increments. 0-based.
 		lanConfig.GratuitousARPIntervalMilliSec = int32(paramData[0]) * 500
 
@@ -264,7 +264,7 @@ func FillLanConfig(lanConfig *LanConfig, paramSelector LanParamSelector, paramDa
 		}
 		lanConfig.RMCPCipherSuiteEntries = ids
 
-	case LanParam_CihperSuitePrivilegeLevels:
+	case LanParam_CipherSuitePrivilegeLevels:
 		levels := []PrivilegeLevel{}
 		for i, v := range paramData {
 			if i == 0 {
@@ -285,15 +285,15 @@ func FillLanConfig(lanConfig *LanConfig, paramSelector LanParamSelector, paramDa
 			Priority:      (paramData[3] & 0xe0) >> 5,
 		}
 
-	case LanParam_BadPassordThreshold:
+	case LanParam_BadPasswordThreshold:
 		resetInterval, _, _ := unpackUint16L(paramData, 2)
 		lockInterval, _, _ := unpackUint16L(paramData, 4)
 
 		lanConfig.BadPasswordThreshold = BadPasswordThreshold{
-			GenerateSessionAuditEvent:   isBit0Set(paramData[0]),
-			Threshold:                   paramData[1],
-			AttemptCountResetIntevalSec: uint32(resetInterval) * 10,
-			UserLockoutIntervalSec:      uint32(lockInterval) * 10,
+			GenerateSessionAuditEvent:    isBit0Set(paramData[0]),
+			Threshold:                    paramData[1],
+			AttemptCountResetIntervalSec: uint32(resetInterval) * 10,
+			UserLockoutIntervalSec:       uint32(lockInterval) * 10,
 		}
 
 	case LanParam_IP6Support:

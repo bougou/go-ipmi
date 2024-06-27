@@ -89,7 +89,7 @@ func (p PowerRestorePolicy) String() string {
 	if ok {
 		return s
 	}
-	return "unkown"
+	return "unknown"
 }
 
 func (req *GetChassisStatusRequest) Pack() []byte {

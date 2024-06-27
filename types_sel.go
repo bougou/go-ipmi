@@ -102,7 +102,7 @@ func (oemNonTimestamped *SELOEMNonTimestamped) Pack() []byte {
 // 32.1 SEL Standard Event Records
 type SELStandard struct {
 	Timestamp    time.Time    // Time when event was logged. uint32 LS byte first.
-	GeneratorID  GeneratorID  // RqSA & LUN if event was generated from IPMB. Software ID if event was generatedfrom system software.
+	GeneratorID  GeneratorID  // RqSA & LUN if event was generated from IPMB. Software ID if event was generated from system software.
 	EvMRev       uint8        // Event Message Revision (format version)
 	SensorType   SensorType   // Sensor Type Code for sensor that generated the event
 	SensorNumber SensorNumber // Number of sensor that generated the event

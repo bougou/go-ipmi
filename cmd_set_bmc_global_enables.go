@@ -4,7 +4,7 @@ import "fmt"
 
 // 22.1 Set BMC Global Enables Command
 type SetBMCGlobalEnablesRequest struct {
-	// Generic system mgmt. software must do a "read-modifywrite" using the Get BMC Global Enables and Set BMC Global Enables to avoid altering EnableOEM_X field.
+	// Generic system mgmt. software must do a "read-modify-write" using the Get BMC Global Enables and Set BMC Global Enables to avoid altering EnableOEM_X field.
 	EnableOEM2 bool
 	EnableOEM1 bool
 	EnableOEM0 bool

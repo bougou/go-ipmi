@@ -130,7 +130,7 @@ func (res *GetSensorEventEnableResponse) Format() string {
 	return fmt.Sprintf(`Event Messages Disabled   : %v
 Sensor Scanning Disabled  : %v
 Enabled Assert Event      : %s
-Enabled Desassert Event   : %s`,
+Enabled Deassert Event    : %s`,
 
 		res.EventMessagesDisabled,
 		res.SensorScanningDisabled,

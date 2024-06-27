@@ -86,7 +86,7 @@ func generate_auth_hmac(authAlg interface{}, data []byte, key []byte) ([]byte, e
 // The cipherKey length is either 16, 24, or 32 bytes to select AES-128, AES-192, or AES-256.
 func encryptAES(plainText []byte, cipherKey []byte, iv []byte) ([]byte, error) {
 	if len(plainText)%aes.BlockSize != 0 {
-		return nil, fmt.Errorf("input plainText must be mutiple of aes block size (16)")
+		return nil, fmt.Errorf("input plainText must be multiple of aes block size (16)")
 	}
 
 	l := len(cipherKey)

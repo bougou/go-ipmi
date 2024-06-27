@@ -63,7 +63,7 @@ type GetDeviceIDResponse struct {
 	// internal data structure version numbers. The meanings of the numbers are
 	// specific to the vendor identified by Manufacturer ID (see below). When the
 	// vendor-specific definition is not known, generic utilities should display each
-	// byte as 2-digit hexadecimal numbers, with byte 13 displayed first as the mostsignificant byte.
+	// byte as 2-digit hexadecimal numbers, with byte 13 displayed first as the most-significant byte.
 	AuxiliaryFirmwareRevision []byte // 4 bytes
 }
 

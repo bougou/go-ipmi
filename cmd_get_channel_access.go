@@ -4,7 +4,7 @@ import "fmt"
 
 // 22.23 Get Channel Access Command
 type GetChannelAccessRequest struct {
-	ChannnelNumber uint8
+	ChannelNumber uint8
 
 	AccessOption ChannelAccessOption
 }
@@ -21,7 +21,7 @@ type GetChannelAccessResponse struct {
 func (req *GetChannelAccessRequest) Pack() []byte {
 	out := make([]byte, 2)
 
-	packUint8(req.ChannnelNumber, out, 0)
+	packUint8(req.ChannelNumber, out, 0)
 	packUint8(uint8(req.AccessOption)<<6, out, 1)
 
 	return out
@@ -33,7 +33,7 @@ func (req *GetChannelAccessRequest) Command() Command {
 
 func (res *GetChannelAccessResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{
-		0x82: "set not supported on selected channel (e.g. channel is sessionless.)",
+		0x82: "set not supported on selected channel (e.g. channel is session-less.)",
 		0x83: "access mode not supported",
 	}
 }
@@ -69,8 +69,8 @@ func (res *GetChannelAccessResponse) Format() string {
 
 func (c *Client) GetChannelAccess(channelNumber uint8, accessOption ChannelAccessOption) (response *GetChannelAccessResponse, err error) {
 	request := &GetChannelAccessRequest{
-		ChannnelNumber: channelNumber,
-		AccessOption:   accessOption,
+		ChannelNumber: channelNumber,
+		AccessOption:  accessOption,
 	}
 	response = &GetChannelAccessResponse{}
 	err = c.Exchange(request, response)

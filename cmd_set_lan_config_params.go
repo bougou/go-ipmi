@@ -8,7 +8,7 @@ type SetLanConfigParamsRequest struct {
 }
 
 type SetLanConfigParamsResponse struct {
-	// emtpy
+	// empty
 }
 
 func (req *SetLanConfigParamsRequest) Pack() []byte {

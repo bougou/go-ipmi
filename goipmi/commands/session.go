@@ -26,7 +26,9 @@ func NewCmdSession() *cobra.Command {
 }
 
 func NewCmdSessionInfo() *cobra.Command {
+	// cSpell: disable
 	usage := `Session Commands: info <active | all | id 0xnnnnnnnn | handle 0xnn>`
+	// cSpell: enable
 
 	cmd := &cobra.Command{
 		Use:   "info",

@@ -22,7 +22,7 @@ const (
 	LanParam_PrimaryRMCPPort                  LanParamSelector = 8
 	LanParam_SecondaryRMCPPort                LanParamSelector = 9
 	LanParam_ARPControl                       LanParamSelector = 10
-	LanParam_GratuituousARPInterval           LanParamSelector = 11
+	LanParam_GratuitousARPInterval            LanParamSelector = 11
 	LanParam_DefaultGatewayIP                 LanParamSelector = 12
 	LanParam_DefaultGatewayMAC                LanParamSelector = 13
 	LanParam_BackupGatewayIP                  LanParamSelector = 14
@@ -35,9 +35,9 @@ const (
 	LanParam_VLANPriority                     LanParamSelector = 21
 	LanParam_CipherSuiteEntrySupport          LanParamSelector = 22
 	LanParam_CipherSuiteEntries               LanParamSelector = 23
-	LanParam_CihperSuitePrivilegeLevels       LanParamSelector = 24
+	LanParam_CipherSuitePrivilegeLevels       LanParamSelector = 24
 	LanParam_AlertDestinationVLAN             LanParamSelector = 25 // read only
-	LanParam_BadPassordThreshold              LanParamSelector = 26
+	LanParam_BadPasswordThreshold             LanParamSelector = 26
 	LanParam_IP6Support                       LanParamSelector = 50
 	LanParam_IP6Enables                       LanParamSelector = 51
 	LanParam_IP6StaticTrafficClass            LanParamSelector = 52
@@ -45,11 +45,11 @@ const (
 	LanParam_IP6FlowLabel                     LanParamSelector = 54
 	LanParam_IP6Status                        LanParamSelector = 55
 	LanParam_IP6StaticAddr                    LanParamSelector = 56
-	LanParam_IP6DHCP6StaticDUIDLength         LanParamSelector = 57
+	LanParam_IP6DHCP6StaticDUIDLength         LanParamSelector = 57 // DHCPv6 uses DHCP Unique Identifier (DUID) to identify clients (and also clients identify the DHCPv6 server by its DUID)
 	LanParam_IP6DHCP6StaticDUIDs              LanParamSelector = 58
 	LanParam_IP6DynamicAddr                   LanParamSelector = 59
-	LanParam_IP6DHCP6DynamicDUIDLenth         LanParamSelector = 60
-	LanParam_IP6DHCP6DyanmicDUIDs             LanParamSelector = 61
+	LanParam_IP6DHCP6DynamicDUIDLength        LanParamSelector = 60
+	LanParam_IP6DHCP6DynamicDUIDs             LanParamSelector = 61
 	LanParam_IP6DHCP6TimingConfigSupport      LanParamSelector = 62
 	LanParam_IP6DHCP6TimingConfig             LanParamSelector = 63
 	LanParam_IP6RouterAddressConfigControl    LanParamSelector = 64
@@ -67,7 +67,7 @@ const (
 	LanParam_IP6DynamicRouterPrefixLength     LanParamSelector = 76
 	LanParam_IP6DynamicRouterPrefixValue      LanParamSelector = 77
 	LanParam_IP6DynamicRouterReceivedHopLimit LanParamSelector = 78 // read only
-	LanParam_IP6NDSLAACTimingConfigSupport    LanParamSelector = 79 // read only
+	LanParam_IP6NDSLAACTimingConfigSupport    LanParamSelector = 79 // read only, IPv6 Neighbor	Discovery / SLAAC
 	LanParam_IP6NDSLAACTiming                 LanParamSelector = 80
 
 	// OEM Parameters 192:
@@ -89,7 +89,7 @@ var LanParams = []LanParam{
 	{Selector: LanParam_PrimaryRMCPPort, DataSize: 2, Name: "Primary RMCP Port"},
 	{Selector: LanParam_SecondaryRMCPPort, DataSize: 2, Name: "Secondary RMCP Port"},
 	{Selector: LanParam_ARPControl, DataSize: 1, Name: "BMC ARP Control"},
-	{Selector: LanParam_GratuituousARPInterval, DataSize: 1, Name: "Gratituous ARP Intrvl"},
+	{Selector: LanParam_GratuitousARPInterval, DataSize: 1, Name: "Gratuitous ARP Interval"},
 	{Selector: LanParam_DefaultGatewayIP, DataSize: 4, Name: "Default Gateway IP"},
 	{Selector: LanParam_DefaultGatewayMAC, DataSize: 6, Name: "Default Gateway MAC"},
 	{Selector: LanParam_BackupGatewayIP, DataSize: 4, Name: "Backup Gateway IP"},
@@ -102,8 +102,8 @@ var LanParams = []LanParam{
 	{Selector: LanParam_VLANPriority, DataSize: 1, Name: "802.1q VLAN Priority"},
 	{Selector: LanParam_CipherSuiteEntrySupport, DataSize: 1, Name: "RMCP+ Cipher Suite Count"},
 	{Selector: LanParam_CipherSuiteEntries, DataSize: 17, Name: "RMCP+ Cipher Suites"},
-	{Selector: LanParam_CihperSuitePrivilegeLevels, DataSize: 9, Name: "Cipher Suite Priv Max"},
-	{Selector: LanParam_BadPassordThreshold, DataSize: 4, Name: "Bad Password Threshold"},
+	{Selector: LanParam_CipherSuitePrivilegeLevels, DataSize: 9, Name: "Cipher Suite Priv Max"},
+	{Selector: LanParam_BadPasswordThreshold, DataSize: 4, Name: "Bad Password Threshold"},
 }
 
 func (lanParam LanParamSelector) String() string {
@@ -207,7 +207,7 @@ func (p SetInProgress) String() string {
 	m := map[SetInProgress]string{
 		0x00: "set complete",
 		0x01: "set in progress",
-		0x02: "commit wirte",
+		0x02: "commit write",
 		0x03: "reserved",
 	}
 	s, ok := m[p]
@@ -370,11 +370,11 @@ type BadPasswordThreshold struct {
 	Threshold uint8
 
 	// Attempt Count Reset Interval.
-	// The raw data is 2 byte, and the unit is in tens of seconds, the program should convert to senconds.
-	AttemptCountResetIntevalSec uint32
+	// The raw data is 2 byte, and the unit is in tens of seconds, the program should convert to seconds.
+	AttemptCountResetIntervalSec uint32
 
 	// User Lockout Interval
-	// The raw data is 2 byte, and the unit is in tens of seconds, the program should convert to senconds.
+	// The raw data is 2 byte, and the unit is in tens of seconds, the program should convert to seconds.
 	UserLockoutIntervalSec uint32
 }
 

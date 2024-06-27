@@ -166,7 +166,7 @@ func (p *SOLConfigParam_SetInProgress) Format() string {
 	case 0:
 		return "set complete"
 	case 1:
-		return "set in progess"
+		return "set in progress"
 	case 2:
 		return "commit write"
 	}
@@ -227,7 +227,7 @@ func (p *SOLConfigParam_SOLAuthentication) Pack() []byte {
 
 func (p *SOLConfigParam_SOLAuthentication) Format() string {
 	return fmt.Sprintf(`
-Force Entryption     : %v
+Force Encryption     : %v
 Force Authentication : %v
 Privilege Level      : %#02x`, p.ForceEncryption, p.ForceAuthentication, p.PrivilegeLevel)
 }

@@ -3,6 +3,7 @@ package ipmi
 // OEM represents Manufacturer ID, that is IANA Private Enterprise Number
 type OEM uint32
 
+// cSpell: disable
 const (
 	OEM_UNKNOWN                      = 0
 	OEM_DEBUG                        = 0xFFFFFE /* Hoping IANA won't hit this soon */

@@ -395,7 +395,7 @@ func (c *Client) genSession20(payloadType PayloadType, rawPayload []byte) (*Sess
 	//
 	sessionPayload := rawPayload
 	if c.session.v20.state == SessionStateActive && sessionHeader.PayloadEncrypted {
-		e, err := c.encryptPlayload(rawPayload, nil)
+		e, err := c.encryptPayload(rawPayload, nil)
 		if err != nil {
 			return nil, fmt.Errorf("encrypt payload failed, err: %s", err)
 		}
@@ -490,7 +490,7 @@ func (c *Client) genSessionTrailer(sessionHeader []byte, sessionPayload []byte) 
 //   - Encrypted Payload.
 //   - the cipher text of both rawPayload
 //   - padded Confidentiality Trailer.
-func (c *Client) encryptPlayload(rawPayload []byte, iv []byte) ([]byte, error) {
+func (c *Client) encryptPayload(rawPayload []byte, iv []byte) ([]byte, error) {
 
 	switch c.session.v20.cryptAlg {
 	case CryptAlg_None:
@@ -523,18 +523,18 @@ func (c *Client) encryptPlayload(rawPayload []byte, iv []byte) ([]byte, error) {
 		cipherKey := c.session.v20.k2[0:16]
 		c.DebugBytes("cipher key (k2)", cipherKey, 16)
 
-		encyptedPayload, err := encryptAES(paddedData, cipherKey, iv)
+		encryptedPayload, err := encryptAES(paddedData, cipherKey, iv)
 		if err != nil {
 			return nil, fmt.Errorf("encrypt payload with AES_CBC_128 failed, err: %s", err)
 		}
-		c.DebugBytes("encrypted data", encyptedPayload, 16)
+		c.DebugBytes("encrypted data", encryptedPayload, 16)
 
 		var out []byte
 
 		// write Confidentiality Header
 		out = append(out, iv...)
 		// write Encrypted Payload
-		out = append(out, encyptedPayload...)
+		out = append(out, encryptedPayload...)
 
 		c.DebugBytes("encrypted session payload", out, 16)
 
@@ -577,12 +577,12 @@ func (c *Client) encryptPlayload(rawPayload []byte, iv []byte) ([]byte, error) {
 			cipherKey = keyRC[:16]
 		}
 
-		encyptedPayload, err := encryptRC4(rawPayload, cipherKey, iv)
+		encryptedPayload, err := encryptRC4(rawPayload, cipherKey, iv)
 		if err != nil {
 			return nil, fmt.Errorf("encrypt payload with xRC4_40 or xRC4_128 failed, err: %s", err)
 		}
 		// write Encrypted Payload
-		out = append(out, encyptedPayload...)
+		out = append(out, encryptedPayload...)
 		// xRC4 does not use a confidentiality trailer.
 		return out, nil
 

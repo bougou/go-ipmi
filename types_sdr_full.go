@@ -35,7 +35,7 @@ type SDRFull struct {
 
 	SensorInitialization SensorInitialization
 
-	SensorCapabilitites SensorCapabilitites
+	SensorCapabilities SensorCapabilities
 
 	SensorType             SensorType
 	SensorEventReadingType EventReadingType
@@ -56,7 +56,7 @@ type SDRFull struct {
 	// see: 36.3 Sensor Reading Conversion Formula
 	// y = L[(Mx + (B * 10^B_Exp) ) * 10^R_Exp ] units
 
-	// LinearizationFunc is the Lineraization func. (L of the Sensor Reading Convertion Formula)
+	// LinearizationFunc is the Linearization func. (L of the Sensor Reading Conversion Formula)
 	//
 	// [6:0] - enum (linear, ln, log10, log2, e, exp10, exp2, 1/x, sqr(x), cube(x), sqrt(x),
 	// cube-1 (x) )
@@ -335,10 +335,10 @@ Reading Factors       : %s`,
 		full.SensorInitialization.InitSensorType,
 		formatBool(full.SensorInitialization.EventGenerationEnabled, "enabled", "disabled"),
 		formatBool(full.SensorInitialization.SensorScanningEnabled, "enabled", "disabled"),
-		formatBool(full.SensorCapabilitites.AutoRearm, "yes(auto)", "no(manual)"),
-		full.SensorCapabilitites.HysteresisAccess.String(),
-		full.SensorCapabilitites.ThresholdAccess,
-		full.SensorCapabilitites.EventMessageControl,
+		formatBool(full.SensorCapabilities.AutoRearm, "yes(auto)", "no(manual)"),
+		full.SensorCapabilities.HysteresisAccess.String(),
+		full.SensorCapabilities.ThresholdAccess,
+		full.SensorCapabilities.EventMessageControl,
 		strings.Join(full.Mask.ReadableThresholds().Strings(), " "),
 		strings.Join(full.Mask.SettableThresholds().Strings(), " "),
 		strings.Join(full.Mask.StatusReturnedThresholds().Strings(), " "),
@@ -400,7 +400,7 @@ func parseSDRFullSensor(data []byte, sdr *SDR) error {
 	}
 
 	b11, _, _ := unpackUint8(data, 11)
-	s.SensorCapabilitites = SensorCapabilitites{
+	s.SensorCapabilities = SensorCapabilities{
 		IgnoreWithEntity:    isBit7Set(b11),
 		AutoRearm:           isBit6Set(b11),
 		HysteresisAccess:    SensorHysteresisAccess((b11 & 0x3f) >> 4),

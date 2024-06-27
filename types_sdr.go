@@ -251,7 +251,7 @@ func FormatSDRs_FRU(records []*SDR) string {
 		"FRUEntityID",
 		"FRUEntityInstance",
 		"TypeLength",
-		"DeiveName",
+		"DeviceName",
 	}
 	table.SetHeader(headers)
 	table.SetFooter(headers)
@@ -722,7 +722,7 @@ func (mask *Mask) SupportedThresholdEvents() SensorEvents {
 		out = append(out, SensorEvent_LNR_Low_Assert)
 	}
 
-	// Desseartion Events
+	// Deassertion Events
 	if mask.Threshold.UNC.High_Deassert {
 		out = append(out, SensorEvent_UNC_High_Deassert)
 	}
@@ -768,9 +768,9 @@ func (mask *Mask) SupportedThresholdEvents() SensorEvents {
 	return out
 }
 
-// SensorCapbilitites represent the capabilities of the sensor.
+// SensorCapabilities represent the capabilities of the sensor.
 // SDRs of Full/Compact record type has this field.
-type SensorCapabilitites struct {
+type SensorCapabilities struct {
 	// [7] - 1b = IgnoreWithEntity sensor if Entity is not present or disabled. 0b = don't ignore sensor
 	IgnoreWithEntity bool
 

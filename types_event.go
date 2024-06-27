@@ -93,9 +93,9 @@ const (
 	EventReadingTypeThreshold              EventReadingType = 0x01
 	EventReadingTypeTransitionState        EventReadingType = 0x02
 	EventReadingTypeState                  EventReadingType = 0x03
-	EventReadingTypePredicitiveFailure     EventReadingType = 0x04
+	EventReadingTypePredictiveFailure      EventReadingType = 0x04
 	EventReadingTypeLimit                  EventReadingType = 0x05
-	EventReadingTypePeformance             EventReadingType = 0x06
+	EventReadingTypePerformance            EventReadingType = 0x06
 	EventReadingTypeTransitionSeverity     EventReadingType = 0x07
 	EventReadingTypeDevicePresent          EventReadingType = 0x08
 	EventReadingTypeDeviceEnabled          EventReadingType = 0x09
@@ -547,7 +547,7 @@ var (
 		High:          true,
 	}
 
-	// Dessaert Events
+	// Deassert Events
 
 	SensorEvent_UNC_Low_Deassert = SensorEvent{
 		SensorClass:   SensorClassThreshold,
@@ -718,7 +718,7 @@ var (
 )
 
 // SensorEventFlag holds a struct with fields indicating the specified sensor event is set or not.
-// SensorEventFlag was embeded in Sensor related commands.
+// SensorEventFlag was embedded in Sensor related commands.
 type SensorEventFlag struct {
 	SensorEvent_UNC_High_Assert bool
 	SensorEvent_UNC_Low_Assert  bool

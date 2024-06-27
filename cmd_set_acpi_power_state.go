@@ -41,7 +41,7 @@ func (s SystemPowerState) String() string {
 		0x03: "S3, typically equates to suspend-to-RAM",
 		0x04: "S4, typically equates to suspend-to-disk",
 		0x05: "S5/G2, soft off",
-		0x06: "S4/S5, sent when message source canno differentiate between S4 and S5",
+		0x06: "S4/S5, sent when message source cannot differentiate between S4 and S5",
 		0x07: "G3, mechanical off",
 		0x08: "sleeping, sleeping - cannot differentiate between S1-S3",
 		0x09: "G1 sleeping, sleeping - cannot differentiate between S1-S4",
@@ -49,7 +49,7 @@ func (s SystemPowerState) String() string {
 		0x20: "Legacy On, Legacy On (indicates On for system that don't support ACPI or have ACPI capabilities disabled)",
 		0x21: "Legacy Soft-Off",
 		0x2a: "Unknown, system power state unknown",
-		0x7f: "No Chagne",
+		0x7f: "No Change",
 	}
 	o, ok := m[s]
 	if ok {

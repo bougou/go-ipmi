@@ -28,7 +28,9 @@ func Test_ActivateSessionAuthCode(t *testing.T) {
 				Command:           0x3a,
 			},
 			input: &AuthCodeMultiSessionInput{
-				Password:   "vtA9kBPODBPBy",
+				// cSpell:disable
+				Password: "vtA9kBPODBPBy",
+				// cSpell:enable
 				SessionID:  0xb215d500,
 				SessionSeq: 0x00000000,
 			},
@@ -49,7 +51,9 @@ func Test_ActivateSessionAuthCode(t *testing.T) {
 				Command:           CommandSetSessionPrivilegeLevel.ID,
 			},
 			input: &AuthCodeMultiSessionInput{
-				Password:   "vtA9kBPODBPBy",
+				// cSpell:disable
+				Password: "vtA9kBPODBPBy",
+				// cSpell:enable
 				SessionID:  0xa26f8e00,
 				SessionSeq: 0xdabbb496,
 			},
@@ -71,7 +75,7 @@ func Test_ActivateSessionAuthCode(t *testing.T) {
 		expected := tt.expect
 
 		if !isByteSliceEqual(got, expected) {
-			t.Errorf("test %s failed, not euqal, got: %v, expected: %v", tt.name, got, expected)
+			t.Errorf("test %s failed, not equal, got: %v, expected: %v", tt.name, got, expected)
 		}
 	}
 }

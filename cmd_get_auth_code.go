@@ -15,13 +15,13 @@ type GetAuthCodeRequest struct {
 	Data [16]byte
 }
 
-type GetAuthCodeReponse struct {
+type GetAuthCodeResponse struct {
 	CompletionCode
 
 	// For IPMI v1.5 AuthCode Number:
 	AuthCode [16]byte
 
-	// ForIPMI v2.0 Integrity Algorithum Number
+	// ForIPMI v2.0 Integrity Algorithm Number
 	// Resultant hash, per selected Integrity algorithm. Up to 20 bytes. An
 	// implementation can elect to return a variable length field based on the size of
 	// the hash for the given integrity algorithm, or can return a fixed field where the

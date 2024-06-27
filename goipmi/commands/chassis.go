@@ -235,7 +235,7 @@ bootparam set bootflag <device> [options=...]
 				parameterSelector := args[1]
 				i, err := parseStringToInt64(parameterSelector)
 				if err != nil {
-					CheckErr(fmt.Errorf("param %s must be a valid interger in range (0-127), err: %s", parameterSelector, err))
+					CheckErr(fmt.Errorf("param %s must be a valid integer in range (0-127), err: %s", parameterSelector, err))
 				}
 
 				res, err := client.GetSystemBootOptions(ipmi.BootOptionParameterSelector(i))

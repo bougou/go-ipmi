@@ -142,7 +142,7 @@ func (c *Client) WithBufferSize(bufferSize int) *Client {
 
 // WithCipherSuiteID sets a custom cipher suite which is used during OpenSession command.
 // It is only valid for client with IPMI lanplus interface.
-// For the cutsom cipherSuiteID to take effect, you must call WithCipherSuiteID before calling Connect method.
+// For the custom cipherSuiteID to take effect, you must call WithCipherSuiteID before calling Connect method.
 func (c *Client) WithCipherSuiteID(cipherSuiteID CipherSuiteID) *Client {
 	if c.session != nil {
 		c.session.v20.cipherSuiteID = cipherSuiteID

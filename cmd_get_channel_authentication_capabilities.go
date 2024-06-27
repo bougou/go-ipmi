@@ -85,7 +85,7 @@ type GetChannelAuthenticationCapabilitiesResponse struct {
 
 	// Additional OEM-specific information for the OEM Authentication Type for RMCP.
 	// Return 00h if no OEM authentication type available.
-	OEMAuxilirayData uint8
+	OEMAuxiliaryData uint8
 }
 
 func (req *GetChannelAuthenticationCapabilitiesRequest) Pack() []byte {
@@ -132,7 +132,7 @@ func (res *GetChannelAuthenticationCapabilitiesResponse) Unpack(msg []byte) erro
 	}
 
 	res.OEMID, _, _ = unpackUint24L(msg, 4)
-	res.OEMAuxilirayData, _, _ = unpackUint8(msg, 7)
+	res.OEMAuxiliaryData, _, _ = unpackUint8(msg, 7)
 	return nil
 }
 

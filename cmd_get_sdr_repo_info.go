@@ -11,11 +11,11 @@ type GetSDRRepoInfoRequest struct {
 }
 
 type GetSDRRepoInfoResponse struct {
-	SDRVersion               uint8  // version number of the SDR command set for the SDR Device. 51h for this specification.
-	RecordCount              uint16 // LS Byte first
-	FreeSpeceBytes           uint16 // LS Byte first
-	MostRecentAddititionTime time.Time
-	MostRecentEraseTime      time.Time
+	SDRVersion             uint8  // version number of the SDR command set for the SDR Device. 51h for this specification.
+	RecordCount            uint16 // LS Byte first
+	FreeSpaceBytes         uint16 // LS Byte first
+	MostRecentAdditionTime time.Time
+	MostRecentEraseTime    time.Time
 
 	SDROperationSupport SDROperationSupport
 }
@@ -25,7 +25,7 @@ type SDROperationSupport struct {
 	SupportModalSDRRepoUpdate    bool // A modal SDR Repository is only updated when the controller is in an SDR Repository update mode.
 	SupportNonModalSDRRepoUpdate bool // A non-modal SDR Repository can be written to at any time
 	SupportDeleteSDR             bool
-	SupportParitialAddSDR        bool
+	SupportPartialAddSDR         bool
 	SupportReserveSDRRepo        bool
 	SupportGetSDRRepoAllocInfo   bool
 }
@@ -45,10 +45,10 @@ func (res *GetSDRRepoInfoResponse) Unpack(msg []byte) error {
 
 	res.SDRVersion, _, _ = unpackUint8(msg, 0)
 	res.RecordCount, _, _ = unpackUint16L(msg, 1)
-	res.FreeSpeceBytes, _, _ = unpackUint16L(msg, 3)
+	res.FreeSpaceBytes, _, _ = unpackUint16L(msg, 3)
 
 	addTS, _, _ := unpackUint32L(msg, 5)
-	res.MostRecentAddititionTime = parseTimestamp(addTS)
+	res.MostRecentAdditionTime = parseTimestamp(addTS)
 
 	deleteTS, _, _ := unpackUint32L(msg, 9)
 	res.MostRecentEraseTime = parseTimestamp(deleteTS)
@@ -59,7 +59,7 @@ func (res *GetSDRRepoInfoResponse) Unpack(msg []byte) error {
 		SupportModalSDRRepoUpdate:    isBit6Set(b),
 		SupportNonModalSDRRepoUpdate: isBit5Set(b),
 		SupportDeleteSDR:             isBit3Set(b),
-		SupportParitialAddSDR:        isBit2Set(b),
+		SupportPartialAddSDR:         isBit2Set(b),
 		SupportReserveSDRRepo:        isBit1Set(b),
 		SupportGetSDRRepoAllocInfo:   isBit0Set(b),
 	}
@@ -97,13 +97,13 @@ Reserve SDR repository supported    : %v
 SDR Repository Alloc info supported : %v`,
 		res.SDRVersion,
 		res.RecordCount,
-		res.FreeSpeceBytes,
-		res.MostRecentAddititionTime,
+		res.FreeSpaceBytes,
+		res.MostRecentAdditionTime,
 		res.MostRecentEraseTime,
 		res.SDROperationSupport.Overflow,
 		s,
 		res.SDROperationSupport.SupportDeleteSDR,
-		res.SDROperationSupport.SupportParitialAddSDR,
+		res.SDROperationSupport.SupportPartialAddSDR,
 		res.SDROperationSupport.SupportReserveSDRRepo,
 		res.SDROperationSupport.SupportGetSDRRepoAllocInfo,
 	)

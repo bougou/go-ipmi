@@ -55,7 +55,7 @@ func main() {
 }
 ```
 
-## Functions Comparision with ipmitool
+## Functions Comparison with ipmitool
 
 Each command defined in the IPMI specification is a pair of request/response messages.
 These IPMI commands are implemented as methods of the `ipmi.Client` struct in this library.
@@ -64,12 +64,12 @@ Some `ipmitool` cmdline usages are implemented by calling just one IPMI command,
 but others are not. Like `ipmitool sdr list`, it's a loop of `GetSDR` IPMI command.
 
 So this library also implements some methods that are not IPMI commands defined
-in IPMI sepcification, but just some common helpers, like `GetSDRs` to get all SDRs.
+in IPMI specification, but just some common helpers, like `GetSDRs` to get all SDRs.
 These methods are marked with an asterisk `(*)` after the method name in the following docs.
 
 The implementation logic of IPMI commands is almost same. See [Contributing](./CONTRIBUTING.md)
 
-> More commmands are ongoing ...
+> More commands are ongoing ...
 
 ### IPM Device Global Commands
 
@@ -245,7 +245,7 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | ClearSDRRepo           |         |
 | GetSDRRepoTime         |         |
 | SetSDRRepoTime         |         |
-| EnterSDRRepoUpateMode  |         |
+| EnterSDRRepoUpdateMode  |         |
 | ExitSDRRepoUpdateMode  |         |
 | RunInitializationAgent |         |
 
@@ -304,7 +304,7 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 
 | Method          | Status | corresponding ipmitool usage |
 | --------------- | ------ | ---------------------------- |
-| Fowarded        |        |
+| Forwarded        |        |
 | SetForwarded    |        |
 | GetForwarded    |        |
 | EnableForwarded |        |

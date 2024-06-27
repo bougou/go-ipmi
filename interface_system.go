@@ -97,7 +97,7 @@ func (c *Client) exchangeOpen(request Request, response Response) error {
 	if ccode != 0x00 {
 		return &ResponseError{
 			completionCode: CompletionCode(ccode),
-			description:    fmt.Sprintf("ipmiRes CompletaionCode (%#02x) is not normal: %s", ccode, StrCC(response, ccode)),
+			description:    fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, StrCC(response, ccode)),
 		}
 	}
 
@@ -113,7 +113,7 @@ func (c *Client) exchangeOpen(request Request, response Response) error {
 		}
 	}
 
-	c.Debug("<< Commmand Response", response)
+	c.Debug("<< Command Response", response)
 	return nil
 }
 

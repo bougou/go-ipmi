@@ -134,7 +134,7 @@ func (res *GetSensorEventStatusResponse) Format() string {
 Sensor Scanning Disabled  : %v
 Reading State Unavailable : %v
 Occurred Assert Event     : %s
-Occurred Desassert Event  : %s`,
+Occurred Deassert Event  : %s`,
 
 		res.EventMessagesDisabled,
 		res.SensorScanningDisabled,

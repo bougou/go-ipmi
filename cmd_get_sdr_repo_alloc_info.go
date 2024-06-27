@@ -4,7 +4,7 @@ import "fmt"
 
 // 33.10 Get SDR Repository Allocation Info Command
 type GetSDRRepoAllocInfoRequest struct {
-	// emtpy
+	// empty
 }
 
 type GetSDRRepoAllocInfoResponse struct {

@@ -41,7 +41,7 @@ func (c *UDPClient) initConn() error {
 	if c.proxy != nil {
 		conn, err := c.proxy.Dial("udp", fmt.Sprintf("%s:%d", c.Host, c.Port))
 		if err != nil {
-			return fmt.Errorf("proxy dail failed, err: %s", err)
+			return fmt.Errorf("proxy dial failed, err: %s", err)
 		}
 		c.conn = conn
 	} else {
@@ -129,7 +129,7 @@ func (c *UDPClient) Exchange(ctx context.Context, reader io.Reader) ([]byte, err
 
 		// Set a deadline for the ReadOperation so that we don't
 		// wait forever for a server that might not respond on
-		// a resonable amount of time.
+		// a reasonable amount of time.
 		deadline := time.Now().Add(c.timeout)
 		err = c.conn.SetReadDeadline(deadline)
 		if err != nil {

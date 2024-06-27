@@ -114,7 +114,7 @@ func (res *OpenSessionResponse) Format() string {
   Maximum privilege level            : %#02x %s
   Console Session ID                 : %#0x
   BMC Session ID                     : %#0x
-  Negotiated authenticatin algorithm : %#02x %s
+  Negotiated authentication algorithm : %#02x %s
   Negotiated integrity algorithm     : %#02x %s
   Negotiated encryption algorithm    : %#02x %s`,
 		res.MessageTag,
@@ -213,7 +213,7 @@ func (p *AuthenticationPayload) Unpack(msg []byte) error {
 	// 2 bytes reserved
 	p.PayloadLength, _, _ = unpackUint8(msg, 3)
 	p.AuthAlg, _, _ = unpackUint8(msg, 4)
-	// 3 bytes serverd
+	// 3 bytes reserved
 	return nil
 }
 
@@ -235,7 +235,7 @@ func (p *IntegrityPayload) Unpack(msg []byte) error {
 	// 2 bytes reserved
 	p.PayloadLength, _, _ = unpackUint8(msg, 3)
 	p.IntegrityAlg, _, _ = unpackUint8(msg, 4)
-	// 3 bytes serverd
+	// 3 bytes reserved
 	return nil
 }
 
@@ -257,6 +257,6 @@ func (p *ConfidentialityPayload) Unpack(msg []byte) error {
 	// 2 bytes reserved
 	p.PayloadLength, _, _ = unpackUint8(msg, 3)
 	p.CryptAlg, _, _ = unpackUint8(msg, 4)
-	// 3 bytes serverd
+	// 3 bytes reserved
 	return nil
 }

@@ -64,7 +64,7 @@ type v20 struct {
 	integrityAlg      IntegrityAlg
 	cryptAlg          CryptAlg
 	maxPrivilegeLevel PrivilegeLevel // uint8 requestedRole sent in RAKP 1 message
-	role              uint8          // whole byte of priviledge level in RAKP1, will be used for computing authcode of rakp2, rakp3
+	role              uint8          // whole byte of privilege level in RAKP1, will be used for computing authcode of rakp2, rakp3
 	consoleSessionID  uint32
 	bmcSessionID      uint32
 
@@ -156,14 +156,14 @@ func (c *Client) exchangeLAN(request Request, response Response) error {
 		return err
 	}
 
-	c.Debug("<< Commmand Response", response)
+	c.Debug("<< Command Response", response)
 	return nil
 
 }
 
 // 13.14
 // IPMI v1.5 LAN Session Activation
-// 1. RmcpresencePing - PMCPPresencePong
+// 1. RmcpPresencePing - RmcpPresencePong
 // 2. Get Channel Authentication Capabilities
 // 3. Get Session Challenge
 // 4. Activate Session
@@ -250,7 +250,7 @@ func (c *Client) Connect20() error {
 }
 
 // ConnectAuto detects the IPMI version supported by BMC by using
-// GetChannelAuthenticaitonCapabilities commmand, then decide to use v1.5 or v2.0
+// GetChannelAuthenticationCapabilities command, then decide to use v1.5 or v2.0
 // for subsequent requests.
 func (c *Client) ConnectAuto() error {
 	var (

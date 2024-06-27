@@ -35,7 +35,7 @@ const (
 	CipherAlgTagBitMask uint8 = 0xc0 // [7:6]=11b
 
 	CipherAlgTagBitAuthMask       uint8 = 0x00 // [7:6]=00b
-	CipherAlgTagBitInegrityMask   uint8 = 0x40 // [7:6]=01b
+	CipherAlgTagBitIntegrityMask  uint8 = 0x40 // [7:6]=01b
 	CipherAlgTagBitEncryptionMask uint8 = 0x80 // [7:6]=10b
 
 	LIST_ALGORITHMS_BY_CIPHER_SUITE uint8 = 0x80
@@ -95,7 +95,7 @@ func getCipherSuiteAlgorithms(cipherSuiteID CipherSuiteID) (authAlg AuthAlg, int
 // The size of a CipherSuiteRecord is
 type CipherSuiteRecord struct {
 	// If StartOfRecord is C0h, indicating that the Start Of Record byte is followed by an Cipher Suite ID
-	// If StartOfRecord is C1h, iddicating that the Start Of Record byte is followed  by a OEM Cipher Suite ID plus OEM IANA
+	// If StartOfRecord is C1h, indicating that the Start Of Record byte is followed  by a OEM Cipher Suite ID plus OEM IANA
 	StartOfRecord uint8
 
 	// a numeric way of identifying the Cipher Suite on the platform

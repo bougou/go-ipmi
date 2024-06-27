@@ -136,7 +136,7 @@ func (c *Client) ActivateSession() (response *ActivateSessionResponse, err error
 
 	// The Activate Session packet is typically authenticated.
 	// We set session to active here to indicate this request should be authenticated
-	// but if ActivateSession Command failed, we should set sessoin active to false
+	// but if ActivateSession Command failed, we should set session active to false
 	err = c.Exchange(request, response)
 	if err != nil {
 		return

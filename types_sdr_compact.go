@@ -29,7 +29,7 @@ type SDRCompact struct {
 
 	SensorInitialization SensorInitialization
 
-	SensorCapabilitites SensorCapabilitites
+	SensorCapabilities SensorCapabilities
 
 	SensorType             SensorType
 	SensorEventReadingType EventReadingType
@@ -122,10 +122,10 @@ Negative Hysteresis   : %#02x`,
 		compact.SensorInitialization.InitSensorType,
 		formatBool(compact.SensorInitialization.EventGenerationEnabled, "enabled", "disabled"),
 		formatBool(compact.SensorInitialization.SensorScanningEnabled, "enabled", "disabled"),
-		formatBool(compact.SensorCapabilitites.AutoRearm, "yes(auto)", "no(manual)"),
-		compact.SensorCapabilitites.HysteresisAccess.String(),
-		compact.SensorCapabilitites.ThresholdAccess,
-		compact.SensorCapabilitites.EventMessageControl,
+		formatBool(compact.SensorCapabilities.AutoRearm, "yes(auto)", "no(manual)"),
+		compact.SensorCapabilities.HysteresisAccess.String(),
+		compact.SensorCapabilities.ThresholdAccess,
+		compact.SensorCapabilities.EventMessageControl,
 		strings.Join(compact.Mask.ReadableThresholds().Strings(), " "),
 		strings.Join(compact.Mask.SettableThresholds().Strings(), " "),
 		strings.Join(compact.Mask.StatusReturnedThresholds().Strings(), " "),
@@ -207,7 +207,7 @@ func parseSDRCompactSensor(data []byte, sdr *SDR) error {
 	}
 
 	b11, _, _ := unpackUint8(data, 11)
-	s.SensorCapabilitites = SensorCapabilitites{
+	s.SensorCapabilities = SensorCapabilities{
 		IgnoreWithEntity:    isBit7Set(b11),
 		AutoRearm:           isBit6Set(b11),
 		HysteresisAccess:    SensorHysteresisAccess((b11 & 0x3f) >> 4),

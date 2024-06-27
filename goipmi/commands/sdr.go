@@ -98,7 +98,7 @@ func NewCmdSDRList() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			recordTypes := []ipmi.SDRRecordType{}
 
-			// default only get Full and Compacat SDR
+			// default only get Full and Compact SDR
 			if len(args) == 0 {
 				recordTypes = append(recordTypes, ipmi.SDRRecordTypeFullSensor, ipmi.SDRRecordTypeCompactSensor)
 			}
@@ -128,7 +128,7 @@ func NewCmdSDRList() *cobra.Command {
 				case "generic":
 					recordTypes = append(recordTypes, ipmi.SDRRecordTypeGenericLocator)
 				default:
-					CheckErr(fmt.Errorf("unkown supported record type (%s), usage: %s", args[0], usage))
+					CheckErr(fmt.Errorf("unknown supported record type (%s), usage: %s", args[0], usage))
 					return
 				}
 			}

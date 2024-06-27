@@ -24,7 +24,7 @@ type RmcpPingResponse struct {
 
 	// Reserved for future definition by ASF specification,
 	// set to 00 00 00 00 00 00h, six bytes
-	Reserverd []byte
+	Reserved []byte
 }
 
 func (req *RmcpPingRequest) Pack() []byte {
@@ -50,7 +50,7 @@ func (res *RmcpPingResponse) Unpack(msg []byte) error {
 	res.RMCPSecurityExtensionsSupported = isBit7Set(c)
 	res.DMTFDashSupported = isBit5Set(c)
 
-	res.Reserverd, _, _ = unpackBytes(msg, 10, 6)
+	res.Reserved, _, _ = unpackBytes(msg, 10, 6)
 	return nil
 }
 

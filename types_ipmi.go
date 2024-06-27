@@ -33,7 +33,7 @@ type IPMIRequest struct {
 	Checksum2 uint8
 }
 
-// IPMIResponse repsent IPMI PayloadType msg response
+// IPMIResponse represent IPMI PayloadType msg response
 type IPMIResponse struct {
 	// Requester's Address. 1 byte. LS bit is 0 for Slave Addresses and 1 for Software IDs. Upper 7-bits hold Slave Address or Software ID, respectively. This byte is always 20h when the BMC is the requester.
 	RequesterAddr uint8 // SlaveAddress or SoftwareID
@@ -95,7 +95,7 @@ func (req *IPMIRequest) Pack() []byte {
 func (req *IPMIRequest) ComputeChecksum() {
 	// 8-bit checksum algorithm: Initialize checksum to 0. For each byte, checksum = (checksum + byte) modulo 256. Then checksum = - checksum. When the checksum and the bytes are added together, modulo 256, the result should be 0.
 	//
-	// the posititon end is not included
+	// the position end is not included
 	var checksumFn = func(msg []byte, start int, end int) uint8 {
 		c := 0
 		for i := start; i < end; i++ {
@@ -197,5 +197,5 @@ func StrCC(response Response, ccode uint8) string {
 	if ok {
 		return s
 	}
-	return "unkown completion code"
+	return "unknown completion code"
 }

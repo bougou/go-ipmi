@@ -115,7 +115,7 @@ func parseCipherSuitesData(cipherSuitesData []byte) ([]CipherSuiteRecord, error)
 			csRecord.OEMIanaID, _, _ = unpackUint24L(cipherSuitesData, offset)
 
 		default:
-			return records, fmt.Errorf("bad start of record byte in the cipher suite data, vlalue %x", startOfRecord)
+			return records, fmt.Errorf("bad start of record byte in the cipher suite data, value %x", startOfRecord)
 		}
 
 		for {
@@ -129,12 +129,12 @@ func parseCipherSuitesData(cipherSuitesData []byte) ([]CipherSuiteRecord, error)
 				break
 			}
 
-			algTag := algByte & CipherAlgTagBitMask // clear lowerest 6 bits
+			algTag := algByte & CipherAlgTagBitMask // clear lowest 6 bits
 			algNumber := algByte & CipherAlgMask    // clear highest 2 bits
 			switch algTag {
 			case CipherAlgTagBitAuthMask:
 				csRecord.AuthAlg = algNumber
-			case CipherAlgTagBitInegrityMask:
+			case CipherAlgTagBitIntegrityMask:
 				csRecord.IntegrityAlgs = append(csRecord.IntegrityAlgs, algNumber)
 			case CipherAlgTagBitEncryptionMask:
 				csRecord.CryptAlgs = append(csRecord.CryptAlgs, algNumber)

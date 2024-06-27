@@ -9,7 +9,7 @@ const (
 	IPMB_LUN_SMS   LUN = 0x10 // SMS Message LUN (Intended for messages to System Management Software)
 	IPMB_LUN_OEM_2 LUN = 0x11 // OEM LUN 2
 
-	// the least significat bit
+	// the least significant bit
 	// 0b (ID is a slave address)
 	// 1b (ID is a Software ID)
 	BMC_SA             uint8 = 0x20 // BMC's responder address
@@ -196,7 +196,7 @@ func (mode ChannelAccessMode) String() string {
 type ChannelPrivilegeOption uint8
 
 const (
-	ChanenlPrivilegeOption_NoChange    ChannelPrivilegeOption = 0
+	ChannelPrivilegeOption_NoChange    ChannelPrivilegeOption = 0
 	ChannelPrivilegeOption_NonVolatile ChannelPrivilegeOption = 1
 	ChannelPrivilegeOption_Volatile    ChannelPrivilegeOption = 2
 )

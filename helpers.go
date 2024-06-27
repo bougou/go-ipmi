@@ -120,7 +120,7 @@ func randomBytes(n int) []byte {
 	return b
 }
 
-// onesComplement returns the signed interger of the input number encoded with 1's complement.
+// onesComplement returns the signed integer of the input number encoded with 1's complement.
 // The lowest significant 'bitSize' bits of the input number i is considered.
 func onesComplement(i uint32, bitSize uint8) int32 {
 	var leftBitSize uint8 = 32 - bitSize
@@ -140,7 +140,7 @@ func onesComplement(i uint32, bitSize uint8) int32 {
 	return -int32(t)
 }
 
-// twosComplement returns the signed interger of the input number encoded with 2's complement.
+// twosComplement returns the signed integer of the input number encoded with 2's complement.
 // The lowest significant 'bitSize' bits of the input number i is considered.
 func twosComplement(i uint32, bitSize uint8) int32 {
 	var leftBitSize uint8 = 32 - bitSize
@@ -539,7 +539,7 @@ func packUint64L(i uint64, msg []byte, off int) (int, error) {
 }
 
 // 8421 BCD
-// bcdUint8 decodes BCD encoded interger to normal unsigned interger.
+// bcdUint8 decodes BCD encoded integer to normal unsigned integer.
 func bcdUint8(i uint8) uint8 {
 	msb4 := i >> 4
 	lsb4 := i & 0x0f

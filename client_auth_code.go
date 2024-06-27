@@ -161,7 +161,7 @@ func (c *Client) genIntegrityAuthCode(input []byte) ([]byte, error) {
 	}
 }
 
-// sik (Session Integrite Key)
+// sik (Session Integrity Key)
 // Both the remote console and the managed system generate sik by using
 // the same hmackey and hmac data, so they should be same.
 // see 13.31
@@ -171,11 +171,11 @@ func (c *Client) generate_sik() ([]byte, error) {
 	packBytes(c.session.v20.bmcRand[:], input, 16)    // 16 bytes
 	packUint8(c.session.v20.role, input, 32)          // 1 bytes, Requested privilege level (entire byte)
 	packUint8(uint8(len(c.Username)), input, 33)      // 1 bytes, Username length
-	packBytes([]byte(c.Username), input, 34)          // N bytes, Usename (absent for null usernames)
+	packBytes([]byte(c.Username), input, 34)          // N bytes, Username (absent for null usernames)
 
 	c.DebugBytes("sik mac input", input, 16)
 	var hmacKey []byte
-	// hmacKey shoud use 160-bit key Kg
+	// hmacKey should use 160-bit key Kg
 	// and Kuid is used in place of Kg if "one-key" logins are being used.
 	if len(c.session.v20.bmcKey) != 0 {
 		hmacKey = c.session.v20.bmcKey
@@ -254,12 +254,12 @@ func (c *Client) generate_rakp2_authcode() ([]byte, error) {
 	packBytes(c.session.v20.consoleRand[:], buffer, 8)     // 16 bytes, Remote console random number
 	packBytes(c.session.v20.bmcRand[:], buffer, 24)        // 16 bytes, BMC random number (RC)
 	packBytes(c.session.v20.bmcGUID[:], buffer, 40)        // 16 bytes, BMC guid
-	packUint8(c.session.v20.role, buffer, 56)              // 1 bytes, entire byte of privilegelevel of rakp1
+	packUint8(c.session.v20.role, buffer, 56)              // 1 bytes, entire byte of privilege level of rakp1
 	packUint8(uint8(len(c.Username)), buffer, 57)          // 1 bytes, Username length
-	packBytes([]byte(c.Username), buffer, 58)              // N bytes, Usename (absent for null usernames)
+	packBytes([]byte(c.Username), buffer, 58)              // N bytes, Username (absent for null usernames)
 	c.DebugBytes("rakp2 authcode input", buffer, 16)
 
-	// The bmc also use user password to caculate authcode, so if the authcode does not match,
+	// The bmc also use user password to calculate authcode, so if the authcode does not match,
 	// it may indicates the password is no right.
 	hmacKey := padBytes(c.Password, 20, 0x00)
 	c.DebugBytes("rakp2 authcode key", hmacKey, 16)
@@ -316,7 +316,7 @@ func (c *Client) generate_rakp3_authcode() ([]byte, error) {
 
 	input = append(input, byte(len([]byte(c.Username)))) // 1 bytes, Username length
 
-	input = append(input, []byte(c.Username)...) // N bytes, Usename (absent for null usernames)
+	input = append(input, []byte(c.Username)...) // N bytes, Username (absent for null usernames)
 
 	c.DebugBytes("rakp3 auth code input", input, 16)
 

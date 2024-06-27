@@ -135,7 +135,7 @@ func (res *RAKPMessage2) Format() string {
 // ValidateRAKP2 validates RAKPMessage2 returned by BMC.
 func (c *Client) ValidateRAKP2(rakp2 *RAKPMessage2) (bool, error) {
 	if c.session.v20.consoleSessionID != rakp2.RemoteConsoleSessionID {
-		return false, fmt.Errorf("session id not matched, cached console session id: %x, rapk2 returned session id: %x", c.session.v20.consoleSessionID, rakp2.RemoteConsoleSessionID)
+		return false, fmt.Errorf("session id not matched, cached console session id: %x, rakp2 returned session id: %x", c.session.v20.consoleSessionID, rakp2.RemoteConsoleSessionID)
 	}
 
 	// rakp2 authcode is valid

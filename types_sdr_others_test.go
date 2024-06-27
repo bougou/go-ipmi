@@ -27,18 +27,20 @@ func TestTypeLength_Chars(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:      "differen lenght for tl & raw",
+			name:      "different length for tl & raw",
 			tl:        0xc0,
 			args:      args{raw: []byte{57, 84}},
 			wantChars: nil,
 			wantErr:   true,
 		},
 		{
-			name:      "valid 8-bit ASCII",
-			tl:        0xcd,
-			args:      args{raw: []byte{89, 49, 85, 85, 66, 51, 79, 71, 88, 89, 48, 75, 70}},
+			name: "valid 8-bit ASCII",
+			tl:   0xcd,
+			args: args{raw: []byte{89, 49, 85, 85, 66, 51, 79, 71, 88, 89, 48, 75, 70}},
+			// cSpell: disable
 			wantChars: []byte("Y1UUB3OGXY0KF"),
-			wantErr:   false,
+			// cSpell: enable
+			wantErr: false,
 		},
 		{
 			name:      "untrimmed 8-bit ASCII",

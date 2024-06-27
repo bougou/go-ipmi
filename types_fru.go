@@ -14,7 +14,7 @@ type FRULocation string
 const (
 	FRULocation_IPMB           FRULocation = "directly on IPMB"
 	FRULocation_PrivateBus     FRULocation = "on private bus"
-	FRULocation_MgmtController FRULocation = "on mangement controller"
+	FRULocation_MgmtController FRULocation = "on management controller"
 )
 
 const (
@@ -615,9 +615,9 @@ type FRURecordTypePowerSupply struct {
 	LowEndInputVoltageRange1 uint16
 	// This specifies the high end of acceptable voltage into the power supply. The units are 10mV.
 	HighEndInputVoltageRange1 uint16
-	// This specifies the low end of acceptable voltage into the power supply. This field would be used if the power supply did not support autoswitch. Range 1 would define the 110V range, while range 2 would be used for 220V. The units are 10mV.
+	// This specifies the low end of acceptable voltage into the power supply. This field would be used if the power supply did not support auto-switch. Range 1 would define the 110V range, while range 2 would be used for 220V. The units are 10mV.
 	LowEndInputVoltageRange2 uint16
-	// This specifies the high end of acceptable voltage into the power supply. This field would be used if the power supply did not support autoswitch. Range 1 would define the 110V range, while range 2 would be used for 220V. The units are 10mV.
+	// This specifies the high end of acceptable voltage into the power supply. This field would be used if the power supply did not support auto-switch. Range 1 would define the 110V range, while range 2 would be used for 220V. The units are 10mV.
 	HighEndInputVoltageRange2 uint16
 	// This specifies the low end of acceptable frequency range into the power supply. Use 00h if supply accepts a DC input.
 	LowEndInputFrequencyRange uint8
@@ -626,8 +626,8 @@ type FRURecordTypePowerSupply struct {
 	// Minimum number of milliseconds the power supply can hold up POWERGOOD (and maintain valid DC output) after input power is lost.
 	InputDropoutToleranceMilliSecond uint8
 
-	HotSwapSuppot         bool
-	Autoswitch            bool
+	HotSwapSupport        bool
+	AutoSwitch            bool
 	PowerFactorCorrection bool
 	PredictiveFailSupport bool
 
@@ -705,7 +705,7 @@ func (output *FRURecordTypeDCOutput) Unpack(msg []byte) error {
 }
 
 // FRU: 18.2a Extended DC Output (Record Type 0x09)
-type FRURecordTypeExtenedDCOutput struct {
+type FRURecordTypeExtendedDCOutput struct {
 	//  if the power supply provides this output even when the power supply is switched off.
 	OutputWhenOff bool
 
@@ -731,7 +731,7 @@ type FRURecordTypeExtenedDCOutput struct {
 	MaxCurrentDraw uint16
 }
 
-func (output *FRURecordTypeExtenedDCOutput) Unpack(msg []byte) error {
+func (output *FRURecordTypeExtendedDCOutput) Unpack(msg []byte) error {
 	if len(msg) < 12 {
 		return ErrUnpackedDataTooShort
 	}
@@ -792,21 +792,21 @@ func (output *FRURecordTypeDCLoad) Unpack(msg []byte) error {
 
 // FRU: 18.3a Extended DC Load (Record Type 0x0A)
 type FRURecordTypeExtendedDCLoad struct {
-	IsCurrrentUnit100mA bool // current units: true = 100 mA , false = 10 mA
-	OutputNumber        uint8
-	NominalVoltage10mV  int16
-	MinVoltage10mV      int16
-	MaxVoltage10mV      int16
-	RippleNoise1mV      int16
-	MinCurrentLoad      uint16 // units is determined by IsCurrentUnit100mA field
-	MaxCurrentLoad      uint16 // units is determined by IsCurrentUnit100mA field
+	IsCurrentUnit100mA bool // current units: true = 100 mA , false = 10 mA
+	OutputNumber       uint8
+	NominalVoltage10mV int16
+	MinVoltage10mV     int16
+	MaxVoltage10mV     int16
+	RippleNoise1mV     int16
+	MinCurrentLoad     uint16 // units is determined by IsCurrentUnit100mA field
+	MaxCurrentLoad     uint16 // units is determined by IsCurrentUnit100mA field
 }
 
 func (f *FRURecordTypeExtendedDCLoad) Unpack(msg []byte) error {
 	if len(msg) < 13 {
 		return ErrUnpackedDataTooShort
 	}
-	f.IsCurrrentUnit100mA = isBit7Set(msg[0])
+	f.IsCurrentUnit100mA = isBit7Set(msg[0])
 	f.OutputNumber = msg[0] & 0x0f
 
 	b1, _, _ := unpackUint16L(msg, 1)
@@ -903,7 +903,7 @@ func (f *FRURecordTypeBaseCompatibility) Unpack(msg []byte) error {
 }
 
 // FRU: 18.6 Extended Compatibility Record (Record Type 0x05)
-type FRURecordTypeExtendedCompatiblityRecord struct {
+type FRURecordTypeExtendedCompatibilityRecord struct {
 	ManufacturerID         uint32
 	EntityID               EntityID
 	CompatibilityBase      uint8
@@ -911,7 +911,7 @@ type FRURecordTypeExtendedCompatiblityRecord struct {
 	CodeRangeMask          uint8
 }
 
-func (f *FRURecordTypeExtendedCompatiblityRecord) Unpack(msg []byte) error {
+func (f *FRURecordTypeExtendedCompatibilityRecord) Unpack(msg []byte) error {
 	if len(msg) < 7 {
 		return ErrUnpackedDataTooShort
 	}

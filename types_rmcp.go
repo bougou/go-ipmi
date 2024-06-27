@@ -364,7 +364,7 @@ func (c *Client) ParseRmcpResponse(msg []byte, response Response) error {
 		if ccode != 0x00 {
 			return &ResponseError{
 				completionCode: CompletionCode(ccode),
-				description:    fmt.Sprintf("ipmiRes CompletaionCode (%#02x) is not normal: %s", ccode, StrCC(response, ccode)),
+				description:    fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, StrCC(response, ccode)),
 			}
 		}
 
@@ -415,7 +415,7 @@ func (c *Client) ParseRmcpResponse(msg []byte, response Response) error {
 			if ccode != 0x00 {
 				return &ResponseError{
 					completionCode: CompletionCode(ccode),
-					description:    fmt.Sprintf("ipmiRes CompletaionCode (%#02x) is not normal: %s", ccode, StrCC(response, ccode)),
+					description:    fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, StrCC(response, ccode)),
 				}
 			}
 
@@ -448,7 +448,7 @@ const (
 	RmcpStatusCodeInvalidRole                RmcpStatusCode = 0x09
 	RmcpStatusCodeUnauthorizedRoleOfPriLevel RmcpStatusCode = 0x0a
 	RmcpStatusCodeNoResToCreateSessAtRole    RmcpStatusCode = 0x0b
-	RmcpStatusCodeInvalidNameLenght          RmcpStatusCode = 0x0c
+	RmcpStatusCodeInvalidNameLength          RmcpStatusCode = 0x0c
 	RmcpStatusCodeUnauthorizedName           RmcpStatusCode = 0x0d
 	RmcpStatusCodeUnauthorizedGUID           RmcpStatusCode = 0x0e
 	RmcpStatusCodeInvalidIntegrityCheckValue RmcpStatusCode = 0x0f

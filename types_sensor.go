@@ -46,7 +46,7 @@ func (c SensorType) String() string {
 	if ok {
 		return s
 	}
-	return "unkown"
+	return "unknown"
 }
 
 const (
@@ -58,7 +58,7 @@ const (
 	SensorTypePhysicalSecurity             SensorType = 0x05 // Chassis Intrusion
 	SensorTypePlatformSecurity             SensorType = 0x06
 	SensorTypeProcessor                    SensorType = 0x07
-	SensorTypePowserSupply                 SensorType = 0x08
+	SensorTypePowerSupply                  SensorType = 0x08
 	SensorTypePowerUnit                    SensorType = 0x09
 	SensorTypeCollingDevice                SensorType = 0x0a
 	SensorTypeOtherUnitsbased              SensorType = 0x0b
@@ -96,7 +96,7 @@ const (
 	SensorTypeVersionChange                SensorType = 0x2b
 	SensorTypeFRUState                     SensorType = 0x2c
 
-	// Reserverd: 0x2D - 0xBF
+	// Reserved: 0x2D - 0xBF
 	// OEM Reserved: 0xC0 - 0xFF
 )
 
@@ -153,7 +153,7 @@ type SensorUnitType uint8
 
 const (
 	SensorUnitType_Unspecified        SensorUnitType = 0  // unspecified
-	SensorUnitType_DegressC           SensorUnitType = 1  // degrees C, Celsius, 摄氏度 ℃
+	SensorUnitType_DegreesC           SensorUnitType = 1  // degrees C, Celsius, 摄氏度 ℃
 	SensorUnitType_DegreesF           SensorUnitType = 2  // degrees F, Fahrenheit, 华氏度
 	SensorUnitType_DegreesK           SensorUnitType = 3  // degrees K, Kelvins, 开尔文
 	SensorUnitType_Volts              SensorUnitType = 4  // Volts, 伏特（电压单位）
@@ -216,7 +216,7 @@ const (
 	SensorUnitType_DbA                SensorUnitType = 61 // DbA, dBA is often used to specify the loudness of the fan used to cool the microprocessor and associated components. Typical dBA ratings are in the neighborhood of 25 dBA, representing 25 A-weighted decibels above the threshold of hearing. This is approximately the loudness of a person whispering in a quiet room.
 	SensorUnitType_DbC                SensorUnitType = 62 // DbC
 	SensorUnitType_Gray               SensorUnitType = 63 // gray, 核吸收剂量(Gy)
-	SensorUnitType_Severt             SensorUnitType = 64 // sievert, 希沃特（辐射效果单位, 简称希）
+	SensorUnitType_Sievert            SensorUnitType = 64 // sievert, 希沃特（辐射效果单位, 简称希）
 	SensorUnitType_ColorTempDegK      SensorUnitType = 65 // color temp deg K, 色温
 	SensorUnitType_Bit                SensorUnitType = 66 // bit, 比特（二进位制信息单位）
 	SensorUnitType_Kilobit            SensorUnitType = 67 // kilobit, 千比特
@@ -440,7 +440,7 @@ type SensorThreshold struct {
 	// type of threshold
 	Type SensorThresholdType
 	Mask Mask_Threshold
-	// theshold raw reading value before conversion
+	// threshold raw reading value before conversion
 	Raw uint8
 }
 
@@ -460,7 +460,7 @@ const (
 	LinearizationFunc_SQR    LinearizationFunc = 0x08
 	LinearizationFunc_CUBE   LinearizationFunc = 0x09
 	LinearizationFunc_SQRT   LinearizationFunc = 0x0a
-	LinearizationFunc_CUBERT LinearizationFunc = 0x0b
+	LinearizationFunc_CBRT   LinearizationFunc = 0x0b
 
 	// 70h = non-linear.
 	// 71h-7Fh = non-linear OEM
@@ -484,10 +484,10 @@ func (l LinearizationFunc) String() string {
 		0x05: "exp10",
 		0x06: "exp2",
 		0x07: "1/x",
-		0x08: "sqr(x)",    // 平方 sqr(3) = 9
-		0x09: "cube(x)",   // 立方 cube(3) = 27
-		0x0a: "sqrt(x)",   // 平方根 sqrt(9) = 3
-		0x0b: "cubert(x)", // 立方根 cubert(27) = 3
+		0x08: "sqr(x)",  // 平方 sqr(3) = 9
+		0x09: "cube(x)", // 立方 cube(3) = 27
+		0x0a: "sqrt(x)", // 平方根 sqrt(9) = 3
+		0x0b: "cbrt(x)", // 立方根 cbrt(27) = 3
 	}
 	s, ok := m[l]
 	if ok {
@@ -519,7 +519,7 @@ func (l LinearizationFunc) Apply(x float64) float64 {
 		return math.Pow(float64(x), 3.0)
 	case LinearizationFunc_SQRT:
 		return math.Sqrt(float64(x))
-	case LinearizationFunc_CUBERT:
+	case LinearizationFunc_CBRT:
 		return math.Cbrt(float64(x))
 	case LinearizationFunc_Linear:
 		// `linear means y=f(x)=x`, nothing to do
@@ -630,7 +630,7 @@ type SensorModifierRelation uint8
 const (
 	SensorModifierRelation_None SensorModifierRelation = 0
 	SensorModifierRelation_Div  SensorModifierRelation = 1 // Basic Unit / Modifier Unit
-	SensorModifierRelation_Mul  SensorModifierRelation = 2 // Basic Unit * Mofifier Unit
+	SensorModifierRelation_Mul  SensorModifierRelation = 2 // Basic Unit * Modifier Unit
 )
 
 func (unit SensorModifierRelation) String() string {
@@ -766,7 +766,7 @@ func (f ReadingFactors) String() string {
 		f.M, f.Tolerance, f.B, f.Accuracy, f.Accuracy_Exp, f.R_Exp, f.B_Exp)
 }
 
-// The raw analog data is unpacked as an unsigned interger.
+// The raw analog data is unpacked as an unsigned integer.
 // But whether it is a positive number (>0) or negative number (<0) is determined
 // by the "analog data format" field (SensorUnit.AnalogDataFormat)
 func AnalogValue(raw uint8, format SensorAnalogUnitFormat) int32 {
@@ -813,7 +813,7 @@ func ConvertReading(raw uint8, analogDataFormat SensorAnalogUnitFormat, factors 
 	return linearizationFunc.Apply(y)
 }
 
-// ConvertSensorHysteresis converts raw sensor hysterresis value to real value in the desired units for the sensor.
+// ConvertSensorHysteresis converts raw sensor hysteresis value to real value in the desired units for the sensor.
 //
 // see: 36.3 Sensor Reading Conversion Formula
 func ConvertSensorHysteresis(raw uint8, analogDataFormat SensorAnalogUnitFormat, factors ReadingFactors, linearizationFunc LinearizationFunc) float64 {
@@ -862,7 +862,7 @@ type Sensor struct {
 	EventReadingType     EventReadingType
 	SensorUnit           SensorUnit
 	SensorInitialization SensorInitialization
-	SensorCapabilitites  SensorCapabilitites
+	SensorCapabilities   SensorCapabilities
 
 	scanningDisabled bool // update by GetSensorReading
 	readingAvailable bool // update by GetSensorReading
@@ -876,7 +876,7 @@ type Sensor struct {
 	Threshold struct {
 		Mask Mask_Thresholds
 
-		// Threshold Status, udpate by GetSensorReadingResponse.ThresholdStatus()
+		// Threshold Status, updated by GetSensorReadingResponse.ThresholdStatus()
 		ThresholdStatus SensorThresholdStatus
 
 		// Only Full SDR
@@ -914,7 +914,7 @@ type Sensor struct {
 		optionalData2 uint8
 	}
 
-	OccuredEvents []SensorEvent
+	OccurredEvents []SensorEvent
 }
 
 func (s *Sensor) String() string {

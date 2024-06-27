@@ -2,6 +2,7 @@ package open
 
 // see: https://github.com/torvalds/linux/blob/master/arch/alpha/include/uapi/asm/ioctl.h
 
+// cSpell:disable
 const (
 	IOC_NRBITS   = 8
 	IOC_TYPEBITS = 8

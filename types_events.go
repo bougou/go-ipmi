@@ -1,9 +1,10 @@
 package ipmi
 
 // Table 42-2, Generic Event/Reading Type Codes
-// Including Genereic threshold-based events (0x01)
+// Including Generic threshold-based events (0x01)
 // and Generic discrete-based events (0x02 - 0x0c)
-// EventReadingType, Offset
+//
+// map[EventReadingType]: map[Offset]Event
 //
 // The severity is copied from
 // freeipmi/libfreeipmi/interpret/ipmi-interpret-config-sel.c
@@ -168,7 +169,7 @@ var GenericEvents = map[EventReadingType]map[uint8]Event{
 				SensorTypeVoltage:                EventSeverityInfo,
 				SensorTypeFan:                    EventSeverityInfo,
 				SensorTypeProcessor:              EventSeverityInfo,
-				SensorTypePowserSupply:           EventSeverityInfo,
+				SensorTypePowerSupply:            EventSeverityInfo,
 				SensorTypePowerUnit:              EventSeverityInfo,
 				SensorTypeMemory:                 EventSeverityInfo,
 				SensorTypeDriveSlot:              EventSeverityWarning,
@@ -187,7 +188,7 @@ var GenericEvents = map[EventReadingType]map[uint8]Event{
 				SensorTypeVoltage:                EventSeverityInfo,
 				SensorTypeFan:                    EventSeverityInfo,
 				SensorTypeProcessor:              EventSeverityInfo,
-				SensorTypePowserSupply:           EventSeverityInfo,
+				SensorTypePowerSupply:            EventSeverityInfo,
 				SensorTypePowerUnit:              EventSeverityInfo,
 				SensorTypeMemory:                 EventSeverityInfo,
 				SensorTypeDriveSlot:              EventSeverityWarning,
@@ -209,7 +210,7 @@ var GenericEvents = map[EventReadingType]map[uint8]Event{
 				SensorTypeVoltage:                EventSeverityWarning,
 				SensorTypeFan:                    EventSeverityWarning,
 				SensorTypeProcessor:              EventSeverityCritical,
-				SensorTypePowserSupply:           EventSeverityWarning,
+				SensorTypePowerSupply:            EventSeverityWarning,
 				SensorTypePowerUnit:              EventSeverityWarning,
 				SensorTypeMemory:                 EventSeverityCritical,
 				SensorTypeDriveSlot:              EventSeverityInfo,
@@ -228,7 +229,7 @@ var GenericEvents = map[EventReadingType]map[uint8]Event{
 				SensorTypeVoltage:                EventSeverityWarning,
 				SensorTypeFan:                    EventSeverityWarning,
 				SensorTypeProcessor:              EventSeverityCritical,
-				SensorTypePowserSupply:           EventSeverityWarning,
+				SensorTypePowerSupply:            EventSeverityWarning,
 				SensorTypePowerUnit:              EventSeverityWarning,
 				SensorTypeMemory:                 EventSeverityCritical,
 				SensorTypeDriveSlot:              EventSeverityInfo,
@@ -237,9 +238,9 @@ var GenericEvents = map[EventReadingType]map[uint8]Event{
 			},
 		},
 	},
-	EventReadingTypePredicitiveFailure: {
+	EventReadingTypePredictiveFailure: {
 		0x00: {
-			EventName: "Predictive Failure deasserted",
+			EventName: "Predictive Failure de-asserted",
 			AssertionSeverityMap: map[SensorType]EventSeverity{
 				SensorTypeReserved:  EventSeverityInfo,
 				SensorTypeDriveSlot: EventSeverityInfo,
@@ -289,7 +290,7 @@ var GenericEvents = map[EventReadingType]map[uint8]Event{
 			},
 		},
 	},
-	EventReadingTypePeformance: {
+	EventReadingTypePerformance: {
 		0x00: {
 			EventName: "Performance Met",
 			AssertionSeverityMap: map[SensorType]EventSeverity{
@@ -778,7 +779,7 @@ var SensorSpecificEvents = map[SensorType]map[uint8]Event{
 			DeassertionSeverity: EventSeverityWarning,
 		},
 	},
-	SensorTypePowserSupply: {
+	SensorTypePowerSupply: {
 		0x00: {
 			EventName:           "Presence detected",
 			AssertionSeverity:   EventSeverityInfo,
@@ -1665,7 +1666,7 @@ var SensorSpecificEvents = map[SensorType]map[uint8]Event{
 			DeassertionSeverity: EventSeverityCritical,
 		},
 		0x06: {
-			EventName:           "Hardware Change detected with associated Entity was successfu",
+			EventName:           "Hardware Change detected with associated Entity was successful",
 			AssertionSeverity:   EventSeverityInfo,
 			DeassertionSeverity: EventSeverityInfo,
 		},

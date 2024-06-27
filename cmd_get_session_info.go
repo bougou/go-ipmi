@@ -20,7 +20,7 @@ type GetSessionInfoRequest struct {
 
 type GetSessionInfoResponse struct {
 	SessionHandle          uint8 // Session Handle presently assigned to active session.
-	PossbileActiveSessions uint8 // This value reflects the number of possible entries (slots) in the sessions table.
+	PossibleActiveSessions uint8 // This value reflects the number of possible entries (slots) in the sessions table.
 	CurrentActiveSessions  uint8 // Number of currently active sessions on all channels on this controller
 
 	UserID                  uint8
@@ -71,7 +71,7 @@ func (res *GetSessionInfoResponse) Unpack(msg []byte) error {
 		return ErrUnpackedDataTooShort
 	}
 	res.SessionHandle, _, _ = unpackUint8(msg, 0)
-	res.PossbileActiveSessions, _, _ = unpackUint8(msg, 1)
+	res.PossibleActiveSessions, _, _ = unpackUint8(msg, 1)
 	res.CurrentActiveSessions, _, _ = unpackUint8(msg, 2)
 
 	if len(msg) == 3 {
@@ -133,7 +133,7 @@ console mac                   : %s
 console port                  : %d
 	`,
 		res.SessionHandle,
-		res.PossbileActiveSessions,
+		res.PossibleActiveSessions,
 		res.CurrentActiveSessions,
 		res.UserID,
 		res.OperatingPrivilegeLevel,

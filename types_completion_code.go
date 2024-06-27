@@ -22,7 +22,7 @@ const (
 	CompletionCodeIllegalCommand                       CompletionCode = 0xCD
 	CompletionCodeCannotProvideResponse                CompletionCode = 0xCE
 	CompletionCodeCannotExecuteDuplicatedRequest       CompletionCode = 0xCF
-	CompletionCodeCannotProvideResponseSDRRInUpdate    CompletionCode = 0xD0
+	CompletionCodeCannotProvideResponseSDRRInUpdate    CompletionCode = 0xD0 // SDRR, SDR Repository
 	CompletionCodeCannotProvideResponseFirmwareUpdate  CompletionCode = 0xD1
 	CompletionCodeCannotProvideResponseBMCInitialize   CompletionCode = 0xD2
 	CompletionCodeDestinationUnavailable               CompletionCode = 0xD3
@@ -55,7 +55,7 @@ var CC = map[uint8]string{
 	0xce: "Command response could not be provided",
 	0xcf: "Cannot execute duplicated request",
 	0xd0: "SDR Repository in update mode",
-	0xd1: "Device firmeware in update mode",
+	0xd1: "Device firmware in update mode",
 	0xd2: "BMC initialization in progress",
 	0xd3: "Destination unavailable",
 	0xd4: "Insufficient privilege level",

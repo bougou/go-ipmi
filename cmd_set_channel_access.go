@@ -2,7 +2,7 @@ package ipmi
 
 // 22.22 Set Channel Access Command
 type SetChannelAccessRequest struct {
-	ChannnelNumber uint8
+	ChannelNumber uint8
 
 	// [7:6] - 00b = don't set or change Channel Access
 	//         01b = set non-volatile Channel Access according to bits [5:0]
@@ -24,7 +24,7 @@ type SetChannelAccessResponse struct {
 func (req *SetChannelAccessRequest) Pack() []byte {
 	out := make([]byte, 3)
 
-	packUint8(req.ChannnelNumber, out, 0)
+	packUint8(req.ChannelNumber, out, 0)
 
 	var b = req.AccessOption << 6
 	if req.DisablePEFAlerting {
@@ -52,7 +52,7 @@ func (req *SetChannelAccessRequest) Command() Command {
 
 func (res *SetChannelAccessResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{
-		0x82: "set not supported on selected channel (e.g. channel is sessionless.)",
+		0x82: "set not supported on selected channel (e.g. channel is session-less.)",
 		0x83: "access mode not supported",
 	}
 }

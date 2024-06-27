@@ -4,7 +4,7 @@ import "fmt"
 
 // 22.24 Get Channel Info Command
 type GetChannelInfoRequest struct {
-	ChannnelNumber uint8
+	ChannelNumber uint8
 }
 
 type GetChannelInfoResponse struct {
@@ -15,8 +15,8 @@ type GetChannelInfoResponse struct {
 	ActiveSessionCount  uint8
 	VendorID            uint32 // (IANA Enterprise Number) for OEM/Organization that specified the Channel Protocol.
 
-	// Auxiliray Channel Info
-	Auxiliray []byte // Auxiliray Channel Info Raw Data, 2 bytes
+	// Auxiliary Channel Info
+	Auxiliary []byte // Auxiliary Channel Info Raw Data, 2 bytes
 
 	// For Channel = Fh (System Interface)
 	SMSInterruptType                InterruptType
@@ -51,7 +51,7 @@ func (typ InterruptType) String() string {
 }
 
 func (req *GetChannelInfoRequest) Pack() []byte {
-	return []byte{req.ChannnelNumber}
+	return []byte{req.ChannelNumber}
 }
 
 func (req *GetChannelInfoRequest) Command() Command {
@@ -79,10 +79,10 @@ func (res *GetChannelInfoResponse) Unpack(msg []byte) error {
 	res.ActiveSessionCount = s & 0x3f
 
 	res.VendorID, _, _ = unpackUint24L(msg, 4)
-	res.Auxiliray, _, _ = unpackBytes(msg, 7, 2)
+	res.Auxiliary, _, _ = unpackBytes(msg, 7, 2)
 
-	res.SMSInterruptType = InterruptType(res.Auxiliray[0])
-	res.EventMessageBufferInterruptType = InterruptType(res.Auxiliray[1])
+	res.SMSInterruptType = InterruptType(res.Auxiliary[0])
+	res.EventMessageBufferInterruptType = InterruptType(res.Auxiliary[1])
 
 	return nil
 }
@@ -105,7 +105,7 @@ func (res *GetChannelInfoResponse) Format() string {
 
 func (c *Client) GetChannelInfo(channelNumber uint8) (response *GetChannelInfoResponse, err error) {
 	request := &GetChannelInfoRequest{
-		ChannnelNumber: channelNumber,
+		ChannelNumber: channelNumber,
 	}
 	response = &GetChannelInfoResponse{}
 	err = c.Exchange(request, response)

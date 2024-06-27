@@ -178,7 +178,7 @@ var (
 	CommandClearSDRRepo           = Command{ID: 0x27, NetFn: NetFnStorageRequest, Name: "Clear SDR Repository"}
 	CommandGetSDRRepoTime         = Command{ID: 0x28, NetFn: NetFnStorageRequest, Name: "Get SDR Repository Time"}
 	CommandSetSDRRepoTime         = Command{ID: 0x29, NetFn: NetFnStorageRequest, Name: "Set SDR Repository Time"}
-	CommandEnterSDRRepoUpateMode  = Command{ID: 0x2a, NetFn: NetFnStorageRequest, Name: "Enter SDR Repository Update Mode"}
+	CommandEnterSDRRepoUpdateMode = Command{ID: 0x2a, NetFn: NetFnStorageRequest, Name: "Enter SDR Repository Update Mode"}
 	CommandExitSDRRepoUpdateMode  = Command{ID: 0x2b, NetFn: NetFnStorageRequest, Name: "Exit SDR Repository Update Mode"}
 	CommandRunInitializationAgent = Command{ID: 0x2c, NetFn: NetFnStorageRequest, Name: "Run Initialization Agent"}
 
@@ -223,7 +223,7 @@ var (
 	CommandGetSOLConfigParams     = Command{ID: 0x22, NetFn: NetFnTransportRequest, Name: "Get SOL Configuration Parameters"}
 
 	// Command Forwarding Commands
-	CommandFowarded        = Command{ID: 0x30, NetFn: NetFnTransportRequest, Name: "Forwarded Command"}
+	CommandForwarded       = Command{ID: 0x30, NetFn: NetFnTransportRequest, Name: "Forwarded Command"}
 	CommandSetForwarded    = Command{ID: 0x31, NetFn: NetFnTransportRequest, Name: "Set Forwarded Commands"}
 	CommandGetForwarded    = Command{ID: 0x32, NetFn: NetFnTransportRequest, Name: "Get Forwarded Commands"}
 	CommandEnableForwarded = Command{ID: 0x33, NetFn: NetFnTransportRequest, Name: "Enable Forwarded Commands"}

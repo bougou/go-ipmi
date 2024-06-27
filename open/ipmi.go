@@ -69,12 +69,12 @@ var (
 	IPMICTL_SET_TIMING_PARAMS_CMD = IOR(IPMI_IOC_MAGIC, 22, unsafe.Sizeof(IPMI_TIMING_PARAMS{}))
 	IPMICTL_GET_TIMING_PARAMS_CMD = IOR(IPMI_IOC_MAGIC, 23, unsafe.Sizeof(IPMI_TIMING_PARAMS{}))
 
-	IPMICTL_GET_MAINTENCANCE_MODE_CMD = IOR(IPMI_IOC_MAGIC, 30, unsafe.Sizeof(uint32(0)))
-	IPMICTL_SET_MAINTENCANCE_MODE_CMD = IOW(IPMI_IOC_MAGIC, 31, unsafe.Sizeof(uint32(0)))
+	IPMICTL_GET_MAINTENANCE_MODE_CMD = IOR(IPMI_IOC_MAGIC, 30, unsafe.Sizeof(uint32(0)))
+	IPMICTL_SET_MAINTENANCE_MODE_CMD = IOW(IPMI_IOC_MAGIC, 31, unsafe.Sizeof(uint32(0)))
 )
 
 // IPMI_ADDR wraps different IPMI ADDR TYPE data to one struct.
-// IPMI ADDR TYPE (Channel Meidum Type), see: 6.5 Channel Medium Type
+// IPMI ADDR TYPE (Channel Medium Type), see: 6.5 Channel Medium Type
 type IPMI_ADDR struct {
 	AddrType int32
 	Channel  uint16
