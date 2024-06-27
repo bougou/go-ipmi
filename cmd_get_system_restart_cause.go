@@ -51,7 +51,7 @@ func (res *GetSystemRestartCauseResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetSystemRestartCauseResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
 	b, _, _ := unpackUint8(msg, 0)

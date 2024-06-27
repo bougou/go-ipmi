@@ -23,7 +23,7 @@ func (req *GetBTInterfaceCapabilitiesRequest) Pack() []byte {
 func (res *GetBTInterfaceCapabilitiesResponse) Unpack(msg []byte) error {
 	// at least 3 bytes
 	if len(msg) < 5 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 5)
 	}
 
 	res.NumberOfOutstandingRequestsSupported, _, _ = unpackUint8(msg, 0)

@@ -44,7 +44,7 @@ func (res *GetIPStatisticsResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetIPStatisticsResponse) Unpack(msg []byte) error {
 	if len(msg) < 18 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 18)
 	}
 
 	res.IPPacketsReceived, _, _ = unpackUint16L(msg, 0)

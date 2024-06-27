@@ -24,7 +24,7 @@ func (req *SetSessionPrivilegeLevelRequest) Pack() []byte {
 
 func (res *SetSessionPrivilegeLevelResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 	res.PrivilegeLevel = msg[0]
 	return nil

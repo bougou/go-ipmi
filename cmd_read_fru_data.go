@@ -30,7 +30,7 @@ func (req *ReadFRUDataRequest) Pack() []byte {
 
 func (res *ReadFRUDataResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
 	res.CountReturned, _, _ = unpackUint8(msg, 0)

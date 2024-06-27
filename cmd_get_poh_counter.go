@@ -28,7 +28,7 @@ func (req *GetPOHCounterRequest) Pack() []byte {
 
 func (res *GetPOHCounterResponse) Unpack(msg []byte) error {
 	if len(msg) < 5 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 5)
 	}
 
 	res.MinutesPerCount, _, _ = unpackUint8(msg, 0)

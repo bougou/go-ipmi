@@ -37,7 +37,7 @@ func (req *GetSystemInterfaceCapabilitiesRequest) Pack() []byte {
 func (res *GetSystemInterfaceCapabilitiesResponse) Unpack(msg []byte) error {
 	// at least 3 bytes
 	if len(msg) < 3 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 3)
 	}
 
 	// For System Interface Type = SSIF:

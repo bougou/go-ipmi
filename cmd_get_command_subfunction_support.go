@@ -51,7 +51,7 @@ func (req *GetCommandSubfunctionSupportRequest) Pack() []byte {
 
 func (res *GetCommandSubfunctionSupportResponse) Unpack(msg []byte) error {
 	if len(msg) < 3 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 3)
 	}
 	b, _, _ := unpackUint8(msg, 0)
 	res.SpecificationType = b >> 4

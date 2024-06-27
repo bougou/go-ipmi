@@ -37,7 +37,7 @@ func (req *RmcpPingRequest) Command() Command {
 
 func (res *RmcpPingResponse) Unpack(msg []byte) error {
 	if len(msg) < 16 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 16)
 	}
 	res.OEMIANA, _, _ = unpackUint32L(msg, 0)
 	res.OEMDefined, _, _ = unpackUint32L(msg, 4)

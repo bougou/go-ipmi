@@ -24,7 +24,7 @@ func (req *GetFRUInventoryAreaInfoRequest) Pack() []byte {
 
 func (res *GetFRUInventoryAreaInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 3 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 3)
 	}
 
 	res.AreaSizeBytes, _, _ = unpackUint16L(msg, 0)

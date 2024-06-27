@@ -39,7 +39,7 @@ func (res *GetLanConfigParamsResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetLanConfigParamsResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 	res.ParameterVersion, _, _ = unpackUint8(msg, 0)
 	res.ConfigData, _, _ = unpackBytes(msg, 1, len(msg)-1)

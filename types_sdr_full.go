@@ -368,7 +368,7 @@ func parseSDRFullSensor(data []byte, sdr *SDR) error {
 
 	minSize := SDRFullSensorMinSize
 	if len(data) < minSize {
-		return fmt.Errorf("sdr (full sensor) data must be longer than %d", minSize)
+		return ErrNotEnoughDataWith("sdr (full sensor) min size", len(data), minSize)
 	}
 
 	s := &SDRFull{}
@@ -493,7 +493,7 @@ func parseSDRFullSensor(data []byte, sdr *SDR) error {
 	idStrLen := int(s.IDStringTypeLength.Length())
 
 	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (full sensor) data must be longer than %d", minSize+idStrLen)
+		return ErrNotEnoughDataWith("sdr (full sensor)", len(data), minSize+idStrLen)
 	}
 	s.IDStringBytes, _, _ = unpackBytes(data, minSize, idStrLen)
 

@@ -152,7 +152,7 @@ func (sel *SELStandard) EventSeverity() EventSeverity {
 
 func parseSELDefault(msg []byte, sel *SEL) error {
 	if len(msg) < 16 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 16)
 	}
 
 	var s = &SELStandard{}
@@ -185,7 +185,7 @@ func parseSELDefault(msg []byte, sel *SEL) error {
 
 func parseSELOEMTimestamped(msg []byte, sel *SEL) error {
 	if len(msg) < 16 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 16)
 	}
 
 	var s = &SELOEMTimestamped{}
@@ -208,7 +208,7 @@ func parseSELOEMTimestamped(msg []byte, sel *SEL) error {
 
 func parseSELOEMNonTimestamped(msg []byte, sel *SEL) error {
 	if len(msg) < 16 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 16)
 	}
 
 	var s = &SELOEMNonTimestamped{}

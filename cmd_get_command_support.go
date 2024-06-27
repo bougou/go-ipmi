@@ -52,7 +52,7 @@ func (req *GetCommandSupportRequest) Pack() []byte {
 
 func (res *GetCommandSupportResponse) Unpack(msg []byte) error {
 	if len(msg) < 16 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 16)
 	}
 
 	res.CommandSupportMask, _, _ = unpackBytes(msg, 0, 16)

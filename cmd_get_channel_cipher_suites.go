@@ -34,7 +34,7 @@ func (req *GetChannelCipherSuitesRequest) Pack() []byte {
 
 func (res *GetChannelCipherSuitesResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 	res.ChannelNumber, _, _ = unpackUint8(msg, 0)
 	if len(msg) > 1 {

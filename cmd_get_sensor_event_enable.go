@@ -30,7 +30,7 @@ func (req *GetSensorEventEnableRequest) Pack() []byte {
 
 func (res *GetSensorEventEnableResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 	b1, _, _ := unpackUint8(msg, 0)
 	res.EventMessagesDisabled = !isBit7Set(b1)

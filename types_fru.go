@@ -131,7 +131,7 @@ func (s *FRUCommonHeader) Pack() []byte {
 
 func (s *FRUCommonHeader) Unpack(msg []byte) error {
 	if len(msg) < 8 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
 	s.FormatVersion, _, _ = unpackUint8(msg, 0)
 	s.InternalOffset8B, _, _ = unpackUint8(msg, 1)
@@ -204,11 +204,11 @@ type FRUChassisInfoArea struct {
 
 func (fruChassis *FRUChassisInfoArea) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 	// Chassis Info Area Length (in multiples of 8 bytes)
 	if len(msg) < int(msg[1])*8 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), int(msg[1])*8)
 	}
 
 	fruChassis.FormatVersion = msg[0]
@@ -356,11 +356,11 @@ type FRUBoardInfoArea struct {
 
 func (fruBoard *FRUBoardInfoArea) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 	// Board Area Length (in multiples of 8 bytes)
 	if len(msg) < int(msg[1])*8 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), int(msg[1])*8)
 	}
 
 	fruBoard.FormatVersion = msg[0]
@@ -464,11 +464,11 @@ type FRUProductInfoArea struct {
 
 func (fruProduct *FRUProductInfoArea) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 	// Product Area Length (in multiples of 8 bytes)
 	if len(msg) < int(msg[1])*8 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), int(msg[1])*8)
 	}
 
 	fruProduct.FormatVersion = msg[0]
@@ -551,11 +551,11 @@ type FRUMultiRecord struct {
 
 func (fruMultiRecord *FRUMultiRecord) Unpack(msg []byte) error {
 	if len(msg) < 3 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 3)
 	}
 	// RecordLength
 	if len(msg) < int(msg[2]) {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), int(msg[2]))
 	}
 
 	fruMultiRecord.RecordType = FRURecordType(msg[0])
@@ -682,7 +682,7 @@ type FRURecordTypeDCOutput struct {
 
 func (output *FRURecordTypeDCOutput) Unpack(msg []byte) error {
 	if len(msg) < 12 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 12)
 	}
 	b, _, _ := unpackUint8(msg, 0)
 	output.OutputWhenOff = isBit7Set(b)
@@ -733,7 +733,7 @@ type FRURecordTypeExtendedDCOutput struct {
 
 func (output *FRURecordTypeExtendedDCOutput) Unpack(msg []byte) error {
 	if len(msg) < 12 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 12)
 	}
 	b, _, _ := unpackUint8(msg, 0)
 	output.OutputWhenOff = isBit7Set(b)
@@ -769,7 +769,7 @@ type FRURecordTypeDCLoad struct {
 
 func (output *FRURecordTypeDCLoad) Unpack(msg []byte) error {
 	if len(msg) < 12 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 12)
 	}
 	b, _, _ := unpackUint8(msg, 0)
 	output.OutputNumber = b & 0x0f
@@ -804,7 +804,7 @@ type FRURecordTypeExtendedDCLoad struct {
 
 func (f *FRURecordTypeExtendedDCLoad) Unpack(msg []byte) error {
 	if len(msg) < 13 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 13)
 	}
 	f.IsCurrentUnit100mA = isBit7Set(msg[0])
 	f.OutputNumber = msg[0] & 0x0f
@@ -873,7 +873,7 @@ type FRURecordTypeManagementAccess struct {
 
 func (f *FRURecordTypeManagementAccess) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 	f.SubRecordType = ManagementAccessSubRecordType(msg[0])
 	f.Data, _, _ = unpackBytes(msg, 1, len(msg)-1)
@@ -892,7 +892,7 @@ type FRURecordTypeBaseCompatibility struct {
 
 func (f *FRURecordTypeBaseCompatibility) Unpack(msg []byte) error {
 	if len(msg) < 7 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 7)
 	}
 	f.ManufacturerID, _, _ = unpackUint24L(msg, 0)
 	f.EntityID = EntityID(msg[3])
@@ -913,7 +913,7 @@ type FRURecordTypeExtendedCompatibilityRecord struct {
 
 func (f *FRURecordTypeExtendedCompatibilityRecord) Unpack(msg []byte) error {
 	if len(msg) < 7 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 7)
 	}
 	f.ManufacturerID, _, _ = unpackUint24L(msg, 0)
 	f.EntityID = EntityID(msg[3])
@@ -931,7 +931,7 @@ type FRURecordTypeOEM struct {
 
 func (f *FRURecordTypeOEM) Unpack(msg []byte) error {
 	if len(msg) < 3 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 3)
 	}
 	f.ManufacturerID, _, _ = unpackUint24L(msg, 0)
 	f.Data, _, _ = unpackBytes(msg, 3, len(msg)-3)
@@ -942,14 +942,14 @@ func (f *FRURecordTypeOEM) Unpack(msg []byte) error {
 // a TypeLength byte. The offset index SHOULD points to the TypeLength field.
 func getFRUTypeLengthField(fruData []byte, offset uint16) (nextOffset uint16, typeLength TypeLength, fieldData []byte, err error) {
 	if len(fruData) < int(offset+1) {
-		err = ErrUnpackedDataTooShort
+		err = ErrUnpackedDataTooShortWith(len(fruData), int(offset+1))
 		return
 	}
 
 	typeLength = TypeLength(fruData[offset])
 	length := typeLength.Length()
 	if len(fruData) < int(offset)+int(length)+1 {
-		err = ErrUnpackedDataTooShort
+		err = ErrUnpackedDataTooShortWith(len(fruData), int(offset)+int(length)+1)
 		return
 	}
 
@@ -973,7 +973,7 @@ func getFRUTypeLengthField(fruData []byte, offset uint16) (nextOffset uint16, ty
 // The offset SHOULD points to the start of the custom area fields.
 func getFRUCustomUnusedChecksumFields(fruData []byte, offset uint16) (custom [][]byte, unused []byte, checksum uint8, err error) {
 	if len(fruData) < int(offset+1) {
-		err = ErrUnpackedDataTooShort
+		err = ErrUnpackedDataTooShortWith(len(fruData), int(offset+1))
 		return
 	}
 

@@ -79,7 +79,7 @@ func (h *SessionHeader15) Pack() []byte {
 
 func (h *SessionHeader15) Unpack(msg []byte) error {
 	if len(msg) < SessionHeader15SizeMin {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), SessionHeader15SizeMin)
 	}
 
 	b, _, _ := unpackUint8(msg, 0)
@@ -91,7 +91,7 @@ func (h *SessionHeader15) Unpack(msg []byte) error {
 	var payloadLengthIndex = 9
 	if h.AuthType != AuthTypeNone {
 		if len(msg) < SessionHeader15SizeMax {
-			return ErrUnpackedDataTooShort
+			return ErrUnpackedDataTooShortWith(len(msg), SessionHeader15SizeMax)
 		}
 		h.AuthCode, _, _ = unpackBytes(msg, 9, 16)
 		payloadLengthIndex = 25
@@ -127,7 +127,7 @@ func (s *Session15) Unpack(msg []byte) error {
 	sessionHeaderSize := len(sessionHeader.Pack())
 	sessionPayloadSize := int(sessionHeader.PayloadLength)
 	if len(msg) < sessionHeaderSize+sessionPayloadSize {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), sessionHeaderSize+sessionPayloadSize)
 	}
 	s.Payload, _, _ = unpackBytes(msg, sessionHeaderSize, sessionPayloadSize)
 	return nil
@@ -196,7 +196,7 @@ func (h *SessionHeader20) Pack() []byte {
 
 func (h *SessionHeader20) Unpack(msg []byte) error {
 	if len(msg) < SessionHeader20SizeMin {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), SessionHeader20SizeMin)
 	}
 
 	authType, _, _ := unpackUint8(msg, 0)
@@ -210,7 +210,7 @@ func (h *SessionHeader20) Unpack(msg []byte) error {
 	var sessionIDIndex int
 	if h.PayloadType == PayloadTypeOEM {
 		if len(msg) < SessionHeader20SizeMax {
-			return ErrUnpackedDataTooShort
+			return ErrUnpackedDataTooShortWith(len(msg), SessionHeader20SizeMax)
 		}
 		h.OEMIANA, _, _ = unpackUint32L(msg, 2)
 		h.OEMPayloadID, _, _ = unpackUint16L(msg, 6)
@@ -261,7 +261,7 @@ func (s *Session20) Unpack(msg []byte) error {
 
 	payloadLength := int(s.SessionHeader20.PayloadLength)
 	if len(msg) < sessionHeaderSize+payloadLength {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), sessionHeaderSize+payloadLength)
 	}
 	s.SessionPayload, _, _ = unpackBytes(msg, sessionHeaderSize, payloadLength)
 

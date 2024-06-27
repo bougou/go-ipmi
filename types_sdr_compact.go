@@ -175,7 +175,7 @@ func parseSDRCompactSensor(data []byte, sdr *SDR) error {
 
 	minSize := SDRCompactSensorMinSize
 	if len(data) < minSize {
-		return fmt.Errorf("sdr (compact sensor) data must be longer than %d", minSize)
+		return ErrNotEnoughDataWith("sdr (compact sensor) min size", len(data), minSize)
 	}
 
 	s := &SDRCompact{}
@@ -250,7 +250,7 @@ func parseSDRCompactSensor(data []byte, sdr *SDR) error {
 
 	idStrLen := int(s.IDStringTypeLength.Length())
 	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (compact sensor) data must be longer than %d", minSize+idStrLen)
+		return ErrNotEnoughDataWith("sdr (compact sensor)", len(data), minSize+idStrLen)
 	}
 	s.IDStringBytes, _, _ = unpackBytes(data, minSize, idStrLen)
 	return nil

@@ -24,7 +24,7 @@ func (req *GetSELTimeRequest) Command() Command {
 
 func (res *GetSELTimeResponse) Unpack(msg []byte) error {
 	if len(msg) < 4 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 4)
 	}
 
 	t, _, _ := unpackUint32L(msg, 0)

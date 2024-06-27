@@ -72,7 +72,7 @@ func (req *OpenSessionRequest) Pack() []byte {
 
 func (res *OpenSessionResponse) Unpack(data []byte) error {
 	if len(data) < RmcpOpenSessionResponseMinSize {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(data), RmcpOpenSessionResponseMinSize)
 	}
 
 	res.MessageTag, _, _ = unpackUint8(data, 0)
@@ -94,7 +94,7 @@ func (res *OpenSessionResponse) Unpack(data []byte) error {
 	}
 
 	if len(data) < RmcpOpenSessionResponseSize {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(data), RmcpOpenSessionResponseSize)
 	}
 	res.ManagedSystemSessionID, _, _ = unpackUint32L(data, 8)
 	res.AuthenticationPayload.Unpack(data[12:20])
@@ -207,7 +207,7 @@ func (p *AuthenticationPayload) Pack() []byte {
 
 func (p *AuthenticationPayload) Unpack(msg []byte) error {
 	if len(msg) < 8 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
 	p.PayloadType, _, _ = unpackUint8(msg, 0)
 	// 2 bytes reserved
@@ -229,7 +229,7 @@ func (p *IntegrityPayload) Pack() []byte {
 
 func (p *IntegrityPayload) Unpack(msg []byte) error {
 	if len(msg) < 8 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
 	p.PayloadType, _, _ = unpackUint8(msg, 0)
 	// 2 bytes reserved
@@ -251,7 +251,7 @@ func (p *ConfidentialityPayload) Pack() []byte {
 
 func (p *ConfidentialityPayload) Unpack(msg []byte) error {
 	if len(msg) < 8 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
 	p.PayloadType, _, _ = unpackUint8(msg, 0)
 	// 2 bytes reserved

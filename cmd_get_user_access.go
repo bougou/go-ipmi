@@ -66,7 +66,7 @@ func (res *GetUserAccessResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetUserAccessResponse) Unpack(msg []byte) error {
 	if len(msg) < 4 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 4)
 	}
 
 	res.MaxUsersIDCount, _, _ = unpackUint8(msg, 0)

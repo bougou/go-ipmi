@@ -19,7 +19,7 @@ func (req *ReadEventMessageBufferRequest) Pack() []byte {
 
 func (res *ReadEventMessageBufferResponse) Unpack(msg []byte) error {
 	if len(msg) < 16 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 16)
 	}
 
 	b, _, _ := unpackBytes(msg, 0, 16)

@@ -106,7 +106,7 @@ func (res *GetChassisStatusResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetChassisStatusResponse) Unpack(msg []byte) error {
 	if len(msg) < 3 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 3)
 	}
 
 	b1, _, _ := unpackUint8(msg, 0)

@@ -26,7 +26,7 @@ func (req *GetSystemGUIDRequest) Pack() []byte {
 
 func (res *GetSystemGUIDResponse) Unpack(msg []byte) error {
 	if len(msg) < 16 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 16)
 	}
 	b, _, _ := unpackBytes(msg, 0, 16)
 	res.GUID = array16(b)

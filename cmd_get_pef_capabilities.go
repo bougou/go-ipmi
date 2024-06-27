@@ -34,7 +34,7 @@ func (req *GetPEFCapabilitiesRequest) Pack() []byte {
 
 func (res *GetPEFCapabilitiesResponse) Unpack(msg []byte) error {
 	if len(msg) < 3 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 3)
 	}
 
 	res.PEFVersion = bcdUint8(msg[0])

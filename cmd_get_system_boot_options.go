@@ -46,7 +46,7 @@ func (res *GetSystemBootOptionsResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetSystemBootOptionsResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 	res.ParameterVersion, _, _ = unpackUint8(msg, 0)
 	b, _, _ := unpackUint8(msg, 1)

@@ -78,7 +78,7 @@ func (res *RAKPMessage4) Unpack(msg []byte) error {
 	}
 
 	if len(msg) < 8+authCodeLen {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 8+authCodeLen)
 	}
 
 	res.MessageTag, _, _ = unpackUint8(msg, 0)

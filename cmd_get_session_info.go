@@ -68,7 +68,7 @@ func (req *GetSessionInfoRequest) Pack() []byte {
 func (res *GetSessionInfoResponse) Unpack(msg []byte) error {
 	// at least 3 bytes
 	if len(msg) < 3 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 3)
 	}
 	res.SessionHandle, _, _ = unpackUint8(msg, 0)
 	res.PossibleActiveSessions, _, _ = unpackUint8(msg, 1)
@@ -80,7 +80,7 @@ func (res *GetSessionInfoResponse) Unpack(msg []byte) error {
 
 	// if len(msg) > 3, then at least 6 bytes
 	if len(msg) < 6 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 6)
 	}
 	res.UserID, _, _ = unpackUint8(msg, 3)
 	b5, _, _ := unpackUint8(msg, 4)

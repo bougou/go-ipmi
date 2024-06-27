@@ -25,7 +25,7 @@ func (req *GetSensorHysteresisRequest) Pack() []byte {
 
 func (res *GetSensorHysteresisResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 	res.PositiveRaw, _, _ = unpackUint8(msg, 0)
 	res.NegativeRaw, _, _ = unpackUint8(msg, 1)

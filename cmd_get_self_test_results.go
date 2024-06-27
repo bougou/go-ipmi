@@ -24,7 +24,7 @@ func (res *GetSelfTestResultsResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetSelfTestResultsResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 	res.Byte1, _, _ = unpackUint8(msg, 0)
 	res.Byte2, _, _ = unpackUint8(msg, 1)

@@ -23,7 +23,7 @@ func (req *GetMessageFlagsRequest) Pack() []byte {
 
 func (res *GetMessageFlagsResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
 	b, _, _ := unpackUint8(msg, 0)

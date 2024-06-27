@@ -41,7 +41,7 @@ func (r *Rmcp) Pack() []byte {
 
 func (r *Rmcp) Unpack(msg []byte) error {
 	if len(msg) < 4 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 4)
 	}
 	rmcpHeader := &RmcpHeader{}
 	err := rmcpHeader.Unpack(msg[:4])
@@ -153,7 +153,7 @@ func (r *RmcpHeader) Pack() []byte {
 
 func (r *RmcpHeader) Unpack(msg []byte) error {
 	if len(msg) < 4 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 4)
 	}
 
 	r.Version, _, _ = unpackUint8(msg, 0)
@@ -267,7 +267,7 @@ func (asf *ASF) Pack() []byte {
 
 func (asf *ASF) Unpack(msg []byte) error {
 	if len(msg) < 8 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
 
 	asf.IANA, _, _ = unpackUint32L(msg, 0)
@@ -277,7 +277,7 @@ func (asf *ASF) Unpack(msg []byte) error {
 	asf.DataLength, _, _ = unpackUint8(msg, 7)
 
 	if len(msg) < 8+int(asf.DataLength) {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 8+int(asf.DataLength))
 	}
 	asf.Data, _, _ = unpackBytes(msg, 8, int(asf.DataLength))
 	return nil

@@ -70,7 +70,7 @@ func parseSDREventOnly(data []byte, sdr *SDR) error {
 	const SDREventOnlyMinSize int = 17
 	minSize := SDREventOnlyMinSize
 	if len(data) < minSize {
-		return fmt.Errorf("sdr (event-only) data must be longer than %d", minSize)
+		return ErrNotEnoughDataWith("sdr (event-only sensor) min size", len(data), minSize)
 	}
 
 	s := &SDREventOnly{}
@@ -100,7 +100,7 @@ func parseSDREventOnly(data []byte, sdr *SDR) error {
 
 	idStrLen := int(s.IDStringTypeLength.Length())
 	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (event-only) data must be longer than %d", minSize+idStrLen)
+		return ErrNotEnoughDataWith("sdr (event-only sensor)", len(data), minSize+idStrLen)
 	}
 	s.IDStringBytes, _, _ = unpackBytes(data, minSize, idStrLen)
 	return nil
@@ -149,7 +149,7 @@ type SDREntityAssociation struct {
 func parseSDREntityAssociation(data []byte, sdr *SDR) error {
 	const SDREntityAssociationSize int = 16
 	if len(data) < SDREntityAssociationSize {
-		return fmt.Errorf("sdr (entity association) data must be longer than %d", SDREntityAssociationSize)
+		return ErrNotEnoughDataWith("sdr (entity association)", len(data), SDREntityAssociationSize)
 	}
 
 	s := &SDREntityAssociation{}
@@ -230,7 +230,7 @@ type SDRDeviceRelative struct {
 func parseSDRDeviceRelativeEntityAssociation(data []byte, sdr *SDR) error {
 	const SDRDeviceRelativeEntityAssociationSize = 32
 	if len(data) < SDRDeviceRelativeEntityAssociationSize {
-		return fmt.Errorf("sdr (device-relative entity association) data must be longer than %d", SDRDeviceRelativeEntityAssociationSize)
+		return ErrNotEnoughDataWith("sdr (device-relative entity association)", len(data), SDRDeviceRelativeEntityAssociationSize)
 	}
 
 	s := &SDRDeviceRelative{}
@@ -309,7 +309,7 @@ func parseSDRGenericLocator(data []byte, sdr *SDR) error {
 	minSize := SDRGenericLocatorMinSize
 
 	if len(data) < minSize {
-		return fmt.Errorf("sdr (generic-locator) data must be longer than %d", minSize)
+		return ErrNotEnoughDataWith("sdr (generic-locator) min size", len(data), minSize)
 	}
 
 	s := &SDRGenericDeviceLocator{}
@@ -337,7 +337,7 @@ func parseSDRGenericLocator(data []byte, sdr *SDR) error {
 
 	idStrLen := int(s.DeviceIDTypeLength.Length())
 	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (generic-locator) data must be longer than %d", minSize+idStrLen)
+		return ErrNotEnoughDataWith("sdr (generic-locator)", len(data), minSize+idStrLen)
 	}
 	s.DeviceIDString, _, _ = unpackBytes(data, minSize, idStrLen)
 	return nil
@@ -428,7 +428,7 @@ func parseSDRFRUDeviceLocator(data []byte, sdr *SDR) error {
 	const SDRFRUDeviceLocatorMinSize = 16 // plus the ID String Bytes (optional 16 bytes maximum)
 	minSize := SDRFRUDeviceLocatorMinSize
 	if len(data) < minSize {
-		return fmt.Errorf("sdr (fru device) data must be longer than %d", minSize)
+		return ErrNotEnoughDataWith("sdr (fru device) min size", len(data), minSize)
 	}
 
 	s := &SDRFRUDeviceLocator{}
@@ -469,7 +469,7 @@ func parseSDRFRUDeviceLocator(data []byte, sdr *SDR) error {
 		idStrLen = int(s.DeviceIDTypeLength.Length())
 	}
 	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (fru device) data must be longer than %d", minSize+idStrLen)
+		return ErrNotEnoughDataWith("sdr (fru device)", len(data), minSize+idStrLen)
 	}
 
 	s.DeviceIDBytes, _, _ = unpackBytes(data, minSize, idStrLen)
@@ -515,7 +515,7 @@ func parseSDRManagementControllerDeviceLocator(data []byte, sdr *SDR) error {
 	minSize := SDRManagementControllerDeviceLocatorMinSize
 
 	if len(data) < minSize {
-		return fmt.Errorf("sdr (mgmt controller device locator) data must be longer than %d", minSize)
+		return ErrNotEnoughDataWith("sdr (mgmt controller device locator) min size", len(data), minSize)
 	}
 
 	s := &SDRMgmtControllerDeviceLocator{}
@@ -551,7 +551,7 @@ func parseSDRManagementControllerDeviceLocator(data []byte, sdr *SDR) error {
 
 	idStrLen := int(s.DeviceIDTypeLength.Length())
 	if len(data) < minSize+idStrLen {
-		return fmt.Errorf("sdr (mgmt controller device locator) data must be longer than %d", minSize+idStrLen)
+		return ErrNotEnoughDataWith("sdr (mgmt controller device locator)", len(data), minSize+idStrLen)
 	}
 	s.DeviceIDBytes, _, _ = unpackBytes(data, minSize, idStrLen)
 	return nil
@@ -591,7 +591,7 @@ func parseSDRManagementControllerConfirmation(data []byte, sdr *SDR) error {
 	const SDRManagementControllerConfirmationSize = 32
 	minSize := SDRManagementControllerConfirmationSize
 	if len(data) < minSize {
-		return fmt.Errorf("sdr (mgmt controller confirmation) data must be longer than %d", minSize)
+		return ErrNotEnoughDataWith("sdr (mgmt controller confirmation) min size", len(data), minSize)
 	}
 
 	s := &SDRMgmtControllerConfirmation{}
@@ -663,7 +663,7 @@ func parseSDRBMCMessageChannelInfo(data []byte, sdr *SDR) error {
 	const SDRBMCMessageChannelInfoSize = 16
 	minSize := SDRBMCMessageChannelInfoSize
 	if len(data) < minSize {
-		return fmt.Errorf("sdr (bmc message channel info) data must be longer than %d", minSize)
+		return ErrNotEnoughDataWith("sdr (bmc message channel info) min size", len(data), minSize)
 	}
 
 	s := &SDRBMCChannelInfo{}
@@ -702,7 +702,7 @@ func parseSDROEM(data []byte, sdr *SDR) error {
 	const SDROEMMaxSize = 64 // OEM defined records are limited to a maximum of 64 bytes, including the header
 
 	if len(data) < SDROEMMinSize {
-		return fmt.Errorf("sdr (bmc message channel info) data must be longer than %d", SDROEMMinSize)
+		return ErrNotEnoughDataWith("sdr (oem) min size", len(data), SDROEMMinSize)
 	}
 
 	s := &SDROEM{}

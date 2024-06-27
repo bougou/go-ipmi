@@ -26,7 +26,7 @@ func (res *GetMessageResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetMessageResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 	res.ChannelNumber, _, _ = unpackUint8(msg, 0)
 	res.MessageData, _, _ = unpackBytes(msg, 1, len(msg)-1)

@@ -105,7 +105,7 @@ func (req *GetChannelAuthenticationCapabilitiesRequest) Command() Command {
 
 func (res *GetChannelAuthenticationCapabilitiesResponse) Unpack(msg []byte) error {
 	if len(msg) < 8 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
 
 	res.ChannelNumber, _, _ = unpackUint8(msg, 0)

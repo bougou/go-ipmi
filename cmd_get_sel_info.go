@@ -38,7 +38,7 @@ func (req *GetSELInfoRequest) Pack() []byte {
 
 func (res *GetSELInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 14 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 14)
 	}
 	res.SELVersion, _, _ = unpackUint8(msg, 0)
 	res.Entries, _, _ = unpackUint16L(msg, 1)

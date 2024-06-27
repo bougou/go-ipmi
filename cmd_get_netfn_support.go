@@ -41,7 +41,7 @@ func (req *GetNetFnSupportRequest) Pack() []byte {
 
 func (res *GetNetFnSupportResponse) Unpack(msg []byte) error {
 	if len(msg) < 17 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 17)
 	}
 	b, _, _ := unpackUint8(msg, 0)
 	res.LUN3Support = LUNSupport(b >> 6)

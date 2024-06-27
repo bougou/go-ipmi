@@ -27,7 +27,7 @@ func (req *GetSensorReadingFactorsRequest) Pack() []byte {
 
 func (res *GetSensorReadingFactorsResponse) Unpack(msg []byte) error {
 	if len(msg) < 7 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 7)
 	}
 
 	res.NextReading, _, _ = unpackUint8(msg, 0)

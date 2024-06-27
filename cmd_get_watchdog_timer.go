@@ -30,7 +30,7 @@ type GetWatchdogTimerResponse struct {
 
 func (res *GetWatchdogTimerResponse) Unpack(msg []byte) error {
 	if len(msg) < 8 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
 
 	res.DontLog = isBit7Set(msg[0])

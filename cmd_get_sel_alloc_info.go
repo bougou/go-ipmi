@@ -24,7 +24,7 @@ func (req *GetSELAllocInfoRequest) Command() Command {
 
 func (res *GetSELAllocInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 9 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 9)
 	}
 	res.PossibleAllocUnits, _, _ = unpackUint16L(msg, 0)
 	res.AllocUnitsSize, _, _ = unpackUint16L(msg, 2)

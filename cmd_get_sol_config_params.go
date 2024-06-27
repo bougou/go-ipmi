@@ -38,7 +38,7 @@ func (res *GetSOLConfigParamsResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetSOLConfigParamsResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
 	res.ParameterRevision = msg[0]

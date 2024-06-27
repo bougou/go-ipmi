@@ -91,7 +91,7 @@ type ActivateSessionResponse struct {
 
 func (res *ActivateSessionResponse) Unpack(data []byte) error {
 	if len(data) < 10 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(data), 10)
 	}
 	res.AuthType = AuthType(data[0])
 	res.SessionID, _, _ = unpackUint32L(data, 1)

@@ -105,7 +105,7 @@ func (res *GetDeviceIDResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetDeviceIDResponse) Unpack(msg []byte) error {
 	if len(msg) < 11 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 11)
 	}
 
 	res.DeviceID, _, _ = unpackUint8(msg, 0)
@@ -140,7 +140,7 @@ func (res *GetDeviceIDResponse) Unpack(msg []byte) error {
 	res.ProductID, _, _ = unpackUint16L(msg, 9)
 
 	if len(msg) > 11 && len(msg) < 15 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 15)
 	} else {
 		res.AuxiliaryFirmwareRevision, _, _ = unpackBytes(msg, 11, 4)
 	}

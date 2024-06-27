@@ -37,7 +37,7 @@ func (req *GetSensorThresholdsRequest) Pack() []byte {
 
 func (res *GetSensorThresholdsResponse) Unpack(msg []byte) error {
 	if len(msg) < 7 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 7)
 	}
 	b, _, _ := unpackUint8(msg, 0)
 	res.UNR_Readable = isBit5Set(b)

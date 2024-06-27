@@ -25,7 +25,7 @@ func (req *DeleteSELEntryRequest) Pack() []byte {
 
 func (res *DeleteSELEntryResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 	res.RecordID, _, _ = unpackUint16L(msg, 0)
 	return nil

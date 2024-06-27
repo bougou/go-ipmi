@@ -31,7 +31,7 @@ func (req *EnableMessageChannelReceiveRequest) Pack() []byte {
 
 func (res *EnableMessageChannelReceiveResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
 	res.ChannelNumber, _, _ = unpackUint8(msg, 0)

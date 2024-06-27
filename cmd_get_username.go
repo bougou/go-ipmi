@@ -26,7 +26,7 @@ func (res *GetUsernameResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetUsernameResponse) Unpack(msg []byte) error {
 	if len(msg) < 16 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 16)
 	}
 	username, _, _ := unpackBytes(msg, 0, 16)
 	res.Username = string(bytes.TrimRight(username, "\x00"))

@@ -26,7 +26,7 @@ func (req *GetSensorTypeRequest) Pack() []byte {
 
 func (res *GetSensorTypeResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 	b1, _, _ := unpackUint8(msg, 0)
 	res.SensorType = SensorType(b1)

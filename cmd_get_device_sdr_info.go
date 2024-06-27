@@ -47,7 +47,7 @@ func (req *GetDeviceSDRInfoRequest) Pack() []byte {
 
 func (res *GetDeviceSDRInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
 	res.Count, _, _ = unpackUint8(msg, 0)
@@ -61,7 +61,7 @@ func (res *GetDeviceSDRInfoResponse) Unpack(msg []byte) error {
 
 	if res.DynamicSensorPopulation {
 		if len(msg) < 6 {
-			return ErrUnpackedDataTooShort
+			return ErrUnpackedDataTooShortWith(len(msg), 6)
 		}
 		res.SensorPopulationChangeIndicator, _, _ = unpackUint32L(msg, 2)
 	}

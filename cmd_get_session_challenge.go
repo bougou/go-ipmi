@@ -30,7 +30,7 @@ func (req *GetSessionChallengeRequest) Pack() []byte {
 
 func (res *GetSessionChallengeResponse) Unpack(msg []byte) error {
 	if len(msg) < 20 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 20)
 	}
 	res.TemporarySessionID, _, _ = unpackUint32L(msg, 0)
 	b, _, _ := unpackBytes(msg, 4, 16)

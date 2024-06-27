@@ -19,7 +19,7 @@ func (req *ReserveSELRequest) Pack() []byte {
 
 func (res *ReserveSELResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 	res.ReservationID, _, _ = unpackUint16L(msg, 0)
 	return nil

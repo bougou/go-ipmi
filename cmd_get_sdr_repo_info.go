@@ -40,7 +40,7 @@ func (req *GetSDRRepoInfoRequest) Command() Command {
 
 func (res *GetSDRRepoInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 14 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 14)
 	}
 
 	res.SDRVersion, _, _ = unpackUint8(msg, 0)

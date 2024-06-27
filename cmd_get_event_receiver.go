@@ -23,7 +23,7 @@ func (res *GetEventReceiverResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetEventReceiverResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 	res.SlaveAddress = msg[0]
 	res.LUN = msg[1]

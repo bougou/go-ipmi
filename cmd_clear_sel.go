@@ -32,7 +32,7 @@ func (req *ClearSELRequest) Command() Command {
 
 func (res *ClearSELResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
 	res.ErasureProgressStatus, _, _ = unpackUint8(msg, 0)

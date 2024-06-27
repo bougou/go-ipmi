@@ -43,7 +43,7 @@ func (res *SuspendARPsResponse) CompletionCodes() map[uint8]string {
 
 func (res *SuspendARPsResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
 	b, _, _ := unpackUint8(msg, 0)

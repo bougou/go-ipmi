@@ -30,7 +30,7 @@ func (req *GetSDRRequest) Command() Command {
 
 func (res *GetSDRResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 	res.NextRecordID, _, _ = unpackUint16L(msg, 0)
 	res.RecordData, _, _ = unpackBytes(msg, 2, len(msg)-2)

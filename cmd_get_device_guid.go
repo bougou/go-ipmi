@@ -29,7 +29,7 @@ func (res *GetDeviceGUIDResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetDeviceGUIDResponse) Unpack(msg []byte) error {
 	if len(msg) < 16 {
-		return ErrUnpackedDataTooShort
+		return ErrUnpackedDataTooShortWith(len(msg), 16)
 	}
 
 	guid, _, _ := unpackBytes(msg, 0, 16)
