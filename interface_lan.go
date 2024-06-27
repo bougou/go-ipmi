@@ -151,7 +151,7 @@ func (c *Client) exchangeLAN(request Request, response Response) error {
 	c.DebugBytes("recv", recv, 16)
 
 	if err := c.ParseRmcpResponse(recv, response); err != nil {
-		// Warn, must directly return err.
+		// Warn, must directly return err. (DO NOT wrap err to another error)
 		// The error returned by ParseRmcpResponse might be of *ResponseError type.
 		return err
 	}

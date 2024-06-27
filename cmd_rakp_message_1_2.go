@@ -36,6 +36,20 @@ type RAKPMessage2 struct {
 
 	MessageTag uint8
 
+	// RMCP+ Status Code - Identifies the status of the previous message.
+	//
+	// If the previous message generated an error, then only the Completion Code, Reserved, and
+	// Remote Console Session ID fields are returned.
+	//
+	// If the Remote Console Session ID  field is indeterminate
+	// (as would be the case if the Managed System Session ID in RAKP Message 1 were invalid)
+	// then the Remote Console Session ID field will be set to all zeros.
+	//
+	// On error, the remote console can attempt to correct the error and send a new RAKP Message 1.
+	//
+	// Note that the remote console must change the Message Tag value to ensure the BMC sees the message as a new message and not as a retry.
+	//
+	// See Table 13-15, RMCP+ and RAKP Message Status Codes for the status codes defined for this message.
 	RmcpStatusCode RmcpStatusCode
 
 	// The Remote Console Session ID specified by the RMCP+ Open Session Request message associated with this response.
@@ -87,8 +101,9 @@ func (r *RAKPMessage1) Role() uint8 {
 }
 
 func (res *RAKPMessage2) Unpack(msg []byte) error {
-	if len(msg) < 40 {
-		return ErrUnpackedDataTooShort
+	// If RAKPMessage1 failed to be validated, the returned RAKPMessage2 only holds 8 bytes.
+	if len(msg) < 8 {
+		return ErrUnpackedDataTooShortWith(len(msg), 40)
 	}
 
 	res.MessageTag = msg[0]
@@ -96,8 +111,13 @@ func (res *RAKPMessage2) Unpack(msg []byte) error {
 	// 2 bytes reserved
 	res.RemoteConsoleSessionID, _, _ = unpackUint32L(msg, 4)
 
+	// Now we can check whether RmcpStatusCode indicates error
 	if res.RmcpStatusCode != RmcpStatusCodeNoErrors {
 		return fmt.Errorf("the return status of rakp2 has error: %v", res.RmcpStatusCode)
+	}
+
+	if len(msg) < 40 {
+		return ErrUnpackedDataTooShortWith(len(msg), 40)
 	}
 
 	res.ManagedSystemRandomNumber = array16(msg[8:24])
