@@ -56,6 +56,14 @@ func (c *Client) GetSDR(recordID uint16) (response *GetSDRResponse, err error) {
 	}
 	response = &GetSDRResponse{}
 	err = c.Exchange(request, response)
+
+	// Todo, try read partial data if err (ResponseError and CompletionCode) indicate
+	// reading full data (0xff) exceeds the maximum transfer length for the interface
+	// if resErr, ok := err.(*ResponseError); ok {
+	// 	if resErr.CompletionCode() == CompletionCodeCannotReturnRequestedDataBytes {
+	// 	}
+	// }
+
 	return
 }
 
@@ -118,7 +126,7 @@ func (c *Client) GetSDRBySensorName(sensorName string) (*SDR, error) {
 		return sdr, nil
 	}
 
-	return nil, fmt.Errorf("not found SDR for sensor name (%#0x)", sensorName)
+	return nil, fmt.Errorf("not found SDR for sensor name (%s)", sensorName)
 }
 
 // GetSDRs fetches the SDR records with the specified RecordTypes.
@@ -158,8 +166,8 @@ func (c *Client) GetSDRs(recordTypes ...SDRRecordType) ([]*SDR, error) {
 }
 
 // GetSDRsMap returns all Full/Compact SDRs grouped by GeneratorID and SensorNumber.
-// The sensor name can only be got from SDR record. So use this method to construct a map from which
-// you can get sensor name.
+// The sensor name can only be got from SDR record.
+// So use this method to construct a map from which you can get sensor name.
 func (c *Client) GetSDRsMap() (SDRMapBySensorNumber, error) {
 	var out = make(map[GeneratorID]map[SensorNumber]*SDR)
 

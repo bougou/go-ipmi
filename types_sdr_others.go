@@ -356,7 +356,7 @@ type SDRFRUDeviceLocator struct {
 
 	// FRU Device ID / Device Slave Address
 	//
-	// For LOGICAL FRU DEVICE (accessed via FRU commands to mgmt. controller):
+	// For Logical FRU DEVICE (accessed via FRU commands to mgmt. controller):
 	// [7:0] - Number identifying FRU device within given IPM Controller. FFh = reserved.
 	// The primary FRU device for a management controller is always device #0 at
 	// LUN 00b. The primary FRU device is not reported via this FRU Device Locator
@@ -364,28 +364,32 @@ type SDRFRUDeviceLocator struct {
 	// Management Controller Device Locator record.
 	//
 	// For non-intelligent FRU device:
-	// [7:1] - 7-bit I2C Slave Address[1] . This is relative to the bus the device is on. For
-	// devices on the IPMB, this is the slave address of the device on the IPMB. For
-	// devices on a private bus, this is the slave address of the device on the private
-	// bus.
+	// [7:1] - 7-bit I2C Slave Address
+	// This is relative to the bus the device is on.
+	// For devices on the IPMB, this is the slave address of the device on the IPMB.
+	// For devices on a private bus, this is the slave address of the device on the private bus.
 	// [0] - reserved
 	FRUDeviceID_SlaveAddress uint8
 
 	// [7] - logical/physical FRU device
-	// 0b = device is not a logical FRU Device
-	// 1b = device is logical FRU Device (accessed via FRU commands to mgmt. controller)
+	//   0b = device is not a logical FRU Device (a physical device, that is a non-intelligent device)
+	//   1b = device is logical FRU Device (accessed via FRU commands to mgmt. controller)
 	IsLogicalFRUDevice bool
 
-	// [4:3] - LUN for Master Write-Read command or FRU Command. 00b if device is non-intelligent device directly on IPMB.
+	// [4:3] - LUN for Read/Write FRU Data Command or Master Write-Read command.
 	AccessLUN uint8
 
 	// [2:0] - Private bus ID if bus = Private.
-	// 000b if device directly on IPMB, or device is a logical FRU Device.
+	//   000b if device directly on IPMB, or device is a logical FRU Device.
+	//
+	// three bits, total eight bus ids, 000 ~ 111, (0 ~ 7)
 	PrivateBusID uint8
 
-	// [7:4] - Channel number for management controller used to access device. 000b if
-	// device directly on the primary IPMB, or if controller is on the primary IPMB. Msbit for channel number is kept in next byte. (For IPMI v1.5. This byte position
-	// was reserved for IPMI v1.0.)
+	// [7:4] - Channel number for management controller used to access device.
+	//   000b if device directly on the primary IPMB, or if controller is on the primary IPMB.
+	//   Msbit for channel number is kept in next byte.
+	//   (For IPMI v1.5. This byte position  was reserved for IPMI v1.0.)
+	//
 	// [3:0] - reserved
 	ChannelNumber uint8
 
@@ -395,8 +399,9 @@ type SDRFRUDeviceLocator struct {
 
 	DeviceType         DeviceType
 	DeviceTypeModifier uint8
-	FRUEntityID        uint8
-	FRUEntityInstance  uint8
+
+	FRUEntityID       uint8
+	FRUEntityInstance uint8
 
 	DeviceIDTypeLength TypeLength
 	DeviceIDBytes      []byte // Short ID string for the FRU Device
@@ -404,23 +409,14 @@ type SDRFRUDeviceLocator struct {
 
 // Table 38-1, FRU Device Locator Field Usage
 func (sdrFRU *SDRFRUDeviceLocator) Location() FRULocation {
-	if sdrFRU.DeviceAccessAddress == 0x00 {
-		// Use MasterWriteRead command to access FRU.
-		// FRUDeviceID_SlaveAddress (slave address Of SEEPROM on the IPMB)
-		return FRULocation_IPMB
-	}
-
 	if sdrFRU.IsLogicalFRUDevice {
-		// Use Read/WriteFRUData command to access FRU.
-		// DeviceAccessAddress (Slave Address of IPMB)
-		// FRUDeviceID_SlaveAddress
 		return FRULocation_MgmtController
 	}
 
-	// Use MasterWriteRead command to access FRU.
-	// DeviceAccessAddress (Slave Address of IPMB)
-	// PrivateBusID
-	// FRUDeviceID_SlaveAddress (Slave Address of SEEPROM on the Private Bus)
+	if sdrFRU.DeviceAccessAddress == 0x00 {
+		return FRULocation_IPMB
+	}
+
 	return FRULocation_PrivateBus
 }
 

@@ -149,8 +149,6 @@ func canonicalEntityString(entityID EntityID, entityInstance EntityInstance) str
 type DeviceType uint16
 
 func (d DeviceType) String() string {
-	// IPMB/I2C Device Type Codes
-	// EEPROM,或写作E2PROM, 全称电子式可擦除可编程只读存储器 （英语：Electrically-Erasable Programmable Read-Only Memory）,是一种可以通过电子方式多次复写的半导体存储设备。
 	var deviceTypeMap = map[DeviceType]string{
 		0x00: "Reserved",
 		0x01: "Reserved",

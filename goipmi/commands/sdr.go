@@ -91,7 +91,7 @@ func NewCmdSDRGet() *cobra.Command {
 }
 
 func NewCmdSDRList() *cobra.Command {
-	usage := `sdr list <all|full|compact|full|event|mcloc|fru|generic>`
+	usage := `sdr list <all|full|compact|event|mcloc|fru|generic>`
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "list",

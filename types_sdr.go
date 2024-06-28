@@ -160,7 +160,7 @@ func (sdr *SDR) HasAnalogReading() bool {
 }
 
 // ParseSDR parses raw SDR record data to SDR struct.
-// This function is normally used after GetSDRResponse or GetDeviceSDRResponse to
+// This function is normally used after getting GetSDRResponse or GetDeviceSDRResponse to
 // interpret the raw SDR record data in the response.
 func ParseSDR(data []byte, nextRecordID uint16) (*SDR, error) {
 	const SDRRecordHeaderSize int = 5

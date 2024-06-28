@@ -12,9 +12,38 @@ import (
 type FRULocation string
 
 const (
-	FRULocation_IPMB           FRULocation = "directly on IPMB"
-	FRULocation_PrivateBus     FRULocation = "on private bus"
+	// FRU Location: FRU Device behind a management controller
+	//
+	// only logical FRU Device can be accessed via FRU commands to mgmt controller
+	//
+	// Access Method:
+	// Read/Write FRU Data commands to management controller providing access to the FRU Device.
+	//
+	// Use Read/WriteFRUData command to access FRU.
+	// DeviceAccessAddress (Slave Address of IPMB)
+	// FRUDeviceID_SlaveAddress
 	FRULocation_MgmtController FRULocation = "on management controller"
+
+	// FRU Location: SEEPROM On private bus behind a management controller
+	//
+	// Access Method:
+	// Master Write-Read command to management controller that provides access to the private bus.
+	//
+	// Use MasterWriteRead command to access FRU.
+	// DeviceAccessAddress (Slave Address of IPMB)
+	// PrivateBusID
+	// FRUDeviceID_SlaveAddress (Slave Address of SEEPROM on the Private Bus)
+	FRULocation_PrivateBus FRULocation = "on private bus"
+
+	// FRU Location : SEEPROM Device directly on IPMB
+	//
+	// Access Method:
+	// Master Write-Read command through BMC from system software, or access via other interface
+	// providing low-level I2C access to the IPMB.
+	//
+	// Use MasterWriteRead command to access FRU.
+	// FRUDeviceID_SlaveAddress (slave address Of SEEPROM on the IPMB)
+	FRULocation_IPMB FRULocation = "directly on IPMB"
 )
 
 const (
@@ -831,33 +860,40 @@ type ManagementAccessSubRecordType uint8
 
 func (t ManagementAccessSubRecordType) String() string {
 	m := map[ManagementAccessSubRecordType]string{
-		// SystemMgmtURL []byte
-		// // A name to identify the system that contains this FRU. (same as DMI
-		// // DMTF|General Information|001 - System Name)
-		// SystemName []byte
-		// // The IP network address of the system that contains this FRU. Can be either the IP
-		// // address or the host name + domain name (eg. finance.sc.hp.com)
-		// SystemPingAddr []byte
-		// // The Internet Uniform Resource Locator string that can be used through a World
-		// // Wide Web browser to obtain management information about this FRU. (same as DMI
-		// // DMTF|Field Replaceable Unit|002 - FRU Internet Uniform Resource Locator)
-		// ComponentMgmtURL []byte
-		// // A clear description of this FRU. (same asDMI "DMTF|Field Replaceable Unit|002 - Description")
-		// ComponentName []byte
-		// // The IP network address of this FRU. Can be either the IP address or the host name
-		// // + domain name (e.g. critter.sc.hp.com).
-		// ComponentPingAddr []byte
-		// // This is a copy of the system GUID from [SMBIOS]
-		// SystemUniqueID [16]byte
 
+		// SystemMgmtURL []byte
+		// A name to identify the system that contains this FRU. (same as DMI
+		// DMTF|General Information|001 - System Name)
 		0x01: "System Management URL",
+
+		// SystemName []byte
+		// The IP network address of the system that contains this FRU. Can be either the IP
+		// address or the host name + domain name (eg. finance.sc.hp.com)
 		0x02: "System Name",
+
+		// SystemPingAddr []byte
+		// The Internet Uniform Resource Locator string that can be used through a World
+		// Wide Web browser to obtain management information about this FRU. (same as DMI
+		// DMTF|Field Replaceable Unit|002 - FRU Internet Uniform Resource Locator)
 		0x03: "System Ping Address",
+
+		// ComponentMgmtURL []byte
+		// A clear description of this FRU. (same asDMI "DMTF|Field Replaceable Unit|002 - Description")
 		0x04: "Component Management URL",
+
+		// ComponentName []byte
+		// The IP network address of this FRU. Can be either the IP address or the host name
+		// + domain name (e.g. critter.sc.hp.com).
 		0x05: "Component Name",
+
+		// ComponentPingAddr []byte
+		// This is a copy of the system GUID from [SMBIOS]
 		0x06: "Component Ping Address",
+
+		// SystemUniqueID [16]byte
 		0x07: "System Unique ID",
 	}
+
 	s, ok := m[t]
 	if ok {
 		return s

@@ -302,9 +302,9 @@ Sensor Initialization :
     Scanning          : %s
 Sensor Capabilities   :
   Auto Re-arm         : %s
-	Hysteresis Support  : %s
-	Threshold Access    : %s
-	Ev Message Control  : %s
+  Hysteresis Support  : %s
+  Threshold Access    : %s
+  Ev Message Control  : %s
 Mask                  :
   Readable Thresholds : %s
   Settable Thresholds : %s

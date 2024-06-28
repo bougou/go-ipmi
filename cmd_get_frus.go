@@ -136,8 +136,11 @@ func (c *Client) GetFRUs() ([]*FRU, error) {
 		return nil, fmt.Errorf("GetDeviceID failed, err: %s", err)
 	}
 
+	c.Debug("deviceRes", deviceRes)
+
 	if deviceRes.AdditionalDeviceSupport.SupportFRUInventory {
-		// FRU Device ID #00 at LUN 00b is predefined as being the FRU Device for the FRU that the management controller is located on.
+		// FRU Device ID #00 at LUN 00b is predefined as being the FRU Device
+		// for the FRU that the management controller is located on.
 		var deviceID uint8 = 0x00
 		fru, err := c.GetFRU(deviceID, "Builtin FRU")
 		if err != nil {
@@ -156,44 +159,68 @@ func (c *Client) GetFRUs() ([]*FRU, error) {
 
 	for _, sdr := range sdrs {
 		switch sdr.RecordHeader.RecordType {
+
 		case SDRRecordTypeFRUDeviceLocator:
-			if !sdr.FRUDeviceLocator.IsLogicalFRUDevice {
-				// only logical FRU Device can be accessed via FRU commands to mgmt controller
-				continue
-			}
 
 			deviceType := sdr.FRUDeviceLocator.DeviceType
 			deviceTypeModifier := sdr.FRUDeviceLocator.DeviceTypeModifier
-			deviceID := sdr.FRUDeviceLocator.FRUDeviceID_SlaveAddress
+
 			deviceName := string(sdr.FRUDeviceLocator.DeviceIDBytes)
+			deviceAccessAddress := sdr.FRUDeviceLocator.DeviceAccessAddress         // controller
+			accessLUN := sdr.FRUDeviceLocator.AccessLUN                             // LUN
+			privateBusID := sdr.FRUDeviceLocator.PrivateBusID                       // Private bus
+			deviceIDOrSlaveAddress := sdr.FRUDeviceLocator.FRUDeviceID_SlaveAddress // device
 
-			if deviceType != 0x10 && (deviceType < 0x08 || deviceType > 0x0f || deviceTypeModifier != 0x02) {
-				// ignore
-				continue
-			}
+			fruLocation := sdr.FRUDeviceLocator.Location()
 
-			if sdr.FRUDeviceLocator.DeviceAccessAddress == BMC_SA && deviceID == 0x00 {
-				continue
-			}
+			c.Debugf("fruLocation: (%s), deviceType: (%s [%#02x]), deviceTypeModifier: (%#02x), deviceIDOrSlaveAddress: (%#02x), deviceName: (%s), isLogical: (%v), "+
+				"DeviceAccessAddress (%#02x), AccessLUN: (%#02x), PrivateBusID(%#02x)\n",
+				fruLocation, deviceType.String(), uint8(deviceType), deviceTypeModifier, deviceIDOrSlaveAddress, deviceName, sdr.FRUDeviceLocator.IsLogicalFRUDevice,
+				deviceAccessAddress, accessLUN, privateBusID,
+			)
 
-			switch deviceTypeModifier {
-			case 0x00, 0x02:
-				fru, err := c.GetFRU(deviceID, deviceName)
+			// see 38. Accessing FRU Devices
+			switch fruLocation {
+			case FRULocation_MgmtController:
+				if accessLUN == 0x00 && deviceIDOrSlaveAddress == 0x00 {
+					// this is the Builtin FRU device, already got
+					continue
+				}
+
+				// Todo, accessed using Read/Write FRU commands at LUN other than 00b
+				fru, err := c.GetFRU(deviceIDOrSlaveAddress, deviceName)
 				if err != nil {
-					return nil, fmt.Errorf("GetFRU sdr device id (%#02x) failed, err: %s", deviceID, err)
+					return nil, fmt.Errorf("GetFRU sdr device id (%#02x) failed, err: %s", deviceIDOrSlaveAddress, err)
 				}
 				frus = append(frus, fru)
 
-			case 0x01:
-				// *   0x01 = DIMM Memory ID
-				fruData, err := c.GetFRUData(deviceID)
-				if err != nil {
-					return nil, fmt.Errorf("GetFRUData failed, err: %s", err)
-				}
-				c.DebugBytes("FRU Data", fruData, 16)
-				// Todo, parse SPD
+			case FRULocation_PrivateBus:
+				// Todo,
+				switch deviceType {
+				case 0x10:
+					// Todo, refactor BuildIPMIRequest to use LUN
+					// if sdr.FRUDeviceLocator.DeviceAccessAddress == BMC_SA && deviceID == 0x00 {
+					// 	continue
+					// }
 
-			default:
+					switch deviceTypeModifier {
+					// 0x00, 0x02 = IPMI FRU Inventory
+					case 0x00, 0x02:
+
+					// 0x01 = DIMM Memory ID
+					case 0x01:
+
+					// 03h = System Processor Cartridge FRU / PIROM (processor information ROM)
+					case 0x03:
+
+					}
+
+				case 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f:
+					// Todo
+				}
+
+			case FRULocation_IPMB:
+
 			}
 
 		case SDRRecordTypeManagementControllerDeviceLocator:
