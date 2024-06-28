@@ -6,6 +6,8 @@ import (
 )
 
 // 43.1 SDRFull Type 01h, Full Sensor Record
+//
+// The Full Sensor Record can be used to describe any type of sensor.
 type SDRFull struct {
 	//
 	// Record KEY
@@ -26,11 +28,14 @@ type SDRFull struct {
 	// associated with the sensor.
 	SensorEntityID       EntityID
 	SensorEntityInstance EntityInstance
-	// 0b = treat entity as a physical entity per Entity ID table
-	// 1b = treat entity as a logical container entity. For example, if this bit is set,
-	// and the Entity ID is "Processor", the container entity would be considered
-	// to represent a logical "Processor Group" rather than a physical processor.
+
+	// For example, if this bit is set, and the Entity ID is "Processor",
+	// the container entity would be considered to represent a logical "Processor Group" rather than a physical processor.
+	//
 	// This bit is typically used in conjunction with an Entity Association full.
+	//
+	//  0b = treat entity as a physical entity per Entity ID table
+	//  1b = treat entity as a logical container entity.
 	SensorEntityIsLogical bool
 
 	SensorInitialization SensorInitialization
@@ -401,11 +406,11 @@ func parseSDRFullSensor(data []byte, sdr *SDR) error {
 
 	b11, _, _ := unpackUint8(data, 11)
 	s.SensorCapabilities = SensorCapabilities{
-		IgnoreWithEntity:    isBit7Set(b11),
-		AutoRearm:           isBit6Set(b11),
-		HysteresisAccess:    SensorHysteresisAccess((b11 & 0x3f) >> 4),
-		ThresholdAccess:     SensorThresholdAccess((b11 & 0x0f) >> 2),
-		EventMessageControl: SensorEventMessageControl(b11 & 0x03),
+		IgnoreSensorIfNoEntity: isBit7Set(b11),
+		AutoRearm:              isBit6Set(b11),
+		HysteresisAccess:       SensorHysteresisAccess((b11 & 0x3f) >> 4),
+		ThresholdAccess:        SensorThresholdAccess((b11 & 0x0f) >> 2),
+		EventMessageControl:    SensorEventMessageControl(b11 & 0x03),
 	}
 
 	sensorType, _, _ := unpackUint8(data, 12)

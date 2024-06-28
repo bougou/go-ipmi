@@ -77,6 +77,7 @@ func (c *Client) GetSensorByName(sensorName string) (*Sensor, error) {
 }
 
 // sdrToSensor convert SDR record to Sensor struct.
+//
 // Only Full and Compact SDR records are meaningful here. Pass SDRs with other record types will return error.
 //
 // This function will fetch other sensor-related values which are not stored in SDR by other IPMI commands.
@@ -99,6 +100,8 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 		sensor.EventReadingType = sdr.Full.SensorEventReadingType
 		sensor.SensorInitialization = sdr.Full.SensorInitialization
 		sensor.SensorCapabilities = sdr.Full.SensorCapabilities
+		sensor.EntityID = sdr.Full.SensorEntityID
+		sensor.EntityInstance = sdr.Full.SensorEntityInstance
 
 		sensor.Threshold.LinearizationFunc = sdr.Full.LinearizationFunc
 		sensor.Threshold.ReadingFactors = sdr.Full.ReadingFactors
@@ -111,13 +114,14 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 		sensor.EventReadingType = sdr.Compact.SensorEventReadingType
 		sensor.SensorInitialization = sdr.Compact.SensorInitialization
 		sensor.SensorCapabilities = sdr.Compact.SensorCapabilities
+		sensor.EntityID = sdr.Compact.SensorEntityID
+		sensor.EntityInstance = sdr.Compact.SensorEntityInstance
 
 	default:
 		return nil, fmt.Errorf("only support Full or Compact SDR record type, input is %s", sdr.RecordHeader.RecordType)
 	}
 
-	c.Debug("Sensor brief", sensor)
-
+	c.Debug("Sensor:", sensor)
 	c.Debug("Get Sensor", fmt.Sprintf("Sensor Name: %s, Sensor Number: %#02x\n", sensor.Name, sensor.Number))
 
 	if err := c.fillSensorReading(sensor); err != nil {

@@ -6,6 +6,8 @@ import (
 )
 
 // 43.2 SDR Type 02h, Compact Sensor Record
+//
+// The Compact sensor record saves space, but has limitations in the sensors it can describe.
 type SDRCompact struct {
 	//
 	// Record KEY
@@ -208,11 +210,11 @@ func parseSDRCompactSensor(data []byte, sdr *SDR) error {
 
 	b11, _, _ := unpackUint8(data, 11)
 	s.SensorCapabilities = SensorCapabilities{
-		IgnoreWithEntity:    isBit7Set(b11),
-		AutoRearm:           isBit6Set(b11),
-		HysteresisAccess:    SensorHysteresisAccess((b11 & 0x3f) >> 4),
-		ThresholdAccess:     SensorThresholdAccess((b11 & 0x0f) >> 2),
-		EventMessageControl: SensorEventMessageControl(b11 & 0x03),
+		IgnoreSensorIfNoEntity: isBit7Set(b11),
+		AutoRearm:              isBit6Set(b11),
+		HysteresisAccess:       SensorHysteresisAccess((b11 & 0x3f) >> 4),
+		ThresholdAccess:        SensorThresholdAccess((b11 & 0x0f) >> 2),
+		EventMessageControl:    SensorEventMessageControl(b11 & 0x03),
 	}
 
 	sensorType, _, _ := unpackUint8(data, 12)

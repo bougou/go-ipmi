@@ -420,19 +420,19 @@ type SensorStatus string
 
 const (
 	// SensorStatusOK means okay (the sensor is present and operating correctly)
-	SensorStatusOK = "ok"
+	SensorStatusOK = "OK"
 
 	// SensorStatusNoSensor means no sensor (corresponding reading will say disabled or Not Readable)
-	SensorStatusNoSensor = "ns"
+	SensorStatusNoSensor = "N/A"
 
 	// SensorStatusNonCritical means non-critical error (lower or upper)
-	SensorStatusNonCritical = "nc"
+	SensorStatusNonCritical = "NC"
 
 	// SensorStatusCritical means critical error (lower or upper)
-	SensorStatusCritical = "cr"
+	SensorStatusCritical = "CR"
 
 	// SensorStatusNonRecoverable means non-recoverable error (lower or upper)
-	SensorStatusNonRecoverable = "nr"
+	SensorStatusNonRecoverable = "NR"
 )
 
 // SensorThreshold holds all values and attributes of a specified threshold type.
@@ -685,13 +685,13 @@ type SensorThresholdAccess uint8
 const (
 	// no thresholds.
 	SensorThresholdAccess_No SensorThresholdAccess = 0
-	// thresholds are readable, per Reading Mask, below.
+	// thresholds are readable, per Reading Mask
 	SensorThresholdAccess_Readable SensorThresholdAccess = 1
-	// thresholds are readable and settable per Reading Mask and Settable Threshold Mask, respectively.
+	// thresholds are readable and settable, per Reading Mask and Settable Threshold Mask, respectively.
 	SensorThresholdAccess_ReadableSettable SensorThresholdAccess = 2
-	//  Fixed, unreadable, thresholds. Which thresholds are supported is
-	// reflected by the Reading Mask. The threshold value fields report
-	// the values that are hard-coded in the sensor.
+	// Fixed, unreadable, thresholds.
+	// Which thresholds are supported is reflected by the Reading Mask.
+	// The threshold value fields report the values that are hard-coded in the sensor.
 	SensorThresholdAccess_Fixed SensorThresholdAccess = 3
 )
 
@@ -853,10 +853,11 @@ func ConvertSensorTolerance(raw uint8, analogDataFormat SensorAnalogUnitFormat, 
 
 // Sensor holds all attribute of a sensor.
 type Sensor struct {
-	SDRRecordType SDRRecordType
-
 	Number uint8
 	Name   string
+
+	SDRRecordType    SDRRecordType
+	HasAnalogReading bool
 
 	SensorType           SensorType
 	EventReadingType     EventReadingType
@@ -864,9 +865,11 @@ type Sensor struct {
 	SensorInitialization SensorInitialization
 	SensorCapabilities   SensorCapabilities
 
+	EntityID       EntityID
+	EntityInstance EntityInstance
+
 	scanningDisabled bool // update by GetSensorReading
 	readingAvailable bool // update by GetSensorReading
-	HasAnalogReading bool
 
 	// Raw reading value before conversion
 	Raw uint8
@@ -918,13 +921,21 @@ type Sensor struct {
 }
 
 func (s *Sensor) String() string {
+	sensorReadingStr := fmt.Sprintf("%d", s.Raw)
+	sensorValueStr := fmt.Sprintf("%.3f %s", s.Value, s.SensorUnit)
+	if s.scanningDisabled {
+		sensorReadingStr = "Unable to read sensor: Device Not Present"
+		sensorValueStr = "Unable to read sensor: Device Not Present"
+	}
+
 	return fmt.Sprintf(
 		fmt.Sprintf("Sensor ID              : %s (%#02x)\n", s.Name, s.Number) +
-			fmt.Sprintf(" Sensor Type (%s) : %s (%#02x)\n", string(s.EventReadingType.SensorClass()), s.SensorType.String(), uint8(s.SensorType)) +
+			fmt.Sprintf(" Entity ID            : %d.%d (%s)\n", uint8(s.EntityID), uint8(s.EntityInstance), s.EntityID) +
+			fmt.Sprintf(" Sensor Type          : %s (%#02x) (%s)\n", s.SensorType.String(), uint8(s.SensorType), string(s.EventReadingType.SensorClass())) +
 			fmt.Sprintf(" Sensor Number        : %#02x\n", s.Number) +
 			fmt.Sprintf(" Sensor Name          : %s\n", s.Name) +
-			fmt.Sprintf(" Sensor Reading (raw) : %d\n", s.Raw) +
-			fmt.Sprintf(" Sensor Value         : %.3f %s\n", s.Value, s.SensorUnit) +
+			fmt.Sprintf(" Sensor Reading (raw) : %s\n", sensorReadingStr) +
+			fmt.Sprintf(" Sensor Value         : %s\n", sensorValueStr) +
 			fmt.Sprintf(" Sensor Status        : %s\n", s.Status()),
 	)
 }
@@ -1009,14 +1020,6 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 	return buf.String()
 }
 
-func (sensor *Sensor) Status() string {
-	if sensor.IsThreshold() {
-		return string(sensor.Threshold.ThresholdStatus)
-	}
-
-	return fmt.Sprintf("0x%02x%02x", sensor.Discrete.optionalData1, sensor.Discrete.optionalData2)
-}
-
 // IsThreshold returns whether the sensor is threshold sensor class or not.
 func (sensor *Sensor) IsThreshold() bool {
 	return sensor.EventReadingType.IsThreshold()
@@ -1030,17 +1033,6 @@ func (sensor *Sensor) IsThresholdAndReadingValid() bool {
 	return sensor.IsThreshold() && sensor.IsReadingValid()
 }
 
-func (sensor *Sensor) ReadingStr() string {
-	if sensor.IsReadingValid() {
-		if sensor.IsThreshold() {
-			return fmt.Sprintf("%.3f", sensor.Value)
-		}
-		return fmt.Sprintf("%d", sensor.Raw)
-	}
-
-	return "N/A"
-}
-
 func (sensor *Sensor) IsThresholdReadable(thresholdType SensorThresholdType) bool {
 	if !sensor.IsThreshold() {
 		return false
@@ -1048,30 +1040,6 @@ func (sensor *Sensor) IsThresholdReadable(thresholdType SensorThresholdType) boo
 
 	mask := sensor.Threshold.Mask
 	return mask.IsThresholdReadable(thresholdType)
-}
-
-func (sensor *Sensor) ThresholdStr(thresholdType SensorThresholdType) string {
-	if !sensor.IsThresholdReadable(thresholdType) {
-		return "N/A"
-	}
-
-	var value float64
-	switch thresholdType {
-	case SensorThresholdType_LCR:
-		value = sensor.Threshold.LCR
-	case SensorThresholdType_LNR:
-		value = sensor.Threshold.LNR
-	case SensorThresholdType_LNC:
-		value = sensor.Threshold.LNC
-	case SensorThresholdType_UCR:
-		value = sensor.Threshold.UCR
-	case SensorThresholdType_UNC:
-		value = sensor.Threshold.UNC
-	case SensorThresholdType_UNR:
-		value = sensor.Threshold.UNR
-	}
-
-	return fmt.Sprintf("%.3f", value)
 }
 
 // ConvertReading converts raw discrete-sensor reading or raw threshold-sensor value to real value in the desired units for the sensor.
@@ -1096,33 +1064,6 @@ func (sensor *Sensor) ConvertSensorTolerance(raw uint8) float64 {
 		return ConvertSensorTolerance(raw, sensor.SensorUnit.AnalogDataFormat, sensor.Threshold.ReadingFactors, sensor.Threshold.LinearizationFunc)
 	}
 	return float64(raw)
-}
-
-func (sensor *Sensor) HysteresisStr(raw uint8) string {
-	switch sensor.SDRRecordType {
-	case SDRRecordTypeFullSensor:
-		if !sensor.SensorUnit.IsAnalog() {
-			if raw == 0x00 || raw == 0xff {
-				return "unspecified"
-			}
-			return fmt.Sprintf("%#02x", raw)
-		}
-
-		// analog sensor
-		value := sensor.ConvertSensorHysteresis(raw)
-		if raw == 0x00 || raw == 0xff || value == 0.0 {
-			return "unspecified"
-		}
-		return fmt.Sprintf("%#02x/%.3f", raw, value)
-
-	case SDRRecordTypeCompactSensor:
-		if raw == 0x00 || raw == 0xff {
-			return "unspecified"
-		}
-		return fmt.Sprintf("%#02x", raw)
-	}
-
-	return ""
 }
 
 // SensorThreshold return SensorThreshold for a specified threshold type.
@@ -1174,4 +1115,86 @@ func (sensor *Sensor) SensorThreshold(thresholdType SensorThresholdType) SensorT
 	return SensorThreshold{
 		Type: thresholdType,
 	}
+}
+func (sensor *Sensor) Status() string {
+	if sensor.scanningDisabled {
+		return "N/A"
+	}
+
+	if !sensor.IsReadingValid() {
+		return "N/A"
+	}
+
+	if sensor.IsThreshold() {
+		return string(sensor.Threshold.ThresholdStatus)
+	}
+
+	return fmt.Sprintf("0x%02x%02x", sensor.Discrete.optionalData1, sensor.Discrete.optionalData2)
+}
+
+func (sensor *Sensor) ReadingStr() string {
+	if sensor.scanningDisabled {
+		return "N/A"
+	}
+
+	if !sensor.IsReadingValid() {
+		return "N/A"
+	}
+
+	if sensor.IsThreshold() {
+		return fmt.Sprintf("%.3f", sensor.Value)
+	}
+
+	return fmt.Sprintf("%d", sensor.Raw)
+}
+
+func (sensor *Sensor) ThresholdStr(thresholdType SensorThresholdType) string {
+	if !sensor.IsThresholdReadable(thresholdType) {
+		return "N/A"
+	}
+
+	var value float64
+	switch thresholdType {
+	case SensorThresholdType_LCR:
+		value = sensor.Threshold.LCR
+	case SensorThresholdType_LNR:
+		value = sensor.Threshold.LNR
+	case SensorThresholdType_LNC:
+		value = sensor.Threshold.LNC
+	case SensorThresholdType_UCR:
+		value = sensor.Threshold.UCR
+	case SensorThresholdType_UNC:
+		value = sensor.Threshold.UNC
+	case SensorThresholdType_UNR:
+		value = sensor.Threshold.UNR
+	}
+
+	return fmt.Sprintf("%.3f", value)
+}
+
+func (sensor *Sensor) HysteresisStr(raw uint8) string {
+	switch sensor.SDRRecordType {
+	case SDRRecordTypeFullSensor:
+		if !sensor.SensorUnit.IsAnalog() {
+			if raw == 0x00 || raw == 0xff {
+				return "unspecified"
+			}
+			return fmt.Sprintf("%#02x", raw)
+		}
+
+		// analog sensor
+		value := sensor.ConvertSensorHysteresis(raw)
+		if raw == 0x00 || raw == 0xff || value == 0.0 {
+			return "unspecified"
+		}
+		return fmt.Sprintf("%#02x/%.3f", raw, value)
+
+	case SDRRecordTypeCompactSensor:
+		if raw == 0x00 || raw == 0xff {
+			return "unspecified"
+		}
+		return fmt.Sprintf("%#02x", raw)
+	}
+
+	return ""
 }

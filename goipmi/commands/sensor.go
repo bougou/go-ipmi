@@ -340,9 +340,7 @@ sensor detail <sensor_number>
 
 			sensor, err := client.GetSensorByID(sensorNumber)
 			if err != nil {
-				if err != nil {
-					CheckErr(fmt.Errorf("GetSensorByID failed, err: %s", err))
-				}
+				CheckErr(fmt.Errorf("GetSensorByID failed, err: %s", err))
 			}
 			fmt.Println(sensor)
 		},

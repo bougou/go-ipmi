@@ -15,9 +15,14 @@ type GetSensorReadingResponse struct {
 	// reading byte. Ignore on read if sensor does not return an numeric (analog) reading
 	Reading uint8
 
-	EventMessagesDisabled  bool
+	EventMessagesDisabled bool
+
+	// see 16.5 System Software use of Sensor Scanning bits & Entity Info
+	//
+	// System software must ignore any sensor that has the sensor scanning bit disabled - if system software didn't disable the sensor.
 	SensorScanningDisabled bool
-	ReadingUnavailable     bool // Software should use this bit to avoid getting an incorrect status while the first sensor update is in progress.
+
+	ReadingUnavailable bool // Software should use this bit to avoid getting an incorrect status while the first sensor update is in progress.
 
 	// The following fields are optionally, they are only meaningful when reading is valid.
 
