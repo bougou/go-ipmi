@@ -103,7 +103,7 @@ func (r *RAKPMessage1) Role() uint8 {
 func (res *RAKPMessage2) Unpack(msg []byte) error {
 	// If RAKPMessage1 failed to be validated, the returned RAKPMessage2 only holds 8 bytes.
 	if len(msg) < 8 {
-		return ErrUnpackedDataTooShortWith(len(msg), 40)
+		return ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
 
 	res.MessageTag = msg[0]
