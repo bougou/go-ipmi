@@ -55,6 +55,13 @@ func main() {
 }
 ```
 
+## `goipmi` binary
+
+The goipmi is a binary tool which provides the same command usages like ipmitool. The goipmi calls go-impi library underlying.
+
+The purpose of creating goipmi tool was not intended to substitute ipmitool.
+It was not strictly crafted, and was just used to verify the correctness of go-ipmi library.
+
 ## Functions Comparison with ipmitool
 
 Each command defined in the IPMI specification is a pair of request/response messages.
