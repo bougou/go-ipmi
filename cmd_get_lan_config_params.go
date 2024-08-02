@@ -114,6 +114,7 @@ func FillLanConfig(lanConfig *LanConfig, paramSelector LanParamSelector, paramDa
 		}
 	}
 
+	// pre-check the length of paramData to avoid array index out-of-bound access panic.
 	if uint8(len(paramData)) < lanParam.DataSize {
 		return fmt.Errorf("the data for param (%s) is too short, input (%d), required (%d)", paramSelector, len(paramData), lanParam.DataSize)
 	}
@@ -229,14 +230,28 @@ func FillLanConfig(lanConfig *LanConfig, paramSelector LanParamSelector, paramDa
 		}
 
 	case LanParam_AlertDestinationAddress:
-		lanConfig.AlertDestinationAddress = AlertDestinationAddress{
-			SetSelector:         paramData[0],
-			AddressFormat:       (paramData[1] & 0xf0) >> 4,
-			IP4UseBackupGateway: isBit0Set(paramData[2]),
-			IP4IP:               net.IP(paramData[3:7]),
-			IP4MAC:              net.HardwareAddr(paramData[7:12]),
-			IP6IP:               net.IP(paramData[2:18]),
+		alertDestinationAddress := AlertDestinationAddress{
+			SetSelector:   paramData[0],
+			AddressFormat: (paramData[1] & 0xf0) >> 4,
 		}
+
+		if alertDestinationAddress.AddressFormat == 0 {
+
+			// IPv4 and MAC
+			alertDestinationAddress.IP4UseBackupGateway = isBit0Set(paramData[2])
+			alertDestinationAddress.IP4IP = net.IP(paramData[3:7])
+			alertDestinationAddress.IP4MAC = net.HardwareAddr(paramData[7:12])
+
+		} else if alertDestinationAddress.AddressFormat == 1 {
+
+			// IPv6
+			if len(paramData) < 18 {
+				return fmt.Errorf("the data for param (%s) is too short, input (%d), required (%d), AddressFormat is IPv6", paramSelector, len(paramData), 18)
+			}
+			alertDestinationAddress.IP6IP = net.IP(paramData[2:17])
+		}
+
+		lanConfig.AlertDestinationAddress = alertDestinationAddress
 
 	case LanParam_VLANID:
 		lanConfig.VLANEnabled = isBit7Set(paramData[1])

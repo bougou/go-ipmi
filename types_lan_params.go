@@ -77,6 +77,8 @@ const (
 
 )
 
+// Pre-defined information of all lan parameters.
+// This list is used to fetch all lan config information in `GetLanConfig` method.
 var LanParams = []LanParam{
 	{Selector: LanParam_SetInProgress, DataSize: 1, Name: "Set in Progress"},
 	{Selector: LanParam_AuthTypeSupported, DataSize: 1, Name: "Auth Type Support"},
@@ -97,7 +99,7 @@ var LanParams = []LanParam{
 	{Selector: LanParam_CommunityString, DataSize: 18, Name: "SNMP Community String"},
 	{Selector: LanParam_AlertDestinationsNumber, DataSize: 1, Name: "Number of Destinations"},
 	{Selector: LanParam_AlertDestinationType, DataSize: 4, Name: "Destination Type"},
-	{Selector: LanParam_AlertDestinationAddress, DataSize: 18, Name: "Destination Addresses"},
+	{Selector: LanParam_AlertDestinationAddress, DataSize: 13, Name: "Destination Addresses"}, // 13 is required for IPv4 format, 18 required for IPv6
 	{Selector: LanParam_VLANID, DataSize: 2, Name: "802.1q VLAN ID"},
 	{Selector: LanParam_VLANPriority, DataSize: 1, Name: "802.1q VLAN Priority"},
 	{Selector: LanParam_CipherSuiteEntrySupport, DataSize: 1, Name: "RMCP+ Cipher Suite Count"},
@@ -117,7 +119,7 @@ func (lanParam LanParamSelector) String() string {
 
 type LanParam struct {
 	Selector LanParamSelector
-	DataSize uint8
+	DataSize uint8 // DataSize is the minimum valid length of lanParamData(GetLanConfigParamsResponse.ConfigData)
 	Name     string
 }
 
@@ -332,8 +334,9 @@ type AlertDestinationType struct {
 type AlertDestinationAddress struct {
 	SetSelector uint8
 
-	// 0h = IPv4 IP Address followed by DIX Ethernet/802.3 MAC Address
-	// 1h = IPv6 IP Address
+	// Address Format
+	//  - 0h = IPv4 IP Address followed by DIX Ethernet/802.3 MAC Address
+	//  - 1h = IPv6 IP Address
 	AddressFormat uint8
 
 	IP4UseBackupGateway bool

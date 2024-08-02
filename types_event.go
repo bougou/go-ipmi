@@ -89,8 +89,13 @@ func (ed *EventData) String() string {
 type EventReadingType uint8
 
 const (
-	EventReadingTypeUnspecified            EventReadingType = 0x00
-	EventReadingTypeThreshold              EventReadingType = 0x01
+	// Unspecified
+	EventReadingTypeUnspecified EventReadingType = 0x00
+
+	// Threshold
+	EventReadingTypeThreshold EventReadingType = 0x01
+
+	// Generic
 	EventReadingTypeTransitionState        EventReadingType = 0x02
 	EventReadingTypeState                  EventReadingType = 0x03
 	EventReadingTypePredictiveFailure      EventReadingType = 0x04
@@ -103,8 +108,12 @@ const (
 	EventReadingTypeRedundancy             EventReadingType = 0x0b
 	EventReadingTypeACPIPowerState         EventReadingType = 0x0c
 	EventReadingTypeSensorSpecific         EventReadingType = 0x6f
-	EventReadingTypeOEMMin                 EventReadingType = 0x70
-	EventReadingTypeOEMMax                 EventReadingType = 0x7f
+
+	// OEM
+	EventReadingTypeOEMMin EventReadingType = 0x70
+	EventReadingTypeOEMMax EventReadingType = 0x7f
+
+	// Reserved
 )
 
 func (typ EventReadingType) String() string {
