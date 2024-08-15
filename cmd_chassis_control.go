@@ -6,7 +6,7 @@ const (
 	ChassisControlPowerDown           ChassisControl = 0 // down, off
 	ChassisControlPowerUp             ChassisControl = 1
 	ChassisControlPowerCycle          ChassisControl = 2
-	ChassisControlHardwareRest        ChassisControl = 3
+	ChassisControlHardReset           ChassisControl = 3
 	ChassisControlDiagnosticInterrupt ChassisControl = 4
 	ChassisControlSoftShutdown        ChassisControl = 5
 )

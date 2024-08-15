@@ -126,7 +126,7 @@ func NewCmdChassisPower() *cobra.Command {
 				case "cycle":
 					c = ipmi.ChassisControlPowerCycle
 				case "reset":
-					c = ipmi.ChassisControlHardwareRest
+					c = ipmi.ChassisControlHardReset
 				case "diag":
 					c = ipmi.ChassisControlDiagnosticInterrupt
 				case "soft":
