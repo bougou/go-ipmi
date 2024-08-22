@@ -146,5 +146,5 @@ func (c *Client) openSendRequest(request Request) ([]byte, error) {
 	}
 
 	c.Debug("IPMI_REQ", req)
-	return open.SendCommand(c.openipmi.file, req)
+	return open.SendCommand(c.openipmi.file, req, c.timeout)
 }

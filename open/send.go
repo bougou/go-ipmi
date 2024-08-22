@@ -21,7 +21,11 @@ func GetRecv(fd uintptr, op uintptr, recv *IPMI_RECV) error {
 	return err
 }
 
-func SendCommand(file *os.File, req *IPMI_REQ) ([]byte, error) {
+func SendCommand(file *os.File, req *IPMI_REQ, timeout time.Duration) ([]byte, error) {
+	if timeout == 0 {
+		timeout = IPMI_FILE_READ_TIMEOUT
+	}
+
 	fd := file.Fd()
 
 	for {
@@ -72,7 +76,7 @@ func SendCommand(file *os.File, req *IPMI_REQ) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get syscall conn from file: %s", err)
 	}
-	if err := file.SetReadDeadline(time.Now().Add(IPMI_FILE_READ_TIMEOUT)); err != nil {
+	if err := file.SetReadDeadline(time.Now().Add(timeout)); err != nil {
 		return nil, fmt.Errorf("failed to set read deadline on file: %s", err)
 	}
 	if err := conn.Read(readMsgFunc); err != nil {

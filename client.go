@@ -46,7 +46,9 @@ func NewOpenClient() (*Client, error) {
 	myAddr := BMC_SA
 
 	return &Client{
-		Interface: "open",
+		Interface:  "open",
+		timeout:    time.Second * time.Duration(DefaultExchangeTimeoutSec),
+		bufferSize: DefaultBufferSize,
 
 		openipmi: &openipmi{
 			myAddr:     myAddr,
@@ -84,7 +86,7 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 		Port:      port,
 		Username:  user,
 		Password:  pass,
-		Interface: "",
+		Interface: InterfaceLanplus,
 
 		v20:        true,
 		timeout:    time.Second * time.Duration(DefaultExchangeTimeoutSec),
@@ -130,13 +132,19 @@ func (c *Client) WithUDPProxy(proxy proxy.Dialer) *Client {
 
 func (c *Client) WithTimeout(timeout time.Duration) *Client {
 	c.timeout = timeout
-	c.udpClient.timeout = timeout
+
+	if c.udpClient != nil {
+		c.udpClient.timeout = timeout
+	}
 	return c
 }
 
 func (c *Client) WithBufferSize(bufferSize int) *Client {
 	c.bufferSize = bufferSize
-	c.udpClient.bufferSize = bufferSize
+
+	if c.udpClient != nil {
+		c.udpClient.bufferSize = bufferSize
+	}
 	return c
 }
 
