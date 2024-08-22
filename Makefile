@@ -8,9 +8,9 @@ OUTPUT_DIR := $(PWD)/_output
 GOOS ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')
 GOARCH ?= amd64
 
-LDFLAGS := $(LDFLAGS) -X github.com/bougou/go-ipmi/goipmi/commands.Version=$(APP_VERSION)
-LDFLAGS := $(LDFLAGS) -X github.com/bougou/go-ipmi/goipmi/commands.Commit=$(GIT_COMMIT)
-LDFLAGS := $(LDFLAGS) -X github.com/bougou/go-ipmi/goipmi/commands.BuildAt=$(BUILD_TIME)
+LDFLAGS := $(LDFLAGS) -X github.com/bougou/go-ipmi/cmd/goipmi/commands.Version=$(APP_VERSION)
+LDFLAGS := $(LDFLAGS) -X github.com/bougou/go-ipmi/cmd/goipmi/commands.Commit=$(GIT_COMMIT)
+LDFLAGS := $(LDFLAGS) -X github.com/bougou/go-ipmi/cmd/goipmi/commands.BuildAt=$(BUILD_TIME)
 
 PATH := $(BINDIR):$(PATH)
 SHELL := env PATH='$(PATH)' /bin/sh
@@ -26,14 +26,14 @@ test: fmt vet
 
 # Build goipmi binary
 build: fmt vet
-	go build -ldflags "$(LDFLAGS)" -o $(OUTPUT_DIR)/goipmi ./goipmi
+	go build -ldflags "$(LDFLAGS)" -o $(OUTPUT_DIR)/goipmi ./cmd/goipmi
 
 # Cross compiler
 build-all: fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -a -o $(OUTPUT_DIR)/goipmi-$(APP_VERSION)-linux-amd64 ./goipmi
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -a -o $(OUTPUT_DIR)/goipmi-$(APP_VERSION)-linux-arm64 ./goipmi
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -a -o $(OUTPUT_DIR)/goipmi-$(APP_VERSION)-darwin-amd64 ./goipmi
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -a -o $(OUTPUT_DIR)/goipmi-$(APP_VERSION)-darwin-arm64 ./goipmi
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -a -o $(OUTPUT_DIR)/goipmi-$(APP_VERSION)-linux-amd64 ./cmd/goipmi
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -a -o $(OUTPUT_DIR)/goipmi-$(APP_VERSION)-linux-arm64 ./cmd/goipmi
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -a -o $(OUTPUT_DIR)/goipmi-$(APP_VERSION)-darwin-amd64 ./cmd/goipmi
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -a -o $(OUTPUT_DIR)/goipmi-$(APP_VERSION)-darwin-arm64 ./cmd/goipmi
 
 # Run go fmt against code
 fmt:
