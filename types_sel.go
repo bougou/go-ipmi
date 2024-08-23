@@ -236,6 +236,7 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 	var buf = new(bytes.Buffer)
 	table := tablewriter.NewWriter(buf)
 	table.SetAutoWrapText(false)
+	table.SetAlignment(tablewriter.ALIGN_RIGHT)
 
 	headers := []string{
 		"ID",

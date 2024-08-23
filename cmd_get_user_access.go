@@ -164,6 +164,7 @@ func FormatUsers(users []*User) string {
 	var buf = new(bytes.Buffer)
 	table := tablewriter.NewWriter(buf)
 	table.SetAutoWrapText(false)
+	table.SetAlignment(tablewriter.ALIGN_RIGHT)
 
 	headers := []string{
 		"ID",

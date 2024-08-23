@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type SensorFilterOption func(sensor *Sensor) bool
 
@@ -94,7 +97,7 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 	switch sdr.RecordHeader.RecordType {
 	case SDRRecordTypeFullSensor:
 		sensor.Number = uint8(sdr.Full.SensorNumber)
-		sensor.Name = string(sdr.Full.IDStringBytes)
+		sensor.Name = strings.TrimSpace(string(sdr.Full.IDStringBytes))
 		sensor.SensorUnit = sdr.Full.SensorUnit
 		sensor.SensorType = sdr.Full.SensorType
 		sensor.EventReadingType = sdr.Full.SensorEventReadingType
@@ -108,7 +111,7 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 
 	case SDRRecordTypeCompactSensor:
 		sensor.Number = uint8(sdr.Compact.SensorNumber)
-		sensor.Name = string(sdr.Compact.IDStringBytes)
+		sensor.Name = strings.TrimSpace(string(sdr.Compact.IDStringBytes))
 		sensor.SensorUnit = sdr.Compact.SensorUnit
 		sensor.SensorType = sdr.Compact.SensorType
 		sensor.EventReadingType = sdr.Compact.SensorEventReadingType

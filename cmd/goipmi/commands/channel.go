@@ -49,6 +49,10 @@ func NewCmdChannelInfo() *cobra.Command {
 
 			fmt.Println(res.Format())
 
+			if res.SessionSupport == 0 {
+				return
+			}
+
 			res2, err := client.GetChannelAccess(channelNumber, ipmi.ChannelAccessOption_Volatile)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetChannelAccess failed, err: %s", err))

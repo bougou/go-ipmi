@@ -8,6 +8,7 @@ import (
 )
 
 // 43. Sensor Data Record Formats
+// SDRRecordType is a number representing the type of the record.
 type SDRRecordType uint8
 
 const (
@@ -236,6 +237,7 @@ func FormatSDRs_FRU(records []*SDR) string {
 	var buf = new(bytes.Buffer)
 	table := tablewriter.NewWriter(buf)
 	table.SetAutoWrapText(false)
+	table.SetAlignment(tablewriter.ALIGN_RIGHT)
 
 	headers := []string{
 		"RecordID",
@@ -298,6 +300,7 @@ func FormatSDRs(records []*SDR) string {
 	var buf = new(bytes.Buffer)
 	table := tablewriter.NewWriter(buf)
 	table.SetAutoWrapText(false)
+	table.SetAlignment(tablewriter.ALIGN_RIGHT)
 
 	headers := []string{
 		"RecordID",
