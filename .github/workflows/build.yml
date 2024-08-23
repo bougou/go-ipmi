@@ -1,14 +1,14 @@
 ---
-name: Release
+name: Build and Test
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - "main"
 
 jobs:
-  release:
-    name: Build and Release
+  build:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
@@ -21,9 +21,3 @@ jobs:
         run: |
           make dependencies
           make build-all
-      - uses: marvinpinto/action-automatic-releases@latest
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
-          files: |
-            _output/*
