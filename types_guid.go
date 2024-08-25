@@ -189,7 +189,7 @@ func ShowDetailGUID(guid [16]byte) string {
 		out += fmt.Sprintf("UUID Variant      : %s\n", u.Variant().String())
 		sec, nsec := u.Time().UnixTime()
 		out += fmt.Sprintf("Timestamp         : %s\n", time.Unix(sec, nsec).Format(timeFormat))
-		out += fmt.Sprintf("Timestamp(Legacy) : %s", IPMILegacyGUIDTime(u).Format(timeFormat))
+		out += fmt.Sprintf("Timestamp(Legacy) : %s\n", IPMILegacyGUIDTime(u).Format(timeFormat))
 		return out
 	}
 
