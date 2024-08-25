@@ -20,6 +20,7 @@ func NewCmdPEF() *cobra.Command {
 		},
 	}
 	cmd.AddCommand(NewCmdPEFCapabilities())
+	cmd.AddCommand(NewCmdPEFStatus())
 
 	return cmd
 }
@@ -32,6 +33,22 @@ func NewCmdPEFCapabilities() *cobra.Command {
 			res, err := client.GetPEFCapabilities()
 			if err != nil {
 				CheckErr(fmt.Errorf("GetPEFCapabilities failed, err: %s", err))
+			}
+
+			fmt.Println(res.Format())
+		},
+	}
+	return cmd
+}
+
+func NewCmdPEFStatus() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "status",
+		Short: "status",
+		Run: func(cmd *cobra.Command, args []string) {
+			res, err := client.GetLastProcessedEventId()
+			if err != nil {
+				CheckErr(fmt.Errorf("GetLastProcessedEventId failed, err: %s", err))
 			}
 
 			fmt.Println(res.Format())

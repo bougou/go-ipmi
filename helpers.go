@@ -12,6 +12,18 @@ import (
 	"github.com/kr/pretty"
 )
 
+func bytesForPrint(data []byte) string {
+	out := ""
+	for k, v := range data {
+		if k%8 == 0 && k != 0 {
+			out += "\n"
+		}
+		out += fmt.Sprintf("%02x ", v)
+	}
+	out += "\n"
+	return out
+}
+
 func debugBytes(header string, data []byte, width int) {
 	fmt.Printf("%s (%d bytes)\n", header, len(data))
 	for k, v := range data {
