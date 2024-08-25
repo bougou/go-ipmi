@@ -130,11 +130,11 @@ func NewCmdXGetSystemGUID() *cobra.Command {
 				fmt.Println(err)
 				return
 			}
-
 			fmt.Println(res.Format())
-			fmt.Println("\nDetail of GUID\n============")
+
+			fmt.Println("\nDetail of GUID\n==============")
 			fmt.Println()
-			fmt.Println(ipmi.ShowDetailGUID(res.GUID))
+			fmt.Println(ipmi.FormatGUIDDetails(res.GUID))
 		},
 	}
 
@@ -150,11 +150,11 @@ func NewCmdXGetDeviceGUID() *cobra.Command {
 				fmt.Println(err)
 				return
 			}
-
 			fmt.Println(res.Format())
-			fmt.Println("\nDetail of GUID\n============")
+
+			fmt.Println("\nDetail of GUID\n==============")
 			fmt.Println()
-			fmt.Println(ipmi.ShowDetailGUID(res.GUID))
+			fmt.Println(ipmi.FormatGUIDDetails(res.GUID))
 		},
 	}
 

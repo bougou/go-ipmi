@@ -181,15 +181,15 @@ func UUIDVersionString(u *uuid.UUID) string {
 	return fmt.Sprintf("%s (%s)", v.String(), name)
 }
 
-func ShowDetailGUID(guid [16]byte) string {
+func FormatGUIDDetails(guid [16]byte) string {
 	formatGUID := func(u *uuid.UUID, mode GUIDMode) string {
-		out := fmt.Sprintf("GUID              : %s\n", u.String())
-		out += fmt.Sprintf("UUID Encoding     : %s\n", mode)
+		out := fmt.Sprintf("UUID Encoding     : %s\n", mode)
+		out += fmt.Sprintf("GUID              : %s\n", u.String())
 		out += fmt.Sprintf("UUID Version      : %s\n", UUIDVersionString(u))
 		out += fmt.Sprintf("UUID Variant      : %s\n", u.Variant().String())
 		sec, nsec := u.Time().UnixTime()
 		out += fmt.Sprintf("Timestamp         : %s\n", time.Unix(sec, nsec).Format(timeFormat))
-		out += fmt.Sprintf("Timestamp(Legacy) : %s", IPMILegacyGUIDTime(u).Format(timeFormat))
+		out += fmt.Sprintf("Timestamp(Legacy) : %s\n", IPMILegacyGUIDTime(u).Format(timeFormat))
 		return out
 	}
 
@@ -200,6 +200,7 @@ func ShowDetailGUID(guid [16]byte) string {
 		return ""
 	}
 	out += formatGUID(u, GUIDModeSMBIOS)
+	out += "\n-------------------\n"
 
 	u, err = ParseGUID(guid[:], GUIDModeIPMI)
 	if err != nil {
@@ -207,6 +208,7 @@ func ShowDetailGUID(guid [16]byte) string {
 	}
 	out += "\n"
 	out += formatGUID(u, GUIDModeIPMI)
+	out += "\n-------------------\n"
 
 	u, err = ParseGUID(guid[:], GUIDModeRFC4122)
 	if err != nil {
@@ -214,6 +216,7 @@ func ShowDetailGUID(guid [16]byte) string {
 	}
 	out += "\n"
 	out += formatGUID(u, GUIDModeRFC4122)
+	out += "\n-------------------\n"
 
 	return out
 }
