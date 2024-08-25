@@ -36,6 +36,37 @@ const (
 	PayloadTypeOEM7 PayloadType = 0x27
 )
 
+func (pt PayloadType) String() string {
+	m := map[PayloadType]string{
+		0x00: "ipmi",
+		0x01: "sol",
+		0x02: "oem",
+
+		0x10: "rmcp-open-session-request",
+		0x11: "rmcp-open-session-response",
+		0x12: "rakp-message-1",
+		0x13: "rakp-message-2",
+		0x14: "rakp-message-3",
+		0x15: "rakp-message-4",
+
+		0x20: "oem0",
+		0x21: "oem1",
+		0x22: "oem2",
+		0x23: "oem3",
+		0x24: "oem4",
+		0x25: "oem5",
+		0x26: "oem6",
+		0x27: "oem7",
+	}
+
+	s, ok := m[pt]
+	if ok {
+		return s
+	}
+
+	return "reserved"
+}
+
 // 13.28
 type AuthAlg uint8
 
