@@ -141,8 +141,8 @@
         "twobyte",
         "typecode",
         "typelength",
+        "UEFI",
         "Unitsbased",
-        "unkown",
         "VLANID",
         "wakeup"
     ],

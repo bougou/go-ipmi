@@ -2,7 +2,7 @@ module github.com/bougou/go-ipmi
 
 replace github.com/bougou/go-ipmi v0.0.0 => ./
 
-go 1.17
+go 1.20
 
 require (
 	github.com/google/uuid v1.1.2
