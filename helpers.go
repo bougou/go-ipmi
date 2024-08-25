@@ -12,6 +12,8 @@ import (
 	"github.com/kr/pretty"
 )
 
+const timeFormat = time.RFC3339
+
 func bytesForPrint(data []byte) string {
 	out := ""
 	for k, v := range data {

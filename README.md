@@ -1,11 +1,10 @@
 <meta name="author" content="Bougou">
 <meta name="description" content="Go IPMI library">
 <meta name="keywords" content="ipmi, go, golang, bmc">
-<meta name="google-site-verification" content="Ejz48wAig8QjFaggJoluq4crKN7x7Jbi_VnEqFXQIhs" />
 
 # go-ipmi
 
-go-ipmi is a pure golang native IPMI library. It DOES NOT wraps `ipmitool`.
+`go-ipmi` is a pure golang native IPMI library. It DOES NOT wraps `ipmitool`.
 
 ## Usage
 
@@ -150,7 +149,7 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | GetPayloadActivationStatus     |         |
 | GetPayloadInstanceInfo         |         |
 | SetUserPayloadAccess           |         |
-| GetUserPayloadAccess           |         |
+| GetUserPayloadAccess           |         | sol payload status           |
 | GetChannelPayloadSupport       |         |
 | GetChannelPayloadVersion       |         |
 | GetChannelOEMPayloadInfo       |         |
@@ -252,7 +251,7 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | ClearSDRRepo           |         |
 | GetSDRRepoTime         |         |
 | SetSDRRepoTime         |         |
-| EnterSDRRepoUpdateMode  |         |
+| EnterSDRRepoUpdateMode |         |
 | ExitSDRRepoUpdateMode  |         |
 | RunInitializationAgent |         |
 
@@ -311,7 +310,7 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 
 | Method          | Status | corresponding ipmitool usage |
 | --------------- | ------ | ---------------------------- |
-| Forwarded        |        |
+| Forwarded       |        |
 | SetForwarded    |        |
 | GetForwarded    |        |
 | EnableForwarded |        |
@@ -372,3 +371,4 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 
 - [Intelligent Platform Management Interface Specification Second Generation v2.0](https://www.intel.com/content/dam/www/public/us/en/documents/specification-updates/ipmi-intelligent-platform-mgt-interface-spec-2nd-gen-v2-0-spec-update.pdf)
 - [Platform Management FRU Information Storage Definition](https://www.intel.com/content/dam/www/public/us/en/documents/specification-updates/ipmi-platform-mgt-fru-info-storage-def-v1-0-rev-1-3-spec-update.pdf)
+- [PC SDRAM Serial Presence Detect (SPD) Specification](https://cdn.hackaday.io/files/10119432931296/Spdsd12b.pdf)

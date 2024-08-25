@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const timeFormat = time.RFC3339
+
 func NewCmdX() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "x",
@@ -39,7 +41,7 @@ func NewCmdXGetSDR() *cobra.Command {
 		Short: "get-sdr",
 		Run: func(cmd *cobra.Command, args []string) {
 			for {
-				fmt.Printf("\n\nGet SDR at %s\n", time.Now().Format(time.RFC3339))
+				fmt.Printf("\n\nGet SDR at %s\n", time.Now().Format(timeFormat))
 				res, err := client.GetSDRs()
 				if err != nil {
 					fmt.Printf("GetSDRs failed, err: %s", err)
@@ -70,7 +72,7 @@ func NewCmdXGetSensor() *cobra.Command {
 		Short: "get-sensor",
 		Run: func(cmd *cobra.Command, args []string) {
 			for {
-				fmt.Printf("\n\nGet Sensors at %s\n", time.Now().Format(time.RFC3339))
+				fmt.Printf("\n\nGet Sensors at %s\n", time.Now().Format(timeFormat))
 				res, err := client.GetSensors()
 				if err != nil {
 					fmt.Printf("GetSensors failed, err: %s", err)

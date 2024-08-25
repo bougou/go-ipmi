@@ -41,20 +41,21 @@ func (c *UDPClient) initConn() error {
 	if c.proxy != nil {
 		conn, err := c.proxy.Dial("udp", fmt.Sprintf("%s:%d", c.Host, c.Port))
 		if err != nil {
-			return fmt.Errorf("proxy dial failed, err: %s", err)
+			return fmt.Errorf("udp proxy dial failed, err: %s", err)
 		}
 		c.conn = conn
-	} else {
-		remoteAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", c.Host, c.Port))
-		if err != nil {
-			return fmt.Errorf("resolve addr failed, err: %s", err)
-		}
-		conn, err := net.DialUDP("udp", nil, remoteAddr)
-		if err != nil {
-			return fmt.Errorf("dial failed, err: %s", err)
-		}
-		c.conn = conn
+		return nil
 	}
+
+	remoteAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", c.Host, c.Port))
+	if err != nil {
+		return fmt.Errorf("resolve addr failed, err: %s", err)
+	}
+	conn, err := net.DialUDP("udp", nil, remoteAddr)
+	if err != nil {
+		return fmt.Errorf("udp dial failed, err: %s", err)
+	}
+	c.conn = conn
 
 	return nil
 }
@@ -100,7 +101,13 @@ func (c *UDPClient) Close() error {
 	if c.conn == nil {
 		return nil
 	}
-	return c.conn.Close()
+
+	if err := c.conn.Close(); err != nil {
+		return fmt.Errorf("close udp conn failed, err: %s", err)
+	}
+
+	c.conn = nil
+	return nil
 }
 
 // Exchange performs a synchronous UDP query.
@@ -115,6 +122,7 @@ func (c *UDPClient) Exchange(ctx context.Context, reader io.Reader) ([]byte, err
 	recvBuffer := make([]byte, c.bufferSize)
 
 	doneChan := make(chan error, 1)
+	// recvChan stores the integer number which indicates how many bytes
 	recvChan := make(chan int, 1)
 	go func() {
 		// It is possible that this action blocks, although this
@@ -123,23 +131,23 @@ func (c *UDPClient) Exchange(ctx context.Context, reader io.Reader) ([]byte, err
 		//   can't dequeue the queue fast enough.
 		_, err := io.Copy(c.conn, reader)
 		if err != nil {
-			doneChan <- fmt.Errorf("write to conn failed, err: %s", err)
+			doneChan <- fmt.Errorf("write to conn failed, err: %w", err)
 			return
 		}
 
-		// Set a deadline for the ReadOperation so that we don't
+		// Set a deadline for the Read operation so that we don't
 		// wait forever for a server that might not respond on
 		// a reasonable amount of time.
 		deadline := time.Now().Add(c.timeout)
 		err = c.conn.SetReadDeadline(deadline)
 		if err != nil {
-			doneChan <- fmt.Errorf("set conn read deadline failed, err: %s", err)
+			doneChan <- fmt.Errorf("set conn read deadline failed, err: %w", err)
 			return
 		}
 
 		nRead, err := c.conn.Read(recvBuffer)
 		if err != nil {
-			doneChan <- fmt.Errorf("read from conn failed, err: %s", err)
+			doneChan <- fmt.Errorf("read from conn failed, err: %w", err)
 			return
 		}
 

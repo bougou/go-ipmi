@@ -49,8 +49,8 @@ func (res *GetSystemGUIDResponse) Format() string {
 	out += fmt.Sprintf("UUID Encoding     : %s\n", guidMode)
 	out += fmt.Sprintf("GUID Version      : %s\n", UUIDVersionString(u))
 	sec, nsec := u.Time().UnixTime()
-	out += fmt.Sprintf("Timestamp         : %s\n", time.Unix(sec, nsec).Format(time.RFC3339))
-	out += fmt.Sprintf("Timestamp(Legacy) : %s", IPMILegacyGUIDTime(u).Format(time.RFC3339))
+	out += fmt.Sprintf("Timestamp         : %s\n", time.Unix(sec, nsec).Format(timeFormat))
+	out += fmt.Sprintf("Timestamp(Legacy) : %s", IPMILegacyGUIDTime(u).Format(timeFormat))
 	return out
 }
 
