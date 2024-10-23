@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"strings"
 
 	"github.com/olekukonko/tablewriter"
 )
@@ -123,7 +124,7 @@ var sensorTypeMap = map[SensorType]string{
 	0x13: "Critical Interrupt",
 	0x14: "Button",
 	0x15: "Module / Board",
-	0x16: "Microcontroller/Coprocessor",
+	0x16: "Microcontroller",
 	0x17: "Add-in Card",
 	0x18: "Chassis",
 	0x19: "Chip Set",
@@ -146,6 +147,26 @@ var sensorTypeMap = map[SensorType]string{
 	0x2a: "Session Audit",
 	0x2b: "Version Change",
 	0x2c: "FRU State",
+}
+
+func SensorTypeFromNameOrNumber(sensorTypeNameOrNumber string) (SensorType, error) {
+	sensorTypeNumber, err := parseStringToInt64(sensorTypeNameOrNumber)
+	if err == nil {
+		// arg is number
+		_, exists := sensorTypeMap[SensorType(sensorTypeNumber)]
+		if exists {
+			return SensorType(sensorTypeNumber), nil
+		}
+		return SensorTypeReserved, fmt.Errorf("unknown sensor type number: %d", sensorTypeNumber)
+	}
+
+	for number, name := range sensorTypeMap {
+		if name == sensorTypeNameOrNumber {
+			return SensorType(number), nil
+		}
+	}
+
+	return SensorTypeReserved, fmt.Errorf("unknown sensor type name: %s", sensorTypeNameOrNumber)
 }
 
 // 43.17 Sensor Unit Type Codes
@@ -921,11 +942,11 @@ type Sensor struct {
 }
 
 func (s *Sensor) String() string {
-	sensorReadingStr := fmt.Sprintf("%d", s.Raw)
-	sensorValueStr := fmt.Sprintf("%.3f %s", s.Value, s.SensorUnit)
+	sensorReadingRawStr := fmt.Sprintf("%d", s.Raw)
+	sensorReadingValueStr := fmt.Sprintf("%.3f %s", s.Value, s.SensorUnit)
 	if s.scanningDisabled {
-		sensorReadingStr = "Unable to read sensor: Device Not Present"
-		sensorValueStr = "Unable to read sensor: Device Not Present"
+		sensorReadingRawStr = "Unable to read sensor: Device Not Present"
+		sensorReadingValueStr = "Unable to read sensor: Device Not Present"
 	}
 
 	return fmt.Sprintf(
@@ -934,9 +955,10 @@ func (s *Sensor) String() string {
 			fmt.Sprintf(" Sensor Type          : %s (%#02x) (%s)\n", s.SensorType.String(), uint8(s.SensorType), string(s.EventReadingType.SensorClass())) +
 			fmt.Sprintf(" Sensor Number        : %#02x\n", s.Number) +
 			fmt.Sprintf(" Sensor Name          : %s\n", s.Name) +
-			fmt.Sprintf(" Sensor Reading (raw) : %s\n", sensorReadingStr) +
-			fmt.Sprintf(" Sensor Value         : %s\n", sensorValueStr) +
-			fmt.Sprintf(" Sensor Status        : %s\n", s.Status()),
+			fmt.Sprintf(" Sensor Reading (raw) : %s\n", sensorReadingRawStr) +
+			fmt.Sprintf(" Sensor Value         : %s\n", sensorReadingValueStr) +
+			fmt.Sprintf(" Sensor Status        : %s\n", s.Status()) +
+			fmt.Sprintf(" Sensor Human String  : %s\n", s.HumanStr()),
 	)
 }
 
@@ -966,6 +988,7 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 
 	if extended {
 		headers = append(headers, []string{
+			"EntityID",
 			"EventReadingType",
 			"AnalogDataFormat",
 			"ReadV",
@@ -973,6 +996,7 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 			"ReadU",
 			"HasAR",
 			"DiscreteEvents",
+			"HumanStr",
 		}...)
 	}
 
@@ -980,7 +1004,7 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 	table.SetFooter(headers)
 
 	for _, sensor := range sensors {
-		content := []string{
+		rowContent := []string{
 			sensor.SDRRecordType.String(),
 			fmt.Sprintf("%#02x", sensor.Number),
 			sensor.Name,
@@ -997,7 +1021,8 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 		}
 
 		if extended {
-			content = append(content, []string{
+			rowContent = append(rowContent, []string{
+				fmt.Sprintf("%s (%#02x)", sensor.EntityID, uint8(sensor.EntityID)),
 				fmt.Sprintf("%s (%#02x)", sensor.EventReadingType.String(), uint8(sensor.EventReadingType)),
 				sensor.SensorUnit.AnalogDataFormat.String(),
 				fmt.Sprintf("%v", sensor.IsReadingValid()),
@@ -1007,13 +1032,16 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 			}...)
 
 			if sensor.IsThreshold() {
-				content = append(content, "N/A")
+				rowContent = append(rowContent, "N/A")
+
 			} else {
-				content = append(content, fmt.Sprintf("%v", sensor.Discrete.ActiveStates.TrueEvents()))
+				rowContent = append(rowContent, fmt.Sprintf("%v", sensor.DiscreteActiveEvents()))
 			}
+			rowContent = append(rowContent, sensor.HumanStr())
+
 		}
 
-		table.Append(content)
+		table.Append(rowContent)
 	}
 
 	table.Render()
@@ -1133,6 +1161,22 @@ func (sensor *Sensor) Status() string {
 	return fmt.Sprintf("0x%02x%02x", sensor.Discrete.optionalData1, sensor.Discrete.optionalData2)
 }
 
+func (sensor *Sensor) HumanStr() string {
+	if sensor.scanningDisabled {
+		return "N/A"
+	}
+
+	if !sensor.IsReadingValid() {
+		return "N/A"
+	}
+
+	if sensor.IsThreshold() {
+		return fmt.Sprintf("%.3f %s", sensor.Value, sensor.SensorUnit)
+	}
+
+	return strings.Join(sensor.DiscreteActiveEventsString(), ", ")
+}
+
 func (sensor *Sensor) ReadingStr() string {
 	if sensor.scanningDisabled {
 		return "N/A"
@@ -1197,5 +1241,31 @@ func (sensor *Sensor) HysteresisStr(raw uint8) string {
 		return fmt.Sprintf("%#02x", raw)
 	}
 
+	return ""
+}
+
+func (sensor *Sensor) DiscreteActiveEvents() []uint8 {
+	if sensor.IsThreshold() {
+		return []uint8{}
+	}
+
+	return sensor.Discrete.ActiveStates.TrueEvents()
+}
+
+func (sensor *Sensor) DiscreteActiveEventsString() []string {
+	result := make([]string, 0)
+
+	for _, eventOffset := range sensor.DiscreteActiveEvents() {
+		result = append(result, sensor.EventString(eventOffset))
+	}
+
+	return result
+}
+
+func (sensor *Sensor) EventString(eventOffset uint8) string {
+	event := sensor.EventReadingType.EventForOffset(sensor.SensorType, eventOffset)
+	if event != nil {
+		return event.EventName
+	}
 	return ""
 }

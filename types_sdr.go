@@ -424,8 +424,8 @@ type Mask_DiscreteEvent struct {
 	State_14 bool
 }
 
-func (mask Mask_DiscreteEvent) TrueEvents() []int {
-	events := []int{}
+func (mask Mask_DiscreteEvent) TrueEvents() []uint8 {
+	events := []uint8{}
 
 	if mask.State_0 {
 		events = append(events, 0)

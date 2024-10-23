@@ -143,11 +143,11 @@ func (standard *SELStandard) Pack() []byte {
 
 // EventString return string description of the event.
 func (sel *SELStandard) EventString() string {
-	return sel.EventReadingType.EventString(sel.SensorType, sel.SensorNumber, sel.EventData)
+	return sel.EventReadingType.EventString(sel.SensorType, sel.EventData)
 }
 
 func (sel *SELStandard) EventSeverity() EventSeverity {
-	return sel.EventReadingType.EventSeverity(sel.SensorType, sel.SensorNumber, sel.EventData, sel.EventDir)
+	return sel.EventReadingType.EventSeverity(sel.SensorType, sel.EventData, sel.EventDir)
 }
 
 func parseSELDefault(msg []byte, sel *SEL) error {
@@ -268,7 +268,7 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 		case SELRecordTypeRangeStandard:
 			s := sel.Standard
 
-			content := []string{
+			rowContent := []string{
 				fmt.Sprintf("%#04x", sel.RecordID),
 				sel.RecordType.String(),
 				fmt.Sprintf("%#02x", s.EvMRev),
@@ -293,10 +293,10 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 				} else {
 					sensorName = sdr.SensorName()
 				}
-				content = append(content, sensorName)
+				rowContent = append(rowContent, sensorName)
 			}
 
-			table.Append(content)
+			table.Append(rowContent)
 
 		case SELRecordTypeRangeTimestampedOEM:
 		case SELRecordTypeRangeNonTimestampedOEM:

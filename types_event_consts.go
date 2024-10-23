@@ -1,5 +1,33 @@
 package ipmi
 
+func genericEvent(typ EventReadingType, offset uint8) *Event {
+	e, ok := GenericEvents[typ]
+	if !ok {
+		return nil
+	}
+	event, ok := e[offset]
+	if !ok {
+		return nil
+	}
+	return &event
+}
+
+func oemEvent(sensorType SensorType, offset uint8) *Event {
+	return nil
+}
+
+func sensorSpecificEvent(sensorType SensorType, offset uint8) *Event {
+	e, ok := SensorSpecificEvents[sensorType]
+	if !ok {
+		return nil
+	}
+	event, ok := e[offset]
+	if !ok {
+		return nil
+	}
+	return &event
+}
+
 // Table 42-2, Generic Event/Reading Type Codes
 // Including Generic threshold-based events (0x01)
 // and Generic discrete-based events (0x02 - 0x0c)

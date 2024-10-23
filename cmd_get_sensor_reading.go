@@ -33,7 +33,9 @@ type GetSensorReadingResponse struct {
 	Below_LCR bool // at or below LCR threshold
 	Below_LNC bool // at or below LNC threshold
 
-	// see 42.1 It is possible for a discrete sensor to have more than one state active at a time
+	// see 42.1
+	// (Sensor Classes: Discrete)
+	// It is possible for a discrete sensor to have more than one state active at a time.
 	ActiveStates Mask_DiscreteEvent
 
 	optionalData1 uint8

@@ -15,10 +15,16 @@ func SensorFilterOptionIsReadingValid(sensor *Sensor) bool {
 	return sensor.IsReadingValid()
 }
 
+func SensorFilterOptionIsSensorType(sensorType SensorType) func(sensor *Sensor) bool {
+	return func(sensor *Sensor) bool {
+		return sensor.SensorType == sensorType
+	}
+}
+
 // GetSensors returns all sensors with their current readings and status.
 // If there's no filter options, it returns all sensors.
 // If there exists filter options, it only returns the sensors those
-// passed ALL filter options (filter option function returns true)
+// passed ALL filter options.
 func (c *Client) GetSensors(filterOptions ...SensorFilterOption) ([]*Sensor, error) {
 	var out = make([]*Sensor, 0)
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/kr/pretty"
@@ -558,4 +559,13 @@ func bcdUint8(i uint8) uint8 {
 	msb4 := i >> 4
 	lsb4 := i & 0x0f
 	return msb4*10 + lsb4
+}
+
+func parseStringToInt64(s string) (int64, error) {
+	if len(s) > 2 {
+		if s[0] == '0' {
+			return strconv.ParseInt(s, 0, 64)
+		}
+	}
+	return strconv.ParseInt(s, 10, 64)
 }

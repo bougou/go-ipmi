@@ -25,6 +25,7 @@ func NewCmdSDR() *cobra.Command {
 	cmd.AddCommand(NewCmdSDRInfo())
 	cmd.AddCommand(NewCmdSDRGet())
 	cmd.AddCommand(NewCmdSDRList())
+	cmd.AddCommand(NewCmdSDRType())
 
 	return cmd
 }
@@ -84,6 +85,76 @@ func NewCmdSDRGet() *cobra.Command {
 
 			client.Debug("SDR", sdr)
 			fmt.Println(sdr)
+		},
+	}
+
+	return cmd
+}
+
+func NewCmdSDRType() *cobra.Command {
+
+	sensorTypesText := `
+Sensor Types:
+	Temperature               (0x01)   Voltage                   (0x02)
+	Current                   (0x03)   Fan                       (0x04)
+	Physical Security         (0x05)   Platform Security         (0x06)
+	Processor                 (0x07)   Power Supply              (0x08)
+	Power Unit                (0x09)   Cooling Device            (0x0a)
+	Other                     (0x0b)   Memory                    (0x0c)
+	Drive Slot / Bay          (0x0d)   POST Memory Resize        (0x0e)
+	System Firmwares          (0x0f)   Event Logging Disabled    (0x10)
+	Watchdog1                 (0x11)   System Event              (0x12)
+	Critical Interrupt        (0x13)   Button                    (0x14)
+	Module / Board            (0x15)   Microcontroller           (0x16)
+	Add-in Card               (0x17)   Chassis                   (0x18)
+	Chip Set                  (0x19)   Other FRU                 (0x1a)
+	Cable / Interconnect      (0x1b)   Terminator                (0x1c)
+	System Boot Initiated     (0x1d)   Boot Error                (0x1e)
+	OS Boot                   (0x1f)   OS Critical Stop          (0x20)
+	Slot / Connector          (0x21)   System ACPI Power State   (0x22)
+	Watchdog2                 (0x23)   Platform Alert            (0x24)
+	Entity Presence           (0x25)   Monitor ASIC              (0x26)
+	LAN                       (0x27)   Management Subsys Health  (0x28)
+	Battery                   (0x29)   Session Audit             (0x2a)
+	Version Change            (0x2b)   FRU State                 (0x2c)
+`
+	// usage := `sdr type [all|<sensorTypeName>|<sensorTypeNumber>]`
+	cmd := &cobra.Command{
+		Use:   "type",
+		Short: "type",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) == 0 {
+				fmt.Println(sensorTypesText)
+				return
+			}
+
+			if len(args) >= 1 {
+
+				if args[0] == "all" {
+					sensors, err := client.GetSensors()
+					if err != nil {
+						fmt.Printf("failed to get all sensors: %s", err)
+						return
+					}
+
+					fmt.Println(ipmi.FormatSensors(true, sensors...))
+					return
+				}
+
+				sensorType, err := ipmi.SensorTypeFromNameOrNumber(args[0])
+				if err != nil {
+					fmt.Printf("invalid sensor type: %s", args[0])
+					return
+				}
+
+				sensors, err := client.GetSensors(ipmi.SensorFilterOptionIsSensorType(sensorType))
+				if err != nil {
+					fmt.Printf("failed to get (%s) sensors: %s", sensorType, err)
+					return
+				}
+
+				fmt.Println(ipmi.FormatSensors(true, sensors...))
+			}
 		},
 	}
 
