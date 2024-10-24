@@ -15,9 +15,15 @@ func SensorFilterOptionIsReadingValid(sensor *Sensor) bool {
 	return sensor.IsReadingValid()
 }
 
-func SensorFilterOptionIsSensorType(sensorType SensorType) func(sensor *Sensor) bool {
+// Sensor is matched if the sensor type of the sensor is one of the given sensor types.
+func SensorFilterOptionIsSensorType(sensorTypes ...SensorType) func(sensor *Sensor) bool {
 	return func(sensor *Sensor) bool {
-		return sensor.SensorType == sensorType
+		for _, sensorType := range sensorTypes {
+			if sensor.SensorType == sensorType {
+				return true
+			}
+		}
+		return false
 	}
 }
 

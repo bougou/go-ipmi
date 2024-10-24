@@ -2,9 +2,9 @@
 <meta name="description" content="Go IPMI library">
 <meta name="keywords" content="ipmi, go, golang, bmc">
 
-# go-ipmi
+# [go-ipmi](https://github.com/bougou/go-ipmi)
 
-`go-ipmi` is a pure golang native IPMI library. It DOES NOT wraps `ipmitool`.
+[`go-ipmi`](https://github.com/bougou/go-ipmi) is a pure golang native IPMI library. It DOES NOT wraps `ipmitool`.
 
 ## Usage
 
@@ -219,7 +219,7 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | SetSensorType                  | &check; |
 | GetSensorType                  | &check; |
 | SetSensorReadingAndEventStatus | &check; |
-| GetSensors (*)                 | &check; | sensor list                  |
+| GetSensors (*)                 | &check; | sensor list, sdr type        |
 | GetSensorByID (*)              | &check; |                              |
 | GetSensorByName (*)            | &check; | sensor get                   |
 
