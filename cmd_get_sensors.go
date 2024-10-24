@@ -45,10 +45,10 @@ func (c *Client) GetSensors(filterOptions ...SensorFilterOption) ([]*Sensor, err
 			return nil, fmt.Errorf("sdrToSensor failed, err: %s", err)
 		}
 
-		var choose bool = true
+		var choose bool
 		for _, filterOption := range filterOptions {
 			if !filterOption(sensor) {
-				choose = false
+				choose = true
 				break
 			}
 		}
