@@ -260,7 +260,7 @@ func (c *Client) generate_rakp2_authcode() ([]byte, error) {
 	c.DebugBytes("rakp2 authcode input", buffer, 16)
 
 	// The bmc also use user password to calculate authcode, so if the authcode does not match,
-	// it may indicates the password is no right.
+	// it may indicates the password is not right.
 	hmacKey := padBytes(c.Password, 20, 0x00)
 	c.DebugBytes("rakp2 authcode key", hmacKey, 16)
 

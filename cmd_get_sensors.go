@@ -28,9 +28,13 @@ func SensorFilterOptionIsSensorType(sensorTypes ...SensorType) func(sensor *Sens
 }
 
 // GetSensors returns all sensors with their current readings and status.
+//
 // If there's no filter options, it returns all sensors.
-// If there exists filter options, it only returns the sensors those
-// passed ALL filter options.
+//
+// If there exists filter options, it returns the sensors those
+// passed all filter options, that means the filter options are logically ANDed.
+//
+// If you want the filter options are logically ORed, use `GetSensorsAny`
 func (c *Client) GetSensors(filterOptions ...SensorFilterOption) ([]*Sensor, error) {
 	var out = make([]*Sensor, 0)
 
@@ -61,7 +65,45 @@ func (c *Client) GetSensors(filterOptions ...SensorFilterOption) ([]*Sensor, err
 	return out, nil
 }
 
-// GetSensor returns the sensor with current reading and status by specified sensor number.
+// GetSensorsAny returns all sensors with their current readings and status.
+//
+// If there's no filter options, it returns all sensors.
+//
+// If there exists filter options, it only returns the sensors those
+// passed any one filter option, that means the filter options are logically ORed.
+//
+// If you want the filter options are logically ANDed, use `GetSensors`.
+func (c *Client) GetSensorsAny(filterOptions ...SensorFilterOption) ([]*Sensor, error) {
+	var out = make([]*Sensor, 0)
+
+	sdrs, err := c.GetSDRs(SDRRecordTypeFullSensor, SDRRecordTypeCompactSensor)
+	if err != nil {
+		return nil, fmt.Errorf("GetSDRs failed, err: %s", err)
+	}
+
+	for _, sdr := range sdrs {
+		sensor, err := c.sdrToSensor(sdr)
+		if err != nil {
+			return nil, fmt.Errorf("sdrToSensor failed, err: %s", err)
+		}
+
+		var choose bool = false
+		for _, filterOption := range filterOptions {
+			if filterOption(sensor) {
+				choose = true
+				break
+			}
+		}
+
+		if choose {
+			out = append(out, sensor)
+		}
+	}
+
+	return out, nil
+}
+
+// GetSensorByID returns the sensor with current reading and status by specified sensor number.
 func (c *Client) GetSensorByID(sensorNumber uint8) (*Sensor, error) {
 	sdr, err := c.GetSDRBySensorID(sensorNumber)
 	if err != nil {
@@ -76,7 +118,7 @@ func (c *Client) GetSensorByID(sensorNumber uint8) (*Sensor, error) {
 	return sensor, nil
 }
 
-// GetSensor returns the sensor with current reading and status by specified sensor name.
+// GetSensorByName returns the sensor with current reading and status by specified sensor name.
 func (c *Client) GetSensorByName(sensorName string) (*Sensor, error) {
 	sdr, err := c.GetSDRBySensorName(sensorName)
 	if err != nil {

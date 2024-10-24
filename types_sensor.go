@@ -157,7 +157,7 @@ func SensorTypeFromNameOrNumber(sensorTypeNameOrNumber string) (SensorType, erro
 		if exists {
 			return SensorType(sensorTypeNumber), nil
 		}
-		return SensorTypeReserved, fmt.Errorf("unknown sensor type number: %d", sensorTypeNumber)
+		return SensorTypeReserved, fmt.Errorf("unknown sensor type number: %s", sensorTypeNameOrNumber)
 	}
 
 	for number, name := range sensorTypeMap {
