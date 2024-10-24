@@ -1,0 +1,23 @@
+lsi: false
+safe: true
+incremental: false
+gist:
+  noscript: false
+markdown: kramdown
+highlighter: rouge
+permalink: pretty
+
+repos:
+- name: go-ipmi
+  description: IPMI library in pure Go
+  url: https://github.com/bougou/go-ipmi
+
+brand_color: "#DA253B"
+
+
+kramdown:
+  math_engine: mathjax
+  syntax_highlighter: rouge
+
+plugins:
+  - jemoji
