@@ -367,8 +367,16 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | ----------- | ------ | ---------------------------- |
 | ErrorReport |        |
 
+### DCMI Commands
+
+| Method              | Status             | corresponding ipmitool usage |
+| ------------------- | ------------------ | ---------------------------- |
+| GetDCMIPowerReading | :white_check_mark: | dcmi power reading           |
+| GetDCMIAssetTag     | :white_check_mark: | dcmi asset_tag               |
+
 ## Reference
 
 - [Intelligent Platform Management Interface Specification Second Generation v2.0](https://www.intel.com/content/dam/www/public/us/en/documents/specification-updates/ipmi-intelligent-platform-mgt-interface-spec-2nd-gen-v2-0-spec-update.pdf)
 - [Platform Management FRU Information Storage Definition](https://www.intel.com/content/dam/www/public/us/en/documents/specification-updates/ipmi-platform-mgt-fru-info-storage-def-v1-0-rev-1-3-spec-update.pdf)
 - [PC SDRAM Serial Presence Detect (SPD) Specification](https://cdn.hackaday.io/files/10119432931296/Spdsd12b.pdf)
+- [DCMI Group Extension Specification v1.5](https://www.intel.com/content/dam/www/public/us/en/documents/technical-specifications/dcmi-v1-5-rev-spec.pdf)

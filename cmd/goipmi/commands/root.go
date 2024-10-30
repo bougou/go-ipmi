@@ -107,6 +107,7 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.AddCommand(NewCmdFRU())
 	rootCmd.AddCommand(NewCmdSOL())
 	rootCmd.AddCommand(NewCmdPEF())
+	rootCmd.AddCommand(NewCmdDCMI())
 
 	rootCmd.AddCommand(NewCmdX())
 

@@ -267,6 +267,10 @@ var (
 	// Other Bridge Commands
 	CommandErrorReport = Command{ID: 0xff, NetFn: NetFnBridgeRequest, Name: "Error Report (optional)"}
 
+	// Intel DCMI extensions (https://www.intel.com/content/dam/www/public/us/en/documents/technical-specifications/dcmi-v1-5-rev-spec.pdf)
+	CommandGetDCMIPowerReading = Command{ID: 0x02, NetFn: NetFnGroupExtensionRequest, Name: "GetDCMIPowerReading"}
+	CommandGetDCMIAssetTag     = Command{ID: 0x06, NetFn: NetFnGroupExtensionRequest, Name: "GetDCMIAssetTag"}
+
 	// Vendor Specific Commands
 	CommandGetSupermicroBiosVersion = Command{ID: 0xAC, NetFn: NetFnOEMSupermicroRequest, Name: "Get Supermicro BIOS Version"}
 )

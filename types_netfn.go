@@ -36,3 +36,9 @@ const (
 
 	NetFnOEMSupermicroRequest NetFn = 0x30
 )
+
+// Group Extensions
+const (
+	// Intel DCMI extensions (https://www.intel.com/content/dam/www/public/us/en/documents/technical-specifications/dcmi-v1-5-rev-spec.pdf)
+	GroupExtensionDCMI uint8 = 0xDC
+)
