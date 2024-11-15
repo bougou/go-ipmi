@@ -129,15 +129,11 @@ func (res *OpenSessionResponse) Format() string {
 }
 
 func (c *Client) OpenSession() (response *OpenSessionResponse, err error) {
-	bestSuiteID := c.session.v20.cipherSuiteID
+	cipherSuiteID := c.session.v20.cipherSuiteID
 
-	if bestSuiteID == CipherSuiteIDReserved {
-		bestSuiteID = findBestCipherSuite()
-	}
-
-	authAlg, integrityAlg, cryptAlg, err := getCipherSuiteAlgorithms(bestSuiteID)
+	authAlg, integrityAlg, cryptAlg, err := getCipherSuiteAlgorithms(cipherSuiteID)
 	if err != nil {
-		return nil, fmt.Errorf("get cipher suite for id %0x failed, err: %s", bestSuiteID, err)
+		return nil, fmt.Errorf("get cipher suite for id %v failed, err: %s", cipherSuiteID, err)
 	}
 	c.session.v20.requestedAuthAlg = authAlg
 	c.session.v20.requestedIntegrityAlg = integrityAlg

@@ -3,6 +3,7 @@ package commands
 import (
 	"flag"
 	"fmt"
+	"time"
 
 	"github.com/bougou/go-ipmi"
 	"github.com/spf13/cobra"
@@ -54,6 +55,7 @@ func initClient() error {
 
 	client.WithDebug(debug)
 	client.WithInterface(ipmi.Interface(intf))
+	client.WithTimeout(90 * time.Second)
 
 	if err := client.Connect(); err != nil {
 		return fmt.Errorf("client connect failed, err: %s", err)

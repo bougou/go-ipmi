@@ -1,5 +1,12 @@
 package ipmi
 
+const (
+	// 0h-Bh,Fh = specific channel number
+
+	// Eh = retrieve information for channel this request was issued on
+	ChannelNumberSelf uint8 = 0x0e
+)
+
 type LUN uint8
 
 // 7.2 BMC IPMB LUNs

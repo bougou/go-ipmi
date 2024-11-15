@@ -73,6 +73,30 @@ func (c *Client) DebugBytes(header string, data []byte, width int) {
 	debugBytes(header, data, width)
 }
 
+func (c *Client) DebugfRed(format string, object ...interface{}) {
+	if !c.debug {
+		return
+	}
+	const colorRed = "\033[0;31m"
+	fmt.Printf(colorRed+format+"\033[0m", object...)
+}
+
+func (c *Client) DebugfGreen(format string, object ...interface{}) {
+	if !c.debug {
+		return
+	}
+	const colorGreen = "\033[0;32m"
+	fmt.Printf(colorGreen+format+"\033[0m", object...)
+}
+
+func (c *Client) DebugfYellow(format string, object ...interface{}) {
+	if !c.debug {
+		return
+	}
+	const colorYellow = "\033[0;33m"
+	fmt.Printf(colorYellow+format+"\033[0m", object...)
+}
+
 // 37 Timestamp Format
 func parseTimestamp(timestamp uint32) time.Time {
 	return time.Unix(int64(timestamp), 0)

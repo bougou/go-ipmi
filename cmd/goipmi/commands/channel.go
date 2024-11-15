@@ -33,7 +33,7 @@ func NewCmdChannelInfo() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			var channelNumber uint8
 			if len(args) == 0 {
-				channelNumber = 0x0e
+				channelNumber = ipmi.ChannelNumberSelf
 			}
 			if len(args) >= 1 {
 				i, err := parseStringToInt64(args[0])
@@ -78,7 +78,7 @@ func NewCmdChannelGetCiphers() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			var channelNumber uint8
 			if len(args) == 0 {
-				channelNumber = 0x0e
+				channelNumber = ipmi.ChannelNumberSelf
 			}
 			if len(args) >= 1 {
 				i, err := parseStringToInt64(args[0])

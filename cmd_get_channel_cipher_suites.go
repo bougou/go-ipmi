@@ -10,7 +10,9 @@ const (
 
 // 22.15 Get Channel Cipher Suites Command
 type GetChannelCipherSuitesRequest struct {
-	ChannelNumber uint8 // Eh = retrieve information for channel this request was issued on
+	// 0h-Bh, Fh = channel numbers
+	// Eh = retrieve information for channel this request was issued on
+	ChannelNumber uint8
 	PayloadType   PayloadType
 	ListIndex     uint8
 }
@@ -67,7 +69,6 @@ func (c *Client) GetChannelCipherSuites(channelNumber uint8, index uint8) (respo
 	return
 }
 
-// GetAllChannelCipherSuites initiates 64 (MaxCipherSuiteListIndex) requests
 func (c *Client) GetAllChannelCipherSuites(channelNumber uint8) ([]CipherSuiteRecord, error) {
 	var index uint8 = 0
 	var cipherSuitesData = make([]byte, 0)
@@ -102,7 +103,7 @@ func parseCipherSuitesData(cipherSuitesData []byte) ([]CipherSuiteRecord, error)
 				return records, fmt.Errorf("incomplete cipher suite data")
 			}
 			offset++
-			csRecord.CipherSuitID = cipherSuitesData[offset]
+			csRecord.CipherSuitID = CipherSuiteID(cipherSuitesData[offset])
 
 		case OEMCipherSuite:
 			// id + iana (3) + 3 algs (7 bytes)
@@ -110,7 +111,7 @@ func parseCipherSuitesData(cipherSuitesData []byte) ([]CipherSuiteRecord, error)
 				return records, fmt.Errorf("incomplete cipher suite data")
 			}
 			offset++
-			csRecord.CipherSuitID = cipherSuitesData[offset]
+			csRecord.CipherSuitID = CipherSuiteID(cipherSuitesData[offset])
 			offset++
 			csRecord.OEMIanaID, _, _ = unpackUint24L(cipherSuitesData, offset)
 

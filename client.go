@@ -16,7 +16,7 @@ const (
 	InterfaceOpen    Interface = "open"
 	InterfaceTool    Interface = "tool"
 
-	DefaultExchangeTimeoutSec int = 20
+	DefaultExchangeTimeoutSec int = 60
 	DefaultBufferSize         int = 1024
 )
 

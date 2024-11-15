@@ -99,7 +99,7 @@ type CipherSuiteRecord struct {
 	StartOfRecord uint8
 
 	// a numeric way of identifying the Cipher Suite on the platform
-	CipherSuitID uint8
+	CipherSuitID CipherSuiteID
 	OEMIanaID    uint32 // Least significant byte first. 3-byte IANA for the OEM or body that defined the Cipher Suite.
 
 	// an authentication algorithm number is required for all Cipher Suites.
@@ -109,12 +109,37 @@ type CipherSuiteRecord struct {
 	CryptAlgs     []uint8 // Tag bits: [7:6]=10b
 }
 
-func findBestCipherSuite() CipherSuiteID {
-	var bestSuite = CipherSuiteIDReserved
+func (c *Client) findBestCipherSuites() []CipherSuiteID {
+	cipherSuiteRecords, err := c.GetAllChannelCipherSuites(ChannelNumberSelf)
+	if err != nil {
+		return preferredCiphers
+	}
 
+	cipherSuiteIDs := make([]CipherSuiteID, len(cipherSuiteRecords))
+	for i, cipherSuiteRecord := range cipherSuiteRecords {
+		cipherSuiteIDs[i] = cipherSuiteRecord.CipherSuitID
+	}
+	return sortCipherSuites(cipherSuiteIDs)
+}
+
+// sortCipherSuites return cipher suites in order of preference.
+// the cipher suite not in the preferredCiphers list would be excluded.
+func sortCipherSuites(cipherSuites []CipherSuiteID) []CipherSuiteID {
+	sorted := make([]CipherSuiteID, 0)
+	for _, preferredCipher := range preferredCiphers {
+		for _, cipherSuiteID := range cipherSuites {
+			if preferredCipher == cipherSuiteID {
+				sorted = append(sorted, cipherSuiteID)
+			}
+		}
+	}
+
+	return sorted
+}
+
+var preferredCiphers = []CipherSuiteID{
 	// Todo
 	// cipher suite best order is chosen with this criteria:
-	// HMAC-MD5 and MD5 are bad
 	// xRC4 is bad
 	// AES128 is required
 	// HMAC-SHA256 > HMAC-SHA1
@@ -124,19 +149,32 @@ func findBestCipherSuite() CipherSuiteID {
 	// being required by the spec, the only better defined standard cipher
 	// suite is 17. So if SHA256 is available, we should try to use that,
 	// otherwise, fall back to 3.
-	// var cipherSuitesOrder = []byte{
-	// CipherSuiteID17,
-	// CipherSuiteID3,
-	// }
 
-	// supportedCipherSuites = c.GetChannelCipherSuite
+	CipherSuiteID17,
 
-	if bestSuite == CipherSuiteIDReserved {
-		// IPMI 2.0 spec requires that cipher suite 3 is implemented
-		// so we should always be able to fall back to that if better
-		// options are not available.
-		// CipherSuiteID3 -> 01h, 01h, 01h
-		bestSuite = CipherSuiteID3
-	}
-	return bestSuite
+	// IPMI 2.0 spec requires that cipher suite 3 is implemented
+	// so we should always be able to fall back to that if better
+	// options are not available.
+	// CipherSuiteID3 -> 01h, 01h, 01h
+	CipherSuiteID3,
+
+	CipherSuiteID15,
+	CipherSuiteID16,
+	CipherSuiteID18,
+	CipherSuiteID19,
+
+	CipherSuiteID6,
+	CipherSuiteID7,
+	CipherSuiteID8,
+	CipherSuiteID11,
+	CipherSuiteID12,
+
+	// xRC4 is bad, so we don't use it
+
+	// CipherSuiteID4,
+	// CipherSuiteID5,
+	// CipherSuiteID9,
+	// CipherSuiteID10,
+	// CipherSuiteID13,
+	// CipherSuiteID14,
 }

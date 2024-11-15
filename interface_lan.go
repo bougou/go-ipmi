@@ -169,8 +169,10 @@ func (c *Client) exchangeLAN(request Request, response Response) error {
 // 4. Activate Session
 func (c *Client) Connect15() error {
 	var (
-		err            error
-		channelNumber  uint8          = 0x0e // Eh = retrieve information for channel this request was issued on
+		err error
+
+		channelNumber uint8 = ChannelNumberSelf
+
 		privilegeLevel PrivilegeLevel = PrivilegeLevelAdministrator
 	)
 
@@ -209,9 +211,7 @@ func (c *Client) Connect20() error {
 	var (
 		err error
 
-		// 0h-Bh,Fh = specific channel number
-		// Eh = retrieve information for channel this request was issued on
-		channelNumber uint8 = 0x0e
+		channelNumber uint8 = ChannelNumberSelf
 
 		privilegeLevel PrivilegeLevel = PrivilegeLevelAdministrator
 	)
@@ -221,20 +221,49 @@ func (c *Client) Connect20() error {
 		return fmt.Errorf("cmd: Get Channel Authentication Capabilities failed, err: %s", err)
 	}
 
-	// Todo, retry for opensession/rakp1/rakp3
-	_, err = c.OpenSession()
-	if err != nil {
-		return fmt.Errorf("cmd: RMCP+ Open Session failed, err: %s", err)
+	tryCiphers := c.findBestCipherSuites()
+
+	if c.session.v20.cipherSuiteID != CipherSuiteIDReserved {
+		// client explicitly specified a cipher suite to use
+		tryCiphers = []CipherSuiteID{c.session.v20.cipherSuiteID}
 	}
 
-	_, err = c.RAKPMessage1()
-	if err != nil {
-		return fmt.Errorf("cmd: rakp1 failed, err: %s", err)
+	c.DebugfGreen("\n\ntry ciphers (%v)\n", tryCiphers)
+
+	var success bool
+	errs := []error{}
+
+	// try different cipher suites for opensession/rakp1/rakp3
+	for _, cipherSuiteID := range tryCiphers {
+		c.DebugfGreen("\n\ntry cipher suite id (%v)\n\n\n", cipherSuiteID)
+
+		c.session.v20.cipherSuiteID = cipherSuiteID
+
+		_, err = c.OpenSession()
+		if err != nil {
+			errs = append(errs, fmt.Errorf("cmd: RMCP+ Open Session failed with cipher suite id (%v), err: %s", cipherSuiteID, err))
+			continue
+		}
+
+		_, err = c.RAKPMessage1()
+		if err != nil {
+			errs = append(errs, fmt.Errorf("cmd: rakp1 failed with cipher suite id (%v), err: %s", cipherSuiteID, err))
+			continue
+		}
+
+		_, err = c.RAKPMessage3()
+		if err != nil {
+			errs = append(errs, fmt.Errorf("cmd: rakp3 failed with cipher suite id (%v), err: %s", cipherSuiteID, err))
+			continue
+		}
+
+		c.DebugfGreen("\n\nconnect20 success with cipher suite id (%v)\n\n\n", cipherSuiteID)
+		success = true
+		break
 	}
 
-	_, err = c.RAKPMessage3()
-	if err != nil {
-		return fmt.Errorf("cmd: rakp3 failed, err: %s", err)
+	if !success {
+		return fmt.Errorf("\n\nconnect20 failed after try all cipher suite ids (%v), errs: %v", tryCiphers, errs)
 	}
 
 	_, err = c.SetSessionPrivilegeLevel(c.session.v20.maxPrivilegeLevel)
@@ -256,9 +285,7 @@ func (c *Client) ConnectAuto() error {
 	var (
 		err error
 
-		// 0h-Bh,Fh = specific channel number
-		// Eh = retrieve information for channel this request was issued on
-		channelNumber uint8 = 0x0e
+		channelNumber uint8 = ChannelNumberSelf
 
 		privilegeLevel PrivilegeLevel = PrivilegeLevelAdministrator
 	)

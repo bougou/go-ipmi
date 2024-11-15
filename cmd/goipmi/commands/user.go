@@ -34,7 +34,7 @@ func NewCmdUserList() *cobra.Command {
 			var channelNumber uint8
 
 			if len(args) == 0 {
-				channelNumber = 0x0e // current meaning
+				channelNumber = ipmi.ChannelNumberSelf
 			}
 
 			if len(args) > 1 {
@@ -63,7 +63,7 @@ func NewCmdUserSummary() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			var channelNumber uint8
 			if len(args) == 0 {
-				channelNumber = 0x0e // current meaning
+				channelNumber = ipmi.ChannelNumberSelf
 			}
 
 			if len(args) > 1 {
