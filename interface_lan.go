@@ -3,6 +3,7 @@ package ipmi
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -263,7 +264,7 @@ func (c *Client) Connect20() error {
 	}
 
 	if !success {
-		return fmt.Errorf("\n\nconnect20 failed after try all cipher suite ids (%v), errs: %v", tryCiphers, errs)
+		return fmt.Errorf("connect20 failed after try all cipher suite ids (%v), errs: \n%v", tryCiphers, errors.Join(errs...))
 	}
 
 	_, err = c.SetSessionPrivilegeLevel(c.session.v20.maxPrivilegeLevel)
