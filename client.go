@@ -29,6 +29,8 @@ type Client struct {
 
 	debug bool
 
+	maxPrivilegeLevel PrivilegeLevel
+
 	openipmi *openipmi
 	session  *session
 
@@ -91,6 +93,8 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 		v20:        true,
 		timeout:    time.Second * time.Duration(DefaultExchangeTimeoutSec),
 		bufferSize: DefaultBufferSize,
+
+		maxPrivilegeLevel: PrivilegeLevelUnspecified,
 
 		session: &session{
 			// IPMI Request Sequence, start from 1
@@ -158,8 +162,14 @@ func (c *Client) WithCipherSuiteID(cipherSuiteID CipherSuiteID) *Client {
 	return c
 }
 
+// WithMaxPrivilegeLevel sets a specified session privilege level to use.
+func (c *Client) WithMaxPrivilegeLevel(privilegeLevel PrivilegeLevel) *Client {
+	c.maxPrivilegeLevel = privilegeLevel
+	return c
+}
+
 func (c *Client) SessionPrivilegeLevel() PrivilegeLevel {
-	return c.session.v20.maxPrivilegeLevel
+	return c.maxPrivilegeLevel
 }
 
 // Connect connects to the bmc by specified Interface.

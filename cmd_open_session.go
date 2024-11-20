@@ -184,7 +184,6 @@ func (c *Client) OpenSession() (response *OpenSessionResponse, err error) {
 	c.session.v20.authAlg = AuthAlg(response.AuthAlg)
 	c.session.v20.integrityAlg = IntegrityAlg(response.IntegrityAlg)
 	c.session.v20.cryptAlg = CryptAlg(response.CryptAlg)
-	c.session.v20.maxPrivilegeLevel = PrivilegeLevel(response.MaximumPrivilegeLevel)
 	c.session.v20.consoleSessionID = response.RemoteConsoleSessionID
 	c.session.v20.bmcSessionID = response.ManagedSystemSessionID
 

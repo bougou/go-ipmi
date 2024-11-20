@@ -180,9 +180,6 @@ func (c *Client) GetChannelAuthenticationCapabilities(channelNumber uint8, privi
 		MaximumPrivilegeLevel: privilegeLevel,
 	}
 
-	// todo
-	c.session.v15.maxPrivilegeLevel = privilegeLevel
-
 	response = &GetChannelAuthenticationCapabilitiesResponse{}
 	err = c.Exchange(request, response)
 	if err != nil {

@@ -31,8 +31,7 @@ type v15 struct {
 	// indicate whether or not the IPMI 1.5 session is activated.
 	active bool
 
-	maxPrivilegeLevel PrivilegeLevel
-	sessionID         uint32
+	sessionID uint32
 
 	// Sequence number that BMC wants remote console to use for subsequent messages in the session.
 	// Remote console use "inSeq" and increment it when sending Request to BMC.
@@ -61,13 +60,13 @@ type v20 struct {
 
 	// filled by RmcpOpenSessionResponse
 	// RMCP Open Session is used for exchanging session ids
-	authAlg           AuthAlg
-	integrityAlg      IntegrityAlg
-	cryptAlg          CryptAlg
-	maxPrivilegeLevel PrivilegeLevel // uint8 requestedRole sent in RAKP 1 message
-	role              uint8          // whole byte of privilege level in RAKP1, will be used for computing authcode of rakp2, rakp3
-	consoleSessionID  uint32
-	bmcSessionID      uint32
+	authAlg      AuthAlg
+	integrityAlg IntegrityAlg
+	cryptAlg     CryptAlg
+
+	role             uint8 // whole byte of privilege level in RAKP1, will be used for computing authcode of rakp2, rakp3
+	consoleSessionID uint32
+	bmcSessionID     uint32
 
 	// values required for RAKP messages
 
@@ -170,14 +169,15 @@ func (c *Client) exchangeLAN(request Request, response Response) error {
 // 4. Activate Session
 func (c *Client) Connect15() error {
 	var (
-		err error
-
+		err           error
 		channelNumber uint8 = ChannelNumberSelf
-
-		privilegeLevel PrivilegeLevel = PrivilegeLevelAdministrator
 	)
 
-	_, err = c.GetChannelAuthenticationCapabilities(channelNumber, privilegeLevel)
+	if c.maxPrivilegeLevel == PrivilegeLevelUnspecified {
+		c.maxPrivilegeLevel = PrivilegeLevelAdministrator
+	}
+
+	_, err = c.GetChannelAuthenticationCapabilities(channelNumber, c.maxPrivilegeLevel)
 	if err != nil {
 		return fmt.Errorf("GetChannelAuthenticationCapabilities failed, err: %s", err)
 	}
@@ -194,9 +194,9 @@ func (c *Client) Connect15() error {
 		return fmt.Errorf("ActivateSession failed, err: %s", err)
 	}
 
-	_, err = c.SetSessionPrivilegeLevel(c.session.v15.maxPrivilegeLevel)
+	_, err = c.SetSessionPrivilegeLevel(c.maxPrivilegeLevel)
 	if err != nil {
-		return fmt.Errorf("SetSessionPrivilegeLevel failed, err: %s", err)
+		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %s", c.maxPrivilegeLevel, err)
 	}
 
 	go func() {
@@ -210,14 +210,15 @@ func (c *Client) Connect15() error {
 // see 13.15 IPMI v2.0/RMCP+ Session Activation
 func (c *Client) Connect20() error {
 	var (
-		err error
-
+		err           error
 		channelNumber uint8 = ChannelNumberSelf
-
-		privilegeLevel PrivilegeLevel = PrivilegeLevelAdministrator
 	)
 
-	_, err = c.GetChannelAuthenticationCapabilities(channelNumber, privilegeLevel)
+	if c.maxPrivilegeLevel == PrivilegeLevelUnspecified {
+		c.maxPrivilegeLevel = PrivilegeLevelAdministrator
+	}
+
+	_, err = c.GetChannelAuthenticationCapabilities(channelNumber, c.maxPrivilegeLevel)
 	if err != nil {
 		return fmt.Errorf("cmd: Get Channel Authentication Capabilities failed, err: %s", err)
 	}
@@ -267,9 +268,9 @@ func (c *Client) Connect20() error {
 		return fmt.Errorf("connect20 failed after try all cipher suite ids (%v), errs: \n%v", tryCiphers, errors.Join(errs...))
 	}
 
-	_, err = c.SetSessionPrivilegeLevel(c.session.v20.maxPrivilegeLevel)
+	_, err = c.SetSessionPrivilegeLevel(c.maxPrivilegeLevel)
 	if err != nil {
-		return fmt.Errorf("SetSessionPrivilegeLevel failed, err: %s", err)
+		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %s", c.maxPrivilegeLevel, err)
 	}
 
 	go func() {

@@ -59,11 +59,13 @@ func (res *GetChannelAccessResponse) Format() string {
 	return fmt.Sprintf(`    Alerting            : %s
     Per-message Auth    : %s
     User Level Auth     : %s
-    Access Mode         : %s`,
+    Access Mode         : %s
+    Max Privilege Level : %s`,
 		formatBool(res.PEFAlertingDisabled, "disabled", "enabled"),
 		formatBool(res.PerMsgAuthDisabled, "disabled", "enabled"),
 		formatBool(res.UserLevelAuthDisabled, "disabled", "enabled"),
 		res.AccessMode,
+		res.MaxPrivilegeLevel.String(),
 	)
 }
 

@@ -181,7 +181,7 @@ func (c *Client) RAKPMessage1() (response *RAKPMessage2, err error) {
 		MessageTag:                     0,
 		ManagedSystemSessionID:         c.session.v20.bmcSessionID, // set by previous RMCP+ Open Session Request
 		RemoteConsoleRandomNumber:      c.session.v20.consoleRand,
-		RequestedMaximumPrivilegeLevel: c.session.v20.maxPrivilegeLevel,
+		RequestedMaximumPrivilegeLevel: c.maxPrivilegeLevel,
 		NameOnlyLookup:                 true,
 		UsernameLength:                 uint8(len(c.Username)),
 		Username:                       []byte(c.Username),

@@ -124,7 +124,7 @@ func (res *ActivateSessionResponse) Format() string {
 func (c *Client) ActivateSession() (response *ActivateSessionResponse, err error) {
 	request := &ActivateSessionRequest{
 		AuthTypeForSession: c.session.authType,
-		MaxPrivilegeLevel:  c.session.v15.maxPrivilegeLevel,
+		MaxPrivilegeLevel:  c.maxPrivilegeLevel,
 		Challenge:          c.session.v15.challenge,
 
 		// the outbound session sequence number is set by the remote console and can be any random value.
@@ -151,8 +151,6 @@ func (c *Client) ActivateSession() (response *ActivateSessionResponse, err error
 	// The remote console must increment the inbound session sequence number
 	// by one (1) for each subsequent message it sends to the BMC
 	c.session.v15.inSeq = response.InitialInboundSequenceNumber
-
-	c.session.v15.maxPrivilegeLevel = PrivilegeLevel(response.MaxPrivilegeLevel)
 
 	return
 }

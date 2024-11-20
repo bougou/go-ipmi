@@ -117,6 +117,13 @@ func (cp ChannelMedium) String() string {
 }
 
 // 6.8 Channel Privilege Levels
+//
+//   - The `SetChannelAccess` command is used to set the maximum privilege level limit for a channel.
+//   - The `SetSessionPrivilegeLevel` Command is used to request the ability to perform operations
+//     at a particular privilege level.
+//   - The `SetSessionPrivilegeLevel` command can only be used to set privilege levels that are
+//     less than or equal to the privilege level limit for the entire channel,
+//     regardless of the privilege level of the user.
 type PrivilegeLevel uint8
 
 const (

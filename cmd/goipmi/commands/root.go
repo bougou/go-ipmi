@@ -3,6 +3,7 @@ package commands
 import (
 	"flag"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/bougou/go-ipmi"
@@ -19,7 +20,8 @@ var (
 	intf     string
 	debug    bool
 
-	showVersion bool
+	privilegeLevel string
+	showVersion    bool
 
 	client *ipmi.Client
 )
@@ -56,6 +58,22 @@ func initClient() error {
 	client.WithDebug(debug)
 	client.WithInterface(ipmi.Interface(intf))
 	client.WithTimeout(90 * time.Second)
+
+	var privLevel ipmi.PrivilegeLevel = ipmi.PrivilegeLevelUnspecified
+	switch strings.ToUpper(privilegeLevel) {
+	case "CALLBACK":
+		privLevel = ipmi.PrivilegeLevelCallback
+	case "USER":
+		privLevel = ipmi.PrivilegeLevelUser
+	case "OPERATOR":
+		privLevel = ipmi.PrivilegeLevelOperator
+	case "ADMINISTRATOR":
+		privLevel = ipmi.PrivilegeLevelAdministrator
+	}
+
+	if privLevel != ipmi.PrivilegeLevelUnspecified {
+		client.WithMaxPrivilegeLevel(privLevel)
+	}
 
 	if err := client.Connect(); err != nil {
 		return fmt.Errorf("client connect failed, err: %s", err)
@@ -94,6 +112,7 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVarP(&intf, "interface", "I", "open", "interface, supported (open,lan,lanplus)")
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug")
 	rootCmd.PersistentFlags().BoolVarP(&showVersion, "version", "V", false, "version")
+	rootCmd.PersistentFlags().StringVarP(&privilegeLevel, "priv-level", "L", "ADMINISTRATOR", "Force session privilege level. Can be CALLBACK, USER, OPERATOR, ADMINISTRATOR.")
 
 	rootCmd.Flags().AddGoFlagSet(flag.CommandLine)
 
