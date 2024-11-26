@@ -312,7 +312,7 @@ func (c *Client) fillSensorThreshold(sensor *Sensor) error {
 func _canSafelyIgnoredResponseError(err error) bool {
 	if respErr, ok := err.(*ResponseError); ok {
 		cc := respErr.CompletionCode()
-		if cc == CompletionCodeRequestedDataNotPresent || cc == CompletionCodeIllegalCommand {
+		if cc == CompletionCodeRequestedDataNotPresent || cc == CompletionCodeIllegalCommand || cc == CompletionCodeInvalidCommand {
 			// above completion codes CAN be ignored
 			// it normally means the sensor device does not exist or the sensor device does not recognize the IPMI command
 			return true
