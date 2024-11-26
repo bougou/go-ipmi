@@ -193,15 +193,13 @@ func (c *Client) GetSDRsMap() (SDRMapBySensorNumber, error) {
 			generatorID = sdr.Compact.GeneratorID
 			sensorNumber = sdr.Compact.SensorNumber
 		}
-		if recordType != SDRRecordTypeFullSensor && recordType != SDRRecordTypeCompactSensor {
-			// ignored the SDR
-			continue
-		}
 
-		if _, ok := out[generatorID]; !ok {
-			out[generatorID] = make(map[SensorNumber]*SDR)
+		if recordType == SDRRecordTypeFullSensor || recordType == SDRRecordTypeCompactSensor {
+			if _, ok := out[generatorID]; !ok {
+				out[generatorID] = make(map[SensorNumber]*SDR)
+			}
+			out[generatorID][sensorNumber] = sdr
 		}
-		out[generatorID][sensorNumber] = sdr
 
 		recordID = sdr.NextRecordID
 		if recordID == 0xffff {

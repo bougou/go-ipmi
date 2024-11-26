@@ -226,9 +226,9 @@ func parseSELOEMNonTimestamped(msg []byte, sel *SEL) error {
 // FormatSELs print sel records in table format.
 // The second sdrMap is optional. If the sdrMap is not nil,
 // it will also print sensor number, entity id and instance, and asserted discrete states.
-// sdrMap can be get by client GetSDRsMap method.
+// The sdrMap can be fetched by GetSDRsMap method.
 func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
-	var elistMode bool
+	var elistMode bool // extend list
 	if sdrMap != nil {
 		elistMode = true
 	}
