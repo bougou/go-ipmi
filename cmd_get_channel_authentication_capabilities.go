@@ -189,6 +189,12 @@ func (c *Client) GetChannelAuthenticationCapabilities(ctx context.Context, chann
 		return
 	}
 
+	if !response.AnonymousLoginEnabled {
+		if c.Username == "" {
+			return nil, fmt.Errorf("anonymous login is not enabled, username (%s) is empty", c.Username)
+		}
+	}
+
 	c.session.authType = response.chooseAuthType()
 
 	return

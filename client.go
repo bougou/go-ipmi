@@ -86,14 +86,6 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 		return nil, fmt.Errorf("user name (%s) too long, exceed (%d) characters", user, IPMI_MAX_USER_NAME_LENGTH)
 	}
 
-	if len(user) == 0 {
-		return nil, fmt.Errorf("empty username")
-	}
-
-	if len(pass) == 0 {
-		return nil, fmt.Errorf("empty password")
-	}
-
 	c := &Client{
 		Host:      host,
 		Port:      port,
