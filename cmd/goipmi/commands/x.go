@@ -28,8 +28,9 @@ func NewCmdX() *cobra.Command {
 			return closeClient()
 		},
 	}
-	cmd.AddCommand(NewCmdXGetSDR())
-	cmd.AddCommand(NewCmdXGetSensor())
+	cmd.AddCommand(NewCmdXGetSDRs())
+	cmd.AddCommand(NewCmdXGetSensors())
+	cmd.AddCommand(NewCmdXGetDeviceSDRs())
 	cmd.AddCommand(NewCmdXGetPayloadActivationStatus())
 	cmd.AddCommand(NewCmdXGetDeviceGUID())
 	cmd.AddCommand(NewCmdXGetSystemGUID())
@@ -42,9 +43,9 @@ func NewCmdX() *cobra.Command {
 	return cmd
 }
 
-func NewCmdXGetSDR() *cobra.Command {
+func NewCmdXGetSDRs() *cobra.Command {
 	var show bool
-	var waitIntervalSec int
+	var loop bool
 
 	cmd := &cobra.Command{
 		Use:   "get-sdr",
@@ -53,35 +54,43 @@ func NewCmdXGetSDR() *cobra.Command {
 			ctx := context.Background()
 
 			for {
-				fmt.Printf("\n\nGet SDR at %s\n", time.Now().Format(timeFormat))
+				fmt.Printf("\n\nGet SDRs at %s\n", time.Now().Format(timeFormat))
 				res, err := client.GetSDRs(ctx)
 				if err != nil {
 					fmt.Printf("GetSDRs failed, err: %s", err)
-					goto WAIT
+					if loop {
+						goto WAIT
+					} else {
+						return
+					}
 				}
 				fmt.Printf("GetSDRs succeeded, %d records\n", len(res))
 				if show {
 					fmt.Println(ipmi.FormatSDRs(res))
 				}
 
-				goto WAIT
+				if loop {
+					goto WAIT
+				} else {
+					return
+				}
 
 			WAIT:
-				fmt.Printf("Wait for %d seconds\n", waitIntervalSec)
-				time.Sleep(time.Duration(waitIntervalSec) * time.Second)
+				fmt.Println("wait for next loop")
+				time.Sleep(30 * time.Second)
 			}
 		},
 	}
 
 	cmd.PersistentFlags().BoolVarP(&show, "show", "s", false, "show table of result")
-	cmd.PersistentFlags().IntVarP(&waitIntervalSec, "wait", "w", 30, "wait sleep interval sec")
+	cmd.PersistentFlags().BoolVarP(&loop, "loop", "l", false, "loop")
 
 	return cmd
 }
 
-func NewCmdXGetSensor() *cobra.Command {
+func NewCmdXGetSensors() *cobra.Command {
 	var show bool
-	var waitIntervalSec int
+	var loop bool
 
 	cmd := &cobra.Command{
 		Use:   "get-sensor",
@@ -94,23 +103,59 @@ func NewCmdXGetSensor() *cobra.Command {
 				res, err := client.GetSensors(ctx)
 				if err != nil {
 					fmt.Printf("GetSensors failed, err: %s", err)
-					goto WAIT
+					if loop {
+						goto WAIT
+					} else {
+						return
+					}
 				}
 				fmt.Printf("GetSensors succeeded, %d records\n", len(res))
 				if show {
 					fmt.Println(ipmi.FormatSensors(true, res...))
 				}
-				goto WAIT
+				if loop {
+					goto WAIT
+				} else {
+					return
+				}
 
 			WAIT:
-				fmt.Printf("Wait for %d seconds\n", waitIntervalSec)
-				time.Sleep(time.Duration(waitIntervalSec) * time.Second)
+				fmt.Println("wait for next loop")
+				time.Sleep(30 * time.Second)
 			}
 		},
 	}
 
 	cmd.PersistentFlags().BoolVarP(&show, "show", "s", false, "show table of result")
-	cmd.PersistentFlags().IntVarP(&waitIntervalSec, "wait", "w", 30, "wait sleep interval sec")
+	cmd.PersistentFlags().BoolVarP(&loop, "loop", "l", false, "loop")
+
+	return cmd
+}
+
+func NewCmdXGetDeviceSDRs() *cobra.Command {
+	var show bool
+
+	cmd := &cobra.Command{
+		Use:   "get-device-sdr",
+		Short: "get-device-sdr",
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
+
+			fmt.Printf("\n\nGet Device SDR at %s\n", time.Now().Format(timeFormat))
+			res, err := client.GetDeviceSDRs(ctx)
+			if err != nil {
+				fmt.Printf("GetDeviceSDRs failed, err: %s", err)
+				return
+			}
+
+			fmt.Printf("GetDeviceSDRs succeeded, %d records\n", len(res))
+			if show {
+				fmt.Println(ipmi.FormatSDRs(res))
+			}
+		},
+	}
+
+	cmd.PersistentFlags().BoolVarP(&show, "show", "s", false, "show table of result")
 
 	return cmd
 }

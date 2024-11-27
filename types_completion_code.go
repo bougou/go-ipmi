@@ -58,9 +58,9 @@ var CC = map[uint8]string{
 	0xd1: "Device firmware in update mode",
 	0xd2: "BMC initialization in progress",
 	0xd3: "Destination unavailable",
-	0xd4: "Insufficient privilege level",
-	0xd5: "Command not supported in present state",
-	0xd6: "Cannot execute command, command disabled",
+	0xd4: "Cannot execute command, insufficient privilege level or other security-based restriction",
+	0xd5: "Cannot execute command, command or request parameters not supported in present state",
+	0xd6: "Cannot execute command, command disabled or is unavailable",
 	0xff: "Unspecified error",
 }
 

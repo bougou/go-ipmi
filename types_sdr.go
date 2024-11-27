@@ -8,6 +8,8 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+const SDRRecordHeaderSize int = 5
+
 // 43. Sensor Data Record Formats
 // SDRRecordType is a number representing the type of the record.
 type SDRRecordType uint8
@@ -165,8 +167,6 @@ func (sdr *SDR) HasAnalogReading() bool {
 // This function is normally used after getting GetSDRResponse or GetDeviceSDRResponse to
 // interpret the raw SDR record data in the response.
 func ParseSDR(data []byte, nextRecordID uint16) (*SDR, error) {
-	const SDRRecordHeaderSize int = 5
-
 	sdrHeader := &SDRHeader{}
 	if len(data) < SDRRecordHeaderSize {
 		return nil, ErrNotEnoughDataWith("sdr record header size", len(data), SDRRecordHeaderSize)

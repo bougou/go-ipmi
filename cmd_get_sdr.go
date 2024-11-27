@@ -9,8 +9,8 @@ import (
 type GetSDRRequest struct {
 	ReservationID uint16 // LS Byte first
 	RecordID      uint16 // LS Byte first
-	Offset        uint8  // Offset into record
-	Read          uint8  // FFh means read entire record
+	ReadOffset    uint8  // Offset into record
+	ReadBytes     uint8  // FFh means read entire record
 }
 
 type GetSDRResponse struct {
@@ -22,8 +22,8 @@ func (req *GetSDRRequest) Pack() []byte {
 	msg := make([]byte, 6)
 	packUint16L(req.ReservationID, msg, 0)
 	packUint16L(req.RecordID, msg, 2)
-	packUint8(req.Offset, msg, 4)
-	packUint8(req.Read, msg, 5)
+	packUint8(req.ReadOffset, msg, 4)
+	packUint8(req.ReadBytes, msg, 5)
 	return msg
 }
 
@@ -54,18 +54,19 @@ func (c *Client) GetSDR(ctx context.Context, recordID uint16) (response *GetSDRR
 	request := &GetSDRRequest{
 		ReservationID: 0,
 		RecordID:      recordID,
-		Offset:        0,
-		Read:          0xff,
+		ReadOffset:    0,
+		ReadBytes:     0xff,
 	}
 	response = &GetSDRResponse{}
 	err = c.Exchange(ctx, request, response)
 
-	// Todo, try read partial data if err (ResponseError and CompletionCode) indicate
+	// try read partial data if err (ResponseError and CompletionCode) indicate
 	// reading full data (0xff) exceeds the maximum transfer length for the interface
-	// if resErr, ok := err.(*ResponseError); ok {
-	// 	if resErr.CompletionCode() == CompletionCodeCannotReturnRequestedDataBytes {
-	// 	}
-	// }
+	if resErr, ok := err.(*ResponseError); ok {
+		if resErr.CompletionCode() == CompletionCodeCannotReturnRequestedDataBytes {
+			return c.getSDR(ctx, recordID)
+		}
+	}
 
 	return
 }
@@ -86,6 +87,66 @@ func (c *Client) GetSDREnhanced(ctx context.Context, recordID uint16) (*SDR, err
 	}
 
 	return sdr, nil
+}
+
+// getSDR return SDR in a partial read way.
+func (c *Client) getSDR(ctx context.Context, recordID uint16) (response *GetSDRResponse, err error) {
+	var data []byte
+	// the actual data length of the SDR can only be determined after the first GetSDR request/response.
+	dataLength := uint8(0)
+
+	reservationID := uint16(0)
+	readBytes := uint8(16)
+	readTotal := uint8(0)
+	readOffset := uint8(0)
+
+	for {
+		request := &GetSDRRequest{
+			ReservationID: reservationID,
+			RecordID:      recordID,
+			ReadOffset:    readOffset,
+			ReadBytes:     readBytes,
+		}
+		response = &GetSDRResponse{}
+		if err = c.Exchange(ctx, request, response); err != nil {
+			return
+		}
+
+		// determine the total data length by parsing the SDR Header part
+		if readOffset == 0 {
+			if len(response.RecordData) < SDRRecordHeaderSize {
+				return nil, fmt.Errorf("too short record data for SDR header (%d/%d)", len(response.RecordData), SDRRecordHeaderSize)
+			}
+			dataLength = response.RecordData[4] + uint8(SDRRecordHeaderSize)
+			data = make([]byte, dataLength)
+		}
+
+		copy(data[readOffset:readOffset+readBytes], response.RecordData[:])
+
+		readOffset += uint8(len(response.RecordData))
+		readTotal += uint8(len(response.RecordData))
+
+		if readTotal >= dataLength {
+			break
+		}
+
+		if readOffset+readBytes > dataLength {
+			// decrease the readBytes for the last read.
+			readBytes = dataLength - readOffset
+		}
+
+		rsp, err := c.ReserveSDRRepo(ctx)
+		if err == nil {
+			reservationID = rsp.ReservationID
+		} else {
+			reservationID = 0
+		}
+	}
+
+	return &GetSDRResponse{
+		NextRecordID: response.NextRecordID,
+		RecordData:   data,
+	}, nil
 }
 
 func (c *Client) GetSDRBySensorID(ctx context.Context, sensorNumber uint8) (*SDR, error) {

@@ -51,7 +51,16 @@ func (res *GetDeviceSDRResponse) Format() string {
 	return ""
 }
 
-// This command returns general information about the collection of sensors in a Dynamic Sensor Device.
+// The Get Device SDR command allows SDR information for sensors for a Sensor Device
+// (typically implemented in a satellite management controller) to be returned.
+//
+// The Get Device SDR Command can return any type of SDR, not just Types 01h and 02h.
+// This is an optional command for Static Sensor Devices, and mandatory for Dynamic Sensor Devices.
+// The format and action of this command is similar to that for the Get SDR command
+// for SDR Repository Devices.
+//
+// Sensor Devices that support the Get Device SDR command return SDR Records that
+// match the SDR Repository formats.
 func (c *Client) GetDeviceSDR(ctx context.Context, recordID uint16) (response *GetDeviceSDRResponse, err error) {
 	request := &GetDeviceSDRRequest{
 		ReservationID: 0,
@@ -61,7 +70,75 @@ func (c *Client) GetDeviceSDR(ctx context.Context, recordID uint16) (response *G
 	}
 	response = &GetDeviceSDRResponse{}
 	err = c.Exchange(ctx, request, response)
+
+	if resErr, ok := err.(*ResponseError); ok {
+		if resErr.CompletionCode() == CompletionCodeCannotReturnRequestedDataBytes {
+			return c.getDeviceSDR(ctx, recordID)
+		}
+	}
+
 	return
+}
+
+// getDeviceSDR reads the Device SDR record in partial read way.
+func (c *Client) getDeviceSDR(ctx context.Context, recordID uint16) (response *GetDeviceSDRResponse, err error) {
+
+	var data []byte
+	// the actual data length of the SDR can only be determined after the first GetSDR request/response.
+	dataLength := uint8(0)
+
+	reservationID := uint16(0)
+	readBytes := uint8(16)
+	readTotal := uint8(0)
+	readOffset := uint8(0)
+
+	for {
+		request := &GetDeviceSDRRequest{
+			ReservationID: reservationID,
+			RecordID:      recordID,
+			ReadOffset:    readOffset,
+			ReadBytes:     readBytes,
+		}
+		response = &GetDeviceSDRResponse{}
+		if err = c.Exchange(ctx, request, response); err != nil {
+			return
+		}
+
+		// determine the total data length by parsing the SDR Header part
+		if readOffset == 0 {
+			if len(response.RecordData) < SDRRecordHeaderSize {
+				return nil, fmt.Errorf("too short record data for SDR header (%d/%d)", len(response.RecordData), SDRRecordHeaderSize)
+			}
+			dataLength = response.RecordData[4] + uint8(SDRRecordHeaderSize)
+			data = make([]byte, dataLength)
+		}
+
+		copy(data[readOffset:readOffset+readBytes], response.RecordData[:])
+
+		readOffset += uint8(len(response.RecordData))
+		readTotal += uint8(len(response.RecordData))
+
+		if readTotal >= dataLength {
+			break
+		}
+
+		if readOffset+readBytes > dataLength {
+			// decrease the readBytes for the last read.
+			readBytes = dataLength - readOffset
+		}
+
+		rsp, err := c.ReserveDeviceSDRRepo(ctx)
+		if err == nil {
+			reservationID = rsp.ReservationID
+		} else {
+			reservationID = 0
+		}
+	}
+
+	return &GetDeviceSDRResponse{
+		NextRecordID: response.NextRecordID,
+		RecordData:   data,
+	}, nil
 }
 
 func (c *Client) GetDeviceSDRBySensorID(ctx context.Context, sensorNumber uint8) (*SDR, error) {
