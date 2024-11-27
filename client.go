@@ -33,6 +33,11 @@ type Client struct {
 
 	maxPrivilegeLevel PrivilegeLevel
 
+	responderAddr uint8
+	responderLUN  uint8
+	requesterAddr uint8
+	requesterLUN  uint8
+
 	openipmi *openipmi
 	session  *session
 
@@ -101,6 +106,11 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 		bufferSize: DefaultBufferSize,
 
 		maxPrivilegeLevel: PrivilegeLevelUnspecified,
+
+		responderAddr: BMC_SA,
+		responderLUN:  uint8(IPMB_LUN_BMC),
+		requesterAddr: RemoteConsole_SWID,
+		requesterLUN:  0x00,
 
 		session: &session{
 			// IPMI Request Sequence, start from 1
@@ -176,6 +186,15 @@ func (c *Client) WithCipherSuiteID(cipherSuiteID CipherSuiteID) *Client {
 func (c *Client) WithMaxPrivilegeLevel(privilegeLevel PrivilegeLevel) *Client {
 	c.maxPrivilegeLevel = privilegeLevel
 	return c
+}
+
+func (c *Client) WithResponderAddr(responderAddr, responderLUN uint8) {
+	c.responderAddr = responderAddr
+	c.responderLUN = responderLUN
+}
+func (c *Client) WithRequesterAddr(requesterAddr, requesterLUN uint8) {
+	c.requesterAddr = requesterAddr
+	c.requesterLUN = requesterLUN
 }
 
 func (c *Client) SessionPrivilegeLevel() PrivilegeLevel {

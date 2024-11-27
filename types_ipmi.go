@@ -150,15 +150,15 @@ func (c *Client) BuildIPMIRequest(ctx context.Context, reqCmd Request) (*IPMIReq
 	defer c.unlock()
 
 	ipmiReq := &IPMIRequest{
-		ResponderAddr: BMC_SA,
+		ResponderAddr: c.responderAddr,
 
 		NetFn:        reqCmd.Command().NetFn,
-		ResponderLUN: uint8(IPMB_LUN_BMC),
+		ResponderLUN: c.responderLUN,
 
-		RequesterAddr: RemoteConsole_SWID,
+		RequesterAddr: c.requesterAddr,
 
 		RequesterSequence: c.session.ipmiSeq,
-		RequesterLUN:      0x00,
+		RequesterLUN:      c.requesterLUN,
 
 		Command:     reqCmd.Command().ID,
 		CommandData: reqCmd.Pack(),
