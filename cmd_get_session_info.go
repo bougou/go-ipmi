@@ -7,10 +7,11 @@ import (
 
 // 22.20 Get Session Info Command
 type GetSessionInfoRequest struct {
-	// 00h = Return info for active session associated with session this command was received over.
-	// N = get info for Nth active session
-	// FEh = Look up session info according to Session Handle passed in this request.
-	// FFh = Look up session info according to Session ID passed in this request.
+	// Session index
+	//   00h = Return info for active session associated with session this command was received over.
+	//   N = get info for Nth active session
+	//   FEh = Look up session info according to Session Handle passed in this request.
+	//   FFh = Look up session info according to Session ID passed in this request.
 	SessionIndex uint8
 
 	SessionHandle uint8

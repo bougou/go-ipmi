@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"strconv"
+	"sync"
 	"time"
 
 	"golang.org/x/net/proxy"
@@ -23,6 +24,10 @@ type UDPClient struct {
 	bufferSize int
 
 	conn net.Conn
+
+	// lock is used to protect udp Exchange method to prevent another
+	// send/receive operation from occurring while one is in progress.
+	lock sync.Mutex
 }
 
 func NewUDPClient(host string, port int) *UDPClient {
@@ -118,6 +123,9 @@ func (c *UDPClient) Exchange(ctx context.Context, reader io.Reader) ([]byte, err
 	if err := c.initConn(); err != nil {
 		return nil, fmt.Errorf("init udp connection failed, err: %s", err)
 	}
+
+	c.lock.Lock()
+	defer c.lock.Unlock()
 
 	recvBuffer := make([]byte, c.bufferSize)
 

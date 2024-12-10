@@ -35,6 +35,7 @@ func NewCmdX() *cobra.Command {
 
 func NewCmdXGetSDR() *cobra.Command {
 	var show bool
+	var waitIntervalSec int
 
 	cmd := &cobra.Command{
 		Use:   "get-sdr",
@@ -51,21 +52,25 @@ func NewCmdXGetSDR() *cobra.Command {
 				if show {
 					fmt.Println(ipmi.FormatSDRs(res))
 				}
+
 				goto WAIT
 
 			WAIT:
-				time.Sleep(30 * time.Second)
+				fmt.Printf("Wait for %d seconds\n", waitIntervalSec)
+				time.Sleep(time.Duration(waitIntervalSec) * time.Second)
 			}
 		},
 	}
 
 	cmd.PersistentFlags().BoolVarP(&show, "show", "s", false, "show table of result")
+	cmd.PersistentFlags().IntVarP(&waitIntervalSec, "wait", "w", 30, "wait sleep interval sec")
 
 	return cmd
 }
 
 func NewCmdXGetSensor() *cobra.Command {
 	var show bool
+	var waitIntervalSec int
 
 	cmd := &cobra.Command{
 		Use:   "get-sensor",
@@ -85,12 +90,14 @@ func NewCmdXGetSensor() *cobra.Command {
 				goto WAIT
 
 			WAIT:
-				time.Sleep(30 * time.Second)
+				fmt.Printf("Wait for %d seconds\n", waitIntervalSec)
+				time.Sleep(time.Duration(waitIntervalSec) * time.Second)
 			}
 		},
 	}
 
 	cmd.PersistentFlags().BoolVarP(&show, "show", "s", false, "show table of result")
+	cmd.PersistentFlags().IntVarP(&waitIntervalSec, "wait", "w", 30, "wait sleep interval sec")
 
 	return cmd
 }

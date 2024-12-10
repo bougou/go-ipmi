@@ -16,8 +16,9 @@ const (
 	InterfaceOpen    Interface = "open"
 	InterfaceTool    Interface = "tool"
 
-	DefaultExchangeTimeoutSec int = 60
-	DefaultBufferSize         int = 1024
+	DefaultExchangeTimeoutSec   int = 20
+	DefaultKeepAliveIntervalSec int = 30
+	DefaultBufferSize           int = 1024
 )
 
 type Client struct {
@@ -42,6 +43,10 @@ type Client struct {
 	bufferSize int
 
 	l sync.Mutex
+
+	// closedCh is closed when Client.Close() is called.
+	// used to notify other goroutines that Client is closed.
+	closedCh chan bool
 }
 
 func NewOpenClient() (*Client, error) {
@@ -107,6 +112,8 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 				active: false,
 			},
 		},
+
+		closedCh: make(chan bool),
 	}
 
 	c.udpClient = &UDPClient{
@@ -130,7 +137,9 @@ func (c *Client) WithDebug(debug bool) *Client {
 }
 
 func (c *Client) WithUDPProxy(proxy proxy.Dialer) *Client {
-	c.udpClient.SetProxy(proxy)
+	if c.udpClient != nil {
+		c.udpClient.SetProxy(proxy)
+	}
 	return c
 }
 

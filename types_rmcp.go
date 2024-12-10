@@ -485,5 +485,5 @@ func (c RmcpStatusCode) String() string {
 	if ok {
 		return s
 	}
-	return "Reserved"
+	return "Unknown"
 }

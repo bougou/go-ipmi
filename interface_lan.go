@@ -200,7 +200,7 @@ func (c *Client) Connect15() error {
 	}
 
 	go func() {
-		c.keepSessionAlive(30)
+		c.keepSessionAlive(DefaultKeepAliveIntervalSec)
 	}()
 
 	return nil
@@ -274,7 +274,7 @@ func (c *Client) Connect20() error {
 	}
 
 	go func() {
-		c.keepSessionAlive(30)
+		c.keepSessionAlive(DefaultKeepAliveIntervalSec)
 	}()
 
 	return nil
@@ -310,6 +310,9 @@ func (c *Client) ConnectAuto() error {
 
 // closeLAN closes session used in LAN communication.
 func (c *Client) closeLAN() error {
+	// close the channel to notify the keepAliveSession goroutine to stop
+	close(c.closedCh)
+
 	var sessionID uint32
 	if c.v20 {
 		sessionID = c.session.v20.bmcSessionID
@@ -332,15 +335,21 @@ func (c *Client) closeLAN() error {
 }
 
 // 6.12.15 Session Inactivity Timeouts
-func (c *Client) keepSessionAlive(intervalSec int) error {
+func (c *Client) keepSessionAlive(intervalSec int) {
 	var period = time.Duration(intervalSec) * time.Second
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		if _, err := c.GetCurrentSessionInfo(); err != nil {
-			return fmt.Errorf("keepSessionAlive failed, GetCurrentSessionInfo failed, err: %s", err)
+	c.Debugf("keepSessionAlive started")
+	for {
+		select {
+		case <-ticker.C:
+			if _, err := c.GetCurrentSessionInfo(); err != nil {
+				c.DebugfRed("keepSessionAlive failed, GetCurrentSessionInfo failed, err: %s", err)
+			}
+		case <-c.closedCh:
+			c.Debugf("got close signal, keepSessionAlive stopped")
+			return
 		}
 	}
-	return nil
 }
