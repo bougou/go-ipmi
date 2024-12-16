@@ -44,7 +44,7 @@ func (req *SetUserAccessRequest) Pack() []byte {
 	}
 	packUint8(b, out, 0)
 	packUint8(req.UserID&0x3f, out, 1)
-	packUint8(req.MaxPrivLevel&0x3f, out, 1)
+	packUint8(req.MaxPrivLevel&0x3f, out, 2)
 	packUint8(req.SessionLimit&0x0f, out, 3)
 
 	return out
