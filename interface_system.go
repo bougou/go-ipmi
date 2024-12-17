@@ -123,6 +123,7 @@ func (c *Client) openSendRequest(ctx context.Context, request Request) ([]byte, 
 	var dataPtr *byte
 
 	cmdData := request.Pack()
+	c.DebugBytes("cmdData", cmdData, 16)
 	if len(cmdData) > 0 {
 		dataPtr = &cmdData[0]
 	}
