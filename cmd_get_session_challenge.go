@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 22.16
 type GetSessionChallengeRequest struct {
@@ -51,7 +54,7 @@ func (res *GetSessionChallengeResponse) Format() string {
 
 // The command selects which of the BMC-supported authentication types the Remote Console would like to use,
 // and a username that selects which set of user information should be used for the session
-func (c *Client) GetSessionChallenge() (response *GetSessionChallengeResponse, err error) {
+func (c *Client) GetSessionChallenge(ctx context.Context) (response *GetSessionChallengeResponse, err error) {
 	username := padBytes(c.Username, 16, 0x00)
 	request := &GetSessionChallengeRequest{
 		AuthType: c.session.authType,
@@ -59,7 +62,7 @@ func (c *Client) GetSessionChallenge() (response *GetSessionChallengeResponse, e
 	}
 
 	response = &GetSessionChallengeResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	if err != nil {
 		return
 	}

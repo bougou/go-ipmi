@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -42,9 +43,9 @@ func (res *GetSELTimeUTCOffsetResponse) Format() string {
 }
 
 // GetSELTimeUTCOffset is used to retrieve the SEL Time UTC Offset (timezone)
-func (c *Client) GetSELTimeUTCOffset() (response *GetSELTimeUTCOffsetResponse, err error) {
+func (c *Client) GetSELTimeUTCOffset(ctx context.Context) (response *GetSELTimeUTCOffsetResponse, err error) {
 	request := &GetSELTimeUTCOffsetRequest{}
 	response = &GetSELTimeUTCOffsetResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

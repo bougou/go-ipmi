@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 28.12 Set System Boot Options Command
 type SetSystemBootOptionsRequest struct {
@@ -67,16 +70,16 @@ func (res *SetSystemBootOptionsResponse) Format() string {
 // This command is used to set parameters that direct the system boot following a system power up or reset.
 // The boot flags only apply for one system restart. It is the responsibility of the system BIOS
 // to read these settings from the BMC and then clear the boot flags
-func (c *Client) SetSystemBootOptions(request *SetSystemBootOptionsRequest) (response *SetSystemBootOptionsResponse, err error) {
+func (c *Client) SetSystemBootOptions(ctx context.Context, request *SetSystemBootOptionsRequest) (response *SetSystemBootOptionsResponse, err error) {
 	response = &SetSystemBootOptionsResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }
 
 // SetBootDevice set the boot device for next boot.
 // persist of false means it applies to next boot only.
 // persist of true means this setting is persistent for all future boots.
-func (c *Client) SetBootDevice(bootDeviceSelector BootDeviceSelector, bootType BIOSBootType, persist bool) error {
+func (c *Client) SetBootDevice(ctx context.Context, bootDeviceSelector BootDeviceSelector, bootType BIOSBootType, persist bool) error {
 	req := &SetSystemBootOptionsRequest{
 		MarkParameterInvalid: false,
 		ParameterSelector:    BOPS_BootFlags,
@@ -89,7 +92,7 @@ func (c *Client) SetBootDevice(bootDeviceSelector BootDeviceSelector, bootType B
 			},
 		},
 	}
-	if _, err := c.SetSystemBootOptions(req); err != nil {
+	if _, err := c.SetSystemBootOptions(ctx, req); err != nil {
 		return fmt.Errorf("SetSystemBootOptions failed, err: %s", err)
 	}
 	return nil

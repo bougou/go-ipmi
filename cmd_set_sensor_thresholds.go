@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 35.8 Set Sensor Thresholds Command
 type SetSensorThresholdsRequest struct {
 	SensorNumber uint8
@@ -96,8 +98,8 @@ func (res *SetSensorThresholdsResponse) Format() string {
 //
 // This command provides a mechanism for setting the hysteresis values associated
 // with the thresholds of a sensor that has threshold based event generation.
-func (c *Client) SetSensorThresholds(request *SetSensorThresholdsRequest) (response *SetSensorThresholdsResponse, err error) {
+func (c *Client) SetSensorThresholds(ctx context.Context, request *SetSensorThresholdsRequest) (response *SetSensorThresholdsResponse, err error) {
 	response = &SetSensorThresholdsResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

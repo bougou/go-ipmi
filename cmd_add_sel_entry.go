@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 31.6 Add SEL Entry Command
 type AddSELEntryRequest struct {
@@ -38,11 +41,11 @@ func (res *AddSELEntryResponse) Format() string {
 	return fmt.Sprintf("Record ID : %d (%#02x)", res.RecordID, res.RecordID)
 }
 
-func (c *Client) AddSELEntry(sel *SEL) (response *AddSELEntryResponse, err error) {
+func (c *Client) AddSELEntry(ctx context.Context, sel *SEL) (response *AddSELEntryResponse, err error) {
 	request := &AddSELEntryRequest{
 		SEL: sel,
 	}
 	response = &AddSELEntryResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

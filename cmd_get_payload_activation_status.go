@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 24.4 Get Payload Activation Status Command
 type GetPayloadActivationStatusRequest struct {
@@ -112,12 +115,12 @@ func (res *GetPayloadActivationStatusResponse) Format() string {
 	)
 }
 
-func (c *Client) GetPayloadActivationStatus(payloadType PayloadType) (response *GetPayloadActivationStatusResponse, err error) {
+func (c *Client) GetPayloadActivationStatus(ctx context.Context, payloadType PayloadType) (response *GetPayloadActivationStatusResponse, err error) {
 	request := &GetPayloadActivationStatusRequest{
 		PayloadType: payloadType,
 	}
 	response = &GetPayloadActivationStatusResponse{}
 	response.PayloadType = request.PayloadType
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

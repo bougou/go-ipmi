@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -41,9 +42,11 @@ func NewCmdXGetSDR() *cobra.Command {
 		Use:   "get-sdr",
 		Short: "get-sdr",
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
+
 			for {
 				fmt.Printf("\n\nGet SDR at %s\n", time.Now().Format(timeFormat))
-				res, err := client.GetSDRs()
+				res, err := client.GetSDRs(ctx)
 				if err != nil {
 					fmt.Printf("GetSDRs failed, err: %s", err)
 					goto WAIT
@@ -76,9 +79,11 @@ func NewCmdXGetSensor() *cobra.Command {
 		Use:   "get-sensor",
 		Short: "get-sensor",
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
+
 			for {
 				fmt.Printf("\n\nGet Sensors at %s\n", time.Now().Format(timeFormat))
-				res, err := client.GetSensors()
+				res, err := client.GetSensors(ctx)
 				if err != nil {
 					fmt.Printf("GetSensors failed, err: %s", err)
 					goto WAIT
@@ -116,7 +121,8 @@ func NewCmdXGetPayloadActivationStatus() *cobra.Command {
 				fmt.Println(err)
 			}
 
-			res, err := client.GetPayloadActivationStatus(ipmi.PayloadType(payloadType))
+			ctx := context.Background()
+			res, err := client.GetPayloadActivationStatus(ctx, ipmi.PayloadType(payloadType))
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -132,7 +138,8 @@ func NewCmdXGetSystemGUID() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "get-system-guid",
 		Run: func(cmd *cobra.Command, args []string) {
-			res, err := client.GetSystemGUID()
+			ctx := context.Background()
+			res, err := client.GetSystemGUID(ctx)
 			if err != nil {
 				fmt.Println(err)
 				return
@@ -152,7 +159,8 @@ func NewCmdXGetDeviceGUID() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "get-device-guid",
 		Run: func(cmd *cobra.Command, args []string) {
-			res, err := client.GetDeviceGUID()
+			ctx := context.Background()
+			res, err := client.GetDeviceGUID(ctx)
 			if err != nil {
 				fmt.Println(err)
 				return
@@ -172,7 +180,8 @@ func NewCmdXGetPEFConfigSystemUUID() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "get-pef-config-system-uuid",
 		Run: func(cmd *cobra.Command, args []string) {
-			param, err := client.GetPEFConfigParameters_SystemUUID()
+			ctx := context.Background()
+			param, err := client.GetPEFConfigParameters_SystemUUID(ctx)
 			if err != nil {
 				fmt.Println(err)
 				return

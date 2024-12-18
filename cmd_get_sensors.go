@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"strings"
 )
@@ -35,16 +36,16 @@ func SensorFilterOptionIsSensorType(sensorTypes ...SensorType) func(sensor *Sens
 // passed all filter options, that means the filter options are logically ANDed.
 //
 // If you want the filter options are logically ORed, use `GetSensorsAny`
-func (c *Client) GetSensors(filterOptions ...SensorFilterOption) ([]*Sensor, error) {
+func (c *Client) GetSensors(ctx context.Context, filterOptions ...SensorFilterOption) ([]*Sensor, error) {
 	var out = make([]*Sensor, 0)
 
-	sdrs, err := c.GetSDRs(SDRRecordTypeFullSensor, SDRRecordTypeCompactSensor)
+	sdrs, err := c.GetSDRs(ctx, SDRRecordTypeFullSensor, SDRRecordTypeCompactSensor)
 	if err != nil {
 		return nil, fmt.Errorf("GetSDRs failed, err: %s", err)
 	}
 
 	for _, sdr := range sdrs {
-		sensor, err := c.sdrToSensor(sdr)
+		sensor, err := c.sdrToSensor(ctx, sdr)
 		if err != nil {
 			return nil, fmt.Errorf("sdrToSensor failed, err: %s", err)
 		}
@@ -73,16 +74,16 @@ func (c *Client) GetSensors(filterOptions ...SensorFilterOption) ([]*Sensor, err
 // passed any one filter option, that means the filter options are logically ORed.
 //
 // If you want the filter options are logically ANDed, use `GetSensors`.
-func (c *Client) GetSensorsAny(filterOptions ...SensorFilterOption) ([]*Sensor, error) {
+func (c *Client) GetSensorsAny(ctx context.Context, filterOptions ...SensorFilterOption) ([]*Sensor, error) {
 	var out = make([]*Sensor, 0)
 
-	sdrs, err := c.GetSDRs(SDRRecordTypeFullSensor, SDRRecordTypeCompactSensor)
+	sdrs, err := c.GetSDRs(ctx, SDRRecordTypeFullSensor, SDRRecordTypeCompactSensor)
 	if err != nil {
 		return nil, fmt.Errorf("GetSDRs failed, err: %s", err)
 	}
 
 	for _, sdr := range sdrs {
-		sensor, err := c.sdrToSensor(sdr)
+		sensor, err := c.sdrToSensor(ctx, sdr)
 		if err != nil {
 			return nil, fmt.Errorf("sdrToSensor failed, err: %s", err)
 		}
@@ -104,13 +105,13 @@ func (c *Client) GetSensorsAny(filterOptions ...SensorFilterOption) ([]*Sensor, 
 }
 
 // GetSensorByID returns the sensor with current reading and status by specified sensor number.
-func (c *Client) GetSensorByID(sensorNumber uint8) (*Sensor, error) {
-	sdr, err := c.GetSDRBySensorID(sensorNumber)
+func (c *Client) GetSensorByID(ctx context.Context, sensorNumber uint8) (*Sensor, error) {
+	sdr, err := c.GetSDRBySensorID(ctx, sensorNumber)
 	if err != nil {
 		return nil, fmt.Errorf("GetSDRBySensorID failed, err: %s", err)
 	}
 
-	sensor, err := c.sdrToSensor(sdr)
+	sensor, err := c.sdrToSensor(ctx, sdr)
 	if err != nil {
 		return nil, fmt.Errorf("GetSensorFromSDR failed, err: %s", err)
 	}
@@ -119,13 +120,13 @@ func (c *Client) GetSensorByID(sensorNumber uint8) (*Sensor, error) {
 }
 
 // GetSensorByName returns the sensor with current reading and status by specified sensor name.
-func (c *Client) GetSensorByName(sensorName string) (*Sensor, error) {
-	sdr, err := c.GetSDRBySensorName(sensorName)
+func (c *Client) GetSensorByName(ctx context.Context, sensorName string) (*Sensor, error) {
+	sdr, err := c.GetSDRBySensorName(ctx, sensorName)
 	if err != nil {
 		return nil, fmt.Errorf("GetSDRBySensorName failed, err: %s", err)
 	}
 
-	sensor, err := c.sdrToSensor(sdr)
+	sensor, err := c.sdrToSensor(ctx, sdr)
 	if err != nil {
 		return nil, fmt.Errorf("GetSensorFromSDR failed, err: %s", err)
 	}
@@ -138,7 +139,7 @@ func (c *Client) GetSensorByName(sensorName string) (*Sensor, error) {
 // Only Full and Compact SDR records are meaningful here. Pass SDRs with other record types will return error.
 //
 // This function will fetch other sensor-related values which are not stored in SDR by other IPMI commands.
-func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
+func (c *Client) sdrToSensor(ctx context.Context, sdr *SDR) (*Sensor, error) {
 	if sdr == nil {
 		return nil, fmt.Errorf("nil sdr parameter")
 	}
@@ -181,7 +182,7 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 	c.Debug("Sensor:", sensor)
 	c.Debug("Get Sensor", fmt.Sprintf("Sensor Name: %s, Sensor Number: %#02x\n", sensor.Name, sensor.Number))
 
-	if err := c.fillSensorReading(sensor); err != nil {
+	if err := c.fillSensorReading(ctx, sensor); err != nil {
 		return nil, fmt.Errorf("fillSensorReading failed, err: %s", err)
 	}
 
@@ -193,11 +194,11 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 	}
 
 	if !sensor.EventReadingType.IsThreshold() || !sensor.SensorUnit.IsAnalog() {
-		if err := c.fillSensorDiscrete(sensor); err != nil {
+		if err := c.fillSensorDiscrete(ctx, sensor); err != nil {
 			return nil, fmt.Errorf("fillSensorDiscrete failed, err: %s", err)
 		}
 	} else {
-		if err := c.fillSensorThreshold(sensor); err != nil {
+		if err := c.fillSensorThreshold(ctx, sensor); err != nil {
 			return nil, fmt.Errorf("fillSensorThreshold failed, err: %s", err)
 		}
 	}
@@ -205,9 +206,9 @@ func (c *Client) sdrToSensor(sdr *SDR) (*Sensor, error) {
 	return sensor, nil
 }
 
-func (c *Client) fillSensorReading(sensor *Sensor) error {
+func (c *Client) fillSensorReading(ctx context.Context, sensor *Sensor) error {
 
-	readingRes, err := c.GetSensorReading(sensor.Number)
+	readingRes, err := c.GetSensorReading(ctx, sensor.Number)
 	if err != nil {
 		if _canSafelyIgnoredResponseError(err) {
 			c.Debug(fmt.Sprintf("GetSensorReading for sensor %#02x failed but skipped", sensor.Number), err)
@@ -231,8 +232,8 @@ func (c *Client) fillSensorReading(sensor *Sensor) error {
 }
 
 // fillSensorDiscrete retrieves and fills extra sensor attributes for given discrete sensor.
-func (c *Client) fillSensorDiscrete(sensor *Sensor) error {
-	statusRes, err := c.GetSensorEventStatus(sensor.Number)
+func (c *Client) fillSensorDiscrete(ctx context.Context, sensor *Sensor) error {
+	statusRes, err := c.GetSensorEventStatus(ctx, sensor.Number)
 	if err != nil {
 		if _canSafelyIgnoredResponseError(err) {
 			c.Debug(fmt.Sprintf("GetSensorEventStatus for sensor %#02x failed but skipped", sensor.Number), err)
@@ -245,7 +246,7 @@ func (c *Client) fillSensorDiscrete(sensor *Sensor) error {
 }
 
 // fillSensorThreshold retrieves and fills sensor attributes for given threshold sensor.
-func (c *Client) fillSensorThreshold(sensor *Sensor) error {
+func (c *Client) fillSensorThreshold(ctx context.Context, sensor *Sensor) error {
 	if sensor.SDRRecordType != SDRRecordTypeFullSensor {
 		return nil
 	}
@@ -253,7 +254,7 @@ func (c *Client) fillSensorThreshold(sensor *Sensor) error {
 	// If Non Linear, should update the ReadingFactors
 	// see 36.2 Non-Linear Sensors
 	if sensor.Threshold.LinearizationFunc.IsNonLinear() {
-		factorsRes, err := c.GetSensorReadingFactors(sensor.Number, sensor.Raw)
+		factorsRes, err := c.GetSensorReadingFactors(ctx, sensor.Number, sensor.Raw)
 		if err != nil {
 			if _canSafelyIgnoredResponseError(err) {
 				c.Debug(fmt.Sprintf("GetSensorReadingFactors for sensor %#02x failed but skipped", sensor.Number), err)
@@ -264,7 +265,7 @@ func (c *Client) fillSensorThreshold(sensor *Sensor) error {
 		sensor.Threshold.ReadingFactors = factorsRes.ReadingFactors
 	}
 
-	thresholdRes, err := c.GetSensorThresholds(sensor.Number)
+	thresholdRes, err := c.GetSensorThresholds(ctx, sensor.Number)
 	if err != nil {
 		if _canSafelyIgnoredResponseError(err) {
 			c.Debug(fmt.Sprintf("GetSensorThresholds for sensor %#02x failed but skipped", sensor.Number), err)
@@ -291,7 +292,7 @@ func (c *Client) fillSensorThreshold(sensor *Sensor) error {
 	sensor.Threshold.UCR = sensor.ConvertReading(thresholdRes.UCR_Raw)
 	sensor.Threshold.UNR = sensor.ConvertReading(thresholdRes.UNR_Raw)
 
-	hysteresisRes, err := c.GetSensorHysteresis(sensor.Number)
+	hysteresisRes, err := c.GetSensorHysteresis(ctx, sensor.Number)
 	if err != nil {
 		if _canSafelyIgnoredResponseError(err) {
 			c.Debug(fmt.Sprintf("GetSensorHysteresis for sensor %#02x failed but skipped", sensor.Number), err)

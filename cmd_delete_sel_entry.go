@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 31.8 Delete SEL Entry Command
 type DeleteSELEntryRequest struct {
@@ -42,12 +45,12 @@ func (res *DeleteSELEntryResponse) Format() string {
 	return fmt.Sprintf("Record ID : %d (%#02x)", res.RecordID, res.RecordID)
 }
 
-func (c *Client) DeleteSELEntry(recordID uint16, reservationID uint16) (response *DeleteSELEntryResponse, err error) {
+func (c *Client) DeleteSELEntry(ctx context.Context, recordID uint16, reservationID uint16) (response *DeleteSELEntryResponse, err error) {
 	request := &DeleteSELEntryRequest{
 		ReservationID: reservationID,
 		RecordID:      recordID,
 	}
 	response = &DeleteSELEntryResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

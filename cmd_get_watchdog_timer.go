@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 27.7 Get Watchdog Timer Command
 type GetWatchdogTimerRequest struct {
@@ -70,10 +73,10 @@ Present Countdown:      %d sec`,
 	)
 }
 
-func (c *Client) GetWatchdogTimer() (response *GetWatchdogTimerResponse, err error) {
+func (c *Client) GetWatchdogTimer(ctx context.Context) (response *GetWatchdogTimerResponse, err error) {
 	request := &GetWatchdogTimerRequest{}
 	response = &GetWatchdogTimerResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }
 

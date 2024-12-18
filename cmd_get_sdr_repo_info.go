@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -114,9 +115,9 @@ func (res *GetSDRRepoInfoResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{}
 }
 
-func (c *Client) GetSDRRepoInfo() (response *GetSDRRepoInfoResponse, err error) {
+func (c *Client) GetSDRRepoInfo(ctx context.Context) (response *GetSDRRepoInfoResponse, err error) {
 	request := &GetSDRRepoInfoRequest{}
 	response = &GetSDRRepoInfoResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

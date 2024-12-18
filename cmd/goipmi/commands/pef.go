@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -30,7 +31,8 @@ func NewCmdPEFCapabilities() *cobra.Command {
 		Use:   "capabilities",
 		Short: "capabilities",
 		Run: func(cmd *cobra.Command, args []string) {
-			res, err := client.GetPEFCapabilities()
+			ctx := context.Background()
+			res, err := client.GetPEFCapabilities(ctx)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetPEFCapabilities failed, err: %s", err))
 			}
@@ -46,7 +48,8 @@ func NewCmdPEFStatus() *cobra.Command {
 		Use:   "status",
 		Short: "status",
 		Run: func(cmd *cobra.Command, args []string) {
-			res, err := client.GetLastProcessedEventId()
+			ctx := context.Background()
+			res, err := client.GetLastProcessedEventId(ctx)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetLastProcessedEventId failed, err: %s", err))
 			}

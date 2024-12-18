@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 28.8 Set Power Restore Policy Command
 type SetPowerRestorePolicyRequest struct {
@@ -49,11 +52,11 @@ Policy previous   :"%s`,
 
 }
 
-func (c *Client) SetPowerRestorePolicy(policy PowerRestorePolicy) (response *SetPowerRestorePolicyResponse, err error) {
+func (c *Client) SetPowerRestorePolicy(ctx context.Context, policy PowerRestorePolicy) (response *SetPowerRestorePolicyResponse, err error) {
 	request := &SetPowerRestorePolicyRequest{
 		PowerRestorePolicy: policy,
 	}
 	response = &SetPowerRestorePolicyResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

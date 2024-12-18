@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -34,13 +35,14 @@ func NewCmdSELInfo() *cobra.Command {
 		Use:   "info",
 		Short: "info",
 		Run: func(cmd *cobra.Command, args []string) {
-			selInfo, err := client.GetSELInfo()
+			ctx := context.Background()
+			selInfo, err := client.GetSELInfo(ctx)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSELInfo failed, err: %s", err))
 			}
 			fmt.Println(selInfo.Format())
 
-			selAllocInfo, err := client.GetSELAllocInfo()
+			selAllocInfo, err := client.GetSELAllocInfo(ctx)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSELInfo failed, err: %s", err))
 			}
@@ -64,7 +66,8 @@ func NewCmdSELGet() *cobra.Command {
 			}
 			recordID := uint16(id)
 
-			selEntryRes, err := client.GetSELEntry(0x0, recordID)
+			ctx := context.Background()
+			selEntryRes, err := client.GetSELEntry(ctx, 0x0, recordID)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSELEntry failed, err: %s", err))
 			}
@@ -84,7 +87,8 @@ func NewCmdSELList() *cobra.Command {
 		Use:   "list",
 		Short: "list",
 		Run: func(cmd *cobra.Command, args []string) {
-			selEntries, err := client.GetSELEntries(0)
+			ctx := context.Background()
+			selEntries, err := client.GetSELEntries(ctx, 0)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSELInfo failed, err: %s", err))
 			}
@@ -100,12 +104,13 @@ func NewCmdSELElist() *cobra.Command {
 		Use:   "elist",
 		Short: "elist",
 		Run: func(cmd *cobra.Command, args []string) {
-			sdrsMap, err := client.GetSDRsMap()
+			ctx := context.Background()
+			sdrsMap, err := client.GetSDRsMap(ctx)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSDRsMap failed, err: %s", err))
 			}
 
-			selEntries, err := client.GetSELEntries(0)
+			selEntries, err := client.GetSELEntries(ctx, 0)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSELInfo failed, err: %s", err))
 			}

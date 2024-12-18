@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.30 Set User Password Command
 type SetUserPasswordRequest struct {
 	// [5:0] - User ID. 000000b = reserved. (User ID 1 is permanently associated with User 1, the null user name).
@@ -65,7 +67,7 @@ func (res *SetUserPasswordResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetUserPassword(userID uint8, password string, stored20 bool) (response *SetUserPasswordResponse, err error) {
+func (c *Client) SetUserPassword(ctx context.Context, userID uint8, password string, stored20 bool) (response *SetUserPasswordResponse, err error) {
 	request := &SetUserPasswordRequest{
 		UserID:    userID,
 		Stored20:  stored20,
@@ -73,11 +75,11 @@ func (c *Client) SetUserPassword(userID uint8, password string, stored20 bool) (
 		Password:  password,
 	}
 	response = &SetUserPasswordResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) TestUserPassword(userID uint8, password string, stored20 bool) (response *SetUserPasswordResponse, err error) {
+func (c *Client) TestUserPassword(ctx context.Context, userID uint8, password string, stored20 bool) (response *SetUserPasswordResponse, err error) {
 	request := &SetUserPasswordRequest{
 		UserID:    userID,
 		Stored20:  stored20,
@@ -85,26 +87,26 @@ func (c *Client) TestUserPassword(userID uint8, password string, stored20 bool) 
 		Password:  password,
 	}
 	response = &SetUserPasswordResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) DisableUser(userID uint8) (err error) {
+func (c *Client) DisableUser(ctx context.Context, userID uint8) (err error) {
 	request := &SetUserPasswordRequest{
 		UserID:    userID,
 		Operation: PasswordOperationDisableUser,
 	}
 	response := &SetUserPasswordResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return err
 }
 
-func (c *Client) EnableUser(userID uint8) (err error) {
+func (c *Client) EnableUser(ctx context.Context, userID uint8) (err error) {
 	request := &SetUserPasswordRequest{
 		UserID:    userID,
 		Operation: PasswordOperationEnableUser,
 	}
 	response := &SetUserPasswordResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return err
 }

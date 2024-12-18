@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -33,7 +34,8 @@ func NewCmdMCInfo() *cobra.Command {
 		Use:   "info",
 		Short: "info",
 		Run: func(cmd *cobra.Command, args []string) {
-			res, err := client.GetDeviceID()
+			ctx := context.Background()
+			res, err := client.GetDeviceID(ctx)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetDeviceID failed, err: %s", err))
 			}
@@ -53,14 +55,15 @@ func NewCmdMCReset() *cobra.Command {
 			if len(args) < 1 {
 				CheckErr(fmt.Errorf("usage: %s", usage))
 			}
+			ctx := context.Background()
 			switch args[0] {
 			case "warm":
-				if err := client.WarmReset(); err != nil {
+				if err := client.WarmReset(ctx); err != nil {
 					CheckErr(fmt.Errorf("WarmReset failed, err: %s", err))
 				}
 
 			case "cold":
-				if err := client.ColdReset(); err != nil {
+				if err := client.ColdReset(ctx); err != nil {
 					CheckErr(fmt.Errorf("ColdReset failed, err: %s", err))
 				}
 			default:
@@ -81,9 +84,10 @@ func NewCmdMC_ACPI() *cobra.Command {
 			if len(args) < 1 {
 				CheckErr(fmt.Errorf("usage: %s", usage))
 			}
+			ctx := context.Background()
 			switch args[0] {
 			case "get":
-				res, err := client.GetACPIPowerState()
+				res, err := client.GetACPIPowerState(ctx)
 				if err != nil {
 					CheckErr(fmt.Errorf("GetACPIPowerState failed, err: %s", err))
 				}
@@ -103,7 +107,8 @@ func NewCmdMC_GUID() *cobra.Command {
 		Use:   "guid",
 		Short: "guid",
 		Run: func(cmd *cobra.Command, args []string) {
-			res, err := client.GetSystemGUID()
+			ctx := context.Background()
+			res, err := client.GetSystemGUID(ctx)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSystemGUID failed, err: %s", err))
 			}
@@ -127,15 +132,16 @@ func NewCmdMC_Watchdog() *cobra.Command {
 			if len(args) < 1 {
 				CheckErr(fmt.Errorf("usage: %s", usage))
 			}
+			ctx := context.Background()
 			switch args[0] {
 			case "get":
-				res, err := client.GetWatchdogTimer()
+				res, err := client.GetWatchdogTimer(ctx)
 				if err != nil {
 					CheckErr(fmt.Errorf("GetWatchdogTimer failed, err: %s", err))
 				}
 				fmt.Println(res.Format())
 			case "reset":
-				if _, err := client.ResetWatchdogTimer(); err != nil {
+				if _, err := client.ResetWatchdogTimer(ctx); err != nil {
 					CheckErr(fmt.Errorf("ResetWatchdogTimer failed, err: %s", err))
 				}
 			case "off":

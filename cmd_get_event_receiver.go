@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 29.2 Get Event Receiver Command
 type GetEventReceiverRequest struct {
 }
@@ -34,9 +36,9 @@ func (res *GetEventReceiverResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetEventReceiver() (response *GetEventReceiverResponse, err error) {
+func (c *Client) GetEventReceiver(ctx context.Context) (response *GetEventReceiverResponse, err error) {
 	request := &GetEventReceiverRequest{}
 	response = &GetEventReceiverResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

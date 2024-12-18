@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 29.3 Platform Event Message Command
 type PlatformEventMessageRequest struct {
 	// The Generator ID field is a required element of an Event Request Message.
@@ -61,9 +63,9 @@ func (res *PlatformEventMessageResponse) Format() string {
 	return ""
 }
 
-func (c *Client) PlatformEventMessage(request *PlatformEventMessageRequest) (response *PlatformEventMessageResponse, err error) {
+func (c *Client) PlatformEventMessage(ctx context.Context, request *PlatformEventMessageRequest) (response *PlatformEventMessageResponse, err error) {
 	// Todo, consider GeneratorID
 	response = &PlatformEventMessageResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

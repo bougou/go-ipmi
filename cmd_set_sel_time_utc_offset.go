@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 31.11a Set SEL Time UTC Offset
 type SetSELTimeUTCOffsetRequest struct {
 	// signed integer for the offset in minutes from UTC to SEL Time. (ranges from -1440 to 1440)
@@ -37,11 +39,11 @@ func (res *SetSELTimeUTCOffsetResponse) Format() string {
 }
 
 // SetSELTimeUTCOffset initializes and retrieve a UTC offset (timezone) that is associated with the SEL Time
-func (c *Client) SetSELTimeUTCOffset(minutesOffset int16) (response *SetSELTimeUTCOffsetResponse, err error) {
+func (c *Client) SetSELTimeUTCOffset(ctx context.Context, minutesOffset int16) (response *SetSELTimeUTCOffsetResponse, err error) {
 	request := &SetSELTimeUTCOffsetRequest{
 		MinutesOffset: minutesOffset,
 	}
 	response = &SetSELTimeUTCOffsetResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

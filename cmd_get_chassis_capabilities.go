@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 28.1 Get Chassis Capabilities Command
 type GetChassisCapabilitiesRequest struct {
 	// no request data
@@ -62,9 +64,9 @@ func (res *GetChassisCapabilitiesResponse) Format() string {
 	return "todo"
 }
 
-func (c *Client) GetChassisCapabilities() (response *GetChassisCapabilitiesResponse, err error) {
+func (c *Client) GetChassisCapabilities(ctx context.Context) (response *GetChassisCapabilitiesResponse, err error) {
 	request := &GetChassisCapabilitiesRequest{}
 	response = &GetChassisCapabilitiesResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

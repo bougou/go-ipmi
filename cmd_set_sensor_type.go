@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 35.15 Set Sensor Type Command
 type SetSensorTypeRequest struct {
 	SensorNumber     uint8
@@ -35,13 +37,13 @@ func (res *SetSensorTypeResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetSensorType(sensorNumber uint8, sensorType SensorType, eventReadingType EventReadingType) (response *SetSensorTypeResponse, err error) {
+func (c *Client) SetSensorType(ctx context.Context, sensorNumber uint8, sensorType SensorType, eventReadingType EventReadingType) (response *SetSensorTypeResponse, err error) {
 	request := &SetSensorTypeRequest{
 		SensorNumber:     sensorNumber,
 		SensorType:       sensorType,
 		EventReadingType: eventReadingType,
 	}
 	response = &SetSensorTypeResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

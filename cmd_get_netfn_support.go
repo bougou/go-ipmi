@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 21.2 Get NetFn Support Command
 type GetNetFnSupportRequest struct {
 	ChannelNumber uint8
@@ -63,11 +65,11 @@ func (res *GetNetFnSupportResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetNetFnSupport(channelNumber uint8) (response *GetNetFnSupportResponse, err error) {
+func (c *Client) GetNetFnSupport(ctx context.Context, channelNumber uint8) (response *GetNetFnSupportResponse, err error) {
 	request := &GetNetFnSupportRequest{
 		ChannelNumber: channelNumber,
 	}
 	response = &GetNetFnSupportResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

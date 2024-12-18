@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"strings"
 )
@@ -50,7 +51,7 @@ func (res *CommandRawResponse) Format() string {
 	return fmt.Sprintf(`raw.Response = %s`, hexString)
 }
 
-func (c *Client) RawCommand(netFn NetFn, cmd uint8, data []byte, name string) (response *CommandRawResponse, err error) {
+func (c *Client) RawCommand(ctx context.Context, netFn NetFn, cmd uint8, data []byte, name string) (response *CommandRawResponse, err error) {
 	request := &CommandRawRequest{
 		NetFn: netFn,
 		Cmd:   cmd,
@@ -58,6 +59,6 @@ func (c *Client) RawCommand(netFn NetFn, cmd uint8, data []byte, name string) (r
 		Name:  name,
 	}
 	response = &CommandRawResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

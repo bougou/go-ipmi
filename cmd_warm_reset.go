@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 20.3 Warm Reset Command
 type WarmResetRequest struct {
 	// empty
@@ -28,9 +30,9 @@ func (res *WarmResetResponse) Format() string {
 	return ""
 }
 
-func (c *Client) WarmReset() (err error) {
+func (c *Client) WarmReset(ctx context.Context) (err error) {
 	request := &WarmResetRequest{}
 	response := &WarmResetResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 31.9 Clear SEL Command
 type ClearSELRequest struct {
@@ -48,12 +51,12 @@ func (res *ClearSELResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
 
-func (c *Client) ClearSEL(reservationID uint16) (response *ClearSELResponse, err error) {
+func (c *Client) ClearSEL(ctx context.Context, reservationID uint16) (response *ClearSELResponse, err error) {
 	request := &ClearSELRequest{
 		ReservationID:        reservationID,
 		GetErasureStatusFlag: false,
 	}
 	response = &ClearSELResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

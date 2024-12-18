@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.11 Master Write-Read Command
 type MasterWriteReadRequest struct {
 	ChannelNumber    uint8
@@ -53,8 +55,8 @@ func (res *MasterWriteReadResponse) Format() string {
 	return ""
 }
 
-func (c *Client) MasterWriteRead(request *MasterWriteReadRequest) (*MasterWriteReadResponse, error) {
+func (c *Client) MasterWriteRead(ctx context.Context, request *MasterWriteReadRequest) (*MasterWriteReadResponse, error) {
 	response := &MasterWriteReadResponse{}
-	err := c.Exchange(request, response)
+	err := c.Exchange(ctx, request, response)
 	return response, err
 }

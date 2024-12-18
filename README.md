@@ -33,20 +33,24 @@ func main() {
 	// you can set interface type, enum range: open/lan/lanplus/tool, default open
 	// client.WithInterface(ipmi.InterfaceLanplus)
 
+	// !!! Note !!!,
+	// From v0.6.0, all IPMI command methods of the Client accept a context as the first argument.
+	ctx := context.Background()
+
 	// Connect will create an authenticated session for you.
-	if err := client.Connect(); err != nil {
+	if err := client.Connect(ctx); err != nil {
 		panic(err)
 	}
 
 	// Now you can execute other IPMI commands that need authentication.
 
-	res, err := client.GetDeviceID()
+	res, err := client.GetDeviceID(ctx)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(res.Format())
 
-	selEntries, err := client.GetSELEntries(0)
+	selEntries, err := client.GetSELEntries(ctx, 0)
 	if err != nil {
 		panic(err)
 	}

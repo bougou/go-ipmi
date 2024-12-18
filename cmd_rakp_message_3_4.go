@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -99,7 +100,7 @@ func (res *RAKPMessage4) Format() string {
 }
 
 // authAlg is used to parse the returned RAKPMessage4 message
-func (c *Client) RAKPMessage3() (response *RAKPMessage4, err error) {
+func (c *Client) RAKPMessage3(ctx context.Context) (response *RAKPMessage4, err error) {
 	// create session integrity key
 	sik, err := c.generate_sik()
 	if err != nil {
@@ -139,12 +140,12 @@ func (c *Client) RAKPMessage3() (response *RAKPMessage4, err error) {
 	}
 	c.session.v20.state = SessionStateRakp3Sent
 
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err = c.ValidateRAKP4(response); err != nil {
+	if _, err = c.ValidateRAKP4(ctx, response); err != nil {
 		return nil, fmt.Errorf("validate rakp4 failed, err: %s", err)
 	}
 
@@ -153,7 +154,7 @@ func (c *Client) RAKPMessage3() (response *RAKPMessage4, err error) {
 	return response, nil
 }
 
-func (c *Client) ValidateRAKP4(response *RAKPMessage4) (bool, error) {
+func (c *Client) ValidateRAKP4(ctx context.Context, response *RAKPMessage4) (bool, error) {
 	if response.RmcpStatusCode != RmcpStatusCodeNoErrors {
 		return false, fmt.Errorf("rakp4 status code not ok, %x", response.RmcpStatusCode)
 	}

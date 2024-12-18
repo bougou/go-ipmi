@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 21.5 Get Configurable Commands Command
 type GetConfigurableCommandsRequest struct {
 	ChannelNumber uint8
@@ -62,7 +64,7 @@ func (res *GetConfigurableCommandsResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetConfigurableCommands(channelNumber uint8, commandRangeMask CommandRangeMask, netFn NetFn, lun uint8, code uint8, oemIANA uint32) (response *GetConfigurableCommandsResponse, err error) {
+func (c *Client) GetConfigurableCommands(ctx context.Context, channelNumber uint8, commandRangeMask CommandRangeMask, netFn NetFn, lun uint8, code uint8, oemIANA uint32) (response *GetConfigurableCommandsResponse, err error) {
 	request := &GetConfigurableCommandsRequest{
 		ChannelNumber:    channelNumber,
 		CommandRangeMask: commandRangeMask,
@@ -72,6 +74,6 @@ func (c *Client) GetConfigurableCommands(channelNumber uint8, commandRangeMask C
 		OEM_IANA:         oemIANA,
 	}
 	response = &GetConfigurableCommandsResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

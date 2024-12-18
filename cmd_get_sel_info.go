@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -104,9 +105,9 @@ Get SEL Alloc Info supported : %v`,
 	)
 }
 
-func (c *Client) GetSELInfo() (response *GetSELInfoResponse, err error) {
+func (c *Client) GetSELInfo(ctx context.Context) (response *GetSELInfoResponse, err error) {
 	request := &GetSELInfoRequest{}
 	response = &GetSELInfoResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

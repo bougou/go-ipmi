@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 28.2 Get Chassis Status Command
 type GetChassisStatusRequest struct {
@@ -170,9 +173,9 @@ func (res *GetChassisStatusResponse) Format() string {
 		"Power Button Disabled: " + fmt.Sprintf("%v", res.PoweroffButtonDisabled)
 }
 
-func (c *Client) GetChassisStatus() (response *GetChassisStatusResponse, err error) {
+func (c *Client) GetChassisStatus(ctx context.Context) (response *GetChassisStatusResponse, err error) {
 	request := &GetChassisStatusRequest{}
 	response = &GetChassisStatusResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

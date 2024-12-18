@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -121,7 +122,7 @@ func (res *ActivateSessionResponse) Format() string {
 }
 
 // ActivateSession is only used for IPMI v1.5
-func (c *Client) ActivateSession() (response *ActivateSessionResponse, err error) {
+func (c *Client) ActivateSession(ctx context.Context) (response *ActivateSessionResponse, err error) {
 	request := &ActivateSessionRequest{
 		AuthTypeForSession: c.session.authType,
 		MaxPrivilegeLevel:  c.maxPrivilegeLevel,
@@ -137,7 +138,7 @@ func (c *Client) ActivateSession() (response *ActivateSessionResponse, err error
 	// The Activate Session packet is typically authenticated.
 	// We set session to active here to indicate this request should be authenticated
 	// but if ActivateSession Command failed, we should set session active to false
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	if err != nil {
 		return
 	}

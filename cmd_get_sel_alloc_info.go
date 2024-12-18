@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 type GetSELAllocInfoRequest struct {
 	// empty
@@ -52,9 +55,9 @@ Max Record Size              : %d`,
 	)
 }
 
-func (c *Client) GetSELAllocInfo() (response *GetSELAllocInfoResponse, err error) {
+func (c *Client) GetSELAllocInfo(ctx context.Context) (response *GetSELAllocInfoResponse, err error) {
 	request := &GetSELAllocInfoRequest{}
 	response = &GetSELAllocInfoResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

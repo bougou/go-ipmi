@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -57,9 +58,9 @@ Counter reading   : %d`,
 }
 
 // This command returns the present reading of the POH (Power-On Hours) counter, plus the number of counts per hour.
-func (c *Client) GetPOHCounter() (response *GetPOHCounterResponse, err error) {
+func (c *Client) GetPOHCounter(ctx context.Context) (response *GetPOHCounterResponse, err error) {
 	request := &GetPOHCounterRequest{}
 	response = &GetPOHCounterResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

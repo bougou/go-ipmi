@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -35,7 +36,8 @@ func NewCmdSDRInfo() *cobra.Command {
 		Use:   "info",
 		Short: "info",
 		Run: func(cmd *cobra.Command, args []string) {
-			sdrRepoInfo, err := client.GetSDRRepoInfo()
+			ctx := context.Background()
+			sdrRepoInfo, err := client.GetSDRRepoInfo(ctx)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSDRRepoInfo failed, err: %s", err))
 			}
@@ -64,6 +66,7 @@ func NewCmdSDRGet() *cobra.Command {
 			if len(args) < 1 {
 				CheckErr(fmt.Errorf("no Sensor ID or Sensor Name supplied, usage: %s", usage))
 			}
+			ctx := context.Background()
 
 			var sdr *ipmi.SDR
 			var err error
@@ -71,13 +74,13 @@ func NewCmdSDRGet() *cobra.Command {
 			id, err := parseStringToInt64(args[0])
 			if err != nil {
 				// suppose args is sensor name
-				sdr, err = client.GetSDRBySensorName(args[0])
+				sdr, err = client.GetSDRBySensorName(ctx, args[0])
 				if err != nil {
 					CheckErr(fmt.Errorf("GetSDRBySensorName failed, err: %s", err))
 				}
 			} else {
 				sensorID := uint8(id)
-				sdr, err = client.GetSDRBySensorID(sensorID)
+				sdr, err = client.GetSDRBySensorID(ctx, sensorID)
 				if err != nil {
 					CheckErr(fmt.Errorf("GetSDRBySensorID failed, err: %s", err))
 				}
@@ -129,9 +132,10 @@ Sensor Types:
 			}
 
 			if len(args) >= 1 {
+				ctx := context.Background()
 
 				if args[0] == "all" {
-					sensors, err := client.GetSensors()
+					sensors, err := client.GetSensors(ctx)
 					if err != nil {
 						fmt.Printf("failed to get all sensors: %s", err)
 						return
@@ -147,7 +151,7 @@ Sensor Types:
 					return
 				}
 
-				sensors, err := client.GetSensors(ipmi.SensorFilterOptionIsSensorType(sensorType))
+				sensors, err := client.GetSensors(ctx, ipmi.SensorFilterOptionIsSensorType(sensorType))
 				if err != nil {
 					fmt.Printf("failed to get (%s) sensors: %s", sensorType, err)
 					return
@@ -174,6 +178,8 @@ func NewCmdSDRList() *cobra.Command {
 				recordTypes = append(recordTypes, ipmi.SDRRecordTypeFullSensor, ipmi.SDRRecordTypeCompactSensor)
 			}
 
+			ctx := context.Background()
+
 			if len(args) >= 1 {
 				switch args[0] {
 				case "all":
@@ -188,7 +194,7 @@ func NewCmdSDRList() *cobra.Command {
 					recordTypes = append(recordTypes, ipmi.SDRRecordTypeManagementControllerDeviceLocator)
 				case "fru":
 					recordTypes = append(recordTypes, ipmi.SDRRecordTypeFRUDeviceLocator)
-					sdrs, err := client.GetSDRs(recordTypes...)
+					sdrs, err := client.GetSDRs(ctx, recordTypes...)
 					if err != nil {
 						CheckErr(fmt.Errorf("GetSDRs failed, err: %s", err))
 					}
@@ -204,7 +210,7 @@ func NewCmdSDRList() *cobra.Command {
 				}
 			}
 
-			sdrs, err := client.GetSDRs(recordTypes...)
+			sdrs, err := client.GetSDRs(ctx, recordTypes...)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSDRs failed, err: %s", err))
 			}

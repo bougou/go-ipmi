@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -39,7 +40,9 @@ func NewCmdChassisStatus() *cobra.Command {
 		Use:   "status",
 		Short: "status",
 		Run: func(cmd *cobra.Command, args []string) {
-			status, err := client.GetChassisStatus()
+			ctx := context.Background()
+
+			status, err := client.GetChassisStatus(ctx)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetChassisStatus failed, err: %s", err))
 			}
@@ -62,7 +65,10 @@ func NewCmdChassisPolicy() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) == 0 {
 				fmt.Println(usage)
+				return
 			}
+
+			ctx := context.Background()
 
 			if len(args) >= 1 {
 				switch args[0] {
@@ -70,17 +76,17 @@ func NewCmdChassisPolicy() *cobra.Command {
 					fmt.Printf("Supported chassis power policy: %s\n", strings.Join(ipmi.SupportedPowerRestorePolicies, " "))
 					return
 				case "always-on":
-					_, err := client.SetPowerRestorePolicy(ipmi.PowerRestorePolicyAlwaysOn)
+					_, err := client.SetPowerRestorePolicy(ctx, ipmi.PowerRestorePolicyAlwaysOn)
 					if err != nil {
 						CheckErr(fmt.Errorf("SetPowerRestorePolicy failed, err: %s", err))
 					}
 				case "previous":
-					_, err := client.SetPowerRestorePolicy(ipmi.PowerRestorePolicyPrevious)
+					_, err := client.SetPowerRestorePolicy(ctx, ipmi.PowerRestorePolicyPrevious)
 					if err != nil {
 						CheckErr(fmt.Errorf("SetPowerRestorePolicy failed, err: %s", err))
 					}
 				case "always-off":
-					_, err := client.SetPowerRestorePolicy(ipmi.PowerRestorePolicyAlwaysOff)
+					_, err := client.SetPowerRestorePolicy(ctx, ipmi.PowerRestorePolicyAlwaysOff)
 					if err != nil {
 						CheckErr(fmt.Errorf("SetPowerRestorePolicy failed, err: %s", err))
 					}
@@ -104,12 +110,15 @@ func NewCmdChassisPower() *cobra.Command {
 			var c ipmi.ChassisControl
 			if len(args) == 0 {
 				fmt.Println(usage)
+				return
 			}
+
+			ctx := context.Background()
 
 			if len(args) >= 1 {
 				switch args[0] {
 				case "status":
-					status, err := client.GetChassisStatus()
+					status, err := client.GetChassisStatus(ctx)
 					if err != nil {
 						CheckErr(fmt.Errorf("GetChassisStatus failed, err: %s", err))
 					}
@@ -136,7 +145,7 @@ func NewCmdChassisPower() *cobra.Command {
 					return
 				}
 
-				if _, err := client.ChassisControl(c); err != nil {
+				if _, err := client.ChassisControl(ctx, c); err != nil {
 					CheckErr(fmt.Errorf("ChassisControl failed, err: %s", err))
 					return
 				}
@@ -158,10 +167,13 @@ func NewCmdChassisCapabilities() *cobra.Command {
 				fmt.Println(usage)
 				return
 			}
+
+			ctx := context.Background()
+
 			if len(args) >= 1 {
 				switch args[0] {
 				case "get":
-					cap, err := client.GetChassisCapabilities()
+					cap, err := client.GetChassisCapabilities(ctx)
 					if err != nil {
 						CheckErr(fmt.Errorf("GetChassisCapabilities failed, err: %s", err))
 						return
@@ -181,7 +193,8 @@ func NewCmdChassisRestartCause() *cobra.Command {
 		Use:   "restart_cause",
 		Short: "restart_cause",
 		Run: func(cmd *cobra.Command, args []string) {
-			res, err := client.GetSystemRestartCause()
+			ctx := context.Background()
+			res, err := client.GetSystemRestartCause(ctx)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSystemRestartCause failed, err: %s", err))
 			}
@@ -230,6 +243,7 @@ bootparam set bootflag <device> [options=...]
 				return
 			}
 
+			ctx := context.Background()
 			switch args[0] {
 			case "get":
 				parameterSelector := args[1]
@@ -238,7 +252,7 @@ bootparam set bootflag <device> [options=...]
 					CheckErr(fmt.Errorf("param %s must be a valid integer in range (0-127), err: %s", parameterSelector, err))
 				}
 
-				res, err := client.GetSystemBootOptions(ipmi.BootOptionParameterSelector(i))
+				res, err := client.GetSystemBootOptions(ctx, ipmi.BootOptionParameterSelector(i))
 				if err != nil {
 					CheckErr(fmt.Errorf("GetSystemBootOptions failed, err: %s", err))
 				}
@@ -286,7 +300,7 @@ bootparam set bootflag <device> [options=...]
 						},
 					},
 				}
-				res, err := client.SetSystemBootOptions(request)
+				res, err := client.SetSystemBootOptions(ctx, request)
 				if err != nil {
 					CheckErr(fmt.Errorf("SetSystemBootOptions failed, err: %s", err))
 				}
@@ -302,7 +316,8 @@ func NewCmdChassisPoh() *cobra.Command {
 		Use:   "poh",
 		Short: "poh",
 		Run: func(cmd *cobra.Command, args []string) {
-			res, err := client.GetPOHCounter()
+			ctx := context.Background()
+			res, err := client.GetPOHCounter(ctx)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSystemRestartCause failed, err: %s", err))
 			}
@@ -380,7 +395,8 @@ bootdev <device> [options=help,...]
 				}
 			}
 
-			if err := client.SetBootParamBootFlags(bootFlags); err != nil {
+			ctx := context.Background()
+			if err := client.SetBootParamBootFlags(ctx, bootFlags); err != nil {
 				CheckErr(fmt.Errorf("SetBootParamBootFlags failed, err: %s", err))
 			}
 

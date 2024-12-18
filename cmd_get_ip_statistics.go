@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 23.4 Get IP/UDP/RMCP Statistics Command
 type GetIPStatisticsRequest struct {
@@ -82,12 +85,12 @@ UDP Proxy Packet Dropped  : %d`,
 	)
 }
 
-func (c *Client) GetIPStatistics(channelNumber uint8, clearAllStatistics bool) (response *GetIPStatisticsResponse, err error) {
+func (c *Client) GetIPStatistics(ctx context.Context, channelNumber uint8, clearAllStatistics bool) (response *GetIPStatisticsResponse, err error) {
 	request := &GetIPStatisticsRequest{
 		ChannelNumber:      channelNumber,
 		ClearAllStatistics: clearAllStatistics,
 	}
 	response = &GetIPStatisticsResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

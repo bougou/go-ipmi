@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 31.4 Reserve SEL Command
 type ReserveSELRequest struct {
 	// empty
@@ -36,9 +38,9 @@ func (res *ReserveSELResponse) Format() string {
 	return ""
 }
 
-func (c *Client) ReserveSEL() (response *ReserveSELResponse, err error) {
+func (c *Client) ReserveSEL(ctx context.Context) (response *ReserveSELResponse, err error) {
 	request := &ReserveSELRequest{}
 	response = &ReserveSELResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

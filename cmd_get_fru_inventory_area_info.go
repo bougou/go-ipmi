@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -45,11 +46,11 @@ func (res *GetFRUInventoryAreaInfoResponse) Format() string {
 }
 
 // This command returns overall the size of the FRU Inventory Area in this device, in bytes.
-func (c *Client) GetFRUInventoryAreaInfo(fruDeviceID uint8) (response *GetFRUInventoryAreaInfoResponse, err error) {
+func (c *Client) GetFRUInventoryAreaInfo(ctx context.Context, fruDeviceID uint8) (response *GetFRUInventoryAreaInfoResponse, err error) {
 	request := &GetFRUInventoryAreaInfoRequest{
 		FRUDeviceID: fruDeviceID,
 	}
 	response = &GetFRUInventoryAreaInfoResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

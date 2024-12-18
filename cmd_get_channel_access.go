@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 22.23 Get Channel Access Command
 type GetChannelAccessRequest struct {
@@ -69,12 +72,12 @@ func (res *GetChannelAccessResponse) Format() string {
 	)
 }
 
-func (c *Client) GetChannelAccess(channelNumber uint8, accessOption ChannelAccessOption) (response *GetChannelAccessResponse, err error) {
+func (c *Client) GetChannelAccess(ctx context.Context, channelNumber uint8, accessOption ChannelAccessOption) (response *GetChannelAccessResponse, err error) {
 	request := &GetChannelAccessRequest{
 		ChannelNumber: channelNumber,
 		AccessOption:  accessOption,
 	}
 	response = &GetChannelAccessResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

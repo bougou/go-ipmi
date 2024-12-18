@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 28.7 Set Chassis Capabilities Command
 type SetChassisCapabilitiesRequest struct {
 	ProvideFrontPanelLockout bool
@@ -53,8 +55,8 @@ func (res *SetChassisCapabilitiesResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetChassisCapabilities(request *SetChassisCapabilitiesRequest) (response *SetChassisCapabilitiesResponse, err error) {
+func (c *Client) SetChassisCapabilities(ctx context.Context, request *SetChassisCapabilitiesRequest) (response *SetChassisCapabilitiesResponse, err error) {
 	response = &SetChassisCapabilitiesResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

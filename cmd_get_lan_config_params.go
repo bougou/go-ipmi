@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"net"
 )
@@ -56,24 +57,24 @@ Length of Config Data: %d
 	return fmt.Sprintf(out, res.ParameterVersion, res.ConfigData, len(res.ConfigData))
 }
 
-func (c *Client) GetLanConfigParams(channelNumber uint8, paramSelector LanParamSelector) (response *GetLanConfigParamsResponse, err error) {
+func (c *Client) GetLanConfigParams(ctx context.Context, channelNumber uint8, paramSelector LanParamSelector) (response *GetLanConfigParamsResponse, err error) {
 	request := &GetLanConfigParamsRequest{
 		ChannelNumber: channelNumber,
 		ParamSelector: paramSelector,
 	}
 	response = &GetLanConfigParamsResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }
 
 // GetLanConfig will fetch all Lan information.
-func (c *Client) GetLanConfig(channelNumber uint8) (*LanConfig, error) {
+func (c *Client) GetLanConfig(ctx context.Context, channelNumber uint8) (*LanConfig, error) {
 	lanConfig := &LanConfig{}
 
 	for _, lanParam := range LanParams {
 		paramSelector := LanParamSelector(lanParam.Selector)
 
-		res, err := c.GetLanConfigParams(channelNumber, paramSelector)
+		res, err := c.GetLanConfigParams(ctx, channelNumber, paramSelector)
 		if err != nil {
 			resErr, ok := err.(*ResponseError)
 			if !ok {

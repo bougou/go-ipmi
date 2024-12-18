@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 20.4 Get Self Test Results Command
 type GetSelfTestResultsRequest struct {
 	// empty
@@ -36,9 +38,9 @@ func (res *GetSelfTestResultsResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetSelfTestResults() (response *GetSelfTestResultsResponse, err error) {
+func (c *Client) GetSelfTestResults(ctx context.Context) (response *GetSelfTestResultsResponse, err error) {
 	request := &GetSelfTestResultsRequest{}
 	response = &GetSelfTestResultsResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

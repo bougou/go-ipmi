@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 31.5 Get SEL Entry Command
 type GetSELEntryRequest struct {
@@ -57,8 +60,8 @@ func (res *GetSELEntryResponse) Format() string {
 }
 
 // The reservationID is only required for partial Get, use 0000h otherwise.
-func (c *Client) GetSELEntry(reservationID uint16, recordID uint16) (response *GetSELEntryResponse, err error) {
-	if _, err := c.GetSELInfo(); err != nil {
+func (c *Client) GetSELEntry(ctx context.Context, reservationID uint16, recordID uint16) (response *GetSELEntryResponse, err error) {
+	if _, err := c.GetSELInfo(ctx); err != nil {
 		return nil, fmt.Errorf("GetSELInfo failed, err: %s", err)
 	}
 
@@ -69,13 +72,13 @@ func (c *Client) GetSELEntry(reservationID uint16, recordID uint16) (response *G
 		ReadBytes:     0xff,
 	}
 	response = &GetSELEntryResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }
 
 // GetSELEntries return all SEL records starting from the specified recordID.
 // Pass 0 means retrieve all SEL entries starting from the first record.
-func (c *Client) GetSELEntries(startRecordID uint16) ([]*SEL, error) {
+func (c *Client) GetSELEntries(ctx context.Context, startRecordID uint16) ([]*SEL, error) {
 	// Todo
 	// Notice, this extra GetSELInfo call is used to make sure the GetSELEntry works properly.
 	// On Huawei TaiShan 200 (Model 2280), the NextRecordID (0xffff) in GetSELEntryResponse is NOT right occasionally.
@@ -88,14 +91,14 @@ func (c *Client) GetSELEntries(startRecordID uint16) ([]*SEL, error) {
 	// ff ff
 	//
 	// This extra GetSELInfo can avoid it. (I don't known why!)
-	if _, err := c.GetSELInfo(); err != nil {
+	if _, err := c.GetSELInfo(ctx); err != nil {
 		return nil, fmt.Errorf("GetSELInfo failed, err: %s", err)
 	}
 
 	var out = make([]*SEL, 0)
 	var recordID uint16 = startRecordID
 	for {
-		selEntry, err := c.GetSELEntry(0, recordID)
+		selEntry, err := c.GetSELEntry(ctx, 0, recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSELEntry failed, err: %s", err)
 		}

@@ -1,8 +1,11 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
-func (c *Client) SetBootParamSetInProgressState(progressState BOP_SetInProgressState) error {
+func (c *Client) SetBootParamSetInProgressState(ctx context.Context, progressState BOP_SetInProgressState) error {
 	r := &SetSystemBootOptionsRequest{
 		MarkParameterInvalid: false,
 		ParameterSelector:    BOPS_SetInProgressState,
@@ -12,7 +15,7 @@ func (c *Client) SetBootParamSetInProgressState(progressState BOP_SetInProgressS
 		},
 	}
 
-	_, err := c.SetSystemBootOptions(r)
+	_, err := c.SetSystemBootOptions(ctx, r)
 	if err != nil {
 		return fmt.Errorf("SetSystemBootOptions failed, err: %s", err)
 	}
@@ -20,8 +23,8 @@ func (c *Client) SetBootParamSetInProgressState(progressState BOP_SetInProgressS
 	return nil
 }
 
-func (c *Client) SetBootParamBootFlags(bootFlags *BOP_BootFlags) error {
-	if err := c.SetBootParamSetInProgressState(SetInProgressState_SetInProgress); err != nil {
+func (c *Client) SetBootParamBootFlags(ctx context.Context, bootFlags *BOP_BootFlags) error {
+	if err := c.SetBootParamSetInProgressState(ctx, SetInProgressState_SetInProgress); err != nil {
 		goto OUT
 	} else {
 		r := &SetSystemBootOptionsRequest{
@@ -32,21 +35,21 @@ func (c *Client) SetBootParamBootFlags(bootFlags *BOP_BootFlags) error {
 			},
 		}
 
-		_, err := c.SetSystemBootOptions(r)
+		_, err := c.SetSystemBootOptions(ctx, r)
 		if err != nil {
 			return fmt.Errorf("SetSystemBootOptions failed, err: %s", err)
 		}
 	}
 
 OUT:
-	if err := c.SetBootParamSetInProgressState(SetInProgressState_SetComplete); err != nil {
+	if err := c.SetBootParamSetInProgressState(ctx, SetInProgressState_SetComplete); err != nil {
 		return fmt.Errorf("SetBootParamSetInProgressState failed, err: %s", err)
 	}
 
 	return nil
 }
 
-func (c *Client) SetBootParamClearAck(by BootInfoAcknowledgeBy) error {
+func (c *Client) SetBootParamClearAck(ctx context.Context, by BootInfoAcknowledgeBy) error {
 	ack := &BOP_BootInfoAcknowledge{}
 
 	switch by {
@@ -70,7 +73,7 @@ func (c *Client) SetBootParamClearAck(by BootInfoAcknowledgeBy) error {
 		},
 	}
 
-	_, err := c.SetSystemBootOptions(r)
+	_, err := c.SetSystemBootOptions(ctx, r)
 	if err != nil {
 		return fmt.Errorf("SetSystemBootOptions failed, err: %s", err)
 	}

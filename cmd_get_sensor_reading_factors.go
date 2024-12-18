@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 35.5 Get Sensor Reading Factors Command
 type GetSensorReadingFactorsRequest struct {
@@ -84,12 +87,12 @@ AccuracyExp: %d`,
 }
 
 // This command returns the Sensor Reading Factors fields for the specified reading value on the specified sensor.
-func (c *Client) GetSensorReadingFactors(sensorNumber uint8, reading uint8) (response *GetSensorReadingFactorsResponse, err error) {
+func (c *Client) GetSensorReadingFactors(ctx context.Context, sensorNumber uint8, reading uint8) (response *GetSensorReadingFactorsResponse, err error) {
 	request := &GetSensorReadingFactorsRequest{
 		SensorNumber: sensorNumber,
 		Reading:      reading,
 	}
 	response = &GetSensorReadingFactorsResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

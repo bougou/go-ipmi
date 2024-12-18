@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -29,7 +30,8 @@ func NewCmdSOLInfo() *cobra.Command {
 		Use:   "info",
 		Short: "info",
 		Run: func(cmd *cobra.Command, args []string) {
-			sol, err := client.SOLInfo(0x0e)
+			ctx := context.Background()
+			sol, err := client.SOLInfo(ctx, 0x0e)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetDeviceID failed, err: %s", err))
 			}

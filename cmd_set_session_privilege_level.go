@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 22.18 Set Session Privilege Level Command
 type SetSessionPrivilegeLevelRequest struct {
@@ -42,11 +45,11 @@ func (res *SetSessionPrivilegeLevelResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
 
-func (c *Client) SetSessionPrivilegeLevel(privilegeLevel PrivilegeLevel) (response *SetSessionPrivilegeLevelResponse, err error) {
+func (c *Client) SetSessionPrivilegeLevel(ctx context.Context, privilegeLevel PrivilegeLevel) (response *SetSessionPrivilegeLevelResponse, err error) {
 	request := &SetSessionPrivilegeLevelRequest{
 		PrivilegeLevel: privilegeLevel,
 	}
 	response = &SetSessionPrivilegeLevelResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

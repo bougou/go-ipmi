@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/bougou/go-ipmi"
@@ -45,7 +46,8 @@ func NewCmdUserList() *cobra.Command {
 				channelNumber = uint8(id)
 			}
 
-			users, err := client.ListUser(channelNumber)
+			ctx := context.Background()
+			users, err := client.ListUser(ctx, channelNumber)
 			if err != nil {
 				CheckErr(fmt.Errorf("ListUser failed, err: %s", err))
 			}
@@ -74,7 +76,9 @@ func NewCmdUserSummary() *cobra.Command {
 				channelNumber = uint8(id)
 			}
 
-			res, err := client.GetUserAccess(channelNumber, 0x01)
+			ctx := context.Background()
+
+			res, err := client.GetUserAccess(ctx, channelNumber, 0x01)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetUserAccess failed, err: %s", err))
 			}

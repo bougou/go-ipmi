@@ -2,6 +2,7 @@ package ipmi
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"fmt"
 	"os/exec"
@@ -15,16 +16,16 @@ var (
 )
 
 // ConnectTool try to initialize the client.
-func (c *Client) ConnectTool(devnum int32) error {
+func (c *Client) ConnectTool(ctx context.Context, devnum int32) error {
 	return nil
 }
 
 // closeTool closes the ipmi dev file.
-func (c *Client) closeTool() error {
+func (c *Client) closeTool(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) exchangeTool(request Request, response Response) error {
+func (c *Client) exchangeTool(ctx context.Context, request Request, response Response) error {
 	data := request.Pack()
 	msg := make([]byte, 2+len(data))
 	msg[0] = uint8(request.Command().NetFn)

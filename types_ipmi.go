@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 const (
 	IPMIRequesterSequenceMax uint8 = 0x3f // RequesterSequence only occupy 6 bits
 )
@@ -143,7 +145,7 @@ func (res *IPMIResponse) Unpack(msg []byte) error {
 
 // BuildIPMIRequest creates IPMIRequest for a Command Request.
 // It also fills the Checksum1 and Checksum2 fields of IPMIRequest.
-func (c *Client) BuildIPMIRequest(reqCmd Request) (*IPMIRequest, error) {
+func (c *Client) BuildIPMIRequest(ctx context.Context, reqCmd Request) (*IPMIRequest, error) {
 	c.lock()
 	defer c.unlock()
 

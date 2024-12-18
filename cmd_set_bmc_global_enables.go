@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 22.1 Set BMC Global Enables Command
 type SetBMCGlobalEnablesRequest struct {
@@ -65,8 +68,8 @@ func (res *SetBMCGlobalEnablesResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetBMCGlobalEnables(enableSystemEventLogging bool, enableEventMessageBuffer bool, enableEventMessageBufferFullInterrupt bool, enableReceiveMessageQueueInterrupt bool) (response *SetBMCGlobalEnablesResponse, err error) {
-	getRes, err := c.GetBMCGlobalEnables()
+func (c *Client) SetBMCGlobalEnables(ctx context.Context, enableSystemEventLogging bool, enableEventMessageBuffer bool, enableEventMessageBufferFullInterrupt bool, enableReceiveMessageQueueInterrupt bool) (response *SetBMCGlobalEnablesResponse, err error) {
+	getRes, err := c.GetBMCGlobalEnables(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("GetBMCGlobalEnables failed, err: %s", err)
 	}
@@ -82,6 +85,6 @@ func (c *Client) SetBMCGlobalEnables(enableSystemEventLogging bool, enableEventM
 		EnableReceiveMessageQueueInterrupt:    enableReceiveMessageQueueInterrupt,
 	}
 	response = &SetBMCGlobalEnablesResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

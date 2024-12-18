@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 35.2 Get Device SDR Info Command
 type GetDeviceSDRInfoRequest struct {
@@ -92,11 +95,11 @@ LUN 3 has sensors  : %v
 }
 
 // This command returns general information about the collection of sensors in a Dynamic Sensor Device.
-func (c *Client) GetDeviceSDRInfo(getSDRCount bool) (response *GetDeviceSDRInfoResponse, err error) {
+func (c *Client) GetDeviceSDRInfo(ctx context.Context, getSDRCount bool) (response *GetDeviceSDRInfoResponse, err error) {
 	request := &GetDeviceSDRInfoRequest{
 		GetSDRCount: getSDRCount,
 	}
 	response = &GetDeviceSDRInfoResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

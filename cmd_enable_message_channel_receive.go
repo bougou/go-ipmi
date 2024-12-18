@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.5 Enable Message Channel Receive Command
 type EnableMessageChannelReceiveRequest struct {
 	ChannelNumber uint8
@@ -51,9 +53,9 @@ func (res *EnableMessageChannelReceiveResponse) Format() string {
 	return ""
 }
 
-func (c *Client) EnableMessageChannelReceive() (response *EnableMessageChannelReceiveResponse, err error) {
+func (c *Client) EnableMessageChannelReceive(ctx context.Context) (response *EnableMessageChannelReceiveResponse, err error) {
 	request := &EnableMessageChannelReceiveRequest{}
 	response = &EnableMessageChannelReceiveResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

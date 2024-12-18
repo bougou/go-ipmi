@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 27.6 Set Watchdog Timer Command
 type SetWatchdogTimerRequest struct {
 	DontLog       bool
@@ -57,9 +59,9 @@ func (res *SetWatchdogTimerResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetWatchdogTimer() (response *SetWatchdogTimerResponse, err error) {
+func (c *Client) SetWatchdogTimer(ctx context.Context) (response *SetWatchdogTimerResponse, err error) {
 	request := &SetWatchdogTimerRequest{}
 	response = &SetWatchdogTimerResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

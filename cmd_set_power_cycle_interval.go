@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 28.9 Set Power Cycle Interval
 type SetPowerCycleIntervalRequest struct {
 	IntervalInSec uint8
@@ -31,11 +33,11 @@ func (res *SetPowerCycleIntervalResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetPowerCycleInterval(intervalInSec uint8) (response *SetPowerCycleIntervalResponse, err error) {
+func (c *Client) SetPowerCycleInterval(ctx context.Context, intervalInSec uint8) (response *SetPowerCycleIntervalResponse, err error) {
 	request := &SetPowerCycleIntervalRequest{
 		IntervalInSec: intervalInSec,
 	}
 	response = &SetPowerCycleIntervalResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

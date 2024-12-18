@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 20.7 Get ACPI Power State Command
 type GetACPIPowerStateRequest struct {
@@ -45,9 +48,9 @@ ACPI Device Power State: %s`,
 }
 
 // This command is provided to allow system software to tell a controller the present ACPI power state of the system.
-func (c *Client) GetACPIPowerState() (response *GetACPIPowerStateResponse, err error) {
+func (c *Client) GetACPIPowerState(ctx context.Context) (response *GetACPIPowerStateResponse, err error) {
 	request := &GetACPIPowerStateRequest{}
 	response = &GetACPIPowerStateResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

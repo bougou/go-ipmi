@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 35.9 Get Sensor Thresholds Command
 type GetSensorThresholdsRequest struct {
@@ -78,11 +81,11 @@ LNC Readable : %v%s`,
 }
 
 // This command retrieves the threshold for the given sensor.
-func (c *Client) GetSensorThresholds(sensorNumber uint8) (response *GetSensorThresholdsResponse, err error) {
+func (c *Client) GetSensorThresholds(ctx context.Context, sensorNumber uint8) (response *GetSensorThresholdsResponse, err error) {
 	request := &GetSensorThresholdsRequest{
 		SensorNumber: sensorNumber,
 	}
 	response = &GetSensorThresholdsResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

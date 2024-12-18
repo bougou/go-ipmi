@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 type ChassisControl uint8
 
 const (
@@ -41,11 +43,11 @@ func (res *ChassisControlResponse) Format() string {
 	return ""
 }
 
-func (c *Client) ChassisControl(control ChassisControl) (response *ChassisControlResponse, err error) {
+func (c *Client) ChassisControl(ctx context.Context, control ChassisControl) (response *ChassisControlResponse, err error) {
 	request := &ChassisControlRequest{
 		ChassisControl: control,
 	}
 	response = &ChassisControlResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

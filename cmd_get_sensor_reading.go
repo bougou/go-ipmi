@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -148,11 +149,11 @@ Discrete Events        : %v
 	)
 }
 
-func (c *Client) GetSensorReading(sensorNumber uint8) (response *GetSensorReadingResponse, err error) {
+func (c *Client) GetSensorReading(ctx context.Context, sensorNumber uint8) (response *GetSensorReadingResponse, err error) {
 	request := &GetSensorReadingRequest{
 		SensorNumber: sensorNumber,
 	}
 	response = &GetSensorReadingResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

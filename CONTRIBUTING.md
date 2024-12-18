@@ -20,9 +20,9 @@ For a IPMI Command `DoSomething`:
 For `DoSomething` method, you can pass `DoSomethingRequest` directly as the input parameter, like:
 
 ```go
-func (c *Client) DoSomething(request *DoSomethingRequest) (response *DoSomethingResponse, err error) {
+func (c *Client) DoSomething(ctx context.Context, request *DoSomethingRequest) (response *DoSomethingResponse, err error) {
   response := &DoSomethingResponse{}
-  err := c.Exchange(request, response)
+  err := c.Exchange(ctx,request, response)
   return
 }
 ```
@@ -30,12 +30,12 @@ func (c *Client) DoSomething(request *DoSomethingRequest) (response *DoSomething
 or, you can pass some plain parameters, and construct the `DoSomethingRequest` in method body, like:
 
 ```go
-func (c *Client) DoSomething(param1 string, param2 string) (response *DoSomethingResponse, err error) {
+func (c *Client) DoSomething(ctx context.Context, param1 string, param2 string) (response *DoSomethingResponse, err error) {
   request := &DoSomethingRequest{
     // construct by using input params
   }
   response := &DoSomethingResponse{}
-  err := c.Exchange(request, response)
+  err := c.Exchange(ctx,request, response)
   return
 }
 ```

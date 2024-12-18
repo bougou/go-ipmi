@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 28.11 Get System Restart Cause Command
 type GetSystemRestartCauseRequest struct {
@@ -64,9 +67,9 @@ func (res *GetSystemRestartCauseResponse) Format() string {
 	return fmt.Sprintf("System restart cause: %s", res.SystemRestartCause.String())
 }
 
-func (c *Client) GetSystemRestartCause() (response *GetSystemRestartCauseResponse, err error) {
+func (c *Client) GetSystemRestartCause(ctx context.Context) (response *GetSystemRestartCauseResponse, err error) {
 	request := &GetSystemRestartCauseRequest{}
 	response = &GetSystemRestartCauseResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

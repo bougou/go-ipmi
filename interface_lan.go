@@ -96,7 +96,7 @@ type v20 struct {
 
 // buildRawPayload returns the PayloadType and the raw payload bytes for Command Request.
 // Most command requests are of IPMI PayloadType, but some requests like RAKP messages are not.
-func (c *Client) buildRawPayload(reqCmd Request) (PayloadType, []byte, error) {
+func (c *Client) buildRawPayload(ctx context.Context, reqCmd Request) (PayloadType, []byte, error) {
 	var payloadType PayloadType
 	if _, ok := reqCmd.(*OpenSessionRequest); ok {
 		payloadType = PayloadTypeRmcpOpenSessionRequest
@@ -120,7 +120,7 @@ func (c *Client) buildRawPayload(reqCmd Request) (PayloadType, []byte, error) {
 
 	case PayloadTypeIPMI:
 		// Standard Payload Types
-		ipmiReq, err := c.BuildIPMIRequest(reqCmd)
+		ipmiReq, err := c.BuildIPMIRequest(ctx, reqCmd)
 		if err != nil {
 			return 0, nil, fmt.Errorf("BuildIPMIRequest failed, err: %s", err)
 		}
@@ -132,10 +132,10 @@ func (c *Client) buildRawPayload(reqCmd Request) (PayloadType, []byte, error) {
 	return payloadType, rawPayload, nil
 }
 
-func (c *Client) exchangeLAN(request Request, response Response) error {
+func (c *Client) exchangeLAN(ctx context.Context, request Request, response Response) error {
 	c.Debug(">> Command Request", request)
 
-	rmcp, err := c.BuildRmcpRequest(request)
+	rmcp, err := c.BuildRmcpRequest(ctx, request)
 	if err != nil {
 		return fmt.Errorf("build RMCP+ request msg failed, err: %s", err)
 	}
@@ -143,14 +143,13 @@ func (c *Client) exchangeLAN(request Request, response Response) error {
 	sent := rmcp.Pack()
 	c.DebugBytes("sent", sent, 16)
 
-	ctx := context.Background()
 	recv, err := c.udpClient.Exchange(ctx, bytes.NewReader(sent))
 	if err != nil {
 		return fmt.Errorf("client udp exchange msg failed, err: %s", err)
 	}
 	c.DebugBytes("recv", recv, 16)
 
-	if err := c.ParseRmcpResponse(recv, response); err != nil {
+	if err := c.ParseRmcpResponse(ctx, recv, response); err != nil {
 		// Warn, must directly return err. (DO NOT wrap err to another error)
 		// The error returned by ParseRmcpResponse might be of *ResponseError type.
 		return err
@@ -167,7 +166,7 @@ func (c *Client) exchangeLAN(request Request, response Response) error {
 // 2. Get Channel Authentication Capabilities
 // 3. Get Session Challenge
 // 4. Activate Session
-func (c *Client) Connect15() error {
+func (c *Client) Connect15(ctx context.Context) error {
 	var (
 		err           error
 		channelNumber uint8 = ChannelNumberSelf
@@ -177,30 +176,30 @@ func (c *Client) Connect15() error {
 		c.maxPrivilegeLevel = PrivilegeLevelAdministrator
 	}
 
-	_, err = c.GetChannelAuthenticationCapabilities(channelNumber, c.maxPrivilegeLevel)
+	_, err = c.GetChannelAuthenticationCapabilities(ctx, channelNumber, c.maxPrivilegeLevel)
 	if err != nil {
 		return fmt.Errorf("GetChannelAuthenticationCapabilities failed, err: %s", err)
 	}
 
-	_, err = c.GetSessionChallenge()
+	_, err = c.GetSessionChallenge(ctx)
 	if err != nil {
 		return fmt.Errorf("GetSessionChallenge failed, err: %s", err)
 	}
 
 	c.session.v15.preSession = true
 
-	_, err = c.ActivateSession()
+	_, err = c.ActivateSession(ctx)
 	if err != nil {
 		return fmt.Errorf("ActivateSession failed, err: %s", err)
 	}
 
-	_, err = c.SetSessionPrivilegeLevel(c.maxPrivilegeLevel)
+	_, err = c.SetSessionPrivilegeLevel(ctx, c.maxPrivilegeLevel)
 	if err != nil {
 		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %s", c.maxPrivilegeLevel, err)
 	}
 
 	go func() {
-		c.keepSessionAlive(DefaultKeepAliveIntervalSec)
+		c.keepSessionAlive(ctx, DefaultKeepAliveIntervalSec)
 	}()
 
 	return nil
@@ -208,7 +207,7 @@ func (c *Client) Connect15() error {
 }
 
 // see 13.15 IPMI v2.0/RMCP+ Session Activation
-func (c *Client) Connect20() error {
+func (c *Client) Connect20(ctx context.Context) error {
 	var (
 		err           error
 		channelNumber uint8 = ChannelNumberSelf
@@ -218,12 +217,12 @@ func (c *Client) Connect20() error {
 		c.maxPrivilegeLevel = PrivilegeLevelAdministrator
 	}
 
-	_, err = c.GetChannelAuthenticationCapabilities(channelNumber, c.maxPrivilegeLevel)
+	_, err = c.GetChannelAuthenticationCapabilities(ctx, channelNumber, c.maxPrivilegeLevel)
 	if err != nil {
 		return fmt.Errorf("cmd: Get Channel Authentication Capabilities failed, err: %s", err)
 	}
 
-	tryCiphers := c.findBestCipherSuites()
+	tryCiphers := c.findBestCipherSuites(ctx)
 
 	if c.session.v20.cipherSuiteID != CipherSuiteIDReserved {
 		// client explicitly specified a cipher suite to use
@@ -241,19 +240,19 @@ func (c *Client) Connect20() error {
 
 		c.session.v20.cipherSuiteID = cipherSuiteID
 
-		_, err = c.OpenSession()
+		_, err = c.OpenSession(ctx)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("cmd: RMCP+ Open Session failed with cipher suite id (%v), err: %s", cipherSuiteID, err))
 			continue
 		}
 
-		_, err = c.RAKPMessage1()
+		_, err = c.RAKPMessage1(ctx)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("cmd: rakp1 failed with cipher suite id (%v), err: %s", cipherSuiteID, err))
 			continue
 		}
 
-		_, err = c.RAKPMessage3()
+		_, err = c.RAKPMessage3(ctx)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("cmd: rakp3 failed with cipher suite id (%v), err: %s", cipherSuiteID, err))
 			continue
@@ -268,13 +267,13 @@ func (c *Client) Connect20() error {
 		return fmt.Errorf("connect20 failed after try all cipher suite ids (%v), errs: \n%v", tryCiphers, errors.Join(errs...))
 	}
 
-	_, err = c.SetSessionPrivilegeLevel(c.maxPrivilegeLevel)
+	_, err = c.SetSessionPrivilegeLevel(ctx, c.maxPrivilegeLevel)
 	if err != nil {
 		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %s", c.maxPrivilegeLevel, err)
 	}
 
 	go func() {
-		c.keepSessionAlive(DefaultKeepAliveIntervalSec)
+		c.keepSessionAlive(ctx, DefaultKeepAliveIntervalSec)
 	}()
 
 	return nil
@@ -283,7 +282,7 @@ func (c *Client) Connect20() error {
 // ConnectAuto detects the IPMI version supported by BMC by using
 // GetChannelAuthenticationCapabilities command, then decide to use v1.5 or v2.0
 // for subsequent requests.
-func (c *Client) ConnectAuto() error {
+func (c *Client) ConnectAuto(ctx context.Context) error {
 	var (
 		err error
 
@@ -294,22 +293,22 @@ func (c *Client) ConnectAuto() error {
 
 	// force use IPMI v1.5 first
 	c.v20 = false
-	cap, err := c.GetChannelAuthenticationCapabilities(channelNumber, privilegeLevel)
+	cap, err := c.GetChannelAuthenticationCapabilities(ctx, channelNumber, privilegeLevel)
 	if err != nil {
 		return fmt.Errorf("cmd: Get Channel Authentication Capabilities failed, err: %s", err)
 	}
 	if cap.SupportIPMIv20 {
 		c.v20 = true
-		return c.Connect20()
+		return c.Connect20(ctx)
 	}
 	if cap.SupportIPMIv15 {
-		return c.Connect15()
+		return c.Connect15(ctx)
 	}
 	return fmt.Errorf("client does not support IPMI v1.5 and IPMI v.20")
 }
 
 // closeLAN closes session used in LAN communication.
-func (c *Client) closeLAN() error {
+func (c *Client) closeLAN(ctx context.Context) error {
 	// close the channel to notify the keepAliveSession goroutine to stop
 	close(c.closedCh)
 
@@ -323,7 +322,7 @@ func (c *Client) closeLAN() error {
 	request := &CloseSessionRequest{
 		SessionID: sessionID,
 	}
-	if _, err := c.CloseSession(request); err != nil {
+	if _, err := c.CloseSession(ctx, request); err != nil {
 		return fmt.Errorf("CloseSession failed, err: %s", err)
 	}
 
@@ -335,7 +334,7 @@ func (c *Client) closeLAN() error {
 }
 
 // 6.12.15 Session Inactivity Timeouts
-func (c *Client) keepSessionAlive(intervalSec int) {
+func (c *Client) keepSessionAlive(ctx context.Context, intervalSec int) {
 	var period = time.Duration(intervalSec) * time.Second
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
@@ -344,7 +343,7 @@ func (c *Client) keepSessionAlive(intervalSec int) {
 	for {
 		select {
 		case <-ticker.C:
-			if _, err := c.GetCurrentSessionInfo(); err != nil {
+			if _, err := c.GetCurrentSessionInfo(ctx); err != nil {
 				c.DebugfRed("keepSessionAlive failed, GetCurrentSessionInfo failed, err: %s", err)
 			}
 		case <-c.closedCh:

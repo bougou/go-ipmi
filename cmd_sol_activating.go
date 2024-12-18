@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 26.1 SOL Activating Command
 type SOLActivatingRequest struct {
 	SessionState       uint8
@@ -36,9 +38,9 @@ func (res *SOLActivatingResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SOLActivating() (response *SOLActivatingResponse, err error) {
+func (c *Client) SOLActivating(ctx context.Context) (response *SOLActivatingResponse, err error) {
 	request := &SOLActivatingRequest{}
 	response = &SOLActivatingResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

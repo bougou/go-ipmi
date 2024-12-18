@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 20.4 20.5 Manufacturing Test On Command
 type ManufacturingTestOnRequest struct {
 	// empty
@@ -31,9 +33,9 @@ func (res *ManufacturingTestOnResponse) Format() string {
 }
 
 // If the device supports a "manufacturing test mode", this command is reserved to turn that mode on.
-func (c *Client) ManufacturingTestOn() (response *ManufacturingTestOnResponse, err error) {
+func (c *Client) ManufacturingTestOn(ctx context.Context) (response *ManufacturingTestOnResponse, err error) {
 	request := &ManufacturingTestOnRequest{}
 	response = &ManufacturingTestOnResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 23.1 Set LAN Configuration Parameters Command
 type SetLanConfigParamsRequest struct {
 	ChannelNumber int8
@@ -37,9 +39,9 @@ func (res *SetLanConfigParamsResponse) Format() string {
 }
 
 // Todo
-func (c *Client) SetLanConfigParams() (response *SetLanConfigParamsResponse, err error) {
+func (c *Client) SetLanConfigParams(ctx context.Context) (response *SetLanConfigParamsResponse, err error) {
 	request := &SetLanConfigParamsRequest{}
 	response = &SetLanConfigParamsResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

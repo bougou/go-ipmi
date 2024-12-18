@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/bougou/go-ipmi"
@@ -38,12 +39,14 @@ func NewCmdSessionInfo() *cobra.Command {
 				CheckErr(fmt.Errorf(usage))
 			}
 
+			ctx := context.Background()
+
 			switch args[0] {
 			case "active":
 				request := &ipmi.GetSessionInfoRequest{
 					SessionIndex: 0, // current active
 				}
-				res, err := client.GetSessionInfo(request)
+				res, err := client.GetSessionInfo(ctx, request)
 				if err != nil {
 					CheckErr(fmt.Errorf("GetSessionInfo failed, err: %s", err))
 				}

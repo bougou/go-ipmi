@@ -1,6 +1,9 @@
 package ipmi
 
-import "bytes"
+import (
+	"bytes"
+	"context"
+)
 
 // 22.29 Get User Name Command
 type GetUsernameRequest struct {
@@ -37,11 +40,11 @@ func (res *GetUsernameResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetUsername(userID uint8) (response *GetUsernameResponse, err error) {
+func (c *Client) GetUsername(ctx context.Context, userID uint8) (response *GetUsernameResponse, err error) {
 	request := &GetUsernameRequest{
 		UserID: userID,
 	}
 	response = &GetUsernameResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

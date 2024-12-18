@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"net"
 )
@@ -146,17 +147,17 @@ console port                  : %d
 	)
 }
 
-func (c *Client) GetSessionInfo(request *GetSessionInfoRequest) (response *GetSessionInfoResponse, err error) {
+func (c *Client) GetSessionInfo(ctx context.Context, request *GetSessionInfoRequest) (response *GetSessionInfoResponse, err error) {
 	response = &GetSessionInfoResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) GetCurrentSessionInfo() (response *GetSessionInfoResponse, err error) {
+func (c *Client) GetCurrentSessionInfo(ctx context.Context) (response *GetSessionInfoResponse, err error) {
 	request := &GetSessionInfoRequest{
 		SessionIndex: 0x00,
 	}
 	response = &GetSessionInfoResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

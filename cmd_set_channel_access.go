@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.22 Set Channel Access Command
 type SetChannelAccessRequest struct {
 	ChannelNumber uint8
@@ -65,8 +67,8 @@ func (res *SetChannelAccessResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetChannelAccess(request *SetChannelAccessRequest) (response *SetChannelAccessResponse, err error) {
+func (c *Client) SetChannelAccess(ctx context.Context, request *SetChannelAccessRequest) (response *SetChannelAccessResponse, err error) {
 	response = &SetChannelAccessResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

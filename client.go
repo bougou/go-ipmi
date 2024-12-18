@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -182,7 +183,7 @@ func (c *Client) SessionPrivilegeLevel() PrivilegeLevel {
 }
 
 // Connect connects to the bmc by specified Interface.
-func (c *Client) Connect() error {
+func (c *Client) Connect(ctx context.Context) error {
 	// Optional RMCP Ping/Pong mechanism
 	// pongRes, err := c.RmcpPing()
 	// if err != nil {
@@ -195,50 +196,50 @@ func (c *Client) Connect() error {
 	switch c.Interface {
 	case "", InterfaceOpen:
 		var devnum int32 = 0
-		return c.ConnectOpen(devnum)
+		return c.ConnectOpen(ctx, devnum)
 
 	case InterfaceTool:
 		var devnum int32 = 0
-		return c.ConnectTool(devnum)
+		return c.ConnectTool(ctx, devnum)
 
 	case InterfaceLanplus:
 		c.v20 = true
-		return c.Connect20()
+		return c.Connect20(ctx)
 
 	case InterfaceLan:
 		c.v20 = false
-		return c.Connect15()
+		return c.Connect15(ctx)
 
 	default:
 		return fmt.Errorf("not supported interface, supported: lan,lanplus,open")
 	}
 }
 
-func (c *Client) Close() error {
+func (c *Client) Close(ctx context.Context) error {
 	switch c.Interface {
 	case "", InterfaceOpen:
-		return c.closeOpen()
+		return c.closeOpen(ctx)
 
 	case InterfaceTool:
-		return c.closeTool()
+		return c.closeTool(ctx)
 
 	case InterfaceLan, InterfaceLanplus:
-		return c.closeLAN()
+		return c.closeLAN(ctx)
 	}
 
 	return nil
 }
 
-func (c *Client) Exchange(request Request, response Response) error {
+func (c *Client) Exchange(ctx context.Context, request Request, response Response) error {
 	switch c.Interface {
 	case "", InterfaceOpen:
-		return c.exchangeOpen(request, response)
+		return c.exchangeOpen(ctx, request, response)
 
 	case InterfaceTool:
-		return c.exchangeTool(request, response)
+		return c.exchangeTool(ctx, request, response)
 
 	case InterfaceLan, InterfaceLanplus:
-		return c.exchangeLAN(request, response)
+		return c.exchangeLAN(ctx, request, response)
 
 	}
 

@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.6 Get Message Command
 type GetMessageRequest struct {
 	// empty
@@ -37,9 +39,9 @@ func (res *GetMessageResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetMessage() (response *GetMessageResponse, err error) {
+func (c *Client) GetMessage(ctx context.Context) (response *GetMessageResponse, err error) {
 	request := &GetMessageRequest{}
 	response = &GetMessageResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

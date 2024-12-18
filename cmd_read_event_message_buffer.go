@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.8 Read Event Message Buffer Command
 type ReadEventMessageBufferRequest struct {
 }
@@ -37,9 +39,9 @@ func (res *ReadEventMessageBufferResponse) Format() string {
 	return ""
 }
 
-func (c *Client) ReadEventMessageBuffer() (response *ReadEventMessageBufferResponse, err error) {
+func (c *Client) ReadEventMessageBuffer(ctx context.Context) (response *ReadEventMessageBufferResponse, err error) {
 	request := &ReadEventMessageBufferRequest{}
 	response = &ReadEventMessageBufferResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 const (
 	RmcpVersion uint8 = 0x06
@@ -283,8 +286,8 @@ func (asf *ASF) Unpack(msg []byte) error {
 	return nil
 }
 
-func (c *Client) BuildRmcpRequest(reqCmd Request) (*Rmcp, error) {
-	payloadType, rawPayload, err := c.buildRawPayload(reqCmd)
+func (c *Client) BuildRmcpRequest(ctx context.Context, reqCmd Request) (*Rmcp, error) {
+	payloadType, rawPayload, err := c.buildRawPayload(ctx, reqCmd)
 	if err != nil {
 		return nil, fmt.Errorf("buildRawPayload failed, err: %s", err)
 	}
@@ -334,7 +337,7 @@ func (c *Client) BuildRmcpRequest(reqCmd Request) (*Rmcp, error) {
 
 // ParseRmcpResponse parses msg bytes.
 // The response param should be passed as a pointer of the struct which implements the Response interface.
-func (c *Client) ParseRmcpResponse(msg []byte, response Response) error {
+func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response Response) error {
 	rmcp := &Rmcp{}
 	if err := rmcp.Unpack(msg); err != nil {
 		return fmt.Errorf("unpack rmcp failed, err: %s", err)

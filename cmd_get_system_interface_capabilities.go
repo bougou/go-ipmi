@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.9 Get System Interface Capabilities Command
 type GetSystemInterfaceCapabilitiesRequest struct {
 	SystemInterfaceType SystemInterfaceType
@@ -66,11 +68,11 @@ func (res *GetSystemInterfaceCapabilitiesResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetSystemInterfaceCapabilities(interfaceType SystemInterfaceType) (response *GetSystemInterfaceCapabilitiesResponse, err error) {
+func (c *Client) GetSystemInterfaceCapabilities(ctx context.Context, interfaceType SystemInterfaceType) (response *GetSystemInterfaceCapabilitiesResponse, err error) {
 	request := &GetSystemInterfaceCapabilitiesRequest{
 		SystemInterfaceType: interfaceType,
 	}
 	response = &GetSystemInterfaceCapabilitiesResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

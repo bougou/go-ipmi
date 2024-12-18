@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.10 Get BT Interface Capabilities Command
 type GetBTInterfaceCapabilitiesRequest struct {
 }
@@ -43,9 +45,9 @@ func (res *GetBTInterfaceCapabilitiesResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetBTInterfaceCapabilities() (response *GetBTInterfaceCapabilitiesResponse, err error) {
+func (c *Client) GetBTInterfaceCapabilities(ctx context.Context) (response *GetBTInterfaceCapabilitiesResponse, err error) {
 	request := &GetBTInterfaceCapabilitiesRequest{}
 	response = &GetBTInterfaceCapabilitiesResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

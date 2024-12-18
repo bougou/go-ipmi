@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -53,19 +54,19 @@ Data           : %02x`,
 }
 
 // The command returns the specified data from the FRU Inventory Info area.
-func (c *Client) ReadFRUData(fruDeviceID uint8, readOffset uint16, readCount uint8) (response *ReadFRUDataResponse, err error) {
+func (c *Client) ReadFRUData(ctx context.Context, fruDeviceID uint8, readOffset uint16, readCount uint8) (response *ReadFRUDataResponse, err error) {
 	request := &ReadFRUDataRequest{
 		FRUDeviceID: fruDeviceID,
 		ReadOffset:  readOffset,
 		ReadCount:   readCount,
 	}
 	response = &ReadFRUDataResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }
 
 // readFRUDataByLength reads FRU Data in loop until reaches the specified data length
-func (c *Client) readFRUDataByLength(deviceID uint8, offset uint16, length uint16) ([]byte, error) {
+func (c *Client) readFRUDataByLength(ctx context.Context, deviceID uint8, offset uint16, length uint16) ([]byte, error) {
 	var data []byte
 	c.Debugf("Read FRU Data by Length, offset: (%d), length: (%d)\n", offset, length)
 
@@ -74,7 +75,7 @@ func (c *Client) readFRUDataByLength(deviceID uint8, offset uint16, length uint1
 			break
 		}
 
-		res, err := c.tryReadFRUData(deviceID, offset, length)
+		res, err := c.tryReadFRUData(ctx, deviceID, offset, length)
 		if err != nil {
 			return nil, fmt.Errorf("tryReadFRUData failed, err: %s", err)
 		}
@@ -94,7 +95,7 @@ func (c *Client) readFRUDataByLength(deviceID uint8, offset uint16, length uint1
 // tryReadFRUData will try to read FRU data with a read count which starts with
 // the minimal number of the specified length and the hard-coded 32, if the
 // ReadFRUData failed, it try another request with a decreased read count.
-func (c *Client) tryReadFRUData(deviceID uint8, readOffset uint16, length uint16) (response *ReadFRUDataResponse, err error) {
+func (c *Client) tryReadFRUData(ctx context.Context, deviceID uint8, readOffset uint16, length uint16) (response *ReadFRUDataResponse, err error) {
 	var readCount uint8 = 32
 	if length <= uint16(readCount) {
 		readCount = uint8(length)
@@ -106,7 +107,7 @@ func (c *Client) tryReadFRUData(deviceID uint8, readOffset uint16, length uint16
 		}
 
 		c.Debugf("Try Read FRU Data, offset: (%d), count: (%d)\n", readOffset, readCount)
-		res, err := c.ReadFRUData(deviceID, readOffset, readCount)
+		res, err := c.ReadFRUData(ctx, deviceID, readOffset, readCount)
 		if err == nil {
 			return res, nil
 		}

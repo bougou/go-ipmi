@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 26.3 Get SOL Configuration Parameters Command
 type GetSOLConfigParamsRequest struct {
 	GetParameterRevisionOnly bool
@@ -50,7 +52,7 @@ func (res *GetSOLConfigParamsResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetSOLConfigParams(channelNumber uint8, paramSelector SOLConfigParamSelector) (response *GetSOLConfigParamsResponse, err error) {
+func (c *Client) GetSOLConfigParams(ctx context.Context, channelNumber uint8, paramSelector SOLConfigParamSelector) (response *GetSOLConfigParamsResponse, err error) {
 	request := &GetSOLConfigParamsRequest{
 		ChannelNumber:     channelNumber,
 		ParameterSelector: paramSelector,
@@ -58,6 +60,6 @@ func (c *Client) GetSOLConfigParams(channelNumber uint8, paramSelector SOLConfig
 		BlockSelector:     0x00,
 	}
 	response = &GetSOLConfigParamsResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

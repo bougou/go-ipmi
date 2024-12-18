@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -78,9 +79,9 @@ Support Alert                : %s`,
 	)
 }
 
-func (c *Client) GetPEFCapabilities() (response *GetPEFCapabilitiesResponse, err error) {
+func (c *Client) GetPEFCapabilities(ctx context.Context) (response *GetPEFCapabilitiesResponse, err error) {
 	request := &GetPEFCapabilitiesRequest{}
 	response = &GetPEFCapabilitiesResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

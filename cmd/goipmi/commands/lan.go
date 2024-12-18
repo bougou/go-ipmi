@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -45,15 +46,16 @@ stats clear [<channel number>]
 			}
 			channelNumber := uint8(id)
 
+			ctx := context.Background()
 			switch action {
 			case "get":
-				res, err := client.GetIPStatistics(channelNumber, false)
+				res, err := client.GetIPStatistics(ctx, channelNumber, false)
 				if err != nil {
 					CheckErr(fmt.Errorf("GetIPStatistics failed, err: %s", err))
 				}
 				fmt.Println(res.Format())
 			case "clear":
-				res, err := client.GetIPStatistics(channelNumber, true)
+				res, err := client.GetIPStatistics(ctx, channelNumber, true)
 				if err != nil {
 					CheckErr(fmt.Errorf("GetIPStatistics failed, err: %s", err))
 				}
@@ -84,7 +86,8 @@ print [<channel number>]
 			}
 			channelNumber := uint8(id)
 
-			lanConfig, err := client.GetLanConfig(channelNumber)
+			ctx := context.Background()
+			lanConfig, err := client.GetLanConfig(ctx, channelNumber)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetLanConfig failed, err: %s", err))
 			}

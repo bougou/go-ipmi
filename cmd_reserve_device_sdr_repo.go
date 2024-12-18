@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 35.4 Reserve Device SDR Repository Command
 type ReserveDeviceSDRRepoRequest struct {
 	// empty
@@ -35,9 +37,9 @@ func (res *ReserveDeviceSDRRepoResponse) Format() string {
 }
 
 // This command is used to obtain a Reservation ID.
-func (c *Client) ReserveDeviceSDRRepo() (response *ReserveDeviceSDRRepoResponse, err error) {
+func (c *Client) ReserveDeviceSDRRepo(ctx context.Context) (response *ReserveDeviceSDRRepoResponse, err error) {
 	request := &ReserveDeviceSDRRepoRequest{}
 	response = &ReserveDeviceSDRRepoResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

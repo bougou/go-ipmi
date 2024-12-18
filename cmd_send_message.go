@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.7 Send Message Command
 type SendMessageRequest struct {
 	// [7:6] 00b = No tracking
@@ -66,7 +68,7 @@ func (res *SendMessageResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SendMessage(channelNumber uint8, authenticated bool, encrypted bool, trackMask uint8, data []byte) (response *SendMessageResponse, err error) {
+func (c *Client) SendMessage(ctx context.Context, channelNumber uint8, authenticated bool, encrypted bool, trackMask uint8, data []byte) (response *SendMessageResponse, err error) {
 	request := &SendMessageRequest{
 		ChannelNumber: channelNumber,
 		Authenticated: authenticated,
@@ -75,6 +77,6 @@ func (c *Client) SendMessage(channelNumber uint8, authenticated bool, encrypted 
 		MessageData:   data,
 	}
 	response = &SendMessageResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

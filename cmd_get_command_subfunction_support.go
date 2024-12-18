@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 21.4 Get Command Sub-function Support Command
 type GetCommandSubfunctionSupportRequest struct {
 	ChannelNumber uint8
@@ -75,7 +77,7 @@ func (res *GetCommandSubfunctionSupportResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetCommandSubfunctionSupport(channelNumber uint8, netFn NetFn, lun uint8, code uint8, oemIANA uint32) (response *GetCommandSubfunctionSupportResponse, err error) {
+func (c *Client) GetCommandSubfunctionSupport(ctx context.Context, channelNumber uint8, netFn NetFn, lun uint8, code uint8, oemIANA uint32) (response *GetCommandSubfunctionSupportResponse, err error) {
 	request := &GetCommandSubfunctionSupportRequest{
 		ChannelNumber:  channelNumber,
 		NetFn:          netFn,
@@ -84,6 +86,6 @@ func (c *Client) GetCommandSubfunctionSupport(channelNumber uint8, netFn NetFn, 
 		OEM_IANA:       oemIANA,
 	}
 	response = &GetCommandSubfunctionSupportResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

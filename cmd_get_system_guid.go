@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -54,9 +55,9 @@ func (res *GetSystemGUIDResponse) Format() string {
 	return out
 }
 
-func (c *Client) GetSystemGUID() (response *GetSystemGUIDResponse, err error) {
+func (c *Client) GetSystemGUID(ctx context.Context) (response *GetSystemGUIDResponse, err error) {
 	request := &GetSystemGUIDRequest{}
 	response = &GetSystemGUIDResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -58,22 +59,22 @@ func (res *GetChannelCipherSuitesResponse) Format() string {
 // The command is used to look up what authentication, integrity, and confidentiality algorithms are supported.
 // The algorithms are used in combination as 'Cipher Suites'.
 // This command only applies to implementations that support IPMI v2.0/RMCP+ sessions.
-func (c *Client) GetChannelCipherSuites(channelNumber uint8, index uint8) (response *GetChannelCipherSuitesResponse, err error) {
+func (c *Client) GetChannelCipherSuites(ctx context.Context, channelNumber uint8, index uint8) (response *GetChannelCipherSuitesResponse, err error) {
 	request := &GetChannelCipherSuitesRequest{
 		ChannelNumber: channelNumber,
 		PayloadType:   PayloadTypeIPMI,
 		ListIndex:     index,
 	}
 	response = &GetChannelCipherSuitesResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) GetAllChannelCipherSuites(channelNumber uint8) ([]CipherSuiteRecord, error) {
+func (c *Client) GetAllChannelCipherSuites(ctx context.Context, channelNumber uint8) ([]CipherSuiteRecord, error) {
 	var index uint8 = 0
 	var cipherSuitesData = make([]byte, 0)
 	for ; index < MaxCipherSuiteListIndex; index++ {
-		res, err := c.GetChannelCipherSuites(channelNumber, index)
+		res, err := c.GetChannelCipherSuites(ctx, channelNumber, index)
 		if err != nil {
 			return nil, fmt.Errorf("cmd GetChannelCipherSuites failed, err: %s", err)
 		}

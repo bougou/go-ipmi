@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
@@ -22,7 +23,7 @@ type openipmi struct {
 }
 
 // ConnectOpen try to initialize the client by open the device of linux ipmi driver.
-func (c *Client) ConnectOpen(devnum int32) error {
+func (c *Client) ConnectOpen(ctx context.Context, devnum int32) error {
 	c.Debugf("Using ipmi device %d\n", devnum)
 
 	// try the following devices
@@ -65,14 +66,14 @@ func (c *Client) ConnectOpen(devnum int32) error {
 }
 
 // closeOpen closes the ipmi dev file.
-func (c *Client) closeOpen() error {
+func (c *Client) closeOpen(ctx context.Context) error {
 	if err := c.openipmi.file.Close(); err != nil {
 		return fmt.Errorf("close open file failed, err: %s", err)
 	}
 	return nil
 }
 
-func (c *Client) exchangeOpen(request Request, response Response) error {
+func (c *Client) exchangeOpen(ctx context.Context, request Request, response Response) error {
 	if c.openipmi.targetAddr != 0 && c.openipmi.targetAddr != c.openipmi.myAddr {
 
 	} else {
@@ -80,7 +81,7 @@ func (c *Client) exchangeOpen(request Request, response Response) error {
 		c.Debugf("\nSending request [%s] (%#02x) to System Interface\n", request.Command().Name, request.Command().ID)
 	}
 
-	recv, err := c.openSendRequest(request)
+	recv, err := c.openSendRequest(ctx, request)
 	if err != nil {
 		return fmt.Errorf("openSendRequest failed, err: %s", err)
 	}
@@ -117,7 +118,7 @@ func (c *Client) exchangeOpen(request Request, response Response) error {
 	return nil
 }
 
-func (c *Client) openSendRequest(request Request) ([]byte, error) {
+func (c *Client) openSendRequest(ctx context.Context, request Request) ([]byte, error) {
 
 	var dataPtr *byte
 

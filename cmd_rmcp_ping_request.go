@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // RmcpPingRequest
 // 13.2.3 RMCP/ASF Presence Ping Message
@@ -63,10 +66,10 @@ func (res *RmcpPingResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
 
-func (c *Client) RmcpPing() (response *RmcpPingResponse, err error) {
+func (c *Client) RmcpPing(ctx context.Context) (response *RmcpPingResponse, err error) {
 	request := &RmcpPingRequest{}
 	response = &RmcpPingResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 
 	return
 }

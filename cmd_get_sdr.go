@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 33.12 Get SDR Command
 type GetSDRRequest struct {
@@ -47,7 +50,7 @@ func (res *GetSDRResponse) Format() string {
 }
 
 // GetSDR returns raw SDR record.
-func (c *Client) GetSDR(recordID uint16) (response *GetSDRResponse, err error) {
+func (c *Client) GetSDR(ctx context.Context, recordID uint16) (response *GetSDRResponse, err error) {
 	request := &GetSDRRequest{
 		ReservationID: 0,
 		RecordID:      recordID,
@@ -55,7 +58,7 @@ func (c *Client) GetSDR(recordID uint16) (response *GetSDRResponse, err error) {
 		Read:          0xff,
 	}
 	response = &GetSDRResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 
 	// Todo, try read partial data if err (ResponseError and CompletionCode) indicate
 	// reading full data (0xff) exceeds the maximum transfer length for the interface
@@ -67,14 +70,14 @@ func (c *Client) GetSDR(recordID uint16) (response *GetSDRResponse, err error) {
 	return
 }
 
-func (c *Client) GetSDRBySensorID(sensorNumber uint8) (*SDR, error) {
+func (c *Client) GetSDRBySensorID(ctx context.Context, sensorNumber uint8) (*SDR, error) {
 	if SensorNumber(sensorNumber) == SensorNumberReserved {
 		return nil, fmt.Errorf("not valid sensorNumber, %#0x is reserved", sensorNumber)
 	}
 
 	var recordID uint16 = 0
 	for {
-		res, err := c.GetSDR(recordID)
+		res, err := c.GetSDR(ctx, recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSDR failed for recordID (%#02x), err: %s", recordID, err)
 		}
@@ -90,7 +93,7 @@ func (c *Client) GetSDRBySensorID(sensorNumber uint8) (*SDR, error) {
 			continue
 		}
 
-		if err := c.enhanceSDR(sdr); err != nil {
+		if err := c.enhanceSDR(ctx, sdr); err != nil {
 			return sdr, fmt.Errorf("enhanceSDR failed, err: %s", err)
 		}
 		return sdr, nil
@@ -99,10 +102,10 @@ func (c *Client) GetSDRBySensorID(sensorNumber uint8) (*SDR, error) {
 	return nil, fmt.Errorf("not found SDR for sensor id (%#0x)", sensorNumber)
 }
 
-func (c *Client) GetSDRBySensorName(sensorName string) (*SDR, error) {
+func (c *Client) GetSDRBySensorName(ctx context.Context, sensorName string) (*SDR, error) {
 	var recordID uint16 = 0
 	for {
-		res, err := c.GetSDR(recordID)
+		res, err := c.GetSDR(ctx, recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSDR failed for recordID (%#02x), err: %s", recordID, err)
 		}
@@ -119,7 +122,7 @@ func (c *Client) GetSDRBySensorName(sensorName string) (*SDR, error) {
 			continue
 		}
 
-		if err := c.enhanceSDR(sdr); err != nil {
+		if err := c.enhanceSDR(ctx, sdr); err != nil {
 			return sdr, fmt.Errorf("enhanceSDR failed, err: %s", err)
 		}
 		return sdr, nil
@@ -131,11 +134,11 @@ func (c *Client) GetSDRBySensorName(sensorName string) (*SDR, error) {
 // GetSDRs fetches the SDR records with the specified RecordTypes.
 // The parameter is a slice of SDRRecordType used as filter.
 // Empty means to get all SDR records.
-func (c *Client) GetSDRs(recordTypes ...SDRRecordType) ([]*SDR, error) {
+func (c *Client) GetSDRs(ctx context.Context, recordTypes ...SDRRecordType) ([]*SDR, error) {
 	var recordID uint16 = 0
 	var out = make([]*SDR, 0)
 	for {
-		res, err := c.GetSDR(recordID)
+		res, err := c.GetSDR(ctx, recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %s", recordID, err)
 		}
@@ -167,12 +170,12 @@ func (c *Client) GetSDRs(recordTypes ...SDRRecordType) ([]*SDR, error) {
 // GetSDRsMap returns all Full/Compact SDRs grouped by GeneratorID and SensorNumber.
 // The sensor name can only be got from SDR record.
 // So use this method to construct a map from which you can get sensor name.
-func (c *Client) GetSDRsMap() (SDRMapBySensorNumber, error) {
+func (c *Client) GetSDRsMap(ctx context.Context) (SDRMapBySensorNumber, error) {
 	var out = make(map[GeneratorID]map[SensorNumber]*SDR)
 
 	var recordID uint16 = 0
 	for {
-		res, err := c.GetSDR(recordID)
+		res, err := c.GetSDR(ctx, recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %s", recordID, err)
 		}

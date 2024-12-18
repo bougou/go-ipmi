@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 35.3 Get Device SDR Command
 type GetDeviceSDRRequest struct {
@@ -49,7 +52,7 @@ func (res *GetDeviceSDRResponse) Format() string {
 }
 
 // This command returns general information about the collection of sensors in a Dynamic Sensor Device.
-func (c *Client) GetDeviceSDR(recordID uint16) (response *GetDeviceSDRResponse, err error) {
+func (c *Client) GetDeviceSDR(ctx context.Context, recordID uint16) (response *GetDeviceSDRResponse, err error) {
 	request := &GetDeviceSDRRequest{
 		ReservationID: 0,
 		RecordID:      recordID,
@@ -57,18 +60,18 @@ func (c *Client) GetDeviceSDR(recordID uint16) (response *GetDeviceSDRResponse, 
 		ReadBytes:     0xff,
 	}
 	response = &GetDeviceSDRResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) GetDeviceSDRBySensorID(sensorNumber uint8) (*SDR, error) {
+func (c *Client) GetDeviceSDRBySensorID(ctx context.Context, sensorNumber uint8) (*SDR, error) {
 	if SensorNumber(sensorNumber) == SensorNumberReserved {
 		return nil, fmt.Errorf("not valid sensorNumber, %#0x is reserved", sensorNumber)
 	}
 
 	var recordID uint16 = 0
 	for {
-		res, err := c.GetDeviceSDR(recordID)
+		res, err := c.GetDeviceSDR(ctx, recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetDeviceSDR for recordID (%#0x) failed, err: %s", recordID, err)
 		}
@@ -90,11 +93,11 @@ func (c *Client) GetDeviceSDRBySensorID(sensorNumber uint8) (*SDR, error) {
 	return nil, fmt.Errorf("not found SDR for sensor id (%#0x)", sensorNumber)
 }
 
-func (c *Client) GetDeviceSDRs(recordTypes ...SDRRecordType) ([]*SDR, error) {
+func (c *Client) GetDeviceSDRs(ctx context.Context, recordTypes ...SDRRecordType) ([]*SDR, error) {
 	var out = make([]*SDR, 0)
 	var recordID uint16 = 0
 	for {
-		res, err := c.GetDeviceSDR(recordID)
+		res, err := c.GetDeviceSDR(ctx, recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetDeviceSDR for recordID (%#0x) failed, err: %s", recordID, err)
 		}

@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"strings"
 )
@@ -36,9 +37,9 @@ func (res *CommandGetSupermicroBiosVersionResponse) Format() string {
 	)
 }
 
-func (c *Client) GetSupermicroBiosVersion() (response *CommandGetSupermicroBiosVersionResponse, err error) {
+func (c *Client) GetSupermicroBiosVersion(ctx context.Context) (response *CommandGetSupermicroBiosVersionResponse, err error) {
 	request := &CommandGetSupermicroBiosVersionRequest{}
 	response = &CommandGetSupermicroBiosVersionResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

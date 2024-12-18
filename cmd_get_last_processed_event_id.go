@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -58,9 +59,9 @@ LastBMCProcessedEventRecordID      : %#04x (%d)
 	)
 }
 
-func (c *Client) GetLastProcessedEventId() (response *GetLastProcessedEventIdResponse, err error) {
+func (c *Client) GetLastProcessedEventId(ctx context.Context) (response *GetLastProcessedEventIdResponse, err error) {
 	request := &GetLastProcessedEventIdRequest{}
 	response = &GetLastProcessedEventIdResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

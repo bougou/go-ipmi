@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.4 Get Message Flags Command
 type GetMessageFlagsRequest struct {
 }
@@ -46,9 +48,9 @@ func (res *GetMessageFlagsResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetMessageFlags() (response *GetMessageFlagsResponse, err error) {
+func (c *Client) GetMessageFlags(ctx context.Context) (response *GetMessageFlagsResponse, err error) {
 	request := &GetMessageFlagsRequest{}
 	response = &GetMessageFlagsResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

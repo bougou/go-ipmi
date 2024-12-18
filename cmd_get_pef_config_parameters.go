@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -102,7 +103,7 @@ Configuration Parameter Data : %# 02x`,
 	)
 }
 
-func (c *Client) GetPEFConfigParameters(getRevisionOnly bool, paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) (response *GetPEFConfigParametersResponse, err error) {
+func (c *Client) GetPEFConfigParameters(ctx context.Context, getRevisionOnly bool, paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) (response *GetPEFConfigParametersResponse, err error) {
 	request := &GetPEFConfigParametersRequest{
 		GetRevisionOnly: getRevisionOnly,
 		ParamSelector:   paramSelector,
@@ -110,12 +111,12 @@ func (c *Client) GetPEFConfigParameters(getRevisionOnly bool, paramSelector PEFC
 		BlockSelector:   blockSelector,
 	}
 	response = &GetPEFConfigParametersResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) GetPEFConfigParameters_SystemUUID() (param *PEFConfigParam_SystemUUID, err error) {
-	res, err := c.GetPEFConfigParameters(false, PEFConfigParamSelector_SystemGUID, 0, 0)
+func (c *Client) GetPEFConfigParameters_SystemUUID(ctx context.Context) (param *PEFConfigParam_SystemUUID, err error) {
+	res, err := c.GetPEFConfigParameters(ctx, false, PEFConfigParamSelector_SystemGUID, 0, 0)
 	if err != nil {
 		return nil, fmt.Errorf("GetPEFConfigParameters failed, err: %s", err)
 	}

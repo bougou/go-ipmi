@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 28.6 Set Front Panel Enables
 // 定位
 type SetFrontPanelEnablesRequest struct {
@@ -50,7 +52,7 @@ func (res *SetFrontPanelEnablesResponse) Format() string {
 }
 
 // The following command is used to enable or disable the buttons on the front panel of the chassis.
-func (c *Client) SetFrontPanelEnables(disableSleepButton bool, disableDiagnosticButton bool, disableResetButton bool, disablePoweroffButton bool) (response *SetFrontPanelEnablesResponse, err error) {
+func (c *Client) SetFrontPanelEnables(ctx context.Context, disableSleepButton bool, disableDiagnosticButton bool, disableResetButton bool, disablePoweroffButton bool) (response *SetFrontPanelEnablesResponse, err error) {
 	request := &SetFrontPanelEnablesRequest{
 		DisableSleepButton:      disableSleepButton,
 		DisableDiagnosticButton: disableDiagnosticButton,
@@ -58,6 +60,6 @@ func (c *Client) SetFrontPanelEnables(disableSleepButton bool, disableDiagnostic
 		DisablePoweroffButton:   disablePoweroffButton,
 	}
 	response = &SetFrontPanelEnablesResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

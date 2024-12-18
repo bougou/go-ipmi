@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.15.2 Cipher Suite IDs
 type CipherSuiteID uint8
 
@@ -109,8 +111,8 @@ type CipherSuiteRecord struct {
 	CryptAlgs     []uint8 // Tag bits: [7:6]=10b
 }
 
-func (c *Client) findBestCipherSuites() []CipherSuiteID {
-	cipherSuiteRecords, err := c.GetAllChannelCipherSuites(ChannelNumberSelf)
+func (c *Client) findBestCipherSuites(ctx context.Context) []CipherSuiteID {
+	cipherSuiteRecords, err := c.GetAllChannelCipherSuites(ctx, ChannelNumberSelf)
 	if err != nil {
 		return preferredCiphers
 	}

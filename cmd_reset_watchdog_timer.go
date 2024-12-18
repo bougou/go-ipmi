@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 27.5 Reset Watchdog Timer Command
 type ResetWatchdogTimerRequest struct {
 }
@@ -30,9 +32,9 @@ func (res *ResetWatchdogTimerResponse) Format() string {
 	return ""
 }
 
-func (c *Client) ResetWatchdogTimer() (response *ResetWatchdogTimerResponse, err error) {
+func (c *Client) ResetWatchdogTimer(ctx context.Context) (response *ResetWatchdogTimerResponse, err error) {
 	request := &ResetWatchdogTimerRequest{}
 	response = &ResetWatchdogTimerResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

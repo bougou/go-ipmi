@@ -2,6 +2,7 @@ package ipmi
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 
 	"github.com/olekukonko/tablewriter"
@@ -860,12 +861,12 @@ type SensorInitialization struct {
 }
 
 // enhanceSDR will fill extra data for SDR
-func (c *Client) enhanceSDR(sdr *SDR) error {
+func (c *Client) enhanceSDR(ctx context.Context, sdr *SDR) error {
 	if sdr == nil {
 		return nil
 	}
 
-	sensor, err := c.sdrToSensor(sdr)
+	sensor, err := c.sdrToSensor(ctx, sdr)
 	if err != nil {
 		return fmt.Errorf("sdrToSensor failed, err: %s", err)
 	}

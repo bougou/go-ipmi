@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 28.5 Chassis Identify Command
 // 用来定位设备，机箱定位 （机箱定位灯默认亮 interval 秒）
 type ChassisIdentifyRequest struct {
@@ -42,12 +44,12 @@ func (res *ChassisIdentifyResponse) Format() string {
 // This command causes the chassis to physically identify itself by a mechanism
 // chosen by the system implementation; such as turning on blinking user-visible lights
 // or emitting beeps via a speaker, LCD panel, etc.
-func (c *Client) ChassisIdentify(interval uint8, force bool) (response *ChassisIdentifyResponse, err error) {
+func (c *Client) ChassisIdentify(ctx context.Context, interval uint8, force bool) (response *ChassisIdentifyResponse, err error) {
 	request := &ChassisIdentifyRequest{
 		IdentifyInterval: interval,
 		ForceIdentifyOn:  force,
 	}
 	response = &ChassisIdentifyResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

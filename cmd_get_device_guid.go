@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -45,9 +46,9 @@ func (res *GetDeviceGUIDResponse) Format() string {
 	return fmt.Sprintf("GUID: %s", u.String())
 }
 
-func (c *Client) GetDeviceGUID() (response *GetDeviceGUIDResponse, err error) {
+func (c *Client) GetDeviceGUID(ctx context.Context) (response *GetDeviceGUIDResponse, err error) {
 	request := &GetDeviceGUIDRequest{}
 	response = &GetDeviceGUIDResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

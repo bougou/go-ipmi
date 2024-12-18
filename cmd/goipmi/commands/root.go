@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"strings"
@@ -26,6 +27,7 @@ var (
 )
 
 func initClient() error {
+
 	if debug {
 		fmt.Printf("Version: %s\n", Version)
 		fmt.Printf("Commit: %s\n", Commit)
@@ -73,14 +75,17 @@ func initClient() error {
 		client.WithMaxPrivilegeLevel(privLevel)
 	}
 
-	if err := client.Connect(); err != nil {
+	ctx := context.Background()
+
+	if err := client.Connect(ctx); err != nil {
 		return fmt.Errorf("client connect failed, err: %s", err)
 	}
 	return nil
 }
 
 func closeClient() error {
-	if err := client.Close(); err != nil {
+	ctx := context.Background()
+	if err := client.Close(ctx); err != nil {
 		return fmt.Errorf("close client failed, err: %s", err)
 	}
 	return nil

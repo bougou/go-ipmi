@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.3 Clear Message Flags Command
 type ClearMessageFlagsRequest struct {
 	ClearOEM2                            bool
@@ -55,9 +57,9 @@ func (res *ClearMessageFlagsResponse) Format() string {
 	return ""
 }
 
-func (c *Client) ClearMessageFlags() (response *ClearMessageFlagsResponse, err error) {
+func (c *Client) ClearMessageFlags(ctx context.Context) (response *ClearMessageFlagsResponse, err error) {
 	request := &ClearMessageFlagsRequest{}
 	response = &ClearMessageFlagsResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

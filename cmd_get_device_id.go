@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"strings"
 )
@@ -212,9 +213,9 @@ Aux Firmware Rev Info     :
 	)
 }
 
-func (c *Client) GetDeviceID() (response *GetDeviceIDResponse, err error) {
+func (c *Client) GetDeviceID(ctx context.Context) (response *GetDeviceIDResponse, err error) {
 	request := &GetDeviceIDRequest{}
 	response = &GetDeviceIDResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

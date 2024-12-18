@@ -1,8 +1,11 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
-func (c *Client) SOLInfo(channelNumber uint8) (*SOLConfigParam, error) {
+func (c *Client) SOLInfo(ctx context.Context, channelNumber uint8) (*SOLConfigParam, error) {
 	solConfigParam := &SOLConfigParam{}
 
 	params := []SOLConfigParamSelector{
@@ -18,7 +21,7 @@ func (c *Client) SOLInfo(channelNumber uint8) (*SOLConfigParam, error) {
 	}
 
 	for _, param := range params {
-		res, err := c.GetSOLConfigParams(channelNumber, param)
+		res, err := c.GetSOLConfigParams(ctx, channelNumber, param)
 		if err != nil {
 			return nil, fmt.Errorf("GetSOLConfigParams for %d failed, err: %s", uint8(param), err)
 		}

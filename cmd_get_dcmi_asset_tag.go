@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // GetDCMIAssetTagRequest represents a "Get Asset Tag" request according
 // to section 6.4.2 of the [DCMI specification v1.5].
@@ -57,9 +60,9 @@ func (res *GetDCMIAssetTagResponse) Format() string {
 
 // GetDCMIAssetTag sends a DCMI "Get Asset Tag" command.
 // See [GetDCMIAssetTagRequest] for details.
-func (c *Client) GetDCMIAssetTag(offset uint8) (response *GetDCMIAssetTagResponse, err error) {
+func (c *Client) GetDCMIAssetTag(ctx context.Context, offset uint8) (response *GetDCMIAssetTagResponse, err error) {
 	request := &GetDCMIAssetTagRequest{Offset: offset}
 	response = &GetDCMIAssetTagResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

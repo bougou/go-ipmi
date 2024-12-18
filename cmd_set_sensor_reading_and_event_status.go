@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 35.17 Set Sensor Reading And Event Status Command
 type SetSensorReadingAndEventStatusRequest struct {
 	SensorNumber uint8
@@ -59,8 +61,8 @@ func (res *SetSensorReadingAndEventStatusResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetSensorReadingAndEventStatus(request *SetSensorReadingAndEventStatusRequest) (response *SetSensorReadingAndEventStatusResponse, err error) {
+func (c *Client) SetSensorReadingAndEventStatus(ctx context.Context, request *SetSensorReadingAndEventStatusRequest) (response *SetSensorReadingAndEventStatusResponse, err error) {
 	response = &SetSensorReadingAndEventStatusResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

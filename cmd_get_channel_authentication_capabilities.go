@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 13.14
 // 22.13
@@ -173,7 +176,7 @@ func (res *GetChannelAuthenticationCapabilitiesResponse) Format() string {
 // When activating a session, the privilege level passed in this command will
 // normally be the same Requested Maximum Privilege level that will be used
 // for a subsequent Activate Session command.
-func (c *Client) GetChannelAuthenticationCapabilities(channelNumber uint8, privilegeLevel PrivilegeLevel) (response *GetChannelAuthenticationCapabilitiesResponse, err error) {
+func (c *Client) GetChannelAuthenticationCapabilities(ctx context.Context, channelNumber uint8, privilegeLevel PrivilegeLevel) (response *GetChannelAuthenticationCapabilitiesResponse, err error) {
 	request := &GetChannelAuthenticationCapabilitiesRequest{
 		IPMIv20Extended:       true,
 		ChannelNumber:         channelNumber,
@@ -181,7 +184,7 @@ func (c *Client) GetChannelAuthenticationCapabilities(channelNumber uint8, privi
 	}
 
 	response = &GetChannelAuthenticationCapabilitiesResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	if err != nil {
 		return
 	}

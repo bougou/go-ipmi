@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 13.17 RMCP+ Open Session Request
 type OpenSessionRequest struct {
@@ -128,7 +131,7 @@ func (res *OpenSessionResponse) Format() string {
 	)
 }
 
-func (c *Client) OpenSession() (response *OpenSessionResponse, err error) {
+func (c *Client) OpenSession(ctx context.Context) (response *OpenSessionResponse, err error) {
 	cipherSuiteID := c.session.v20.cipherSuiteID
 
 	authAlg, integrityAlg, cryptAlg, err := getCipherSuiteAlgorithms(cipherSuiteID)
@@ -167,7 +170,7 @@ func (c *Client) OpenSession() (response *OpenSessionResponse, err error) {
 
 	c.session.v20.state = SessionStateOpenSessionSent
 
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	if err != nil {
 		return nil, fmt.Errorf("client exchange failed, err: %s", err)
 	}

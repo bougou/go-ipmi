@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"strings"
 )
@@ -139,11 +140,11 @@ Enabled Deassert Event    : %s`,
 	)
 }
 
-func (c *Client) GetSensorEventEnable(sensorNumber uint8) (response *GetSensorEventEnableResponse, err error) {
+func (c *Client) GetSensorEventEnable(ctx context.Context, sensorNumber uint8) (response *GetSensorEventEnableResponse, err error) {
 	request := &GetSensorEventEnableRequest{
 		SensorNumber: sensorNumber,
 	}
 	response = &GetSensorEventEnableResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

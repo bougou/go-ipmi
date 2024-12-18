@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 23.3 Suspend BMC ARPs Command
 type SuspendARPsRequest struct {
 	ChannelNumber        uint8
@@ -56,13 +58,13 @@ func (res *SuspendARPsResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SuspendARPs(channelNumber uint8, suspendARP bool, suspendGratuitousARP bool) (response *SuspendARPsResponse, err error) {
+func (c *Client) SuspendARPs(ctx context.Context, channelNumber uint8, suspendARP bool, suspendGratuitousARP bool) (response *SuspendARPsResponse, err error) {
 	request := &SuspendARPsRequest{
 		ChannelNumber:        channelNumber,
 		SuspendARP:           suspendARP,
 		SuspendGratuitousARP: suspendGratuitousARP,
 	}
 	response = &SuspendARPsResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

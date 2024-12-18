@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -36,11 +37,11 @@ func (res *SetSELTimeResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
 
-func (c *Client) SetSELTime(t time.Time) (response *SetSELTimeResponse, err error) {
+func (c *Client) SetSELTime(ctx context.Context, t time.Time) (response *SetSELTimeResponse, err error) {
 	request := &SetSELTimeRequest{
 		Time: t,
 	}
 	response = &SetSELTimeResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

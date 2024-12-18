@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 20.6 Set ACPI Power State Command
 type SetACPIPowerStateRequest struct {
 	SetSystemPowerState bool // false means don't change system power state
@@ -120,8 +122,8 @@ func (res *SetACPIPowerStateResponse) Format() string {
 }
 
 // This command is provided to allow system software to tell a controller the present ACPI power state of the system.
-func (c *Client) SetACPIPowerState(request *SetACPIPowerStateRequest) (err error) {
+func (c *Client) SetACPIPowerState(ctx context.Context, request *SetACPIPowerStateRequest) (err error) {
 	response := &SetACPIPowerStateResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

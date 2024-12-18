@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.26 Set User Access Command
 type SetUserAccessRequest struct {
 	EnableChanging bool
@@ -68,8 +70,8 @@ func (res *SetUserAccessResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetUserAccess(request *SetUserAccessRequest) (response *SetUserAccessResponse, err error) {
+func (c *Client) SetUserAccess(ctx context.Context, request *SetUserAccessRequest) (response *SetUserAccessResponse, err error) {
 	response = &SetUserAccessResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

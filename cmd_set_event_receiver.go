@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 29.1 Set Event Receiver Command
 type SetEventReceiverRequest struct {
 	// Event Receiver Slave Address. 0FFh disables Event Message Generation, Otherwise:
@@ -33,12 +35,12 @@ func (res *SetEventReceiverResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetEventReceiver(slaveAddress uint8, lun uint8) (response *SetEventReceiverResponse, err error) {
+func (c *Client) SetEventReceiver(ctx context.Context, slaveAddress uint8, lun uint8) (response *SetEventReceiverResponse, err error) {
 	request := &SetEventReceiverRequest{
 		SlaveAddress: slaveAddress,
 		LUN:          lun,
 	}
 	response = &SetEventReceiverResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

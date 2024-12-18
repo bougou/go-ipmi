@@ -2,6 +2,7 @@ package ipmi
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 
 	"github.com/olekukonko/tablewriter"
@@ -98,28 +99,28 @@ func (res *GetUserAccessResponse) Format() string {
 	)
 }
 
-func (c *Client) GetUserAccess(channelNumber uint8, userID uint8) (response *GetUserAccessResponse, err error) {
+func (c *Client) GetUserAccess(ctx context.Context, channelNumber uint8, userID uint8) (response *GetUserAccessResponse, err error) {
 	request := &GetUserAccessRequest{
 		ChannelNumber: channelNumber,
 		UserID:        userID,
 	}
 	response = &GetUserAccessResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) ListUser(channelNumber uint8) ([]*User, error) {
+func (c *Client) ListUser(ctx context.Context, channelNumber uint8) ([]*User, error) {
 	var users = make([]*User, 0)
 
 	var userID uint8 = 1
 	var username string
 	for {
-		res, err := c.GetUserAccess(channelNumber, userID)
+		res, err := c.GetUserAccess(ctx, channelNumber, userID)
 		if err != nil {
 			return nil, fmt.Errorf("get user for userID %d failed, err: %s", userID, err)
 		}
 
-		res2, err := c.GetUsername(userID)
+		res2, err := c.GetUsername(ctx, userID)
 		if err != nil {
 			respErr, ok := err.(*ResponseError)
 			if !ok || uint8(respErr.CompletionCode()) != 0xcc {

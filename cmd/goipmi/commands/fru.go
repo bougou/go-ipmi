@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -29,9 +30,9 @@ func NewCmdFRUPrint() *cobra.Command {
 		Use:   "print",
 		Short: "print",
 		Run: func(cmd *cobra.Command, args []string) {
-
+			ctx := context.Background()
 			if len(args) < 1 {
-				frus, err := client.GetFRUs()
+				frus, err := client.GetFRUs(ctx)
 				if err != nil {
 					CheckErr(fmt.Errorf("GetFRUs failed, err: %s", err))
 				}
@@ -46,7 +47,7 @@ func NewCmdFRUPrint() *cobra.Command {
 				}
 				fruID := uint8(id)
 
-				fru, err := client.GetFRU(fruID, "")
+				fru, err := client.GetFRU(ctx, fruID, "")
 				if err != nil {
 					CheckErr(fmt.Errorf("GetFRU failed, err: %s", err))
 				}

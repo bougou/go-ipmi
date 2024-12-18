@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -41,7 +42,8 @@ func NewCmdDCMIRead() *cobra.Command {
 		Use:   "reading",
 		Short: "reading",
 		Run: func(cmd *cobra.Command, args []string) {
-			resp, err := client.GetDCMIPowerReading()
+			ctx := context.Background()
+			resp, err := client.GetDCMIPowerReading(ctx)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetDCMIPowerReading failed, err: %s", err))
 			}
@@ -56,10 +58,11 @@ func NewCmdDCMIAssetTag() *cobra.Command {
 		Use:   "asset_tag",
 		Short: "asset_tag",
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
 			var assetTag string
 			var offset uint8
 			for {
-				resp, err := client.GetDCMIAssetTag(offset)
+				resp, err := client.GetDCMIAssetTag(ctx, offset)
 				if err != nil {
 					CheckErr(fmt.Errorf("GetDCMIAssetTag failed, err: %s", err))
 				}

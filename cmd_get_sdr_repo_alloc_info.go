@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 33.10 Get SDR Repository Allocation Info Command
 type GetSDRRepoAllocInfoRequest struct {
@@ -43,9 +46,9 @@ func (res *GetSDRRepoAllocInfoResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
 
-func (c *Client) GetSDRRepoAllocInfo() (response *GetSDRRepoAllocInfoResponse, err error) {
+func (c *Client) GetSDRRepoAllocInfo(ctx context.Context) (response *GetSDRRepoAllocInfoResponse, err error) {
 	request := &GetSDRRepoAllocInfoRequest{}
 	response = &GetSDRRepoAllocInfoResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

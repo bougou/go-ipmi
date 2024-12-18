@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/bougou/go-ipmi"
@@ -42,7 +43,9 @@ func NewCmdChannelInfo() *cobra.Command {
 				}
 				channelNumber = uint8(i)
 			}
-			res, err := client.GetChannelInfo(channelNumber)
+
+			ctx := context.Background()
+			res, err := client.GetChannelInfo(ctx, channelNumber)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetChannelInfo failed, err: %s", err))
 			}
@@ -53,14 +56,14 @@ func NewCmdChannelInfo() *cobra.Command {
 				return
 			}
 
-			res2, err := client.GetChannelAccess(channelNumber, ipmi.ChannelAccessOption_Volatile)
+			res2, err := client.GetChannelAccess(ctx, channelNumber, ipmi.ChannelAccessOption_Volatile)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetChannelAccess failed, err: %s", err))
 			}
 			fmt.Println("  Volatile(active) Settings")
 			fmt.Println(res2.Format())
 
-			res3, err := client.GetChannelAccess(channelNumber, ipmi.ChannelAccessOption_NonVolatile)
+			res3, err := client.GetChannelAccess(ctx, channelNumber, ipmi.ChannelAccessOption_NonVolatile)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetChannelAccess failed, err: %s", err))
 			}
@@ -88,7 +91,8 @@ func NewCmdChannelGetCiphers() *cobra.Command {
 				channelNumber = uint8(i)
 			}
 
-			cipherSuiteRecords, err := client.GetAllChannelCipherSuites(channelNumber)
+			ctx := context.Background()
+			cipherSuiteRecords, err := client.GetAllChannelCipherSuites(ctx, channelNumber)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetChannelInfo failed, err: %s", err))
 			}

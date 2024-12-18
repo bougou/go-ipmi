@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -48,13 +49,13 @@ func (res *WriteFRUDataResponse) Format() string {
 }
 
 // The command writes the specified byte or word to the FRU Inventory Info area. This is a low level direct interface to a non-volatile storage area. This means that the interface does not interpret or check any semantics or formatting for the data being written.
-func (c *Client) WriteFRUData(fruDeviceID uint8, writeOffset uint16, writeData []byte) (response *WriteFRUDataResponse, err error) {
+func (c *Client) WriteFRUData(ctx context.Context, fruDeviceID uint8, writeOffset uint16, writeData []byte) (response *WriteFRUDataResponse, err error) {
 	request := &WriteFRUDataRequest{
 		FRUDeviceID: fruDeviceID,
 		WriteOffset: writeOffset,
 		WriteData:   writeData,
 	}
 	response = &WriteFRUDataResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

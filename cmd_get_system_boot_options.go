@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 28.13 Get System Boot Options Command
 type GetSystemBootOptionsRequest struct {
@@ -81,13 +84,13 @@ Boot parameter data: %02x
 // This command is used to set parameters that direct the system boot following a system power up or reset.
 // The boot flags only apply for one system restart. It is the responsibility of the system BIOS
 // to read these settings from the BMC and then clear the boot flags
-func (c *Client) GetSystemBootOptions(parameterSelector BootOptionParameterSelector) (response *GetSystemBootOptionsResponse, err error) {
+func (c *Client) GetSystemBootOptions(ctx context.Context, parameterSelector BootOptionParameterSelector) (response *GetSystemBootOptionsResponse, err error) {
 	request := &GetSystemBootOptionsRequest{
 		ParameterSelector: parameterSelector,
 		SetSelector:       0x00,
 		BlockSelector:     0x00,
 	}
 	response = &GetSystemBootOptionsResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

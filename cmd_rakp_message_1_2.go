@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -153,7 +154,7 @@ func (res *RAKPMessage2) Format() string {
 }
 
 // ValidateRAKP2 validates RAKPMessage2 returned by BMC.
-func (c *Client) ValidateRAKP2(rakp2 *RAKPMessage2) (bool, error) {
+func (c *Client) ValidateRAKP2(ctx context.Context, rakp2 *RAKPMessage2) (bool, error) {
 	if c.session.v20.consoleSessionID != rakp2.RemoteConsoleSessionID {
 		return false, fmt.Errorf("session id not matched, cached console session id: %x, rakp2 returned session id: %x", c.session.v20.consoleSessionID, rakp2.RemoteConsoleSessionID)
 	}
@@ -172,7 +173,7 @@ func (c *Client) ValidateRAKP2(rakp2 *RAKPMessage2) (bool, error) {
 	return true, nil
 }
 
-func (c *Client) RAKPMessage1() (response *RAKPMessage2, err error) {
+func (c *Client) RAKPMessage1(ctx context.Context) (response *RAKPMessage2, err error) {
 
 	c.session.v20.consoleRand = array16(randomBytes(16))
 	c.DebugBytes("console generate console random number", c.session.v20.consoleRand[:], 16)
@@ -194,7 +195,7 @@ func (c *Client) RAKPMessage1() (response *RAKPMessage2, err error) {
 	}
 	c.session.v20.state = SessionStateRakp1Sent
 
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +205,7 @@ func (c *Client) RAKPMessage1() (response *RAKPMessage2, err error) {
 	c.session.v20.bmcGUID = response.ManagedSystemGUID
 	c.session.v20.bmcRand = response.ManagedSystemRandomNumber // will be used in rakp3 to generate authCode
 
-	if _, err = c.ValidateRAKP2(response); err != nil {
+	if _, err = c.ValidateRAKP2(ctx, response); err != nil {
 		err = fmt.Errorf("validate rakp2 message failed, err: %s", err)
 		return
 	}

@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -91,9 +92,9 @@ func (res *GetDCMIPowerReadingResponse) Format() string {
 
 // GetDCMIPowerReading sends a DCMI "Get Power Reading" command.
 // See [GetDCMIPowerReadingRequest] for details.
-func (c *Client) GetDCMIPowerReading() (response *GetDCMIPowerReadingResponse, err error) {
+func (c *Client) GetDCMIPowerReading(ctx context.Context) (response *GetDCMIPowerReadingResponse, err error) {
 	request := &GetDCMIPowerReadingRequest{}
 	response = &GetDCMIPowerReadingResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

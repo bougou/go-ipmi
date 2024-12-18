@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 28.4 Chassis Reset Command
 type ChassisResetRequest struct {
 	// empty
@@ -32,9 +34,9 @@ func (res *ChassisResetResponse) Format() string {
 // This command was used with early versions of the ICMB.
 // It has been superseded by the Chassis Control command
 // For host systems, this corresponds to a system hard reset.
-func (c *Client) ChassisReset() (response *ChassisResetResponse, err error) {
+func (c *Client) ChassisReset(ctx context.Context) (response *ChassisResetResponse, err error) {
 	request := &ChassisResetRequest{}
 	response = &ChassisResetResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

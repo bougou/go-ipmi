@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 30.3 Set PEF Configuration Parameters Command
 type SetPEFConfigParametersRequest struct {
 	ParamSelector uint8
@@ -47,9 +49,9 @@ func (res *SetPEFConfigParametersResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetPEFConfigParameters() (response *SetPEFConfigParametersResponse, err error) {
+func (c *Client) SetPEFConfigParameters(ctx context.Context) (response *SetPEFConfigParametersResponse, err error) {
 	request := &SetPEFConfigParametersRequest{}
 	response = &SetPEFConfigParametersResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

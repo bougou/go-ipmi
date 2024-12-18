@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 35.7 Get Sensor Hysteresis Command
 type GetSensorHysteresisRequest struct {
@@ -46,11 +49,11 @@ Negative Hysteresis : %d`,
 
 // This command retrieves the present hysteresis values for the specified sensor.
 // If the sensor hysteresis values are "fixed", then the hysteresis values can be obtained from the SDR for the sensor.
-func (c *Client) GetSensorHysteresis(sensorNumber uint8) (response *GetSensorHysteresisResponse, err error) {
+func (c *Client) GetSensorHysteresis(ctx context.Context, sensorNumber uint8) (response *GetSensorHysteresisResponse, err error) {
 	request := &GetSensorHysteresisRequest{
 		SensorNumber: sensorNumber,
 	}
 	response = &GetSensorHysteresisResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

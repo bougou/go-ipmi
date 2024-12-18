@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.28 Set User Name Command
 type SetUsernameRequest struct {
 	// [5:0] - User ID. 000000b = reserved. (User ID 1 is permanently associated with User 1, the null user name).
@@ -42,12 +44,12 @@ func (res *SetUsernameResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetUsername(userID uint8, username string) (response *SetUsernameResponse, err error) {
+func (c *Client) SetUsername(ctx context.Context, userID uint8, username string) (response *SetUsernameResponse, err error) {
 	request := &SetUsernameRequest{
 		UserID:   userID,
 		Username: username,
 	}
 	response = &SetUsernameResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

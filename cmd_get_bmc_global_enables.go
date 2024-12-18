@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 22.2 Get BMC Global Enables Command
 type GetBMCGlobalEnablesRequest struct {
 	// empty
@@ -50,9 +52,9 @@ func (res *GetBMCGlobalEnablesResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetBMCGlobalEnables() (response *GetBMCGlobalEnablesResponse, err error) {
+func (c *Client) GetBMCGlobalEnables(ctx context.Context) (response *GetBMCGlobalEnablesResponse, err error) {
 	request := &GetBMCGlobalEnablesRequest{}
 	response = &GetBMCGlobalEnablesResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

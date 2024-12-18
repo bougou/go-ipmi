@@ -1,6 +1,9 @@
 package ipmi
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // 22.24 Get Channel Info Command
 type GetChannelInfoRequest struct {
@@ -103,11 +106,11 @@ func (res *GetChannelInfoResponse) Format() string {
 	)
 }
 
-func (c *Client) GetChannelInfo(channelNumber uint8) (response *GetChannelInfoResponse, err error) {
+func (c *Client) GetChannelInfo(ctx context.Context, channelNumber uint8) (response *GetChannelInfoResponse, err error) {
 	request := &GetChannelInfoRequest{
 		ChannelNumber: channelNumber,
 	}
 	response = &GetChannelInfoResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

@@ -1,6 +1,7 @@
 package ipmi
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -47,11 +48,11 @@ Event/Reading Type          : %#02x (%s)`,
 	)
 }
 
-func (c *Client) GetSensorType(sensorNumber uint8) (response *GetSensorTypeResponse, err error) {
+func (c *Client) GetSensorType(ctx context.Context, sensorNumber uint8) (response *GetSensorTypeResponse, err error) {
 	request := &GetSensorTypeRequest{
 		SensorNumber: sensorNumber,
 	}
 	response = &GetSensorTypeResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }

@@ -1,5 +1,7 @@
 package ipmi
 
+import "context"
+
 // 30.5 Set Last Processed Event ID Command
 type SetLastProcessedEventIdRequest struct {
 	// 0b = set Record ID for last record processed by software.
@@ -45,9 +47,9 @@ func (res *SetLastProcessedEventIdResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetLastProcessedEventId() (response *SetLastProcessedEventIdResponse, err error) {
+func (c *Client) SetLastProcessedEventId(ctx context.Context) (response *SetLastProcessedEventIdResponse, err error) {
 	request := &SetLastProcessedEventIdRequest{}
 	response = &SetLastProcessedEventIdResponse{}
-	err = c.Exchange(request, response)
+	err = c.Exchange(ctx, request, response)
 	return
 }
