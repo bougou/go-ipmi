@@ -62,8 +62,8 @@ func (res *GetDCMIPowerReadingResponse) Unpack(msg []byte) error {
 
 	var off int
 
-	if grpExt, _, _ := unpackUint8(msg, 0); grpExt != GroupExtensionDCMI {
-		return fmt.Errorf("unexpected group extension ID in response: expected %d, found %d", GroupExtensionDCMI, grpExt)
+	if err := CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
+		return err
 	}
 
 	res.CurrentPower, off, _ = unpackUint16L(msg, 1)

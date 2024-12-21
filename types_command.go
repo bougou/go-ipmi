@@ -88,8 +88,8 @@ var (
 	CommandReadEventMessageBuffer         = Command{ID: 0x35, NetFn: NetFnAppRequest, Name: "Read Event Message Buffer"}
 	CommandGetBTInterfaceCapabilities     = Command{ID: 0x36, NetFn: NetFnAppRequest, Name: "Get BT Interface Capabilities"}
 	CommandGetSystemGUID                  = Command{ID: 0x37, NetFn: NetFnAppRequest, Name: "Get System GUID"}
-	CommandSetSystemInfoParameters        = Command{ID: 0x58, NetFn: NetFnAppRequest, Name: "Set System Info Parameters"}
-	CommandGetSystemInfoParameters        = Command{ID: 0x59, NetFn: NetFnAppRequest, Name: "Get System Info Parameters"}
+	CommandSetSystemInfoParams            = Command{ID: 0x58, NetFn: NetFnAppRequest, Name: "Set System Info Parameters"}
+	CommandGetSystemInfoParams            = Command{ID: 0x59, NetFn: NetFnAppRequest, Name: "Get System Info Parameters"}
 	CommandGetChannelAuthCapabilities     = Command{ID: 0x38, NetFn: NetFnAppRequest, Name: "Get Channel Authentication Capabilities"}
 	CommandGetSessionChallenge            = Command{ID: 0x39, NetFn: NetFnAppRequest, Name: "Get Session Challenge"}
 	CommandActivateSession                = Command{ID: 0x3a, NetFn: NetFnAppRequest, Name: "Activate Session"}

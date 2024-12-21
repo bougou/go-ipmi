@@ -26,7 +26,10 @@ type GetDCMIAssetTagResponse struct {
 }
 
 func (req *GetDCMIAssetTagRequest) Pack() []byte {
-	return []byte{GroupExtensionDCMI, req.Offset, 0x0F}
+	// Number of bytes to read (16 bytes maximum)
+	// using the fixed (maximum) value is OK here.
+	var readBytes = uint8(0x10)
+	return []byte{GroupExtensionDCMI, req.Offset, readBytes}
 }
 
 func (req *GetDCMIAssetTagRequest) Command() Command {
@@ -42,8 +45,8 @@ func (res *GetDCMIAssetTagResponse) Unpack(msg []byte) error {
 		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
-	if grpExt, _, _ := unpackUint8(msg, 0); grpExt != GroupExtensionDCMI {
-		return fmt.Errorf("unexpected group extension ID in response: expected %d, found %d", GroupExtensionDCMI, grpExt)
+	if err := CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
+		return err
 	}
 
 	res.TotalLength, _, _ = unpackUint8(msg, 1)
@@ -55,7 +58,7 @@ func (res *GetDCMIAssetTagResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetDCMIAssetTagResponse) Format() string {
-	return fmt.Sprintf("%s (total length: %d)", string(res.AssetTag), res.TotalLength)
+	return fmt.Sprintf("%s (length: %d, total length: %d)", string(res.AssetTag), len(res.AssetTag), res.TotalLength)
 }
 
 // GetDCMIAssetTag sends a DCMI "Get Asset Tag" command.

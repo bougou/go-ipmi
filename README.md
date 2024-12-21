@@ -373,10 +373,23 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 
 ### DCMI Commands
 
-| Method              | Status             | corresponding ipmitool usage |
-| ------------------- | ------------------ | ---------------------------- |
-| GetDCMIPowerReading | :white_check_mark: | dcmi power reading           |
-| GetDCMIAssetTag     | :white_check_mark: | dcmi asset_tag               |
+| Method                          | Status             | corresponding ipmitool usage |
+| ------------------------------- | ------------------ | ---------------------------- |
+| GetDCMICapabilitiesInfo         | :white_check_mark: | dcmi discovery               |
+| GetDCMIPowerReading             | :white_check_mark: | dcmi power reading           |
+| GetDCMIPowerLimit               | :white_check_mark: | dcmi power get_limit         |
+| SetDCMIPowerLimit               | :white_check_mark: | dcmi power set_limit         |
+| ActivateDCMIPowerLimit          | :white_check_mark: | dcmi activate/deactivate     |
+| GetDCMIAssetTag                 | :white_check_mark: | dcmi asset_tag               |
+| GetDCMISensorInfo               | :white_check_mark: | dcmi sensors                 |
+| SetDCMIAssetTag                 | :white_check_mark: | dcmi set_asset_tag           |
+| GetDCMIMgmtControllerIdentifier | :white_check_mark: | dcmi get_mc_id_string        |
+| SetDCMIMgmtControllerIdentifier | :white_check_mark: | dcmi set_mc_id_string        |
+| SetDCMIThermalLimit             | :white_check_mark: | dcmi thermalpolicy get       |
+| GetDCMIThermalLimit             | :white_check_mark: | dcmi thermalpolicy set       |
+| GetDCMITemperatureReadings      | :white_check_mark: | dcmi get_temp_reading        |
+| SetDCMIConfigParams             | :white_check_mark: | dcmi set_conf_param          |
+| GetDCMIConfigParams             | :white_check_mark: | dcmi get_conf_param          |
 
 ## Reference
 
