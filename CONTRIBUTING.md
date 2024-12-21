@@ -21,7 +21,7 @@ For `DoSomething` method, you can pass `DoSomethingRequest` directly as the inpu
 
 ```go
 func (c *Client) DoSomething(ctx context.Context, request *DoSomethingRequest) (response *DoSomethingResponse, err error) {
-  response := &DoSomethingResponse{}
+  response = &DoSomethingResponse{}
   err := c.Exchange(ctx,request, response)
   return
 }
@@ -34,7 +34,7 @@ func (c *Client) DoSomething(ctx context.Context, param1 string, param2 string) 
   request := &DoSomethingRequest{
     // construct by using input params
   }
-  response := &DoSomethingResponse{}
+  response = &DoSomethingResponse{}
   err := c.Exchange(ctx,request, response)
   return
 }

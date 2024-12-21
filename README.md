@@ -127,8 +127,8 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | ReadEventMessageBuffer         | :white_check_mark: |
 | GetBTInterfaceCapabilities     |                    |
 | GetSystemGUID                  | :white_check_mark: | mc guid                      |
-| SetSystemInfoParameters        |                    |
-| GetSystemInfoParameters        |                    |
+| SetSystemInfoParams            |                    |
+| GetSystemInfoParams            |                    |
 | GetChannelAuthCapabilities     | :white_check_mark: |
 | GetSessionChallenge            | :white_check_mark: |
 | ActivateSession                | :white_check_mark: |
@@ -196,8 +196,8 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | ----------------------- | ------------------ | ---------------------------- |
 | GetPEFCapabilities      | :white_check_mark: | pef capabilities             |
 | ArmPEFPostponeTimer     |                    |
-| SetPEFConfigParameters  |                    |
-| GetPEFConfigParameters  |                    |
+| SetPEFConfigParams      |                    |
+| GetPEFConfigParams      |                    |
 | SetLastProcessedEventId |                    |
 | GetLastProcessedEventId |                    |
 | AlertImmediate          |                    |

@@ -181,7 +181,7 @@ func NewCmdXGetPEFConfigSystemUUID() *cobra.Command {
 		Use: "get-pef-config-system-uuid",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
-			param, err := client.GetPEFConfigParameters_SystemUUID(ctx)
+			param, err := client.GetPEFConfigParams_SystemUUID(ctx)
 			if err != nil {
 				fmt.Println(err)
 				return

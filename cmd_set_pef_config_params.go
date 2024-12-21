@@ -3,20 +3,20 @@ package ipmi
 import "context"
 
 // 30.3 Set PEF Configuration Parameters Command
-type SetPEFConfigParametersRequest struct {
+type SetPEFConfigParamsRequest struct {
 	ParamSelector uint8
 	ConfigData    []byte
 }
 
-type SetPEFConfigParametersResponse struct {
+type SetPEFConfigParamsResponse struct {
 	// empty
 }
 
-func (req *SetPEFConfigParametersRequest) Command() Command {
-	return CommandSetPEFConfigParameters
+func (req *SetPEFConfigParamsRequest) Command() Command {
+	return CommandSetPEFConfigParams
 }
 
-func (req *SetPEFConfigParametersRequest) Pack() []byte {
+func (req *SetPEFConfigParamsRequest) Pack() []byte {
 	// empty request data
 
 	out := make([]byte, 1+len(req.ConfigData))
@@ -29,11 +29,11 @@ func (req *SetPEFConfigParametersRequest) Pack() []byte {
 	return out
 }
 
-func (res *SetPEFConfigParametersResponse) Unpack(msg []byte) error {
+func (res *SetPEFConfigParamsResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *SetPEFConfigParametersResponse) CompletionCodes() map[uint8]string {
+func (r *SetPEFConfigParamsResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{
 		0x80: "parameter not supported",
 
@@ -45,13 +45,14 @@ func (r *SetPEFConfigParametersResponse) CompletionCodes() map[uint8]string {
 	}
 }
 
-func (res *SetPEFConfigParametersResponse) Format() string {
+func (res *SetPEFConfigParamsResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetPEFConfigParameters(ctx context.Context) (response *SetPEFConfigParametersResponse, err error) {
-	request := &SetPEFConfigParametersRequest{}
-	response = &SetPEFConfigParametersResponse{}
+// Todo
+func (c *Client) SetPEFConfigParams(ctx context.Context) (response *SetPEFConfigParamsResponse, err error) {
+	request := &SetPEFConfigParamsRequest{}
+	response = &SetPEFConfigParamsResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }

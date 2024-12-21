@@ -24,6 +24,12 @@ type Response interface {
 	Format() string
 }
 
+type Parameter interface {
+	Pack() []byte
+	Unpack(paramData []byte) error
+	Format() string
+}
+
 // ResponseError encapsulate the CompletionCode of IPMI Response Msg
 // alongside with error description.
 type ResponseError struct {
@@ -137,8 +143,8 @@ var (
 	// PEF and Alerting Commands
 	CommandGetPEFCapabilities      = Command{ID: 0x10, NetFn: NetFnSensorEventRequest, Name: "Get PEF Capabilities"}
 	CommandArmPEFPostponeTimer     = Command{ID: 0x11, NetFn: NetFnSensorEventRequest, Name: "Arm PEF Postpone Timer"}
-	CommandSetPEFConfigParameters  = Command{ID: 0x12, NetFn: NetFnSensorEventRequest, Name: "Set PEF Configuration Parameters"}
-	CommandGetPEFConfigParameters  = Command{ID: 0x13, NetFn: NetFnSensorEventRequest, Name: "Get PEF Configuration Parameters"}
+	CommandSetPEFConfigParams      = Command{ID: 0x12, NetFn: NetFnSensorEventRequest, Name: "Set PEF Configuration Parameters"}
+	CommandGetPEFConfigParams      = Command{ID: 0x13, NetFn: NetFnSensorEventRequest, Name: "Get PEF Configuration Parameters"}
 	CommandSetLastProcessedEventId = Command{ID: 0x14, NetFn: NetFnSensorEventRequest, Name: "Set Last Processed Event ID"}
 	CommandGetLastProcessedEventId = Command{ID: 0x15, NetFn: NetFnSensorEventRequest, Name: "Get Last Processed Event ID"}
 	CommandAlertImmediate          = Command{ID: 0x16, NetFn: NetFnSensorEventRequest, Name: "Alert Immediate"}
@@ -243,33 +249,46 @@ var (
 	CommandSendICMBConnectionID  = Command{ID: 0x0c, NetFn: NetFnBridgeRequest, Name: "Send ICMB Connection ID"}
 
 	// Discovery Commands (ICMB)
-	CommandPrepareForDiscovery = Command{ID: 0x10, NetFn: NetFnBridgeRequest, Name: "PrepareForDiscovery"}
-	CommandGetAddresses        = Command{ID: 0x11, NetFn: NetFnBridgeRequest, Name: "GetAddresses"}
-	CommandSetDiscovered       = Command{ID: 0x12, NetFn: NetFnBridgeRequest, Name: "SetDiscovered"}
-	CommandGetChassisDeviceId  = Command{ID: 0x13, NetFn: NetFnBridgeRequest, Name: "GetChassisDeviceId"}
-	CommandSetChassisDeviceId  = Command{ID: 0x14, NetFn: NetFnBridgeRequest, Name: "SetChassisDeviceId"}
+	CommandPrepareForDiscovery = Command{ID: 0x10, NetFn: NetFnBridgeRequest, Name: "Prepare For Discovery"}
+	CommandGetAddresses        = Command{ID: 0x11, NetFn: NetFnBridgeRequest, Name: "Get Addresses"}
+	CommandSetDiscovered       = Command{ID: 0x12, NetFn: NetFnBridgeRequest, Name: "Set Discovered"}
+	CommandGetChassisDeviceId  = Command{ID: 0x13, NetFn: NetFnBridgeRequest, Name: "Get Chassis DeviceId"}
+	CommandSetChassisDeviceId  = Command{ID: 0x14, NetFn: NetFnBridgeRequest, Name: "Set Chassis DeviceId"}
 
 	// Bridging Commands (ICMB)
-	CommandBridgeRequest = Command{ID: 0x20, NetFn: NetFnBridgeRequest, Name: "BridgeRequest"}
-	CommandBridgeMessage = Command{ID: 0x21, NetFn: NetFnBridgeRequest, Name: "BridgeMessage"}
+	CommandBridgeRequest = Command{ID: 0x20, NetFn: NetFnBridgeRequest, Name: "Bridge Request"}
+	CommandBridgeMessage = Command{ID: 0x21, NetFn: NetFnBridgeRequest, Name: "Bridge Message"}
 
 	// Event Commands (ICMB)
-	CommandGetEventCount          = Command{ID: 0x30, NetFn: NetFnBridgeRequest, Name: "GetEventCount"}
-	CommandSetEventDestination    = Command{ID: 0x31, NetFn: NetFnBridgeRequest, Name: "SetEventDestination"}
-	CommandSetEventReceptionState = Command{ID: 0x32, NetFn: NetFnBridgeRequest, Name: "SetEventReceptionState"}
-	CommandSendICMBEventMessage   = Command{ID: 0x33, NetFn: NetFnBridgeRequest, Name: "SendICMBEventMessage"}
-	CommandGetEventDestination    = Command{ID: 0x34, NetFn: NetFnBridgeRequest, Name: "GetEventDestination (optional)"}
-	CommandGetEventReceptionState = Command{ID: 0x35, NetFn: NetFnBridgeRequest, Name: "GetEventReceptionState (optional)"}
+	CommandGetEventCount          = Command{ID: 0x30, NetFn: NetFnBridgeRequest, Name: "Get Event Count"}
+	CommandSetEventDestination    = Command{ID: 0x31, NetFn: NetFnBridgeRequest, Name: "Set Event Destination"}
+	CommandSetEventReceptionState = Command{ID: 0x32, NetFn: NetFnBridgeRequest, Name: "Set Event Reception State"}
+	CommandSendICMBEventMessage   = Command{ID: 0x33, NetFn: NetFnBridgeRequest, Name: "Send ICMB Event Message"}
+	CommandGetEventDestination    = Command{ID: 0x34, NetFn: NetFnBridgeRequest, Name: "Get Event Destination"}
+	CommandGetEventReceptionState = Command{ID: 0x35, NetFn: NetFnBridgeRequest, Name: "Get Event Reception State"}
 
 	// OEM Commands for Bridge NetFn
 	// C0h-FEh
 
 	// Other Bridge Commands
-	CommandErrorReport = Command{ID: 0xff, NetFn: NetFnBridgeRequest, Name: "Error Report (optional)"}
+	CommandErrorReport = Command{ID: 0xff, NetFn: NetFnBridgeRequest, Name: "Error Report"}
 
 	// Intel DCMI extensions (https://www.intel.com/content/dam/www/public/us/en/documents/technical-specifications/dcmi-v1-5-rev-spec.pdf)
-	CommandGetDCMIPowerReading = Command{ID: 0x02, NetFn: NetFnGroupExtensionRequest, Name: "GetDCMIPowerReading"}
-	CommandGetDCMIAssetTag     = Command{ID: 0x06, NetFn: NetFnGroupExtensionRequest, Name: "GetDCMIAssetTag"}
+	CommandGetDCMICapabilitiesInfo         = Command{ID: 0x01, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Capabilities Info"}
+	CommandGetDCMIPowerReading             = Command{ID: 0x02, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Power Reading"}
+	CommandGetDCMIPowerLimit               = Command{ID: 0x03, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Power Limit"}
+	CommandSetDCMIPowerLimit               = Command{ID: 0x04, NetFn: NetFnGroupExtensionRequest, Name: "Set DCMI Power Limit"}
+	CommandActivateDCMIPowerLimit          = Command{ID: 0x05, NetFn: NetFnGroupExtensionRequest, Name: "Activate/Deactivate DCMI Power Limit"}
+	CommandGetDCMIAssetTag                 = Command{ID: 0x06, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Asset Tag"}
+	CommandGetDCMISensorInfo               = Command{ID: 0x07, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Sensor Info"}
+	CommandSetDCMIAssetTag                 = Command{ID: 0x08, NetFn: NetFnGroupExtensionRequest, Name: "Set DCMI Asset Tag"}
+	CommandGetDCMIMgmtControllerIdentifier = Command{ID: 0x09, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Management Controller Identifier String"}
+	CommandSetDCMIMgmtControllerIdentifier = Command{ID: 0x0A, NetFn: NetFnGroupExtensionRequest, Name: "Set DCMI Management Controller Identifier String"}
+	CommandSetDCMIThermalLimit             = Command{ID: 0x0B, NetFn: NetFnGroupExtensionRequest, Name: "Set DCMI Thermal Limit"}
+	CommandGetDCMIThermalLimit             = Command{ID: 0x0C, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Thermal Limit"}
+	CommandGetDCMITemperatureReadings      = Command{ID: 0x10, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Temperature Readings"}
+	CommandSetDCMIConfigParams             = Command{ID: 0x12, NetFn: NetFnGroupExtensionRequest, Name: "Set DCMI Configuration Parameters"}
+	CommandGetDCMIConfigParams             = Command{ID: 0x13, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Configuration Parameters"}
 
 	// Vendor Specific Commands
 	CommandGetSupermicroBiosVersion = Command{ID: 0xAC, NetFn: NetFnOEMSupermicroRequest, Name: "Get Supermicro BIOS Version"}

@@ -9,7 +9,7 @@ type SetSOLConfigParamsRequest struct {
 	ParameterData     []byte
 }
 
-type SetSOLConfigurationParametersResponse struct {
+type SetSOLConfigParamsResponse struct {
 }
 
 func (req *SetSOLConfigParamsRequest) Command() Command {
@@ -24,7 +24,7 @@ func (req *SetSOLConfigParamsRequest) Pack() []byte {
 	return out
 }
 
-func (res *SetSOLConfigurationParametersResponse) CompletionCodes() map[uint8]string {
+func (res *SetSOLConfigParamsResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{
 		0x80: "parameter not supported",
 		0x81: "attempt to set the 'set in progress' value",
@@ -33,21 +33,21 @@ func (res *SetSOLConfigurationParametersResponse) CompletionCodes() map[uint8]st
 	}
 }
 
-func (res *SetSOLConfigurationParametersResponse) Unpack(msg []byte) error {
+func (res *SetSOLConfigParamsResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *SetSOLConfigurationParametersResponse) Format() string {
+func (res *SetSOLConfigParamsResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetSOLConfigurationParameters(ctx context.Context, channelNumber uint8, paramSelector uint8, paramData []byte) (response *SetSOLConfigurationParametersResponse, err error) {
+func (c *Client) SetSOLConfigParams(ctx context.Context, channelNumber uint8, paramSelector uint8, paramData []byte) (response *SetSOLConfigParamsResponse, err error) {
 	request := &SetSOLConfigParamsRequest{
 		ChannelNumber:     channelNumber,
 		ParameterSelector: paramSelector,
 		ParameterData:     paramData,
 	}
-	response = &SetSOLConfigurationParametersResponse{}
+	response = &SetSOLConfigParamsResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }

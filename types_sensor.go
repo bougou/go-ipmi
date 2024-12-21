@@ -949,17 +949,15 @@ func (s *Sensor) String() string {
 		sensorReadingValueStr = "Unable to read sensor: Device Not Present"
 	}
 
-	return fmt.Sprintf(
-		fmt.Sprintf("Sensor ID              : %s (%#02x)\n", s.Name, s.Number) +
-			fmt.Sprintf(" Entity ID            : %d.%d (%s)\n", uint8(s.EntityID), uint8(s.EntityInstance), s.EntityID) +
-			fmt.Sprintf(" Sensor Type          : %s (%#02x) (%s)\n", s.SensorType.String(), uint8(s.SensorType), string(s.EventReadingType.SensorClass())) +
-			fmt.Sprintf(" Sensor Number        : %#02x\n", s.Number) +
-			fmt.Sprintf(" Sensor Name          : %s\n", s.Name) +
-			fmt.Sprintf(" Sensor Reading (raw) : %s\n", sensorReadingRawStr) +
-			fmt.Sprintf(" Sensor Value         : %s\n", sensorReadingValueStr) +
-			fmt.Sprintf(" Sensor Status        : %s\n", s.Status()) +
-			fmt.Sprintf(" Sensor Human String  : %s\n", s.HumanStr()),
-	)
+	return fmt.Sprintf("Sensor ID              : %s (%#02x)\n", s.Name, s.Number) +
+		fmt.Sprintf(" Entity ID            : %d.%d (%s)\n", uint8(s.EntityID), uint8(s.EntityInstance), s.EntityID) +
+		fmt.Sprintf(" Sensor Type          : %s (%#02x) (%s)\n", s.SensorType.String(), uint8(s.SensorType), string(s.EventReadingType.SensorClass())) +
+		fmt.Sprintf(" Sensor Number        : %#02x\n", s.Number) +
+		fmt.Sprintf(" Sensor Name          : %s\n", s.Name) +
+		fmt.Sprintf(" Sensor Reading (raw) : %s\n", sensorReadingRawStr) +
+		fmt.Sprintf(" Sensor Value         : %s\n", sensorReadingValueStr) +
+		fmt.Sprintf(" Sensor Status        : %s\n", s.Status()) +
+		fmt.Sprintf(" Sensor Human String  : %s\n", s.HumanStr())
 }
 
 // FormatSensors return a string of table printed for sensors

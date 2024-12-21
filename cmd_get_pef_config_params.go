@@ -6,7 +6,7 @@ import (
 )
 
 // 30.4 Get PEF Configuration Parameters Command
-type GetPEFConfigParametersRequest struct {
+type GetPEFConfigParamsRequest struct {
 	// [7] - 1b = get parameter revision only. 0b = get parameter
 	// [6:0] - Parameter selector
 	GetRevisionOnly bool
@@ -42,7 +42,7 @@ const (
 	// The OEM is identified according to the Manufacturer ID field returned by the Get Device ID command.
 )
 
-type GetPEFConfigParametersResponse struct {
+type GetPEFConfigParamsResponse struct {
 	// Parameter revision.
 	//
 	// Format:
@@ -55,11 +55,11 @@ type GetPEFConfigParametersResponse struct {
 	ConfigData []byte
 }
 
-func (req *GetPEFConfigParametersRequest) Command() Command {
-	return CommandGetPEFConfigParameters
+func (req *GetPEFConfigParamsRequest) Command() Command {
+	return CommandGetPEFConfigParams
 }
 
-func (req *GetPEFConfigParametersRequest) Pack() []byte {
+func (req *GetPEFConfigParamsRequest) Pack() []byte {
 	// empty request data
 
 	out := make([]byte, 3)
@@ -75,7 +75,7 @@ func (req *GetPEFConfigParametersRequest) Pack() []byte {
 	return out
 }
 
-func (res *GetPEFConfigParametersResponse) Unpack(msg []byte) error {
+func (res *GetPEFConfigParamsResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return ErrUnpackedDataTooShort
 	}
@@ -88,13 +88,13 @@ func (res *GetPEFConfigParametersResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetPEFConfigParametersResponse) CompletionCodes() map[uint8]string {
+func (r *GetPEFConfigParamsResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{
 		0x80: "parameter not supported",
 	}
 }
 
-func (res *GetPEFConfigParametersResponse) Format() string {
+func (res *GetPEFConfigParamsResponse) Format() string {
 	return fmt.Sprintf(`
 Parameter Revision           : %#02x (%d)
 Configuration Parameter Data : %# 02x`,
@@ -103,22 +103,22 @@ Configuration Parameter Data : %# 02x`,
 	)
 }
 
-func (c *Client) GetPEFConfigParameters(ctx context.Context, getRevisionOnly bool, paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) (response *GetPEFConfigParametersResponse, err error) {
-	request := &GetPEFConfigParametersRequest{
+func (c *Client) GetPEFConfigParams(ctx context.Context, getRevisionOnly bool, paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) (response *GetPEFConfigParamsResponse, err error) {
+	request := &GetPEFConfigParamsRequest{
 		GetRevisionOnly: getRevisionOnly,
 		ParamSelector:   paramSelector,
 		SetSelector:     setSelector,
 		BlockSelector:   blockSelector,
 	}
-	response = &GetPEFConfigParametersResponse{}
+	response = &GetPEFConfigParamsResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) GetPEFConfigParameters_SystemUUID(ctx context.Context) (param *PEFConfigParam_SystemUUID, err error) {
-	res, err := c.GetPEFConfigParameters(ctx, false, PEFConfigParamSelector_SystemGUID, 0, 0)
+func (c *Client) GetPEFConfigParams_SystemUUID(ctx context.Context) (param *PEFConfigParam_SystemUUID, err error) {
+	res, err := c.GetPEFConfigParams(ctx, false, PEFConfigParamSelector_SystemGUID, 0, 0)
 	if err != nil {
-		return nil, fmt.Errorf("GetPEFConfigParameters failed, err: %s", err)
+		return nil, fmt.Errorf("GetPEFConfigParams failed, err: %s", err)
 	}
 
 	param = &PEFConfigParam_SystemUUID{}

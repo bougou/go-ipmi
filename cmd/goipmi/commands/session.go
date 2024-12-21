@@ -36,7 +36,8 @@ func NewCmdSessionInfo() *cobra.Command {
 		Short: "info",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) < 1 {
-				CheckErr(fmt.Errorf(usage))
+				fmt.Println(usage)
+				return
 			}
 
 			ctx := context.Background()
