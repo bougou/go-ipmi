@@ -65,8 +65,6 @@ func (dcmiConfig *DCMIConfig) Format() string {
 }
 
 type DCMIConfigParam_ActivateDHCP struct {
-	SetSelector uint8
-
 	// Writing 01h to this parameter will trigger DHCP protocol restart using the latest parameter
 	// settings, if DHCP is enabled. This can be used to ensure that the other DHCP configuration
 	// parameters take effect immediately. Otherwise, the parameters may not take effect until the
@@ -78,7 +76,7 @@ type DCMIConfigParam_ActivateDHCP struct {
 }
 
 func (param *DCMIConfigParam_ActivateDHCP) DCMIConfigParameter() (paramSelector DCMIConfigParamSelector, setSelector uint8) {
-	return DCMIConfigParamSelector_ActivateDHCP, param.SetSelector
+	return DCMIConfigParamSelector_ActivateDHCP, 0
 }
 
 func (param *DCMIConfigParam_ActivateDHCP) Pack() []byte {
@@ -108,15 +106,13 @@ Activate DHCP: %v
 }
 
 type DCMIConfigParam_DiscoveryConfiguration struct {
-	SetSelector uint8
-
 	RandomBackoffEnabled     bool
 	IncludeDHCPOption60And43 bool
 	IncludeDHCPOption12      bool
 }
 
 func (param *DCMIConfigParam_DiscoveryConfiguration) DCMIConfigParameter() (paramSelector DCMIConfigParamSelector, setSelector uint8) {
-	return DCMIConfigParamSelector_DiscoveryConfiguration, param.SetSelector
+	return DCMIConfigParamSelector_DiscoveryConfiguration, 0
 }
 
 func (param *DCMIConfigParam_DiscoveryConfiguration) Pack() []byte {
@@ -162,8 +158,6 @@ DHCP Discovery method:
 }
 
 type DCMIConfigParam_DHCPTiming1 struct {
-	SetSelector uint8
-
 	// This parameter sets the amount of time between the first attempt to reach a server and the
 	// second attempt to reach a server.
 	//
@@ -176,7 +170,7 @@ type DCMIConfigParam_DHCPTiming1 struct {
 }
 
 func (param *DCMIConfigParam_DHCPTiming1) DCMIConfigParameter() (paramSelector DCMIConfigParamSelector, setSelector uint8) {
-	return DCMIConfigParamSelector_DHCPTiming1, param.SetSelector
+	return DCMIConfigParamSelector_DHCPTiming1, 0
 }
 
 func (param *DCMIConfigParam_DHCPTiming1) Pack() []byte {
@@ -199,8 +193,6 @@ func (param *DCMIConfigParam_DHCPTiming1) Format() string {
 }
 
 type DCMIConfigParam_DHCPTiming2 struct {
-	SetSelector uint8
-
 	// This parameter determines the amount of time that must pass between the time that the
 	// client initially tries to determine its address and the time that it decides that it cannot contact
 	// a server. If the last lease is expired, the client will restart the protocol after the defined retry
@@ -211,7 +203,7 @@ type DCMIConfigParam_DHCPTiming2 struct {
 }
 
 func (param *DCMIConfigParam_DHCPTiming2) DCMIConfigParameter() (paramSelector DCMIConfigParamSelector, setSelector uint8) {
-	return DCMIConfigParamSelector_DHCPTiming2, param.SetSelector
+	return DCMIConfigParamSelector_DHCPTiming2, 0
 }
 
 func (param *DCMIConfigParam_DHCPTiming2) Pack() []byte {
@@ -233,8 +225,6 @@ func (param *DCMIConfigParam_DHCPTiming2) Format() string {
 }
 
 type DCMIConfigParam_DHCPTiming3 struct {
-	SetSelector uint8
-
 	// This is the period between DHCP retries after Server contact timeout interval expires. This
 	// parameter determines the time that must pass after the client has determined that there is no
 	// DHCP server present before it tries again to contact a DHCP server.
@@ -244,7 +234,7 @@ type DCMIConfigParam_DHCPTiming3 struct {
 }
 
 func (param *DCMIConfigParam_DHCPTiming3) DCMIConfigParameter() (paramSelector DCMIConfigParamSelector, setSelector uint8) {
-	return DCMIConfigParamSelector_DHCPTiming3, param.SetSelector
+	return DCMIConfigParamSelector_DHCPTiming3, 0
 }
 
 func (param *DCMIConfigParam_DHCPTiming3) Pack() []byte {
