@@ -7,11 +7,11 @@ type GetBTInterfaceCapabilitiesRequest struct {
 }
 
 type GetBTInterfaceCapabilitiesResponse struct {
-	NumberOfOutstandingRequestsSupported uint8
-	InputBufferMessageSizeBytes          uint8
-	OutputBufferMessageSizeBytes         uint8
-	BMCRequestToResponseTimeSec          uint8
-	RecommendedRetries                   uint8
+	OutstandingRequestsCountSupported uint8
+	InputBufferMessageSizeBytes       uint8
+	OutputBufferMessageSizeBytes      uint8
+	BMCRequestToResponseTimeSec       uint8
+	RecommendedRetries                uint8
 }
 
 func (req *GetBTInterfaceCapabilitiesRequest) Command() Command {
@@ -28,11 +28,11 @@ func (res *GetBTInterfaceCapabilitiesResponse) Unpack(msg []byte) error {
 		return ErrUnpackedDataTooShortWith(len(msg), 5)
 	}
 
-	res.NumberOfOutstandingRequestsSupported, _, _ = unpackUint8(msg, 0)
-	res.InputBufferMessageSizeBytes, _, _ = unpackUint8(msg, 0)
-	res.OutputBufferMessageSizeBytes, _, _ = unpackUint8(msg, 0)
-	res.BMCRequestToResponseTimeSec, _, _ = unpackUint8(msg, 0)
-	res.RecommendedRetries, _, _ = unpackUint8(msg, 0)
+	res.OutstandingRequestsCountSupported, _, _ = unpackUint8(msg, 0)
+	res.InputBufferMessageSizeBytes, _, _ = unpackUint8(msg, 1)
+	res.OutputBufferMessageSizeBytes, _, _ = unpackUint8(msg, 2)
+	res.BMCRequestToResponseTimeSec, _, _ = unpackUint8(msg, 3)
+	res.RecommendedRetries, _, _ = unpackUint8(msg, 4)
 	return nil
 }
 

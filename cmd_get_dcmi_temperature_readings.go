@@ -19,9 +19,9 @@ type GetDCMITemperatureReadingsRequest struct {
 type GetDCMITemperatureReadingsResponse struct {
 	entityID EntityID
 
-	TotalEntityInstances        uint8
-	NumberOfTemperatureReadings uint8
-	TemperatureReadings         []DCMITemperatureReading
+	TotalEntityInstances     uint8
+	TemperatureReadingsCount uint8
+	TemperatureReadings      []DCMITemperatureReading
 }
 
 type DCMITemperatureReading struct {
@@ -54,14 +54,14 @@ func (res *GetDCMITemperatureReadingsResponse) Unpack(msg []byte) error {
 	}
 
 	res.TotalEntityInstances = msg[1]
-	res.NumberOfTemperatureReadings = msg[2]
+	res.TemperatureReadingsCount = msg[2]
 
-	if len(msg) < 3+int(res.NumberOfTemperatureReadings)*2 {
-		return ErrUnpackedDataTooShortWith(len(msg), 3+int(res.NumberOfTemperatureReadings)*2)
+	if len(msg) < 3+int(res.TemperatureReadingsCount)*2 {
+		return ErrUnpackedDataTooShortWith(len(msg), 3+int(res.TemperatureReadingsCount)*2)
 	}
 
 	tempReadings := make([]DCMITemperatureReading, 0)
-	for i := 0; i < int(res.NumberOfTemperatureReadings); i++ {
+	for i := 0; i < int(res.TemperatureReadingsCount); i++ {
 		r := DCMITemperatureReading{}
 
 		v := msg[3+i*2]
@@ -83,7 +83,7 @@ func (res *GetDCMITemperatureReadingsResponse) Format() string {
 Number of temperature readings: %d
 Temperature Readings: %v`,
 		res.TotalEntityInstances,
-		res.NumberOfTemperatureReadings,
+		res.TemperatureReadingsCount,
 		res.TemperatureReadings)
 }
 

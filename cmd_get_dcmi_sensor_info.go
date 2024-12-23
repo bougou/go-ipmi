@@ -18,7 +18,7 @@ type GetDCMISensorInfoRequest struct {
 
 type GetDCMISensorInfoResponse struct {
 	TotalEntityInstances uint8
-	NumberOfRecords      uint8
+	RecordsCount         uint8
 	SDRRecordID          []uint16
 }
 
@@ -51,14 +51,14 @@ func (res *GetDCMISensorInfoResponse) Unpack(msg []byte) error {
 	}
 
 	res.TotalEntityInstances = msg[1]
-	res.NumberOfRecords = msg[2]
+	res.RecordsCount = msg[2]
 
-	if len(msg) < 3+int(res.NumberOfRecords)*2 {
-		return ErrUnpackedDataTooShortWith(len(msg), 3+int(res.NumberOfRecords)*2)
+	if len(msg) < 3+int(res.RecordsCount)*2 {
+		return ErrUnpackedDataTooShortWith(len(msg), 3+int(res.RecordsCount)*2)
 	}
 
-	res.SDRRecordID = make([]uint16, res.NumberOfRecords)
-	for i := 0; i < int(res.NumberOfRecords); i++ {
+	res.SDRRecordID = make([]uint16, res.RecordsCount)
+	for i := 0; i < int(res.RecordsCount); i++ {
 		res.SDRRecordID[i], _, _ = unpackUint16L(msg, 3+i*2)
 	}
 
@@ -72,7 +72,7 @@ Number of records: %d
 SDR Record ID: %v
 `,
 		res.TotalEntityInstances,
-		res.NumberOfRecords,
+		res.RecordsCount,
 		res.SDRRecordID,
 	)
 }

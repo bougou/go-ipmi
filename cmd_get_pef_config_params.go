@@ -19,22 +19,22 @@ type GetPEFConfigParamsRequest struct {
 type PEFConfigParamSelector uint8
 
 const (
-	PEFConfigParamSelector_SetInProgress                    PEFConfigParamSelector = 0x00
-	PEFConfigParamSelector_Control                          PEFConfigParamSelector = 0x01
-	PEFConfigParamSelector_ActionGlobalControl              PEFConfigParamSelector = 0x02
-	PEFConfigParamSelector_StartupDelay                     PEFConfigParamSelector = 0x03
-	PEFConfigParamSelector_AlertStartDelay                  PEFConfigParamSelector = 0x04
-	PEFConfigParamSelector_NumberOfEventFilter              PEFConfigParamSelector = 0x05
-	PEFConfigParamSelector_EventFilterTable                 PEFConfigParamSelector = 0x06
-	PEFConfigParamSelector_EventFilterTableData1            PEFConfigParamSelector = 0x07
-	PEFConfigParamSelector_NumberOfAlertPolicyEntries       PEFConfigParamSelector = 0x08
-	PEFConfigParamSelector_AlertPolicyTable                 PEFConfigParamSelector = 0x09
-	PEFConfigParamSelector_SystemGUID                       PEFConfigParamSelector = 0x0a
-	PEFConfigParamSelector_NumberOfAlertStrings             PEFConfigParamSelector = 0x0b
-	PEFConfigParamSelector_AlertStringKeys                  PEFConfigParamSelector = 0x0c
-	PEFConfigParamSelector_AlertStrings                     PEFConfigParamSelector = 0x0d
-	PEFConfigParamSelector_NumberOfGroupControlTableEntries PEFConfigParamSelector = 0x0e
-	PEFConfigParamSelector_GroupControlTable                PEFConfigParamSelector = 0x0f
+	PEFConfigParamSelector_SetInProgress                 PEFConfigParamSelector = 0x00
+	PEFConfigParamSelector_Control                       PEFConfigParamSelector = 0x01
+	PEFConfigParamSelector_ActionGlobalControl           PEFConfigParamSelector = 0x02
+	PEFConfigParamSelector_StartupDelay                  PEFConfigParamSelector = 0x03
+	PEFConfigParamSelector_AlertStartDelay               PEFConfigParamSelector = 0x04
+	PEFConfigParamSelector_EventFiltersCount             PEFConfigParamSelector = 0x05
+	PEFConfigParamSelector_EventFilterTable              PEFConfigParamSelector = 0x06
+	PEFConfigParamSelector_EventFilterTableData1         PEFConfigParamSelector = 0x07
+	PEFConfigParamSelector_AlertPolicyEntriesCount       PEFConfigParamSelector = 0x08
+	PEFConfigParamSelector_AlertPolicyTable              PEFConfigParamSelector = 0x09
+	PEFConfigParamSelector_SystemGUID                    PEFConfigParamSelector = 0x0a
+	PEFConfigParamSelector_AlertStringsCount             PEFConfigParamSelector = 0x0b
+	PEFConfigParamSelector_AlertStringKeys               PEFConfigParamSelector = 0x0c
+	PEFConfigParamSelector_AlertStrings                  PEFConfigParamSelector = 0x0d
+	PEFConfigParamSelector_GroupControlTableEntriesCount PEFConfigParamSelector = 0x0e
+	PEFConfigParamSelector_GroupControlTable             PEFConfigParamSelector = 0x0f
 
 	// 96:127
 	// OEM Parameters (optional. Non-volatile or volatile as specified by OEM)
