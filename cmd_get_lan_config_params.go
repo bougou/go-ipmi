@@ -3,13 +3,12 @@ package ipmi
 import (
 	"context"
 	"fmt"
-	"net"
 )
 
 // 23.2 Get LAN Configuration Parameters Command
 type GetLanConfigParamsRequest struct {
 	ChannelNumber uint8
-	ParamSelector LanParamSelector
+	ParamSelector LanConfigParamSelector
 	SetSelector   uint8
 	BlockSelector uint8
 }
@@ -57,271 +56,724 @@ Length of Config Data: %d
 	return fmt.Sprintf(out, res.ParameterVersion, res.ConfigData, len(res.ConfigData))
 }
 
-func (c *Client) GetLanConfigParams(ctx context.Context, channelNumber uint8, paramSelector LanParamSelector) (response *GetLanConfigParamsResponse, err error) {
+func (c *Client) GetLanConfigParams(ctx context.Context, channelNumber uint8, paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) (response *GetLanConfigParamsResponse, err error) {
 	request := &GetLanConfigParamsRequest{
 		ChannelNumber: channelNumber,
 		ParamSelector: paramSelector,
+		SetSelector:   setSelector,
+		BlockSelector: blockSelector,
 	}
 	response = &GetLanConfigParamsResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }
 
-// GetLanConfig will fetch all Lan information.
+// GetLanConfigParamsFor get the lan config for a specific parameter.
+//
+// The param is a pointer to a struct that implements the LanConfigParameter interface.
+func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8, param LanConfigParameter) error {
+	paramSelector, setSelector, blockSelector := param.LanConfigParamSelector()
+	c.Debugf(">> Get LanConfigParam for paramSelector (%d) %s, setSelector %d, blockSelector %d\n", uint8(paramSelector), paramSelector, setSelector, blockSelector)
+
+	response, err := c.GetLanConfigParams(ctx, channelNumber, paramSelector, setSelector, blockSelector)
+	if err != nil {
+		c.Debugf("!!! Get LanConfigParam for paramSelector (%d) %s, setSelector %d failed, err: %v\n", uint8(paramSelector), paramSelector, setSelector, err)
+
+		return err
+	}
+
+	c.DebugBytes(fmt.Sprintf("<< Got param data for (%s[%d]) ", paramSelector.String(), paramSelector), response.ConfigData, 8)
+	if err := param.Unpack(response.ConfigData); err != nil {
+		return fmt.Errorf("unpack lan config param (%s [%d]) failed, err: %w", paramSelector.String(), paramSelector, err)
+	}
+
+	return nil
+}
+
 func (c *Client) GetLanConfig(ctx context.Context, channelNumber uint8) (*LanConfig, error) {
-	lanConfig := &LanConfig{}
+	lanConfig := &LanConfig{
+		SetInProgress:         &LanConfigParam_SetInProgress{},
+		AuthTypeSupport:       &LanConfigParam_AuthTypeSupport{},
+		AuthTypeEnables:       &LanConfigParam_AuthTypeEnables{},
+		IP:                    &LanConfigParam_IP{},
+		IPSource:              &LanConfigParam_IPSource{},
+		MAC:                   &LanConfigParam_MAC{},
+		SubnetMask:            &LanConfigParam_SubnetMask{},
+		IPHeaderParams:        &LanConfigParam_IPv4HeaderParams{},
+		PrimaryRMCPPort:       &LanConfigParam_PrimaryRMCPPort{},
+		SecondaryRMCPPort:     &LanConfigParam_SecondaryRMCPPort{},
+		ARPControl:            &LanConfigParam_ARPControl{},
+		GratuitousARPInterval: &LanConfigParam_GratuitousARPInterval{},
+		DefaultGatewayIP:      &LanConfigParam_DefaultGatewayIP{},
+		DefaultGatewayMAC:     &LanConfigParam_DefaultGatewayMAC{},
+		BackupGatewayIP:       &LanConfigParam_BackupGatewayIP{},
+		BackupGatewayMAC:      &LanConfigParam_BackupGatewayMAC{},
+		CommunityString:       &LanConfigParam_CommunityString{},
+		// AlertDestinationsCount:            &LanConfigParam_AlertDestinationsCount{},
+		// AlertDestinationTypes:             make([]*LanConfigParam_AlertDestinationType, 0),
+		// AlertDestinationAddresses:         make([]*LanConfigParam_AlertDestinationAddress, 0),
+		VLANID:                &LanConfigParam_VLANID{},
+		VLANPriority:          &LanConfigParam_VLANPriority{},
+		CipherSuitesSupport:   &LanConfigParam_CipherSuitesSupport{},
+		CipherSuitesID:        &LanConfigParam_CipherSuitesID{},
+		CipherSuitesPrivLevel: &LanConfigParam_CipherSuitesPrivLevel{},
+		AlertDestinationVLANs: make([]*LanConfigParam_AlertDestinationVLAN, 0),
+		BadPasswordThreshold:  &LanConfigParam_BadPasswordThreshold{},
+		// IPv6Support:                       &LanConfigParam_IPv6Support{},
+		// IPv6Enables:                       &LanConfigParam_IPv6Enables{},
+		// IPv6StaticTrafficClass:            &LanConfigParam_IPv6StaticTrafficClass{},
+		// IPv6StaticHopLimit:                &LanConfigParam_IPv6StaticHopLimit{},
+		// IPv6FlowLabel:                     &LanConfigParam_IPv6FlowLabel{},
+		// IPv6Status:                        &LanConfigParam_IPv6Status{},
+		// IPv6StaticAddresses:               make([]*LanConfigParam_IPv6StaticAddress, 0),
+		// IPv6DHCPv6StaticDUIDCount:         &LanConfigParam_IPv6DHCPv6StaticDUIDCount{},
+		// IPv6DHCPv6StaticDUIDs:             make([]*LanConfigParam_IPv6DHCPv6StaticDUID, 0),
+		// IPv6DynamicAddresses:              make([]*LanConfigParam_IPv6DynamicAddress, 0),
+		// IPv6DHCPv6DynamicDUIDCount:        &LanConfigParam_IPv6DHCPv6DynamicDUIDCount{},
+		// IPv6DHCPv6DynamicDUIDs:            make([]*LanConfigParam_IPv6DHCPv6DynamicDUID, 0),
+		// IPv6DHCPv6TimingConfigSupport:     &LanConfigParam_IPv6DHCPv6TimingConfigSupport{},
+		// IPv6DHCPv6TimingConfig:            make([]*LanConfigParam_IPv6DHCPv6TimingConfig, 0),
+		// IPv6RouterAddressConfigControl:    &LanConfigParam_IPv6RouterAddressConfigControl{},
+		// IPv6StaticRouter1IP:               &LanConfigParam_IPv6StaticRouter1IP{},
+		// IPv6StaticRouter1MAC:              &LanConfigParam_IPv6StaticRouter1MAC{},
+		// IPv6StaticRouter1PrefixLength:     &LanConfigParam_IPv6StaticRouter1PrefixLength{},
+		// IPv6StaticRouter1PrefixValue:      &LanConfigParam_IPv6StaticRouter1PrefixValue{},
+		// IPv6StaticRouter2IP:               &LanConfigParam_IPv6StaticRouter2IP{},
+		// IPv6StaticRouter2MAC:              &LanConfigParam_IPv6StaticRouter2MAC{},
+		// IPv6StaticRouter2PrefixLength:     &LanConfigParam_IPv6StaticRouter2PrefixLength{},
+		// IPv6StaticRouter2PrefixValue:      &LanConfigParam_IPv6StaticRouter2PrefixValue{},
+		// IPv6DynamicRouterInfoSets:         &LanConfigParam_IPv6DynamicRouterInfoSets{},
+		// IPv6DynamicRouterInfoIP:           make([]*LanConfigParam_IPv6DynamicRouterInfoIP, 0),
+		// IPv6DynamicRouterInfoMAC:          make([]*LanConfigParam_IPv6DynamicRouterInfoMAC, 0),
+		// IPv6DynamicRouterInfoPrefixLength: make([]*LanConfigParam_IPv6DynamicRouterInfoPrefixLength, 0),
+		// IPv6DynamicRouterInfoPrefixValue:  make([]*LanConfigParam_IPv6DynamicRouterInfoPrefixValue, 0),
+		// IPv6DynamicRouterReceivedHopLimit: &LanConfigParam_IPv6DynamicRouterReceivedHopLimit{},
+		// IPv6NDSLAACTimingConfigSupport:    &LanConfigParam_IPv6NDSLAACTimingConfigSupport{},
+		// IPv6NDSLAACTimingConfig:           make([]*LanConfigParam_IPv6NDSLAACTimingConfig, 0),
+	}
 
-	for _, lanParam := range LanParams {
-		paramSelector := LanParamSelector(lanParam.Selector)
-
-		res, err := c.GetLanConfigParams(ctx, channelNumber, paramSelector)
-		if err != nil {
-			resErr, ok := err.(*ResponseError)
-			if !ok {
-				return nil, fmt.Errorf("not ResponseError")
-			}
-
-			cc := resErr.CompletionCode()
-			ccString := StrCC(res, uint8(cc))
-
-			switch uint8(cc) {
-			case 0x80,
-				uint8(CompletionCodeParameterOutOfRange),
-				uint8(CompletionCodeRequestDataFieldInvalid):
-				c.Debugf("paramSelector (%#02x) %s, cc: (%#02x) %s\n", uint8(paramSelector), paramSelector, uint8(cc), ccString)
-				continue
-			default:
-				// other completion codes are treated as error.
-				// including 0x00 which means cc is successful, but other part failed
-				return nil, fmt.Errorf("get lan config param (%s) failed, err: %s", paramSelector, err)
-			}
-		}
-
-		if err := FillLanConfig(lanConfig, paramSelector, res.ConfigData); err != nil {
-			return nil, fmt.Errorf("get lan config param (%s) failed, err: %s", paramSelector, err)
-		}
+	if err := c.GetLanConfigFor(ctx, channelNumber, lanConfig); err != nil {
+		return nil, err
 	}
 
 	return lanConfig, nil
 }
 
-// FillLanConfig will set the corresponding field of lanConfig according to paramSelector and paramData.
-func FillLanConfig(lanConfig *LanConfig, paramSelector LanParamSelector, paramData []byte) error {
-	var lanParam LanParam
-	for _, v := range LanParams {
-		if v.Selector == paramSelector {
-			lanParam = v
-			break
+func (c *Client) GetLanConfigFull(ctx context.Context, channelNumber uint8) (*LanConfig, error) {
+	lanConfig := &LanConfig{
+		SetInProgress:                     &LanConfigParam_SetInProgress{},
+		AuthTypeSupport:                   &LanConfigParam_AuthTypeSupport{},
+		AuthTypeEnables:                   &LanConfigParam_AuthTypeEnables{},
+		IP:                                &LanConfigParam_IP{},
+		IPSource:                          &LanConfigParam_IPSource{},
+		MAC:                               &LanConfigParam_MAC{},
+		SubnetMask:                        &LanConfigParam_SubnetMask{},
+		IPHeaderParams:                    &LanConfigParam_IPv4HeaderParams{},
+		PrimaryRMCPPort:                   &LanConfigParam_PrimaryRMCPPort{},
+		SecondaryRMCPPort:                 &LanConfigParam_SecondaryRMCPPort{},
+		ARPControl:                        &LanConfigParam_ARPControl{},
+		GratuitousARPInterval:             &LanConfigParam_GratuitousARPInterval{},
+		DefaultGatewayIP:                  &LanConfigParam_DefaultGatewayIP{},
+		DefaultGatewayMAC:                 &LanConfigParam_DefaultGatewayMAC{},
+		BackupGatewayIP:                   &LanConfigParam_BackupGatewayIP{},
+		BackupGatewayMAC:                  &LanConfigParam_BackupGatewayMAC{},
+		CommunityString:                   &LanConfigParam_CommunityString{},
+		AlertDestinationsCount:            &LanConfigParam_AlertDestinationsCount{},
+		AlertDestinationTypes:             make([]*LanConfigParam_AlertDestinationType, 0),
+		AlertDestinationAddresses:         make([]*LanConfigParam_AlertDestinationAddress, 0),
+		VLANID:                            &LanConfigParam_VLANID{},
+		VLANPriority:                      &LanConfigParam_VLANPriority{},
+		CipherSuitesSupport:               &LanConfigParam_CipherSuitesSupport{},
+		CipherSuitesID:                    &LanConfigParam_CipherSuitesID{},
+		CipherSuitesPrivLevel:             &LanConfigParam_CipherSuitesPrivLevel{},
+		AlertDestinationVLANs:             make([]*LanConfigParam_AlertDestinationVLAN, 0),
+		BadPasswordThreshold:              &LanConfigParam_BadPasswordThreshold{},
+		IPv6Support:                       &LanConfigParam_IPv6Support{},
+		IPv6Enables:                       &LanConfigParam_IPv6Enables{},
+		IPv6StaticTrafficClass:            &LanConfigParam_IPv6StaticTrafficClass{},
+		IPv6StaticHopLimit:                &LanConfigParam_IPv6StaticHopLimit{},
+		IPv6FlowLabel:                     &LanConfigParam_IPv6FlowLabel{},
+		IPv6Status:                        &LanConfigParam_IPv6Status{},
+		IPv6StaticAddresses:               make([]*LanConfigParam_IPv6StaticAddress, 0),
+		IPv6DHCPv6StaticDUIDCount:         &LanConfigParam_IPv6DHCPv6StaticDUIDCount{},
+		IPv6DHCPv6StaticDUIDs:             make([]*LanConfigParam_IPv6DHCPv6StaticDUID, 0),
+		IPv6DynamicAddresses:              make([]*LanConfigParam_IPv6DynamicAddress, 0),
+		IPv6DHCPv6DynamicDUIDCount:        &LanConfigParam_IPv6DHCPv6DynamicDUIDCount{},
+		IPv6DHCPv6DynamicDUIDs:            make([]*LanConfigParam_IPv6DHCPv6DynamicDUID, 0),
+		IPv6DHCPv6TimingConfigSupport:     &LanConfigParam_IPv6DHCPv6TimingConfigSupport{},
+		IPv6DHCPv6TimingConfig:            make([]*LanConfigParam_IPv6DHCPv6TimingConfig, 0),
+		IPv6RouterAddressConfigControl:    &LanConfigParam_IPv6RouterAddressConfigControl{},
+		IPv6StaticRouter1IP:               &LanConfigParam_IPv6StaticRouter1IP{},
+		IPv6StaticRouter1MAC:              &LanConfigParam_IPv6StaticRouter1MAC{},
+		IPv6StaticRouter1PrefixLength:     &LanConfigParam_IPv6StaticRouter1PrefixLength{},
+		IPv6StaticRouter1PrefixValue:      &LanConfigParam_IPv6StaticRouter1PrefixValue{},
+		IPv6StaticRouter2IP:               &LanConfigParam_IPv6StaticRouter2IP{},
+		IPv6StaticRouter2MAC:              &LanConfigParam_IPv6StaticRouter2MAC{},
+		IPv6StaticRouter2PrefixLength:     &LanConfigParam_IPv6StaticRouter2PrefixLength{},
+		IPv6StaticRouter2PrefixValue:      &LanConfigParam_IPv6StaticRouter2PrefixValue{},
+		IPv6DynamicRouterInfoSets:         &LanConfigParam_IPv6DynamicRouterInfoSets{},
+		IPv6DynamicRouterInfoIP:           make([]*LanConfigParam_IPv6DynamicRouterInfoIP, 0),
+		IPv6DynamicRouterInfoMAC:          make([]*LanConfigParam_IPv6DynamicRouterInfoMAC, 0),
+		IPv6DynamicRouterInfoPrefixLength: make([]*LanConfigParam_IPv6DynamicRouterInfoPrefixLength, 0),
+		IPv6DynamicRouterInfoPrefixValue:  make([]*LanConfigParam_IPv6DynamicRouterInfoPrefixValue, 0),
+		IPv6DynamicRouterReceivedHopLimit: &LanConfigParam_IPv6DynamicRouterReceivedHopLimit{},
+		IPv6NDSLAACTimingConfigSupport:    &LanConfigParam_IPv6NDSLAACTimingConfigSupport{},
+		IPv6NDSLAACTimingConfig:           make([]*LanConfigParam_IPv6NDSLAACTimingConfig, 0),
+	}
+
+	if err := c.GetLanConfigFor(ctx, channelNumber, lanConfig); err != nil {
+		return nil, err
+	}
+
+	return lanConfig, nil
+}
+
+// GetLanConfigFor get the lan config partially.
+// You initialize the LanConfig struct and ONLY initialize the fields you want to get.
+func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanConfig *LanConfig) error {
+	if lanConfig == nil {
+		return nil
+	}
+
+	// If the err is a ResponseError and the completion code wrapped
+	// in ResponseError can be safely ignored
+	var canIgnoreError = func(err error) error {
+		if respErr, ok := err.(*ResponseError); ok {
+			cc := respErr.CompletionCode()
+
+			switch cc {
+			case
+				0x80: // parameter not supported
+
+				return nil
+			}
+
+		}
+		return err
+	}
+
+	if lanConfig.SetInProgress != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.SetInProgress); canIgnoreError(err) != nil {
+			return err
 		}
 	}
 
-	// pre-check the length of paramData to avoid array index out-of-bound access panic.
-	if uint8(len(paramData)) < lanParam.DataSize {
-		return fmt.Errorf("the data for param (%s) is too short, input (%d), required (%d)", paramSelector, len(paramData), lanParam.DataSize)
+	if lanConfig.AuthTypeSupport != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.AuthTypeSupport); canIgnoreError(err) != nil {
+			return err
+		}
 	}
 
-	switch lanParam.Selector {
-	case LanParam_SetInProgress:
-		lanConfig.SetInProgress = SetInProgress(paramData[0])
-
-	case LanParam_AuthTypeSupported:
-		b := paramData[0]
-		lanConfig.AuthTypeSupport = AuthTypeSupport{
-			OEM:      isBit5Set(b),
-			Password: isBit4Set(b),
-			MD5:      isBit2Set(b),
-			MD2:      isBit1Set(b),
+	if lanConfig.AuthTypeEnables != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.AuthTypeEnables); canIgnoreError(err) != nil {
+			return err
 		}
-
-	case LanParam_AuthTypeEnables:
-		lanConfig.AuthTypeEnables = AuthTypeEnables{
-			Callback: AuthTypeEnabled{
-				OEM:      isBit5Set(paramData[0]),
-				Password: isBit4Set(paramData[0]),
-				MD5:      isBit2Set(paramData[0]),
-				MD2:      isBit1Set(paramData[0]),
-			},
-			User: AuthTypeEnabled{
-				OEM:      isBit5Set(paramData[1]),
-				Password: isBit4Set(paramData[1]),
-				MD5:      isBit2Set(paramData[1]),
-				MD2:      isBit1Set(paramData[1]),
-			},
-			Operator: AuthTypeEnabled{
-				OEM:      isBit5Set(paramData[2]),
-				Password: isBit4Set(paramData[2]),
-				MD5:      isBit2Set(paramData[2]),
-				MD2:      isBit1Set(paramData[2]),
-			},
-			Admin: AuthTypeEnabled{
-				OEM:      isBit5Set(paramData[3]),
-				Password: isBit4Set(paramData[3]),
-				MD5:      isBit2Set(paramData[3]),
-				MD2:      isBit1Set(paramData[3]),
-			},
-			OEM: AuthTypeEnabled{
-				OEM:      isBit5Set(paramData[4]),
-				Password: isBit4Set(paramData[4]),
-				MD5:      isBit2Set(paramData[4]),
-				MD2:      isBit1Set(paramData[4]),
-			},
-		}
-
-	case LanParam_IP:
-		lanConfig.IP = net.IPv4(paramData[0], paramData[1], paramData[2], paramData[3])
-
-	case LanParam_IPSource:
-		lanConfig.IPSource = IPAddressSource(paramData[0])
-
-	case LanParam_MAC:
-		lanConfig.MAC = net.HardwareAddr(paramData[0:6])
-
-	case LanParam_SubnetMask:
-		lanConfig.SubnetMask = net.IPv4(paramData[0], paramData[1], paramData[2], paramData[3])
-
-	case LanParam_IPv4HeaderParams:
-		lanConfig.IPHeaderParams = IPHeaderParams{
-			TTL:        paramData[0],
-			Flags:      (paramData[1] & 0xc0) >> 5,
-			Precedence: (paramData[2] & 0xc0) >> 5,
-			TOS:        (paramData[2] & 0x1f) >> 1,
-		}
-
-	case LanParam_PrimaryRMCPPort:
-		lanConfig.PrimaryRMCPPort, _, _ = unpackUint16L(paramData[0:2], 0)
-
-	case LanParam_SecondaryRMCPPort:
-		lanConfig.SecondaryRMCPPort, _, _ = unpackUint16L(paramData[0:2], 0)
-
-	case LanParam_ARPControl:
-		lanConfig.ARPControl = ARPControl{
-			ARPResponseEnabled:   isBit1Set(paramData[0]),
-			GratuitousARPEnabled: isBit0Set(paramData[0]),
-		}
-
-	case LanParam_GratuitousARPInterval:
-		// Gratuitous ARP interval in 500 millisecond increments. 0-based.
-		lanConfig.GratuitousARPIntervalMilliSec = int32(paramData[0]) * 500
-
-	case LanParam_DefaultGatewayIP:
-		lanConfig.DefaultGatewayIP = net.IP(paramData[0:4])
-
-	case LanParam_DefaultGatewayMAC:
-		lanConfig.DefaultGatewayMAC = net.HardwareAddr(paramData[0:6])
-
-	case LanParam_BackupGatewayIP:
-		lanConfig.BackupGatewayIP = net.IP(paramData[0:4])
-
-	case LanParam_BackupGatewayMAC:
-		lanConfig.BackupGatewayMAC = net.HardwareAddr(paramData[0:6])
-
-	case LanParam_CommunityString:
-		lanConfig.CommunityString = NewCommunityString(string(paramData))
-
-	case LanParam_AlertDestinationsNumber:
-		lanConfig.AlertDestinationsNumber = paramData[0]
-
-	case LanParam_AlertDestinationType:
-		lanConfig.AlertDestinationType = AlertDestinationType{
-			SetSelector:             paramData[0],
-			AlertSupportAcknowledge: isBit7Set(paramData[1]),
-			DestinationType:         paramData[1] & 0x07,
-			AlertAcknowledgeTimeout: paramData[2],
-			Retries:                 paramData[3] & 0x7f,
-		}
-
-	case LanParam_AlertDestinationAddress:
-		alertDestinationAddress := AlertDestinationAddress{
-			SetSelector:   paramData[0],
-			AddressFormat: (paramData[1] & 0xf0) >> 4,
-		}
-
-		if alertDestinationAddress.AddressFormat == 0 {
-
-			// IPv4 and MAC
-			alertDestinationAddress.IP4UseBackupGateway = isBit0Set(paramData[2])
-			alertDestinationAddress.IP4IP = net.IP(paramData[3:7])
-			alertDestinationAddress.IP4MAC = net.HardwareAddr(paramData[7:12])
-
-		} else if alertDestinationAddress.AddressFormat == 1 {
-
-			// IPv6
-			if len(paramData) < 18 {
-				return fmt.Errorf("the data for param (%s) is too short, input (%d), required (%d), AddressFormat is IPv6", paramSelector, len(paramData), 18)
-			}
-			alertDestinationAddress.IP6IP = net.IP(paramData[2:17])
-		}
-
-		lanConfig.AlertDestinationAddress = alertDestinationAddress
-
-	case LanParam_VLANID:
-		lanConfig.VLANEnabled = isBit7Set(paramData[1])
-		lanConfig.VLANID = (uint16(paramData[1]&0x0f) << 8) | uint16(paramData[0])
-
-	case LanParam_VLANPriority:
-		lanConfig.VLANPriority = paramData[0] & 0x07
-
-	case LanParam_CipherSuiteEntrySupport:
-		lanConfig.RMCPCipherSuitesCount = paramData[0] & 0x1f
-
-	case LanParam_CipherSuiteEntries:
-		ids := []CipherSuiteID{}
-		var count uint8 = 0
-		for i, v := range paramData {
-			if i == 0 {
-				// first byte is Reserved
-				continue
-			}
-			if count+1 > lanConfig.RMCPCipherSuitesCount {
-				break
-			}
-			ids = append(ids, CipherSuiteID(v))
-			count += 1
-		}
-		lanConfig.RMCPCipherSuiteEntries = ids
-
-	case LanParam_CipherSuitePrivilegeLevels:
-		levels := []PrivilegeLevel{}
-		for i, v := range paramData {
-			if i == 0 {
-				// first byte is reserved
-				continue
-			}
-			levels = append(levels, PrivilegeLevel(v&0x0f))
-			levels = append(levels, PrivilegeLevel(v&0xf0>>4))
-		}
-		lanConfig.RMCPCipherSuitesMaxPrivLevel = levels
-
-	case LanParam_AlertDestinationVLAN:
-		lanConfig.AlertDestinationVLAN = AlertDestinationVLAN{
-			SetSelector:   paramData[0],
-			AddressFormat: (paramData[1] & 0xf0) >> 4,
-			VLANID:        (uint16(paramData[3]&0x0f) << 8) | uint16(paramData[2]),
-			CFI:           isBit4Set(paramData[3]),
-			Priority:      (paramData[3] & 0xe0) >> 5,
-		}
-
-	case LanParam_BadPasswordThreshold:
-		resetInterval, _, _ := unpackUint16L(paramData, 2)
-		lockInterval, _, _ := unpackUint16L(paramData, 4)
-
-		lanConfig.BadPasswordThreshold = BadPasswordThreshold{
-			GenerateSessionAuditEvent:    isBit0Set(paramData[0]),
-			Threshold:                    paramData[1],
-			AttemptCountResetIntervalSec: uint32(resetInterval) * 10,
-			UserLockoutIntervalSec:       uint32(lockInterval) * 10,
-		}
-
-	case LanParam_IP6Support:
-		lanConfig.IP6Support = IP6Support{
-			SupportIP6AlertDestination: isBit2Set(paramData[0]),
-			CanUseBothIP4AndIP6:        isBit1Set(paramData[0]),
-			CanUseIP6Only:              isBit0Set(paramData[0]),
-		}
-
-		// Todo IP6 params parse
-
 	}
 
+	if lanConfig.IP != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IP); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPSource != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPSource); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.MAC != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.MAC); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.SubnetMask != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.SubnetMask); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPHeaderParams != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPHeaderParams); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.PrimaryRMCPPort != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.PrimaryRMCPPort); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.SecondaryRMCPPort != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.SecondaryRMCPPort); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.ARPControl != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.ARPControl); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.GratuitousARPInterval != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.GratuitousARPInterval); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.DefaultGatewayIP != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.DefaultGatewayIP); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.DefaultGatewayMAC != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.DefaultGatewayMAC); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.BackupGatewayIP != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.BackupGatewayIP); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.BackupGatewayMAC != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.BackupGatewayMAC); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.CommunityString != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.CommunityString); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	alertDestinationsCount := uint8(0)
+	if lanConfig.AlertDestinationsCount != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.AlertDestinationsCount); canIgnoreError(err) != nil {
+			return err
+		}
+		alertDestinationsCount = lanConfig.AlertDestinationsCount.Count
+	}
+
+	if lanConfig.AlertDestinationTypes != nil {
+
+		if len(lanConfig.AlertDestinationTypes) == 0 && alertDestinationsCount > 0 {
+			count := alertDestinationsCount + 1
+
+			lanConfig.AlertDestinationTypes = make([]*LanConfigParam_AlertDestinationType, count)
+			for i := uint8(0); i < count; i++ {
+				lanConfig.AlertDestinationTypes[i] = &LanConfigParam_AlertDestinationType{
+					SetSelector: i,
+				}
+			}
+		}
+
+		for _, alertDestinationType := range lanConfig.AlertDestinationTypes {
+			if err := c.GetLanConfigParamsFor(ctx, channelNumber, alertDestinationType); err != nil {
+				return err
+			}
+		}
+	}
+
+	if lanConfig.AlertDestinationAddresses != nil {
+
+		if len(lanConfig.AlertDestinationAddresses) == 0 && alertDestinationsCount > 0 {
+			count := alertDestinationsCount + 1
+
+			lanConfig.AlertDestinationAddresses = make([]*LanConfigParam_AlertDestinationAddress, count)
+			for i := uint8(0); i < count; i++ {
+				lanConfig.AlertDestinationAddresses[i] = &LanConfigParam_AlertDestinationAddress{
+					SetSelector: i,
+				}
+			}
+		}
+
+		for _, alertDestinationAddress := range lanConfig.AlertDestinationAddresses {
+			if err := c.GetLanConfigParamsFor(ctx, channelNumber, alertDestinationAddress); err != nil {
+				return err
+			}
+		}
+	}
+
+	if lanConfig.VLANID != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.VLANID); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.VLANPriority != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.VLANPriority); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.CipherSuitesSupport != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.CipherSuitesSupport); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.CipherSuitesID != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.CipherSuitesID); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.CipherSuitesPrivLevel != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.CipherSuitesPrivLevel); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.AlertDestinationVLANs != nil {
+		if len(lanConfig.AlertDestinationVLANs) == 0 && alertDestinationsCount > 0 {
+			count := alertDestinationsCount + 1
+
+			lanConfig.AlertDestinationVLANs = make([]*LanConfigParam_AlertDestinationVLAN, count)
+			for i := uint8(0); i < count; i++ {
+				lanConfig.AlertDestinationVLANs[i] = &LanConfigParam_AlertDestinationVLAN{
+					SetSelector: i,
+				}
+			}
+		}
+
+		for _, alertDestinationVLAN := range lanConfig.AlertDestinationVLANs {
+			if err := c.GetLanConfigParamsFor(ctx, channelNumber, alertDestinationVLAN); err != nil {
+				return err
+			}
+		}
+	}
+
+	if lanConfig.BadPasswordThreshold != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.BadPasswordThreshold); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6Support != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6Support); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6Enables != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6Enables); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6StaticTrafficClass != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticTrafficClass); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6StaticHopLimit != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticHopLimit); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6FlowLabel != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6FlowLabel); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	var ipv6StaticAddressMax uint8
+	var ipv6DynamicAddressMax uint8
+	if lanConfig.IPv6Status != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6Status); canIgnoreError(err) != nil {
+			return err
+		}
+		ipv6StaticAddressMax = lanConfig.IPv6Status.StaticAddressMax
+		ipv6DynamicAddressMax = lanConfig.IPv6Status.DynamicAddressMax
+	}
+
+	if lanConfig.IPv6StaticAddresses != nil {
+		if len(lanConfig.IPv6StaticAddresses) == 0 && ipv6StaticAddressMax > 0 {
+			count := ipv6StaticAddressMax
+
+			lanConfig.IPv6StaticAddresses = make([]*LanConfigParam_IPv6StaticAddress, count)
+			for i := uint8(0); i < count; i++ {
+				lanConfig.IPv6StaticAddresses[i] = &LanConfigParam_IPv6StaticAddress{
+					SetSelector: i,
+				}
+			}
+		}
+
+		for _, ipv6StaticAddress := range lanConfig.IPv6StaticAddresses {
+			if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6StaticAddress); err != nil {
+				return err
+			}
+		}
+	}
+
+	var ipv6DHCPv6StaticDUIDCount uint8
+	if lanConfig.IPv6DHCPv6StaticDUIDCount != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6DHCPv6StaticDUIDCount); canIgnoreError(err) != nil {
+			return err
+		}
+
+		ipv6DHCPv6StaticDUIDCount = lanConfig.IPv6DHCPv6StaticDUIDCount.Max
+	}
+
+	if lanConfig.IPv6DHCPv6StaticDUIDs != nil {
+		if len(lanConfig.IPv6DHCPv6StaticDUIDs) == 0 && ipv6DHCPv6StaticDUIDCount > 0 {
+			count := ipv6DHCPv6StaticDUIDCount
+
+			lanConfig.IPv6DHCPv6StaticDUIDs = make([]*LanConfigParam_IPv6DHCPv6StaticDUID, count)
+			for i := uint8(0); i < count; i++ {
+				lanConfig.IPv6DHCPv6StaticDUIDs[i] = &LanConfigParam_IPv6DHCPv6StaticDUID{
+					SetSelector: i,
+				}
+			}
+		}
+
+		for _, ipv6DHCPv6StaticDUID := range lanConfig.IPv6DHCPv6StaticDUIDs {
+			if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DHCPv6StaticDUID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if lanConfig.IPv6DynamicAddresses != nil {
+		if len(lanConfig.IPv6DynamicAddresses) == 0 && ipv6DynamicAddressMax > 0 {
+			count := ipv6DynamicAddressMax
+
+			lanConfig.IPv6DynamicAddresses = make([]*LanConfigParam_IPv6DynamicAddress, count)
+			for i := uint8(0); i < count; i++ {
+				lanConfig.IPv6DynamicAddresses[i] = &LanConfigParam_IPv6DynamicAddress{
+					SetSelector: i,
+				}
+			}
+		}
+
+		for _, ipv6DynamicAddress := range lanConfig.IPv6DynamicAddresses {
+			if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DynamicAddress); err != nil {
+				return err
+			}
+		}
+	}
+
+	var ipv6DHCPv6DynamicDUIDCount uint8
+	if lanConfig.IPv6DHCPv6DynamicDUIDCount != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6DHCPv6DynamicDUIDCount); canIgnoreError(err) != nil {
+			return err
+		}
+
+		ipv6DHCPv6DynamicDUIDCount = lanConfig.IPv6DHCPv6DynamicDUIDCount.Max
+	}
+
+	if lanConfig.IPv6DHCPv6DynamicDUIDs != nil {
+		if len(lanConfig.IPv6DHCPv6DynamicDUIDs) == 0 && ipv6DHCPv6DynamicDUIDCount > 0 {
+			// Todo
+
+			// 	count := ipv6DHCPv6DynamicDUIDCount
+
+			// 	lanConfig.IPv6DHCPv6DynamicDUIDs = make([]*LanConfigParam_IPv6DHCPv6DynamicDUID, count)
+			// 	for i := uint8(0); i < count; i++ {
+			// 		lanConfig.IPv6DHCPv6DynamicDUIDs[i] = &LanConfigParam_IPv6DHCPv6DynamicDUID{
+			// 			SetSelector: i,
+			// 		}
+			// 	}
+
+			// 	for _, ipv6DHCPv6DynamicDUID := range lanConfig.IPv6DHCPv6DynamicDUIDs {
+			// 		if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DHCPv6DynamicDUID); err != nil {
+			// 			return err
+			// 		}
+			// 	}
+		}
+	}
+
+	if lanConfig.IPv6DHCPv6TimingConfigSupport != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6DHCPv6TimingConfigSupport); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6DHCPv6TimingConfig != nil {
+		// Todo
+
+		// if len(lanConfig.IPv6DHCPv6TimingConfig) == 0 && ipv6DynamicAddressMax > 0 {
+		// 	count := ipv6DynamicAddressMax
+
+		// 	lanConfig.IPv6DHCPv6TimingConfig = make([]*LanConfigParam_IPv6DHCPv6TimingConfig, count)
+		// 	for i := uint8(0); i < count; i++ {
+		// 		lanConfig.IPv6DHCPv6TimingConfig[i] = &LanConfigParam_IPv6DHCPv6TimingConfig{
+		// 			SetSelector: i,
+		// 		}
+		// 	}
+
+		// 	for _, ipv6DHCPv6TimingConfig := range lanConfig.IPv6DHCPv6TimingConfig {
+		// 		if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DHCPv6TimingConfig); err != nil {
+		// 			return err
+		// 		}
+		// 	}
+		// }
+	}
+
+	if lanConfig.IPv6RouterAddressConfigControl != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6RouterAddressConfigControl); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6StaticRouter1IP != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter1IP); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6StaticRouter1MAC != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter1MAC); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6StaticRouter1PrefixLength != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter1PrefixLength); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6StaticRouter1PrefixValue != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter1PrefixValue); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6StaticRouter2IP != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter2IP); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6StaticRouter2MAC != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter2MAC); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6StaticRouter2PrefixLength != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter2PrefixLength); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6StaticRouter2PrefixValue != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter2PrefixValue); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	var ipv6DynamicRouterInfoCount uint8
+	if lanConfig.IPv6DynamicRouterInfoSets != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6DynamicRouterInfoSets); canIgnoreError(err) != nil {
+			return err
+		}
+
+		ipv6DynamicRouterInfoCount = lanConfig.IPv6DynamicRouterInfoSets.Count
+	}
+
+	if lanConfig.IPv6DynamicRouterInfoIP != nil {
+		if len(lanConfig.IPv6DynamicRouterInfoIP) == 0 && ipv6DynamicRouterInfoCount > 0 {
+			count := ipv6DynamicRouterInfoCount
+
+			lanConfig.IPv6DynamicRouterInfoIP = make([]*LanConfigParam_IPv6DynamicRouterInfoIP, count)
+			for i := uint8(0); i < count; i++ {
+				lanConfig.IPv6DynamicRouterInfoIP[i] = &LanConfigParam_IPv6DynamicRouterInfoIP{
+					SetSelector: i,
+				}
+			}
+
+			for _, ipv6DynamicRouterInfoIP := range lanConfig.IPv6DynamicRouterInfoIP {
+				if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DynamicRouterInfoIP); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	if lanConfig.IPv6DynamicRouterInfoMAC != nil {
+		if len(lanConfig.IPv6DynamicRouterInfoMAC) == 0 && ipv6DynamicRouterInfoCount > 0 {
+			count := ipv6DynamicRouterInfoCount
+
+			lanConfig.IPv6DynamicRouterInfoMAC = make([]*LanConfigParam_IPv6DynamicRouterInfoMAC, count)
+			for i := uint8(0); i < count; i++ {
+				lanConfig.IPv6DynamicRouterInfoMAC[i] = &LanConfigParam_IPv6DynamicRouterInfoMAC{
+					SetSelector: i,
+				}
+			}
+
+			for _, ipv6DynamicRouterInfoMAC := range lanConfig.IPv6DynamicRouterInfoMAC {
+				if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DynamicRouterInfoMAC); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	if lanConfig.IPv6DynamicRouterInfoPrefixLength != nil {
+		if len(lanConfig.IPv6DynamicRouterInfoPrefixLength) == 0 && ipv6DynamicRouterInfoCount > 0 {
+			count := ipv6DynamicRouterInfoCount
+
+			lanConfig.IPv6DynamicRouterInfoPrefixLength = make([]*LanConfigParam_IPv6DynamicRouterInfoPrefixLength, count)
+			for i := uint8(0); i < count; i++ {
+				lanConfig.IPv6DynamicRouterInfoPrefixLength[i] = &LanConfigParam_IPv6DynamicRouterInfoPrefixLength{
+					SetSelector: i,
+				}
+			}
+
+			for _, ipv6DynamicRouterInfoPrefixLength := range lanConfig.IPv6DynamicRouterInfoPrefixLength {
+				if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DynamicRouterInfoPrefixLength); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	if lanConfig.IPv6DynamicRouterInfoPrefixValue != nil {
+		if len(lanConfig.IPv6DynamicRouterInfoPrefixValue) == 0 && ipv6DynamicRouterInfoCount > 0 {
+			count := ipv6DynamicRouterInfoCount
+
+			lanConfig.IPv6DynamicRouterInfoPrefixValue = make([]*LanConfigParam_IPv6DynamicRouterInfoPrefixValue, count)
+			for i := uint8(0); i < count; i++ {
+				lanConfig.IPv6DynamicRouterInfoPrefixValue[i] = &LanConfigParam_IPv6DynamicRouterInfoPrefixValue{
+					SetSelector: i,
+				}
+			}
+
+			for _, ipv6DynamicRouterInfoPrefixValue := range lanConfig.IPv6DynamicRouterInfoPrefixValue {
+				if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DynamicRouterInfoPrefixValue); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	if lanConfig.IPv6DynamicRouterReceivedHopLimit != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6DynamicRouterReceivedHopLimit); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6NDSLAACTimingConfigSupport != nil {
+		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6NDSLAACTimingConfigSupport); canIgnoreError(err) != nil {
+			return err
+		}
+	}
+
+	if lanConfig.IPv6NDSLAACTimingConfig != nil {
+		// Todo
+
+	}
 	return nil
 }

@@ -208,7 +208,7 @@ var (
 	CommandSetLanConfigParams = Command{ID: 0x01, NetFn: NetFnTransportRequest, Name: "Set LAN Configuration Parameters"}
 	CommandGetLanConfigParams = Command{ID: 0x02, NetFn: NetFnTransportRequest, Name: "Get LAN Configuration Parameters"}
 	CommandSuspendARPs        = Command{ID: 0x03, NetFn: NetFnTransportRequest, Name: "Suspend BMC ARPs"}
-	CommandGetIpStatistics    = Command{ID: 0x04, NetFn: NetFnTransportRequest, Name: "Get IP/UDP/RMCP Statistics"}
+	CommandGetIPStatistics    = Command{ID: 0x04, NetFn: NetFnTransportRequest, Name: "Get IP/UDP/RMCP Statistics"}
 
 	// Serial/Modem Device Commands
 	CommandSetSerialConfig        = Command{ID: 0x10, NetFn: NetFnTransportRequest, Name: "Set Serial/Modem Configuration"}

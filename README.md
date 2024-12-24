@@ -76,9 +76,9 @@ but others are not. Like `ipmitool sdr list`, it's a loop of `GetSDR` IPMI comma
 
 So this library also implements some methods that are not IPMI commands defined
 in IPMI specification, but just some common helpers, like `GetSDRs` to get all SDRs.
-These methods are marked with an asterisk `(*)` after the method name in the following docs.
+These methods are marked with an asterisk `*` after the method name in the following docs.
 
-The implementation logic of IPMI commands is almost same. See [Contributing](./CONTRIBUTING.md)
+The implementation logic of IPMI commands are almost same. See [Contributing](./CONTRIBUTING.md)
 
 > More commands are ongoing ...
 
@@ -142,13 +142,13 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | GetChannelInfo                 | :white_check_mark: | channel info                 |
 | SetUserAccess                  | :white_check_mark: |
 | GetUserAccess                  | :white_check_mark: | user summary                 |
-| GetUsers (*)                   | :white_check_mark: | user list                    |
+| GetUsers `*`                   | :white_check_mark: | user list                    |
 | SetUsername                    | :white_check_mark: | user set name                |
-| DisableUser (*)                | :white_check_mark: | user disable                 |
-| EnableUser (*)                 | :white_check_mark: | user enable                  |
+| DisableUser `*`                | :white_check_mark: | user disable                 |
+| EnableUser `*`                 | :white_check_mark: | user enable                  |
 | GetUsername                    | :white_check_mark: |
 | SetUserPassword                | :white_check_mark: | user set password            |
-| TestUserPassword (*)           | :white_check_mark: | user test                    |
+| TestUserPassword `*`           | :white_check_mark: | user test                    |
 | ActivatePayload                |                    |
 | DeactivatePayload              |                    |
 | GetPayloadActivationStatus     |                    |
@@ -177,7 +177,7 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | SetPowerRestorePolicy     | :white_check_mark: | chassis policy list/always-on/previous/always-off |
 | GetSystemRestartCause     | :white_check_mark: | chassis restart_cause                             |
 | SetSystemBootOptions      | :white_check_mark: | chassis bootparam set                             |
-| SetBootParamBootFlags (*) | :white_check_mark: | chassis bootdev                                   |
+| SetBootParamBootFlags `*` | :white_check_mark: | chassis bootdev                                   |
 | GetSystemBootOptions      | :white_check_mark: | chassis bootparam get                             |
 | SetFrontPanelEnables      | :white_check_mark: |
 | SetPowerCycleInterval     | :white_check_mark: |
@@ -224,9 +224,9 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | SetSensorType                  | :white_check_mark: |
 | GetSensorType                  | :white_check_mark: |
 | SetSensorReadingAndEventStatus | :white_check_mark: |
-| GetSensors (*)                 | :white_check_mark: | sensor list, sdr type        |
-| GetSensorByID (*)              | :white_check_mark: |                              |
-| GetSensorByName (*)            | :white_check_mark: | sensor get                   |
+| GetSensors `*`                 | :white_check_mark: | sensor list, sdr type        |
+| GetSensorByID `*`              | :white_check_mark: |                              |
+| GetSensorByName `*`            | :white_check_mark: | sensor get                   |
 
 ### FRU Device Commands
 
@@ -235,8 +235,8 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | GetFRUInventoryAreaInfo | :white_check_mark: |
 | ReadFRUData             | :white_check_mark: |
 | WriteFRUData            | :white_check_mark: |
-| GetFRU (*)              | :white_check_mark: | fru print                    |
-| GetFRUs (*)             | :white_check_mark: | fru print                    |
+| GetFRU `*`              | :white_check_mark: | fru print                    |
+| GetFRUs `*`             | :white_check_mark: | fru print                    |
 
 
 ### SDR Device Commands
@@ -247,9 +247,9 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 | GetSDRRepoAllocInfo    | :white_check_mark: | sdr info                     |
 | ReserveSDRRepo         |                    |
 | GetSDR                 | :white_check_mark: |                              |
-| GetSDRs (*)            | :white_check_mark: |                              |
-| GetSDRBySensorID (*)   | :white_check_mark: |                              |
-| GetSDRBySensorName (*) | :white_check_mark: |
+| GetSDRs `*`            | :white_check_mark: |                              |
+| GetSDRBySensorID `*`   | :white_check_mark: |                              |
+| GetSDRBySensorName `*` | :white_check_mark: |
 | AddSDR                 |                    |
 | PartialAddSDR          |                    |
 | DeleteSDR              |                    |
@@ -281,13 +281,16 @@ The implementation logic of IPMI commands is almost same. See [Contributing](./C
 
 ### LAN Device Commands
 
-| Method             | Status             | corresponding ipmitool usage |
-| ------------------ | ------------------ | ---------------------------- |
-| SetLanConfigParams |                    |
-| GetLanConfigParams | :white_check_mark: |
-| GetLanConfig (*)   | :white_check_mark: | lan print                    |
-| SuspendARPs        | :white_check_mark: |
-| GetIpStatistics    | :white_check_mark: |
+| Method                    | Status             | corresponding ipmitool usage |
+| ------------------------- | ------------------ | ---------------------------- |
+| SetLanConfigParams        | :white_check_mark: | lan set                      |
+| SetLanConfigParamsFor `*` | :white_check_mark: | lan set                      |
+| GetLanConfigParams        | :white_check_mark: |
+| GetLanConfigParamsFor `*` | :white_check_mark: | lan print                    |
+| GetLanConfig `*`          | :white_check_mark: | lan print                    |
+| GetLanConfigFor `*`       | :white_check_mark: | lan print                    |
+| SuspendARPs               | :white_check_mark: |
+| GetIPStatistics           | :white_check_mark: |
 
 ### Serial/Modem Device Commands
 

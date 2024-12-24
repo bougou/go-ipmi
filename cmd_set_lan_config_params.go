@@ -1,11 +1,14 @@
 package ipmi
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // 23.1 Set LAN Configuration Parameters Command
 type SetLanConfigParamsRequest struct {
-	ChannelNumber int8
-	ParamSelector LanParamSelector
+	ChannelNumber uint8
+	ParamSelector LanConfigParamSelector
 	ConfigData    []byte
 }
 
@@ -38,10 +41,25 @@ func (res *SetLanConfigParamsResponse) Format() string {
 	return ""
 }
 
-// Todo
-func (c *Client) SetLanConfigParams(ctx context.Context) (response *SetLanConfigParamsResponse, err error) {
-	request := &SetLanConfigParamsRequest{}
+func (c *Client) SetLanConfigParams(ctx context.Context, channelNumber uint8, paramSelector LanConfigParamSelector, configData []byte) (response *SetLanConfigParamsResponse, err error) {
+	request := &SetLanConfigParamsRequest{
+		ChannelNumber: channelNumber,
+		ParamSelector: paramSelector,
+		ConfigData:    configData,
+	}
 	response = &SetLanConfigParamsResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
+}
+
+func (c *Client) SetLanConfigParamsFor(ctx context.Context, channelNumber uint8, param LanConfigParameter) error {
+	paramSelector, _, _ := param.LanConfigParamSelector()
+	c.DebugBytes(fmt.Sprintf(">> Set param data for (%s[%d]) ", paramSelector.String(), paramSelector), param.Pack(), 8)
+
+	if _, err := c.SetLanConfigParams(ctx, channelNumber, paramSelector, param.Pack()); err != nil {
+		c.Debugf("!!! Set LanConfigParam for paramSelector (%d) %s failed, err: %v\n", uint8(paramSelector), paramSelector, err)
+		return err
+	}
+
+	return nil
 }

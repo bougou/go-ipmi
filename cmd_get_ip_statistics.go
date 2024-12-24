@@ -38,7 +38,7 @@ func (req *GetIPStatisticsRequest) Pack() []byte {
 }
 
 func (req *GetIPStatisticsRequest) Command() Command {
-	return CommandGetIpStatistics
+	return CommandGetIPStatistics
 }
 
 func (res *GetIPStatisticsResponse) CompletionCodes() map[uint8]string {

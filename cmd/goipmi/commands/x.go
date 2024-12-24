@@ -11,6 +11,7 @@ import (
 
 const timeFormat = time.RFC3339
 
+// x Experimental commands.
 func NewCmdX() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "x",
@@ -30,6 +31,8 @@ func NewCmdX() *cobra.Command {
 	cmd.AddCommand(NewCmdXGetDeviceGUID())
 	cmd.AddCommand(NewCmdXGetSystemGUID())
 	cmd.AddCommand(NewCmdXGetPEFConfig())
+	cmd.AddCommand(NewCmdXGetLanConfigFor())
+	cmd.AddCommand(NewCmdXGetLanConfigFull())
 
 	return cmd
 }
@@ -191,5 +194,78 @@ func NewCmdXGetPEFConfig() *cobra.Command {
 		},
 	}
 
+	return cmd
+}
+
+func NewCmdXGetLanConfigFor() *cobra.Command {
+	usage := `
+	get-lan-config-for [<channel number>]
+	`
+
+	cmd := &cobra.Command{
+		Use:   "get-lan-config-for",
+		Short: "get-lan-config-for",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				CheckErr(fmt.Errorf("usage: %s", usage))
+			}
+
+			id, err := parseStringToInt64(args[0])
+			if err != nil {
+				CheckErr(fmt.Errorf("invalid channel number passed, err: %s", err))
+			}
+			channelNumber := uint8(id)
+
+			ctx := context.Background()
+
+			lanConfig := ipmi.LanConfig{
+				IP:               &ipmi.LanConfigParam_IP{},
+				SubnetMask:       &ipmi.LanConfigParam_SubnetMask{},
+				DefaultGatewayIP: &ipmi.LanConfigParam_DefaultGatewayIP{},
+			}
+
+			if err := client.GetLanConfigFor(ctx, channelNumber, &lanConfig); err != nil {
+				CheckErr(fmt.Errorf("GetLanConfig failed, err: %s", err))
+			}
+
+			client.Debug("Lan Config", lanConfig)
+
+			fmt.Println(lanConfig.Format())
+		},
+	}
+	return cmd
+}
+
+func NewCmdXGetLanConfigFull() *cobra.Command {
+	usage := `
+	get-lan-config-for [<channel number>]
+	`
+
+	cmd := &cobra.Command{
+		Use:   "get-lan-config-full",
+		Short: "get-lan-config-full",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				CheckErr(fmt.Errorf("usage: %s", usage))
+			}
+
+			id, err := parseStringToInt64(args[0])
+			if err != nil {
+				CheckErr(fmt.Errorf("invalid channel number passed, err: %s", err))
+			}
+			channelNumber := uint8(id)
+
+			ctx := context.Background()
+
+			lanConfig, err := client.GetLanConfigFull(ctx, channelNumber)
+			if err != nil {
+				CheckErr(fmt.Errorf("GetLanConfig failed, err: %s", err))
+			}
+
+			client.Debug("Lan Config", lanConfig)
+
+			fmt.Println(lanConfig.Format())
+		},
+	}
 	return cmd
 }

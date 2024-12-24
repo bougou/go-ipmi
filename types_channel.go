@@ -173,14 +173,29 @@ func (l PrivilegeLevel) String() string {
 	return "NO ACCESS"
 }
 
-// see: Table 22-28, Get Channel Access Command
+func (l PrivilegeLevel) Symbol() string {
+	m := map[PrivilegeLevel]string{
+		0x00: "X",
+		0x01: "c",
+		0x02: "u",
+		0x03: "o",
+		0x04: "a",
+		0x05: "O",
+	}
+	s, ok := m[l]
+	if ok {
+		return s
+	}
+	return "-"
+}
 
+// see: Table 22-28, Get Channel Access Command
 type ChannelAccessOption uint8
 
 const (
 	ChannelAccessOption_NoChange    ChannelAccessOption = 0
-	ChannelAccessOption_NonVolatile ChannelAccessOption = 1
-	ChannelAccessOption_Volatile    ChannelAccessOption = 2
+	ChannelAccessOption_NonVolatile ChannelAccessOption = 1 // get non-volatile Channel Access
+	ChannelAccessOption_Volatile    ChannelAccessOption = 2 // get present volatile (active) setting of Channel Access
 )
 
 // 6.6 Channel Access Modes
