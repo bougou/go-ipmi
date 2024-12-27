@@ -103,7 +103,7 @@ var LanParams = []LanParam{
 	{Selector: LanParam_VLANID, DataSize: 2, Name: "802.1q VLAN ID"},
 	{Selector: LanParam_VLANPriority, DataSize: 1, Name: "802.1q VLAN Priority"},
 	{Selector: LanParam_CipherSuiteEntrySupport, DataSize: 1, Name: "RMCP+ Cipher Suite Count"},
-	{Selector: LanParam_CipherSuiteEntries, DataSize: 17, Name: "RMCP+ Cipher Suites"},
+	{Selector: LanParam_CipherSuiteEntries, DataSize: 1, Name: "RMCP+ Cipher Suites"},
 	{Selector: LanParam_CipherSuitePrivilegeLevels, DataSize: 9, Name: "Cipher Suite Priv Max"},
 	{Selector: LanParam_BadPasswordThreshold, DataSize: 4, Name: "Bad Password Threshold"},
 }
