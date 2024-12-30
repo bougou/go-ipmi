@@ -265,22 +265,20 @@ func FillLanConfig(lanConfig *LanConfig, paramSelector LanParamSelector, paramDa
 		lanConfig.RMCPCipherSuitesCount = paramData[0] & 0x1f
 
 	case LanParam_CipherSuiteEntries:
-		if len(paramData) <= 17 {
-			ids := []CipherSuiteID{}
-			var count uint8 = 0
-			for i, v := range paramData {
-				if i == 0 {
-					// first byte is Reserved
-					continue
-				}
-				if count+1 > lanConfig.RMCPCipherSuitesCount {
-					break
-				}
-				ids = append(ids, CipherSuiteID(v))
-				count += 1
+		ids := []CipherSuiteID{}
+		var count uint8 = 0
+		for i, v := range paramData {
+			if i == 0 {
+				// first byte is Reserved
+				continue
 			}
-			lanConfig.RMCPCipherSuiteEntries = ids
+			if count+1 > lanConfig.RMCPCipherSuitesCount {
+				break
+			}
+			ids = append(ids, CipherSuiteID(v))
+			count += 1
 		}
+		lanConfig.RMCPCipherSuiteEntries = ids
 
 	case LanParam_CipherSuitePrivilegeLevels:
 		levels := []PrivilegeLevel{}
