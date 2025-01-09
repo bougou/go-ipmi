@@ -83,48 +83,56 @@ func (c *Client) GetDCMIConfigParamsFor(ctx context.Context, param DCMIConfigPar
 	return nil
 }
 
-func (c *Client) GetDCMIConfigurations(ctx context.Context) (*DCMIConfig, error) {
-	dcmiConfig := &DCMIConfig{}
-
-	{
-		param := DCMIConfigParam_ActivateDHCP{}
-		if err := c.GetDCMIConfigParamsFor(ctx, &param); err != nil {
-			return nil, err
-		}
-		dcmiConfig.ActivateDHCP = param
+func (c *Client) GetDCMIConfig(ctx context.Context) (*DCMIConfig, error) {
+	dcmiConfig := &DCMIConfig{
+		ActivateDHCP:           &DCMIConfigParam_ActivateDHCP{},
+		DiscoveryConfiguration: &DCMIConfigParam_DiscoveryConfiguration{},
+		DHCPTiming1:            &DCMIConfigParam_DHCPTiming1{},
+		DHCPTiming2:            &DCMIConfigParam_DHCPTiming2{},
+		DHCPTiming3:            &DCMIConfigParam_DHCPTiming3{},
 	}
 
-	{
-		param := DCMIConfigParam_DiscoveryConfiguration{}
-		if err := c.GetDCMIConfigParamsFor(ctx, &param); err != nil {
-			return nil, err
-		}
-		dcmiConfig.DiscoveryConfiguration = param
-	}
-
-	{
-		param := DCMIConfigParam_DHCPTiming1{}
-		if err := c.GetDCMIConfigParamsFor(ctx, &param); err != nil {
-			return nil, err
-		}
-		dcmiConfig.DHCPTiming1 = param
-	}
-
-	{
-		param := DCMIConfigParam_DHCPTiming2{}
-		if err := c.GetDCMIConfigParamsFor(ctx, &param); err != nil {
-			return nil, err
-		}
-		dcmiConfig.DHCPTiming2 = param
-	}
-
-	{
-		param := DCMIConfigParam_DHCPTiming3{}
-		if err := c.GetDCMIConfigParamsFor(ctx, &param); err != nil {
-			return nil, err
-		}
-		dcmiConfig.DHCPTiming3 = param
+	if err := c.GetDCMIConfigFor(ctx, dcmiConfig); err != nil {
+		return nil, err
 	}
 
 	return dcmiConfig, nil
+}
+
+func (c *Client) GetDCMIConfigFor(ctx context.Context, dcmiConfig *DCMIConfig) error {
+	if dcmiConfig == nil {
+		return nil
+	}
+
+	if dcmiConfig.ActivateDHCP != nil {
+		if err := c.GetDCMIConfigParamsFor(ctx, dcmiConfig.ActivateDHCP); err != nil {
+			return err
+		}
+	}
+
+	if dcmiConfig.DiscoveryConfiguration != nil {
+		if err := c.GetDCMIConfigParamsFor(ctx, dcmiConfig.DiscoveryConfiguration); err != nil {
+			return err
+		}
+	}
+
+	if dcmiConfig.DHCPTiming1 != nil {
+		if err := c.GetDCMIConfigParamsFor(ctx, dcmiConfig.DHCPTiming1); err != nil {
+			return err
+		}
+	}
+
+	if dcmiConfig.DHCPTiming2 != nil {
+		if err := c.GetDCMIConfigParamsFor(ctx, dcmiConfig.DHCPTiming2); err != nil {
+			return err
+		}
+	}
+
+	if dcmiConfig.DHCPTiming3 != nil {
+		if err := c.GetDCMIConfigParamsFor(ctx, dcmiConfig.DHCPTiming3); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

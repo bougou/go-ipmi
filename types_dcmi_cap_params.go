@@ -27,27 +27,64 @@ const (
 	DCMICapParamSelector_EnhancedSystemPowerStatisticsAttributes = DCMICapParamSelector(0x05)
 )
 
+func (dcmiCapParamSelector DCMICapParamSelector) String() string {
+	m := map[DCMICapParamSelector]string{
+		DCMICapParamSelector_SupportedDCMICapabilities:               "Supported DCMI capabilities",
+		DCMICapParamSelector_MandatoryPlatformAttributes:             "Mandatory platform attributes",
+		DCMICapParamSelector_OptionalPlatformAttributes:              "Optional platform attributes",
+		DCMICapParamSelector_ManageabilityAccessAttributes:           "Manageability access attributes",
+		DCMICapParamSelector_EnhancedSystemPowerStatisticsAttributes: "Enhanced system power statistics attributes",
+	}
+	s, ok := m[dcmiCapParamSelector]
+	if ok {
+		return s
+	}
+
+	return "Unknown"
+}
+
 type DCMICapabilities struct {
-	SupportedDCMICapabilities               DCMICapParam_SupportedDCMICapabilities
-	MandatoryPlatformAttributes             DCMICapParam_MandatoryPlatformAttributes
-	OptionalPlatformAttributes              DCMICapParam_OptionalPlatformAttributes
-	ManageabilityAccessAttributes           DCMICapParam_ManageabilityAccessAttributes
-	EnhancedSystemPowerStatisticsAttributes DCMICapParam_EnhancedSystemPowerStatisticsAttributes
+	SupportedDCMICapabilities               *DCMICapParam_SupportedDCMICapabilities
+	MandatoryPlatformAttributes             *DCMICapParam_MandatoryPlatformAttributes
+	OptionalPlatformAttributes              *DCMICapParam_OptionalPlatformAttributes
+	ManageabilityAccessAttributes           *DCMICapParam_ManageabilityAccessAttributes
+	EnhancedSystemPowerStatisticsAttributes *DCMICapParam_EnhancedSystemPowerStatisticsAttributes
 }
 
 func (dcmiCap *DCMICapabilities) Format() string {
-	return fmt.Sprintf(`
-%s
-%s
-%s
-%s
-%s`,
-		dcmiCap.SupportedDCMICapabilities.Format(),
-		dcmiCap.MandatoryPlatformAttributes.Format(),
-		dcmiCap.OptionalPlatformAttributes.Format(),
-		dcmiCap.ManageabilityAccessAttributes.Format(),
-		dcmiCap.EnhancedSystemPowerStatisticsAttributes.Format(),
-	)
+	format := func(param DCMICapParameter) string {
+		paramSelector := param.DCMICapParamSelector()
+		content := param.Format()
+		if content[len(content)-1] != '\n' {
+			content += "\n"
+		}
+		content += "\n"
+		return fmt.Sprintf("[%02d] %-44s: %s", paramSelector, paramSelector.String(), content)
+	}
+
+	out := ""
+
+	if dcmiCap.SupportedDCMICapabilities != nil {
+		out += format(dcmiCap.SupportedDCMICapabilities)
+	}
+
+	if dcmiCap.MandatoryPlatformAttributes != nil {
+		out += format(dcmiCap.MandatoryPlatformAttributes)
+	}
+
+	if dcmiCap.OptionalPlatformAttributes != nil {
+		out += format(dcmiCap.OptionalPlatformAttributes)
+	}
+
+	if dcmiCap.ManageabilityAccessAttributes != nil {
+		out += format(dcmiCap.ManageabilityAccessAttributes)
+	}
+
+	if dcmiCap.EnhancedSystemPowerStatisticsAttributes != nil {
+		out += format(dcmiCap.EnhancedSystemPowerStatisticsAttributes)
+	}
+
+	return out
 }
 
 type DCMICapParam_SupportedDCMICapabilities struct {
@@ -80,8 +117,6 @@ func (dcmiCap *DCMICapParam_SupportedDCMICapabilities) Unpack(paramData []byte) 
 
 func (dcmiCap *DCMICapParam_SupportedDCMICapabilities) Format() string {
 	return fmt.Sprintf(`
-    Supported DCMI capabilities:
-
         Optional platform capabilities
             Power management                  (%s)
 
@@ -133,8 +168,6 @@ func (dcmiCap *DCMICapParam_MandatoryPlatformAttributes) Unpack(paramData []byte
 
 func (dcmiCap *DCMICapParam_MandatoryPlatformAttributes) Format() string {
 	return fmt.Sprintf(`
-    Mandatory platform attributes:
-
         SEL Attributes:
             SEL automatic rollover is  (%s)
             %d SEL entries
@@ -178,12 +211,10 @@ func (param *DCMICapParam_OptionalPlatformAttributes) Unpack(paramData []byte) e
 
 func (param *DCMICapParam_OptionalPlatformAttributes) Format() string {
 	return fmt.Sprintf(`
-    Optional Platform Attributes:
-
         Power Management:
-            Slave address of device: %#02x
-            Channel number is %#02x %s
-            Device revision is %d
+            Slave address of device : %#02x
+            Channel number is       : %#02x %s
+            Device revision is      : %d
 `,
 		param.PowerMgmtDeviceSlaveAddr,
 		param.PewerMgmtControllerChannelNumber,
@@ -219,10 +250,9 @@ func (param *DCMICapParam_ManageabilityAccessAttributes) Unpack(paramData []byte
 }
 func (param *DCMICapParam_ManageabilityAccessAttributes) Format() string {
 	return fmt.Sprintf(`
-    Manageability Access Attributes:
-        Primary LAN channel number: %d is (%s)
-        Secondary LAN channel number: %d is (%s)
-        Serial channel number: %d is (%s)
+        Primary LAN channel number   : %d is %s
+        Secondary LAN channel number : %d is %s
+        Serial channel number        : %d is %s
 `,
 		param.PrimaryLANChannelNumber,
 		formatBool(param.PrimaryLANChannelNumber != 0xFF, "available", "unavailable"),
@@ -234,6 +264,7 @@ func (param *DCMICapParam_ManageabilityAccessAttributes) Format() string {
 }
 
 type DCMICapParam_EnhancedSystemPowerStatisticsAttributes struct {
+	RollingCount                 uint8
 	RollingAverageTimePeriodsSec []int
 }
 
@@ -246,16 +277,18 @@ func (param *DCMICapParam_EnhancedSystemPowerStatisticsAttributes) Pack() []byte
 }
 
 func (param *DCMICapParam_EnhancedSystemPowerStatisticsAttributes) Unpack(paramData []byte) error {
-	if len(paramData) < 2 {
-		return ErrUnpackedDataTooShortWith(len(paramData), 2)
+	if len(paramData) < 1 {
+		return ErrUnpackedDataTooShortWith(len(paramData), 1)
 	}
 
-	periodsCount := int(paramData[0])
-	if len(paramData) < 1+periodsCount {
-		return ErrNotEnoughDataWith("rolling average time periods", len(paramData), 1+periodsCount)
+	param.RollingCount = paramData[0]
+
+	rollingCount := int(param.RollingCount)
+	if len(paramData) < 1+rollingCount {
+		return ErrNotEnoughDataWith("rolling average time periods", len(paramData), 1+rollingCount)
 	}
 
-	periodsData, _, _ := unpackBytes(paramData, 1, periodsCount)
+	periodsData, _, _ := unpackBytes(paramData, 1, rollingCount)
 	for _, periodData := range periodsData {
 		durationUnit := periodData >> 6
 		durationNumber := periodData & 0x3F
@@ -279,12 +312,10 @@ func (param *DCMICapParam_EnhancedSystemPowerStatisticsAttributes) Unpack(paramD
 }
 func (param *DCMICapParam_EnhancedSystemPowerStatisticsAttributes) Format() string {
 	return fmt.Sprintf(`
-    Enhanced System Power Statistics Attributes:
-
-        Number of rolling average time periods: %d
-        rolling average time periods: %v
+        Rolling count                : %d
+        Rolling average time periods : %v
 `,
-		len(param.RollingAverageTimePeriodsSec),
+		param.RollingCount,
 		param.RollingAverageTimePeriodsSec,
 	)
 }

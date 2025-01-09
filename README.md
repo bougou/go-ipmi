@@ -380,6 +380,9 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 | Method                          | Status             | corresponding ipmitool usage |
 | ------------------------------- | ------------------ | ---------------------------- |
 | GetDCMICapabilitiesInfo         | :white_check_mark: | dcmi discovery               |
+| GetDCMICapabilitiesInfoFor (*)  | :white_check_mark: | dcmi discovery               |
+| GetDCMICapabilities (*)         | :white_check_mark: | dcmi discovery               |
+| GetDCMICapabilitiesFor (*)      | :white_check_mark: | dcmi discovery               |
 | GetDCMIPowerReading             | :white_check_mark: | dcmi power reading           |
 | GetDCMIPowerLimit               | :white_check_mark: | dcmi power get_limit         |
 | SetDCMIPowerLimit               | :white_check_mark: | dcmi power set_limit         |
@@ -395,6 +398,9 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 | GetDCMITemperatureReadings      | :white_check_mark: | dcmi get_temp_reading        |
 | SetDCMIConfigParams             | :white_check_mark: | dcmi set_conf_param          |
 | GetDCMIConfigParams             | :white_check_mark: | dcmi get_conf_param          |
+| GetDCMIConfigParamsFor (*)      | :white_check_mark: | dcmi get_conf_param          |
+| GetDCMIConfig (*)               | :white_check_mark: | dcmi get_conf_param          |
+| GetDCMIConfigFor (*)            | :white_check_mark: | dcmi get_conf_param          |
 
 ## Reference
 

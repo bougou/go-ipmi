@@ -27,11 +27,11 @@ const (
 
 func (paramSelector DCMIConfigParamSelector) String() string {
 	m := map[DCMIConfigParamSelector]string{
-		DCMIConfigParamSelector_ActivateDHCP:           "ActivateDHCP",
-		DCMIConfigParamSelector_DiscoveryConfiguration: "DiscoveryConfiguration",
-		DCMIConfigParamSelector_DHCPTiming1:            "DHCPTiming1",
-		DCMIConfigParamSelector_DHCPTiming2:            "DHCPTiming2",
-		DCMIConfigParamSelector_DHCPTiming3:            "DHCPTiming3",
+		DCMIConfigParamSelector_ActivateDHCP:           "Activate DHCP",
+		DCMIConfigParamSelector_DiscoveryConfiguration: "Discovery Configuration",
+		DCMIConfigParamSelector_DHCPTiming1:            "DHCP Timing1",
+		DCMIConfigParamSelector_DHCPTiming2:            "DHCP Timing2",
+		DCMIConfigParamSelector_DHCPTiming3:            "DHCP Timing3",
 	}
 
 	if v, ok := m[paramSelector]; ok {
@@ -42,26 +42,47 @@ func (paramSelector DCMIConfigParamSelector) String() string {
 }
 
 type DCMIConfig struct {
-	ActivateDHCP           DCMIConfigParam_ActivateDHCP
-	DiscoveryConfiguration DCMIConfigParam_DiscoveryConfiguration
-	DHCPTiming1            DCMIConfigParam_DHCPTiming1
-	DHCPTiming2            DCMIConfigParam_DHCPTiming2
-	DHCPTiming3            DCMIConfigParam_DHCPTiming3
+	ActivateDHCP           *DCMIConfigParam_ActivateDHCP
+	DiscoveryConfiguration *DCMIConfigParam_DiscoveryConfiguration
+	DHCPTiming1            *DCMIConfigParam_DHCPTiming1
+	DHCPTiming2            *DCMIConfigParam_DHCPTiming2
+	DHCPTiming3            *DCMIConfigParam_DHCPTiming3
 }
 
 func (dcmiConfig *DCMIConfig) Format() string {
-	return fmt.Sprintf(`
-%s
-%s
-%s
-%s
-%s`,
-		dcmiConfig.ActivateDHCP.Format(),
-		dcmiConfig.DiscoveryConfiguration.Format(),
-		dcmiConfig.DHCPTiming1.Format(),
-		dcmiConfig.DHCPTiming2.Format(),
-		dcmiConfig.DHCPTiming3.Format(),
-	)
+	out := ""
+
+	format := func(param DCMIConfigParameter) string {
+		paramSelector, _ := param.DCMIConfigParameter()
+
+		content := param.Format()
+		if content[len(content)-1] != '\n' {
+			content += "\n"
+		}
+		return fmt.Sprintf("[%02d] %-24s: %s", paramSelector, paramSelector.String(), content)
+	}
+
+	if dcmiConfig.ActivateDHCP != nil {
+		out = format(dcmiConfig.ActivateDHCP)
+	}
+
+	if dcmiConfig.DiscoveryConfiguration != nil {
+		out += format(dcmiConfig.DiscoveryConfiguration)
+	}
+
+	if dcmiConfig.DHCPTiming1 != nil {
+		out += format(dcmiConfig.DHCPTiming1)
+	}
+
+	if dcmiConfig.DHCPTiming2 != nil {
+		out += format(dcmiConfig.DHCPTiming2)
+	}
+
+	if dcmiConfig.DHCPTiming3 != nil {
+		out += format(dcmiConfig.DHCPTiming3)
+	}
+
+	return out
 }
 
 type DCMIConfigParam_ActivateDHCP struct {
@@ -98,11 +119,7 @@ func (param *DCMIConfigParam_ActivateDHCP) Unpack(paramData []byte) error {
 }
 
 func (param *DCMIConfigParam_ActivateDHCP) Format() string {
-	return fmt.Sprintf(`
-Activate DHCP: %v
-`,
-		param.Activate,
-	)
+	return fmt.Sprintf(`%v`, param.Activate)
 }
 
 type DCMIConfigParam_DiscoveryConfiguration struct {
@@ -145,11 +162,9 @@ func (param *DCMIConfigParam_DiscoveryConfiguration) Unpack(paramData []byte) er
 
 func (param *DCMIConfigParam_DiscoveryConfiguration) Format() string {
 	return fmt.Sprintf(`
-DHCP Discovery method:
-    Random Backoff Enabled:             %v
-    Include DHCPOption60AndOption43:    %v (Vendor class identifier using DCMI IANA, plus Vendor class
--specific Information)
-    Include DHCPOption12:               %v (Management Controller ID String)
+        Random Backoff Enabled          : %v
+        Include DHCPOption60AndOption43 : %v (Vendor class identifier using DCMI IANA, plus Vendor class-specific Information)
+        Include DHCPOption12            : %v (Management Controller ID String)
 `,
 		param.RandomBackoffEnabled,
 		formatBool(param.IncludeDHCPOption60And43, "enabled", "disabled"),
@@ -187,7 +202,9 @@ func (param *DCMIConfigParam_DHCPTiming1) Unpack(paramData []byte) error {
 }
 
 func (param *DCMIConfigParam_DHCPTiming1) Format() string {
-	return fmt.Sprintf(`Initial timeout interval: %d seconds`,
+	return fmt.Sprintf(`
+        Initial timeout interval : %d seconds
+`,
 		param.InitialTimeoutIntervalSec,
 	)
 }
@@ -220,7 +237,9 @@ func (param *DCMIConfigParam_DHCPTiming2) Unpack(paramData []byte) error {
 }
 
 func (param *DCMIConfigParam_DHCPTiming2) Format() string {
-	return fmt.Sprintf(`Server contact timeout interval: %d seconds`,
+	return fmt.Sprintf(`
+        Server contact timeout interval: %d seconds
+`,
 		param.ServerContactTimeoutIntervalSec)
 }
 
@@ -251,7 +270,9 @@ func (param *DCMIConfigParam_DHCPTiming3) Unpack(paramData []byte) error {
 }
 
 func (param *DCMIConfigParam_DHCPTiming3) Format() string {
-	return fmt.Sprintf(`Server contact retry interval: %d seconds`,
+	return fmt.Sprintf(`
+        Server contact retry interval: %d seconds
+`,
 		param.ServerContactRetryIntervalSec,
 	)
 }

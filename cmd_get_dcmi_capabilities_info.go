@@ -111,48 +111,56 @@ func (c *Client) GetDCMICapabilitiesInfoFor(ctx context.Context, param DCMICapPa
 	return nil
 }
 
-func (c *Client) DiscoveryDCMICapabilities(ctx context.Context) (*DCMICapabilities, error) {
-	dcmiCap := &DCMICapabilities{}
-
-	{
-		param := DCMICapParam_SupportedDCMICapabilities{}
-		if err := c.GetDCMICapabilitiesInfoFor(ctx, &param); err != nil {
-			return nil, err
-		}
-		dcmiCap.SupportedDCMICapabilities = param
+func (c *Client) GetDCMICapabilities(ctx context.Context) (*DCMICapabilities, error) {
+	dcmiCap := &DCMICapabilities{
+		SupportedDCMICapabilities:               &DCMICapParam_SupportedDCMICapabilities{},
+		MandatoryPlatformAttributes:             &DCMICapParam_MandatoryPlatformAttributes{},
+		OptionalPlatformAttributes:              &DCMICapParam_OptionalPlatformAttributes{},
+		ManageabilityAccessAttributes:           &DCMICapParam_ManageabilityAccessAttributes{},
+		EnhancedSystemPowerStatisticsAttributes: &DCMICapParam_EnhancedSystemPowerStatisticsAttributes{},
 	}
 
-	{
-		param := DCMICapParam_MandatoryPlatformAttributes{}
-		if err := c.GetDCMICapabilitiesInfoFor(ctx, &param); err != nil {
-			return nil, err
-		}
-		dcmiCap.MandatoryPlatformAttributes = param
-	}
-
-	{
-		param := DCMICapParam_OptionalPlatformAttributes{}
-		if err := c.GetDCMICapabilitiesInfoFor(ctx, &param); err != nil {
-			return nil, err
-		}
-		dcmiCap.OptionalPlatformAttributes = param
-	}
-
-	{
-		param := DCMICapParam_ManageabilityAccessAttributes{}
-		if err := c.GetDCMICapabilitiesInfoFor(ctx, &param); err != nil {
-			return nil, err
-		}
-		dcmiCap.ManageabilityAccessAttributes = param
-	}
-
-	{
-		param := DCMICapParam_EnhancedSystemPowerStatisticsAttributes{}
-		if err := c.GetDCMICapabilitiesInfoFor(ctx, &param); err != nil {
-			return nil, err
-		}
-		dcmiCap.EnhancedSystemPowerStatisticsAttributes = param
+	if err := c.GetDCMICapabilitiesFor(ctx, dcmiCap); err != nil {
+		return nil, err
 	}
 
 	return dcmiCap, nil
+}
+
+func (c *Client) GetDCMICapabilitiesFor(ctx context.Context, dcmiCap *DCMICapabilities) error {
+	if dcmiCap == nil {
+		return nil
+	}
+
+	if dcmiCap.SupportedDCMICapabilities != nil {
+		if err := c.GetDCMICapabilitiesInfoFor(ctx, dcmiCap.SupportedDCMICapabilities); err != nil {
+			return err
+		}
+	}
+
+	if dcmiCap.MandatoryPlatformAttributes != nil {
+		if err := c.GetDCMICapabilitiesInfoFor(ctx, dcmiCap.MandatoryPlatformAttributes); err != nil {
+			return err
+		}
+	}
+
+	if dcmiCap.OptionalPlatformAttributes != nil {
+		if err := c.GetDCMICapabilitiesInfoFor(ctx, dcmiCap.OptionalPlatformAttributes); err != nil {
+			return err
+		}
+	}
+
+	if dcmiCap.ManageabilityAccessAttributes != nil {
+		if err := c.GetDCMICapabilitiesInfoFor(ctx, dcmiCap.ManageabilityAccessAttributes); err != nil {
+			return err
+		}
+	}
+
+	if dcmiCap.EnhancedSystemPowerStatisticsAttributes != nil {
+		if err := c.GetDCMICapabilitiesInfoFor(ctx, dcmiCap.EnhancedSystemPowerStatisticsAttributes); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

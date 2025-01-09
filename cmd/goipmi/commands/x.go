@@ -20,6 +20,9 @@ func NewCmdX() *cobra.Command {
 			return initClient()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) == 0 {
+				cmd.Help()
+			}
 		},
 		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
 			return closeClient()
@@ -33,6 +36,7 @@ func NewCmdX() *cobra.Command {
 	cmd.AddCommand(NewCmdXGetPEFConfig())
 	cmd.AddCommand(NewCmdXGetLanConfigFor())
 	cmd.AddCommand(NewCmdXGetLanConfigFull())
+	cmd.AddCommand(NewCmdXGetDCMIConfig())
 
 	return cmd
 }
@@ -267,5 +271,24 @@ func NewCmdXGetLanConfigFull() *cobra.Command {
 			fmt.Println(lanConfig.Format())
 		},
 	}
+	return cmd
+
+}
+
+func NewCmdXGetDCMIConfig() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "get-dcmi-config",
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
+			dcmiConfig, err := client.GetDCMIConfig(ctx)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			fmt.Println(dcmiConfig.Format())
+		},
+	}
+
 	return cmd
 }

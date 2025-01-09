@@ -70,11 +70,11 @@ func NewCmdDCMIDiscover() *cobra.Command {
 		Short: "discover",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
-			dcmiCapabilities, err := client.DiscoveryDCMICapabilities(ctx)
+			dcmiCap, err := client.GetDCMICapabilities(ctx)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetDCMIPowerReading failed, err: %s", err))
 			}
-			fmt.Println(dcmiCapabilities.Format())
+			fmt.Println(dcmiCap.Format())
 		},
 	}
 
@@ -87,9 +87,9 @@ func NewCmdDCMIGetConfigParam() *cobra.Command {
 		Short: "get_conf_param",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
-			dcmiConfig, err := client.GetDCMIConfigurations(ctx)
+			dcmiConfig, err := client.GetDCMIConfig(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetDCMIConfigurations failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetDCMIConfig failed, err: %s", err))
 			}
 			fmt.Println(dcmiConfig.Format())
 		},
