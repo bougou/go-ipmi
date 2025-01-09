@@ -385,6 +385,7 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 | SetDCMIPowerLimit               | :white_check_mark: | dcmi power set_limit         |
 | ActivateDCMIPowerLimit          | :white_check_mark: | dcmi activate/deactivate     |
 | GetDCMIAssetTag                 | :white_check_mark: | dcmi asset_tag               |
+| GetDCMIAssetTagFull (*)         | :white_check_mark: | dcmi asset_tag               |
 | GetDCMISensorInfo               | :white_check_mark: | dcmi sensors                 |
 | SetDCMIAssetTag                 | :white_check_mark: | dcmi set_asset_tag           |
 | GetDCMIMgmtControllerIdentifier | :white_check_mark: | dcmi get_mc_id_string        |

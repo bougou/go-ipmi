@@ -37,7 +37,12 @@ func (req *GetDCMIAssetTagRequest) Command() Command {
 }
 
 func (res *GetDCMIAssetTagResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
+	return map[uint8]string{
+		0x80: "Encoding type in FRU is binary / unspecified",
+		0x81: "Encoding type in FRU is BCD Plus",
+		0x82: "Encoding type in FRU is 6-bit ASCII Packed",
+		0x83: "Encoding type in FRU is set to ASCII+Latin1, but language code is not set to English (indicating data is 2-byte UNICODE)",
+	}
 }
 
 func (res *GetDCMIAssetTagResponse) Unpack(msg []byte) error {
@@ -67,5 +72,44 @@ func (c *Client) GetDCMIAssetTag(ctx context.Context, offset uint8) (response *G
 	request := &GetDCMIAssetTagRequest{Offset: offset}
 	response = &GetDCMIAssetTagResponse{}
 	err = c.Exchange(ctx, request, response)
+	return
+}
+
+func (c *Client) GetDCMIAssetTagFull(ctx context.Context) (assetTagRaw []byte, typeLength TypeLength, err error) {
+	assetTagRaw = make([]byte, 0)
+
+	typeCode := uint8(0)
+	offset := uint8(0)
+
+	for {
+		resp, err := c.GetDCMIAssetTag(ctx, offset)
+		if err != nil {
+			if err, ok := err.(*ResponseError); ok {
+				cc := uint8(err.CompletionCode())
+				switch cc {
+				// align the completion code with the FRU Type Length Byte Format
+				case 0x80:
+					typeCode = 0b00
+				case 0x81:
+					typeCode = 0b01
+				case 0x82:
+					typeCode = 0x10
+				case 0x83:
+					typeCode = 0x11
+				default:
+					return nil, 0, fmt.Errorf("GetDCMIAssetTag failed, err: %s", err)
+				}
+			}
+		}
+
+		assetTagRaw = append(assetTagRaw, resp.AssetTag...)
+		if resp.TotalLength <= offset+uint8(len(resp.AssetTag)) {
+			break
+		}
+		offset += uint8(len(resp.AssetTag))
+	}
+
+	typeLength = TypeLength(typeCode<<6 | uint8(len(assetTagRaw)))
+
 	return
 }

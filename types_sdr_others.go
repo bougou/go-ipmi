@@ -733,7 +733,7 @@ type SDRReserved struct {
 type TypeLength uint8
 
 func (tl TypeLength) String() string {
-	return fmt.Sprintf("Byte: (%#02x) / Type: (%s) / Length: %d / Size: %d / ", uint8(tl), tl.Type(), tl.Length(), tl.Size())
+	return fmt.Sprintf("Byte: (%#02x) / Type: (%s) / Length: %d / Size: %d", uint8(tl), tl.Type(), tl.Length(), tl.Size())
 }
 
 func (tl TypeLength) Type() string {

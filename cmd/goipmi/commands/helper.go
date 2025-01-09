@@ -13,7 +13,7 @@ const (
 	DefaultErrorExitCode = 1
 )
 
-// ErrExit may be passed to CheckError to instruct it to output nothing but exit with status code 1.
+// ErrExit may be passed to CheckErr to instruct it to output nothing but exit with status code 1.
 var ErrExit = fmt.Errorf("exit")
 
 func CheckErr(err error) {

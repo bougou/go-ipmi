@@ -115,6 +115,11 @@ func (fru *FRU) String() string {
 		buf.WriteString(fmt.Sprintf("  Product Version      : %s\n", fru.ProductInfoArea.Version))
 		buf.WriteString(fmt.Sprintf("  Product Part Number  : %s\n", fru.ProductInfoArea.PartModel))
 		buf.WriteString(fmt.Sprintf("  Product Serial       : %s\n", fru.ProductInfoArea.SerialNumber))
+
+		assetTag, _ := fru.ProductInfoArea.AssetTagTypeLength.Chars(fru.ProductInfoArea.AssetTag)
+		buf.WriteString(fmt.Sprintf("  Product Asset Tag    : %s\n", string(assetTag)))
+		buf.WriteString(fmt.Sprintf("  Product Asset Tag TL : %s\n", fru.ProductInfoArea.AssetTagTypeLength))
+
 		for _, v := range fru.ProductInfoArea.Custom {
 			buf.WriteString(fmt.Sprintf("  Product Extra        : %s\n", v))
 		}

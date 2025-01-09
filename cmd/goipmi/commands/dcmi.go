@@ -279,20 +279,17 @@ func NewCmdDCMIAssetTag() *cobra.Command {
 		Short: "asset_tag",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
-			var assetTag string
-			var offset uint8
-			for {
-				resp, err := client.GetDCMIAssetTag(ctx, offset)
-				if err != nil {
-					CheckErr(fmt.Errorf("GetDCMIAssetTag failed, err: %s", err))
-				}
-				assetTag += string(resp.AssetTag)
-				if resp.TotalLength <= offset+uint8(len(resp.AssetTag)) {
-					break
-				}
-				offset += uint8(len(resp.AssetTag))
+			assetTagRaw, typeLength, err := client.GetDCMIAssetTagFull(ctx)
+			if err != nil {
+				CheckErr(fmt.Errorf("GetDCMIAssetTagFull failed, err: %s", err))
 			}
-			fmt.Printf("Asset tag: %s\n", assetTag)
+
+			assetTag, err := typeLength.Chars(assetTagRaw)
+			if err != nil {
+				CheckErr(fmt.Errorf("convert raw to chars failed, err: %s", err))
+
+			}
+			fmt.Printf("Asset tag: %s\nTypeLength: %s\n", assetTag, typeLength)
 		},
 	}
 	return cmd
