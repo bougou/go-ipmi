@@ -21,10 +21,12 @@ func (req *WriteFRUDataRequest) Command() Command {
 }
 
 func (req *WriteFRUDataRequest) Pack() []byte {
-	out := make([]byte, 4)
+	out := make([]byte, 3+len(req.WriteData))
 	packUint8(req.FRUDeviceID, out, 0)
 	packUint16L(req.WriteOffset, out, 1)
-	packBytes(req.WriteData, out, 3)
+	if len(req.WriteData) > 0 {
+		packBytes(req.WriteData, out, 3)
+	}
 	return out
 }
 

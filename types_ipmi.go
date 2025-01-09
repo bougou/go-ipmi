@@ -177,7 +177,7 @@ func (c *Client) BuildIPMIRequest(ctx context.Context, reqCmd Request) (*IPMIReq
 // AllCC returns all possible completion codes for the specified response.
 // i.e.:
 //
-//	the generic completion codes for all impi cmd response
+//	the generic completion codes for all ipmi cmd response
 //	+
 //	the specific completion codes for specified cmd response.
 func AllCC(response Response) map[uint8]string {

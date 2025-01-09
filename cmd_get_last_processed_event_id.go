@@ -34,8 +34,8 @@ func (res *GetLastProcessedEventIdResponse) Unpack(msg []byte) error {
 	ts, _, _ := unpackUint32L(msg, 0)
 	res.MostRecentAdditionTime = parseTimestamp(ts)
 	res.LastRecordID, _, _ = unpackUint16L(msg, 4)
-	res.LastSoftwareProcessedEventRecordID, _, _ = unpackUint16(msg, 6)
-	res.LastBMCProcessedEventRecordID, _, _ = unpackUint16(msg, 8)
+	res.LastSoftwareProcessedEventRecordID, _, _ = unpackUint16L(msg, 6)
+	res.LastBMCProcessedEventRecordID, _, _ = unpackUint16L(msg, 8)
 	return nil
 }
 
@@ -47,10 +47,10 @@ func (r *GetLastProcessedEventIdResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetLastProcessedEventIdResponse) Format() string {
 	return fmt.Sprintf(`
-MostRecentAdditionTime             : %s
-LastRecordID                       : %#04x (%d)
-LastSoftwareProcessedEventRecordID : %#04x (%d)
-LastBMCProcessedEventRecordID      : %#04x (%d)
+Last SEL addition        : %s
+Last SEL record ID       : %#04x (%d)
+Last S/W processed ID    : %#04x (%d)
+Last BMC processed ID    : %#04x (%d)
 `,
 		res.MostRecentAdditionTime.String(),
 		res.LastRecordID, res.LastRecordID,

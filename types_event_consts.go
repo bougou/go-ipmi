@@ -1,5 +1,11 @@
 package ipmi
 
+// For example, a 'button' sensor supports a set of sensor-specific event offsets:
+// 0 for Power Button pressed, for Sleep Button pressed, and 2 for Reset Button pressed.
+// When an event is generated, it could have a 0, 1, or 2 in the event offset field
+// depending on what button press occurred.
+// type EventOffset uint8
+
 func genericEvent(typ EventReadingType, offset uint8) *Event {
 	e, ok := GenericEvents[typ]
 	if !ok {

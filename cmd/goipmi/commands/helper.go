@@ -1,9 +1,12 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/olekukonko/tablewriter"
 )
 
 const (
@@ -54,4 +57,20 @@ func fatal(msg string, code int) {
 		fmt.Fprint(os.Stderr, msg)
 	}
 	os.Exit(code)
+}
+
+func formatTable(headers []string, rows [][]string) string {
+	var buf = new(bytes.Buffer)
+	table := tablewriter.NewWriter(buf)
+	table.SetAutoWrapText(false)
+	table.SetAlignment(tablewriter.ALIGN_RIGHT)
+	table.SetHeader(headers)
+	table.SetFooter(headers)
+
+	for _, row := range rows {
+		table.Append(row)
+	}
+
+	table.Render()
+	return buf.String()
 }

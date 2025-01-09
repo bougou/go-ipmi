@@ -205,6 +205,13 @@ Bad Password Threshold  : %d`,
 
 type SetInProgress uint8
 
+const (
+	SetInProgress_SetComplete   SetInProgress = 0x00
+	SetInProgress_SetInProgress SetInProgress = 0x01
+	SetInProgress_CommitWrite   SetInProgress = 0x02
+	SetInProgress_Reserved      SetInProgress = 0x03
+)
+
 func (p SetInProgress) String() string {
 	m := map[SetInProgress]string{
 		0x00: "set complete",

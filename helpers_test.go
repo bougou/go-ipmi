@@ -115,3 +115,30 @@ func Test_twosComplementEncode(t *testing.T) {
 		}
 	}
 }
+
+func Test_unpackBytes(t *testing.T) {
+	tests := []struct {
+		name     string
+		expected []byte
+		input    []uint8
+		offset   int
+		length   int
+	}{
+		{"test1", []byte{0x03, 0x04}, []uint8{0x01, 0x02, 0x03, 0x04}, 2, 2},
+		{"test2", []byte{0x04, 0x05, 0x06, 0x07}, []uint8{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}, 3, 4},
+		{"test3", []byte{}, []uint8{}, 0, 0},
+		{"test4", []byte{0x01}, []uint8{0x01}, 0, 1},
+	}
+
+	for _, tt := range tests {
+		got, _, err := unpackBytes(tt.input, tt.offset, tt.length)
+		if err != nil {
+			t.Errorf("test (%s) unpackBytes failed, err: %s", tt.name, err)
+			return
+		}
+		if !isByteSliceEqual(got, tt.expected) {
+			t.Errorf("test %s not matched, got: %v, expected: %v", tt.name, got, tt.expected)
+			return
+		}
+	}
+}

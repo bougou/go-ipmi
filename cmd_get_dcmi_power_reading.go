@@ -34,8 +34,8 @@ type GetDCMIPowerReadingResponse struct {
 	Timestamp uint32
 	// Statistics reporting time period
 	//
-	// For Mode 01h, timeframe in milliseconds, over which the controller
-	// collects statistics. For Mode 02h (not yet supported), timeframe reflects
+	// For Mode 01h, time-frame in milliseconds, over which the controller
+	// collects statistics. For Mode 02h (not yet supported), time-frame reflects
 	// the Averaging Time period in units.
 	ReportingPeriod uint32
 	// True if power measurements are available, false otherwise.
