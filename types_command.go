@@ -148,7 +148,7 @@ var (
 	CommandSetLastProcessedEventId = Command{ID: 0x14, NetFn: NetFnSensorEventRequest, Name: "Set Last Processed Event ID"}
 	CommandGetLastProcessedEventId = Command{ID: 0x15, NetFn: NetFnSensorEventRequest, Name: "Get Last Processed Event ID"}
 	CommandAlertImmediate          = Command{ID: 0x16, NetFn: NetFnSensorEventRequest, Name: "Alert Immediate"}
-	CommandPEFAck                  = Command{ID: 0x17, NetFn: NetFnSensorEventRequest, Name: "PET Acknowledge"}
+	CommandPETAcknowledge          = Command{ID: 0x17, NetFn: NetFnSensorEventRequest, Name: "PET Acknowledge"}
 
 	// Sensor Device Commands
 	CommandGetDeviceSDRInfo               = Command{ID: 0x20, NetFn: NetFnSensorEventRequest, Name: "Get Device SDR Info"}
