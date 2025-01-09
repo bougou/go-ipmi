@@ -29,7 +29,7 @@ func NewCmdX() *cobra.Command {
 	cmd.AddCommand(NewCmdXGetPayloadActivationStatus())
 	cmd.AddCommand(NewCmdXGetDeviceGUID())
 	cmd.AddCommand(NewCmdXGetSystemGUID())
-	cmd.AddCommand(NewCmdXGetPEFConfigSystemUUID())
+	cmd.AddCommand(NewCmdXGetPEFConfig())
 
 	return cmd
 }
@@ -176,18 +176,18 @@ func NewCmdXGetDeviceGUID() *cobra.Command {
 	return cmd
 }
 
-func NewCmdXGetPEFConfigSystemUUID() *cobra.Command {
+func NewCmdXGetPEFConfig() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "get-pef-config-system-uuid",
+		Use: "get-pef-config",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
-			param, err := client.GetPEFConfigParams_SystemUUID(ctx)
+			pefConfig, err := client.GetPEFConfig(ctx)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 
-			fmt.Println(param.Format())
+			fmt.Println(pefConfig.Format())
 		},
 	}
 
