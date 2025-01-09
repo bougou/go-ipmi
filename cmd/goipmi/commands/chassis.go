@@ -10,6 +10,39 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	bootParamGetUsage = `
+bootparam get <param #>
+available param #
+  0 : Set In Progress (volatile)
+  1 : service partition selector (semi-volatile)
+  2 : service partition scan (non-volatile)
+  3 : BMC boot flag valid bit clearing (semi-volatile)
+  4 : boot info acknowledge (semi-volatile)
+  5 : boot flags (semi-volatile)
+  6 : boot initiator info (semi-volatile)
+  7 : boot initiator mailbox (semi-volatile)`
+
+	bootParamSetUsage = `
+bootparam set bootflag <device> [options=...]
+ Legal devices are:
+  none        : No override
+  force_pxe   : Force PXE boot
+  force_disk  : Force boot from default Hard-drive
+  force_safe  : Force boot from default Hard-drive, request Safe Mode
+  force_diag  : Force boot from Diagnostic Partition
+  force_cdrom : Force boot from CD/DVD
+  force_bios  : Force boot into BIOS Setup
+ Legal options are:
+  help    : print this message
+  PEF     : Clear valid bit on reset/power cycle cause by PEF
+  timeout : Automatically clear boot flag valid bit on timeout
+  watchdog: Clear valid bit on reset/power cycle cause by watchdog
+  reset   : Clear valid bit on push button reset/soft reset
+  power   : Clear valid bit on power up via power push button or wake event
+ Any Option may be prepended with no- to invert sense of operation`
+)
+
 func NewCmdChassis() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "chassis",
@@ -205,109 +238,105 @@ func NewCmdChassisRestartCause() *cobra.Command {
 }
 
 func NewCmdChassisBootParam() *cobra.Command {
-	usage := `bootparam get <param #>
-available param #
-  0 : Set In Progress (volatile)
-	1 : service partition selector (semi-volatile)
-	2 : service partition scan (non-volatile)
-	3 : BMC boot flag valid bit clearing (semi-volatile)
-	4 : boot info acknowledge (semi-volatile)
-	5 : boot flags (semi-volatile)
-	6 : boot initiator info (semi-volatile)
-	7 : boot initiator mailbox (semi-volatile)
-bootparam set bootflag <device> [options=...]
- Legal devices are:
-  none        : No override
-  force_pxe   : Force PXE boot
-  force_disk  : Force boot from default Hard-drive
-  force_safe  : Force boot from default Hard-drive, request Safe Mode
-  force_diag  : Force boot from Diagnostic Partition
-  force_cdrom : Force boot from CD/DVD
-  force_bios  : Force boot into BIOS Setup
- Legal options are:
-  help    : print this message
-  PEF     : Clear valid bit on reset/power cycle cause by PEF
-  timeout : Automatically clear boot flag valid bit on timeout
-  watchdog: Clear valid bit on reset/power cycle cause by watchdog
-  reset   : Clear valid bit on push button reset/soft reset
-  power   : Clear valid bit on power up via power push button or wake event
- Any Option may be prepended with no- to invert sense of operation
-`
 
 	cmd := &cobra.Command{
 		Use:   "bootparam",
 		Short: "bootparam",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) < 2 {
-				fmt.Println(usage)
+				fmt.Println(bootParamGetUsage)
+				fmt.Println(bootParamSetUsage)
+				return
+			}
+		},
+	}
+
+	cmd.AddCommand(NewCmdChassisBootParamGet())
+	cmd.AddCommand(NewCmdChassisBootParamSet())
+
+	return cmd
+}
+
+func NewCmdChassisBootParamGet() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "get",
+		Short: "get",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				fmt.Println(bootParamGetUsage)
 				return
 			}
 
 			ctx := context.Background()
-			switch args[0] {
-			case "get":
-				parameterSelector := args[1]
-				i, err := parseStringToInt64(parameterSelector)
-				if err != nil {
-					CheckErr(fmt.Errorf("param %s must be a valid integer in range (0-127), err: %s", parameterSelector, err))
-				}
-
-				res, err := client.GetSystemBootOptions(ctx, ipmi.BootOptionParameterSelector(i))
-				if err != nil {
-					CheckErr(fmt.Errorf("GetSystemBootOptions failed, err: %s", err))
-				}
-				fmt.Println(res.Format())
-
-			case "set":
-				if len(args) < 3 {
-					fmt.Println(usage)
-					return
-				}
-
-				parameterSelector := args[1]
-				// currently only support set bootflag
-				if parameterSelector != "bootflag" {
-					fmt.Println(usage)
-					return
-				}
-
-				var f = func(bootDevice string) ipmi.BootDeviceSelector {
-					m := map[string]ipmi.BootDeviceSelector{
-						"none":        ipmi.BootDeviceSelectorNoOverride,
-						"force_pxe":   ipmi.BootDeviceSelectorForcePXE,
-						"force_disk":  ipmi.BootDeviceSelectorForceHardDrive,
-						"force_safe":  ipmi.BootDeviceSelectorForceHardDriveSafe,
-						"force_diag":  ipmi.BootDeviceSelectorForceDiagnosticPartition,
-						"force_cdrom": ipmi.BootDeviceSelectorForceCDROM,
-						"force_bios":  ipmi.BootDeviceSelectorForceBIOSSetup,
-					}
-					if s, ok := m[bootDevice]; ok {
-						return s
-					}
-					return ipmi.BootDeviceSelectorNoOverride
-				}
-				bootDeviceSelector := f(args[2])
-
-				request := &ipmi.SetSystemBootOptionsRequest{
-					MarkParameterInvalid: false,
-					ParameterSelector:    ipmi.BOPS_BootFlags,
-					BootOptionParameter: ipmi.BootOptionParameter{
-						BootFlags: &ipmi.BOP_BootFlags{
-							BootFlagsValid:     true,
-							Persist:            false,
-							BIOSBootType:       ipmi.BIOSBootTypeLegacy,
-							BootDeviceSelector: bootDeviceSelector,
-						},
-					},
-				}
-				res, err := client.SetSystemBootOptions(ctx, request)
-				if err != nil {
-					CheckErr(fmt.Errorf("SetSystemBootOptions failed, err: %s", err))
-				}
-				fmt.Println(res.Format())
+			paramSelector := args[0]
+			i, err := parseStringToInt64(paramSelector)
+			if err != nil {
+				CheckErr(fmt.Errorf("param %s must be a valid integer in range (0-127), err: %s", paramSelector, err))
 			}
+
+			res, err := client.GetSystemBootOptions(ctx, ipmi.BootOptionParamSelector(i), 0x00, 0x00)
+			if err != nil {
+				CheckErr(fmt.Errorf("GetSystemBootOptions failed, err: %s", err))
+			}
+
+			fmt.Println(res.Format())
 		},
 	}
+
+	return cmd
+}
+
+func NewCmdChassisBootParamSet() *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "set",
+		Short: "set",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 3 {
+				fmt.Println(bootParamSetUsage)
+				return
+			}
+
+			paramSelector := args[0]
+			// currently only support set bootflag
+			if paramSelector != "bootflag" {
+				fmt.Println(bootParamSetUsage)
+				return
+			}
+
+			var f = func(bootDevice string) ipmi.BootDeviceSelector {
+				m := map[string]ipmi.BootDeviceSelector{
+					"none":        ipmi.BootDeviceSelectorNoOverride,
+					"force_pxe":   ipmi.BootDeviceSelectorForcePXE,
+					"force_disk":  ipmi.BootDeviceSelectorForceHardDrive,
+					"force_safe":  ipmi.BootDeviceSelectorForceHardDriveSafe,
+					"force_diag":  ipmi.BootDeviceSelectorForceDiagnosticPartition,
+					"force_cdrom": ipmi.BootDeviceSelectorForceCDROM,
+					"force_bios":  ipmi.BootDeviceSelectorForceBIOSSetup,
+				}
+				if s, ok := m[bootDevice]; ok {
+					return s
+				}
+				return ipmi.BootDeviceSelectorNoOverride
+			}
+			bootDeviceSelector := f(args[1])
+
+			param := &ipmi.BootOptionParam_BootFlags{
+				BootFlagsValid:     true,
+				Persist:            false,
+				BIOSBootType:       ipmi.BIOSBootTypeLegacy,
+				BootDeviceSelector: bootDeviceSelector,
+			}
+
+			ctx := context.Background()
+			if err := client.SetSystemBootOptionsFor(ctx, param); err != nil {
+				CheckErr(fmt.Errorf("SetSystemBootOptionsFor failed, err: %s", err))
+			}
+
+			fmt.Println("Set Succeeded.")
+		},
+	}
+
 	return cmd
 }
 
@@ -369,7 +398,7 @@ bootdev <device> [options=help,...]
 			default:
 				return
 			}
-			bootFlags := &ipmi.BOP_BootFlags{
+			bootFlags := &ipmi.BootOptionParam_BootFlags{
 				BootDeviceSelector: dev,
 			}
 

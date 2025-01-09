@@ -7,208 +7,165 @@ import (
 	"time"
 )
 
-// Table 28-14, Boot Option Parameters
-// You should fill ONLY one field at one time.
-type BootOptionParameter struct {
-	SetInProgressState       *BOP_SetInProgressState
-	ServicePartitionSelector *BOP_ServicePartitionSelector
-	ServicePartitionScan     *BOP_ServicePartitionScan
-	BMCBootFlagValidBitClear *BOP_BMCBootFlagValidBitClear
-	BootInfoAcknowledge      *BOP_BootInfoAcknowledge
-	BootFlags                *BOP_BootFlags
-	BootInitiatorInfo        *BOP_BootInitiatorInfo
-	BootInitiatorMailbox     *BOP_BootInitiatorMailbox
-}
-
-type BootOptionParameterSelector uint8 //  only 7 bits occupied, 0-127
+type BootOptionParamSelector uint8 //  only 7 bits occupied, 0-127
 
 const (
-	BOPS_SetInProgressState       BootOptionParameterSelector = 0x00
-	BOPS_ServicePartitionSelector BootOptionParameterSelector = 0x01
-	BOPS_ServicePartitionScan     BootOptionParameterSelector = 0x02
-	BOPS_BMCBootFlagValidBitClear BootOptionParameterSelector = 0x03
-	BOPS_BootInfoAcknowledge      BootOptionParameterSelector = 0x04
-	BOPS_BootFlags                BootOptionParameterSelector = 0x05
-	BOPS_BootInitiatorInfo        BootOptionParameterSelector = 0x06
-	BOPS_BootInitiatorMailbox     BootOptionParameterSelector = 0x07
+	BootOptionParamSelector_SetInProgress            BootOptionParamSelector = 0x00
+	BootOptionParamSelector_ServicePartitionSelector BootOptionParamSelector = 0x01
+	BootOptionParamSelector_ServicePartitionScan     BootOptionParamSelector = 0x02
+	BootOptionParamSelector_BMCBootFlagValidBitClear BootOptionParamSelector = 0x03
+	BootOptionParamSelector_BootInfoAcknowledge      BootOptionParamSelector = 0x04
+	BootOptionParamSelector_BootFlags                BootOptionParamSelector = 0x05
+	BootOptionParamSelector_BootInitiatorInfo        BootOptionParamSelector = 0x06
+	BootOptionParamSelector_BootInitiatorMailbox     BootOptionParamSelector = 0x07
 
 	// OEM Parameters, 96:127
 )
 
-func (bop *BootOptionParameter) Format(paramSelector BootOptionParameterSelector) string {
-	switch paramSelector {
-	case BOPS_SetInProgressState:
-		return fmt.Sprintf(" Set In Progress : %s", bop.SetInProgressState.Format())
-	case BOPS_ServicePartitionSelector:
-		return fmt.Sprintf(" Service Partition Selector : %s", bop.ServicePartitionSelector.Format())
-	case BOPS_ServicePartitionScan:
-		return fmt.Sprintf(" Service Partition Scan :\n%s", bop.ServicePartitionScan.Format())
-	case BOPS_BMCBootFlagValidBitClear:
-		return fmt.Sprintf(" BMC boot flag valid bit clearing :\n%s", bop.BMCBootFlagValidBitClear.Format())
-	case BOPS_BootInfoAcknowledge:
-		return fmt.Sprintf(" Boot Info Acknowledge :\n%s", bop.BootInfoAcknowledge.Format())
-	case BOPS_BootFlags:
-		return fmt.Sprintf(" Boot Flags :\n%s", bop.BootFlags.Format())
-	case BOPS_BootInitiatorInfo:
-		return fmt.Sprintf(" Boot Initiator Info :\n%s", bop.BootInitiatorInfo.Format())
-	case BOPS_BootInitiatorMailbox:
-		return bop.BootInitiatorMailbox.Format()
+func (bop BootOptionParamSelector) String() string {
+	m := map[BootOptionParamSelector]string{
+		BootOptionParamSelector_SetInProgress:            "Set In Progress",
+		BootOptionParamSelector_ServicePartitionSelector: "Service Partition Selector",
+		BootOptionParamSelector_ServicePartitionScan:     "Service Partition Scan",
+		BootOptionParamSelector_BMCBootFlagValidBitClear: "BMC Boot Flag Valid bit Clearing",
+		BootOptionParamSelector_BootInfoAcknowledge:      "Boot Info Acknowledge",
+		BootOptionParamSelector_BootFlags:                "Boot Flags",
+		BootOptionParamSelector_BootInitiatorInfo:        "Boot Initiator Info",
+		BootOptionParamSelector_BootInitiatorMailbox:     "Boot Initiator Mailbox",
 	}
-	return ""
+
+	s, ok := m[bop]
+	if ok {
+		return s
+	}
+
+	return "Unknown"
 }
 
-func (bop *BootOptionParameter) Pack(paramSelector BootOptionParameterSelector) []byte {
-	switch paramSelector {
-	case BOPS_SetInProgressState:
-		return bop.SetInProgressState.Pack()
-	case BOPS_ServicePartitionSelector:
-		return bop.ServicePartitionSelector.Pack()
-	case BOPS_ServicePartitionScan:
-		return bop.ServicePartitionScan.Pack()
-	case BOPS_BMCBootFlagValidBitClear:
-		return bop.BMCBootFlagValidBitClear.Pack()
-	case BOPS_BootInfoAcknowledge:
-		return bop.BootInfoAcknowledge.Pack()
-	case BOPS_BootFlags:
-		return bop.BootFlags.Pack()
-	case BOPS_BootInitiatorInfo:
-		return bop.BootInitiatorInfo.Pack()
-	case BOPS_BootInitiatorMailbox:
-		return bop.BootInitiatorMailbox.Pack()
-	}
-	return nil
+type BootOptionParameter interface {
+	BootOptionParameter() (paramSelector BootOptionParamSelector, setSelector uint8, blockSelector uint8)
+	Parameter
 }
 
-func ParseBootOptionParameterData(paramSelector BootOptionParameterSelector, paramData []byte) (*BootOptionParameter, error) {
-	bop := &BootOptionParameter{}
-
-	var err error
-	switch paramSelector {
-	case BOPS_SetInProgressState:
-		var tmp uint8
-		p := (*BOP_SetInProgressState)(&tmp)
-		err = p.Unpack(paramData)
-		if err != nil {
-			break
-		}
-		bop.SetInProgressState = p
-
-	case BOPS_ServicePartitionSelector:
-		var tmp uint8
-		p := (*BOP_ServicePartitionSelector)(&tmp)
-		err = p.Unpack(paramData)
-		if err != nil {
-			break
-		}
-		bop.ServicePartitionSelector = p
-
-	case BOPS_ServicePartitionScan:
-		var tmp uint8
-		p := (*BOP_ServicePartitionScan)(&tmp)
-		err = p.Unpack(paramData)
-		if err != nil {
-			break
-		}
-		bop.ServicePartitionScan = p
-
-	case BOPS_BMCBootFlagValidBitClear:
-		p := &BOP_BMCBootFlagValidBitClear{}
-		err = p.Unpack(paramData)
-		if err != nil {
-			break
-		}
-		bop.BMCBootFlagValidBitClear = p
-
-	case BOPS_BootInfoAcknowledge:
-		p := &BOP_BootInfoAcknowledge{}
-		err = p.Unpack(paramData)
-		if err != nil {
-			break
-		}
-		bop.BootInfoAcknowledge = p
-
-	case BOPS_BootFlags:
-		p := &BOP_BootFlags{}
-		err = p.Unpack(paramData)
-		if err != nil {
-			break
-		}
-		bop.BootFlags = p
-
-	case BOPS_BootInitiatorInfo:
-		p := &BOP_BootInitiatorInfo{}
-		err = p.Unpack(paramData)
-		if err != nil {
-			break
-		}
-		bop.BootInitiatorInfo = p
-
-	case BOPS_BootInitiatorMailbox:
-		p := &BOP_BootInitiatorMailbox{}
-		err = p.Unpack(paramData)
-		if err != nil {
-			break
-		}
-		bop.BootInitiatorMailbox = p
-
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("unpack paramData for paramSelector (%d) failed, err: %s", paramSelector, err)
-	}
-	return bop, nil
-}
-
-type BOP_SetInProgressState uint8
-
-const (
-	SetInProgressState_SetComplete   BOP_SetInProgressState = 0
-	SetInProgressState_SetInProgress BOP_SetInProgressState = 1
-	SetInProgressState_CommitWrite   BOP_SetInProgressState = 2
-	SetInProgressState_Reserved      BOP_SetInProgressState = 3
+var (
+	_ BootOptionParameter = (*BootOptionParam_SetInProgress)(nil)
+	_ BootOptionParameter = (*BootOptionParam_ServicePartitionSelector)(nil)
+	_ BootOptionParameter = (*BootOptionParam_ServicePartitionScan)(nil)
+	_ BootOptionParameter = (*BootOptionParam_BMCBootFlagValidBitClear)(nil)
+	_ BootOptionParameter = (*BootOptionParam_BootInfoAcknowledge)(nil)
+	_ BootOptionParameter = (*BootOptionParam_BootFlags)(nil)
+	_ BootOptionParameter = (*BootOptionParam_BootInitiatorInfo)(nil)
+	_ BootOptionParameter = (*BootOptionParam_BootInitiatorMailbox)(nil)
 )
 
-func (p *BOP_SetInProgressState) Unpack(paramData []byte) error {
+// Table 28-14, Boot Option Parameters
+type BootOptions struct {
+	SetInProgress            *BootOptionParam_SetInProgress
+	ServicePartitionSelector *BootOptionParam_ServicePartitionSelector
+	ServicePartitionScan     *BootOptionParam_ServicePartitionScan
+	BMCBootFlagValidBitClear *BootOptionParam_BMCBootFlagValidBitClear
+	BootInfoAcknowledge      *BootOptionParam_BootInfoAcknowledge
+	BootFlags                *BootOptionParam_BootFlags
+	BootInitiatorInfo        *BootOptionParam_BootInitiatorInfo
+	BootInitiatorMailbox     *BootOptionParam_BootInitiatorMailbox
+}
+
+func (bootOptions *BootOptions) Format() string {
+	format := func(param BootOptionParameter) string {
+		paramSelector, _, _ := param.BootOptionParameter()
+
+		content := param.Format()
+		if content[len(content)-1] != '\n' {
+			content += "\n"
+		}
+		return fmt.Sprintf("[%02d] %-24s: %s", paramSelector, paramSelector.String(), content)
+	}
+
+	out := ""
+
+	if bootOptions.SetInProgress != nil {
+		out += format(bootOptions.SetInProgress)
+	}
+
+	if bootOptions.ServicePartitionSelector != nil {
+		out += format(bootOptions.ServicePartitionSelector)
+	}
+
+	if bootOptions.ServicePartitionScan != nil {
+		out += format(bootOptions.ServicePartitionScan)
+	}
+
+	if bootOptions.BMCBootFlagValidBitClear != nil {
+		out += format(bootOptions.BMCBootFlagValidBitClear)
+	}
+
+	if bootOptions.BootInfoAcknowledge != nil {
+		out += format(bootOptions.BootInfoAcknowledge)
+	}
+
+	if bootOptions.BootFlags != nil {
+		out += format(bootOptions.BootFlags)
+	}
+
+	if bootOptions.BootInitiatorInfo != nil {
+		out += format(bootOptions.BootInitiatorInfo)
+	}
+
+	if bootOptions.BootInitiatorMailbox != nil {
+		out += format(bootOptions.BootInitiatorMailbox)
+	}
+
+	return out
+}
+
+type BootOptionParam_SetInProgress struct {
+	Value SetInProgress
+}
+
+func (p *BootOptionParam_SetInProgress) BootOptionParameter() (paramSelector BootOptionParamSelector, setSelector uint8, blockSelector uint8) {
+	return BootOptionParamSelector_SetInProgress, 0, 0
+}
+
+func (p *BootOptionParam_SetInProgress) Unpack(paramData []byte) error {
 	if len(paramData) != 1 {
 		return fmt.Errorf("the parameter data length must be 1 byte")
 	}
-	*p = BOP_SetInProgressState(paramData[0])
+
+	p.Value = SetInProgress(paramData[0])
 	return nil
 }
 
-func (p *BOP_SetInProgressState) Pack() []byte {
-	return []byte{uint8(*p)}
+func (p *BootOptionParam_SetInProgress) Pack() []byte {
+	return []byte{uint8(p.Value)}
 }
 
-func (p BOP_SetInProgressState) Format() string {
-	switch p {
-	case 0:
-		return "set complete"
-	case 1:
-		return "set in progress"
-	case 2:
-		return "commit write"
-	}
-	return ""
+func (p *BootOptionParam_SetInProgress) Format() string {
+	return p.Value.String()
 }
 
 // This value is used to select which service partition BIOS should boot using.
-type BOP_ServicePartitionSelector uint8
-
-func (p *BOP_ServicePartitionSelector) Pack() []byte {
-	return []byte{uint8(*p)}
+type BootOptionParam_ServicePartitionSelector struct {
+	Selector uint8
 }
 
-func (p *BOP_ServicePartitionSelector) Unpack(paramData []byte) error {
+func (p *BootOptionParam_ServicePartitionSelector) BootOptionParameter() (paramSelector BootOptionParamSelector, setSelector uint8, blockSelector uint8) {
+	return BootOptionParamSelector_ServicePartitionSelector, 0, 0
+}
+
+func (p *BootOptionParam_ServicePartitionSelector) Pack() []byte {
+	return []byte{p.Selector}
+}
+
+func (p *BootOptionParam_ServicePartitionSelector) Unpack(paramData []byte) error {
 	if len(paramData) != 1 {
 		return fmt.Errorf("the parameter data length must be 1 byte")
 	}
-	*p = BOP_ServicePartitionSelector(paramData[0])
+	p.Selector = paramData[0]
 	return nil
 }
 
-func (p BOP_ServicePartitionSelector) Format() string {
-	switch p {
+func (p *BootOptionParam_ServicePartitionSelector) Format() string {
+	switch p.Selector {
 	case 0:
 		return "unspecified"
 	default:
@@ -216,35 +173,64 @@ func (p BOP_ServicePartitionSelector) Format() string {
 	}
 }
 
-type BOP_ServicePartitionScan uint8
-
-func (p *BOP_ServicePartitionScan) Pack() []byte {
-	return []byte{uint8(*p)}
+type BootOptionParam_ServicePartitionScan struct {
+	// data 1 [7:2] - reserved
+	//  - [1] - 1b = Request BIOS to scan for specified service partition.
+	//               BIOS clears this bit after the requested scan has been performed.
+	//  - [0] - 1b = Service Partition discovered.
+	//               BIOS sets this bit to indicate it has discovered the specified service partition.
+	//               The bit retains the value from the last scan.
+	//               Therefore, to get up-to-date status of the discovery state, a scan may need to be requested.
+	RequestBIOSScan            bool
+	ServicePartitionDiscovered bool
 }
 
-func (p *BOP_ServicePartitionScan) Unpack(paramData []byte) error {
+func (p *BootOptionParam_ServicePartitionScan) BootOptionParameter() (paramSelector BootOptionParamSelector, setSelector uint8, blockSelector uint8) {
+	return BootOptionParamSelector_ServicePartitionScan, 0, 0
+}
+
+func (p *BootOptionParam_ServicePartitionScan) Pack() []byte {
+	var b uint8
+
+	if p.RequestBIOSScan {
+		b = setBit1(b)
+	}
+
+	if p.ServicePartitionDiscovered {
+		b = setBit0(b)
+	}
+
+	return []byte{b}
+}
+
+func (p *BootOptionParam_ServicePartitionScan) Unpack(paramData []byte) error {
 	if len(paramData) != 1 {
 		return fmt.Errorf("the parameter data length must be 1 byte")
 	}
-	*p = BOP_ServicePartitionScan(paramData[0])
+
+	p.RequestBIOSScan = isBit1Set(paramData[0])
+	p.ServicePartitionDiscovered = isBit0Set(paramData[0])
 	return nil
 }
 
-func (p BOP_ServicePartitionScan) Format() string {
-	var s string
-	if isBit1Set(uint8(p)) {
+func (p BootOptionParam_ServicePartitionScan) Format() string {
+	s := "\n"
+
+	if p.RequestBIOSScan {
 		s += "   - Request BIOS to scan\n"
 	}
-	if isBit0Set(uint8(p)) {
-		s += "   - Service Partition Discoverd"
+	if p.ServicePartitionDiscovered {
+		s += "   - Service Partition Discoverd\n"
 	}
-	if s == "" {
-		return "     No flag set"
+
+	if s == "\n" {
+		s += "    No flag set\n"
 	}
+
 	return s
 }
 
-type BOP_BMCBootFlagValidBitClear struct {
+type BootOptionParam_BMCBootFlagValidBitClear struct {
 	DontClearOnResetPEFOrPowerCyclePEF      bool // corresponding to restart cause: 0x08, 0x09
 	DontClearOnCommandReceivedTimeout       bool // corresponding to restart cause: 0x01
 	DontClearOnWatchdogTimeout              bool // corresponding to restart cause: 0x04
@@ -252,9 +238,13 @@ type BOP_BMCBootFlagValidBitClear struct {
 	DontClearOnPowerUpPushButtonOrWakeEvent bool // corresponding to restart cause: 0x03, 0x0b
 }
 
-func (p *BOP_BMCBootFlagValidBitClear) Format() string {
+func (p *BootOptionParam_BMCBootFlagValidBitClear) BootOptionParameter() (paramSelector BootOptionParamSelector, setSelector uint8, blockSelector uint8) {
+	return BootOptionParamSelector_BMCBootFlagValidBitClear, 0, 0
+}
 
-	var s string
+func (p *BootOptionParam_BMCBootFlagValidBitClear) Format() string {
+	s := "\n"
+
 	if p.DontClearOnResetPEFOrPowerCyclePEF {
 		s += "   - Don't clear valid bit on reset/power cycle cause by PEF\n"
 	}
@@ -268,18 +258,18 @@ func (p *BOP_BMCBootFlagValidBitClear) Format() string {
 		s += "   - Don't clear valid bit on push button reset // soft reset\n"
 	}
 	if p.DontClearOnPowerUpPushButtonOrWakeEvent {
-		s += "   - Don't clear valid bit on power up via power push button or wake event"
+		s += "   - Don't clear valid bit on power up via power push button or wake event\n"
 	}
 
 	// When any flag was set, then at least one of the above condition will be true, thus 's' would not be empty.
-	if s == "" {
-		return "     No flag set"
+	if s == "\n" {
+		s += "    No flag set\n"
 	}
 
 	return s
 }
 
-func (p *BOP_BMCBootFlagValidBitClear) Pack() []byte {
+func (p *BootOptionParam_BMCBootFlagValidBitClear) Pack() []byte {
 	var b uint8
 
 	if p.DontClearOnResetPEFOrPowerCyclePEF {
@@ -300,7 +290,7 @@ func (p *BOP_BMCBootFlagValidBitClear) Pack() []byte {
 	return []byte{b}
 }
 
-func (p *BOP_BMCBootFlagValidBitClear) Unpack(parameterData []byte) error {
+func (p *BootOptionParam_BMCBootFlagValidBitClear) Unpack(parameterData []byte) error {
 	if len(parameterData) != 1 {
 		return fmt.Errorf("the parameter data length must be 1 byte")
 	}
@@ -314,17 +304,7 @@ func (p *BOP_BMCBootFlagValidBitClear) Unpack(parameterData []byte) error {
 	return nil
 }
 
-type BootInfoAcknowledgeBy uint8
-
-const (
-	BootInfoAcknowledgeByBIOSPOST           BootInfoAcknowledgeBy = 1 << 0
-	BootInfoAcknowledgeByOSLoader           BootInfoAcknowledgeBy = 1 << 1
-	BootInfoAcknowledgeByOSServicePartition BootInfoAcknowledgeBy = 1 << 2
-	BootInfoAcknowledgeBySMS                BootInfoAcknowledgeBy = 1 << 3
-	BootInfoAcknowledgeByOEM                BootInfoAcknowledgeBy = 1 << 4
-)
-
-type BOP_BootInfoAcknowledge struct {
+type BootOptionParam_BootInfoAcknowledge struct {
 	// The boot initiator should typically write FFh to this parameter prior to initiating the boot.
 	// The boot initiator may write 0 s if it wants to intentionally direct a given party to ignore the
 	// boot info.
@@ -336,8 +316,13 @@ type BOP_BootInfoAcknowledge struct {
 	ByBIOSPOST           bool
 }
 
-func (p *BOP_BootInfoAcknowledge) Format() string {
-	var s string
+func (p *BootOptionParam_BootInfoAcknowledge) BootOptionParameter() (paramSelector BootOptionParamSelector, setSelector uint8, blockSelector uint8) {
+	return BootOptionParamSelector_BootInfoAcknowledge, 0, 0
+}
+
+func (p *BootOptionParam_BootInfoAcknowledge) Format() string {
+	s := "\n"
+
 	if p.ByOEM {
 		s += "   - OEM has handled boot info\n"
 	}
@@ -351,16 +336,17 @@ func (p *BOP_BootInfoAcknowledge) Format() string {
 		s += "   - OS Loader has handled boot info\n"
 	}
 	if p.ByBIOSPOST {
-		s += "   - BIOS/POST has handled boot info"
+		s += "   - BIOS/POST has handled boot info\n"
 	}
 
-	if s == "" {
-		return "     No flag set\n"
+	if s == "\n" {
+		s += "    No flag set\n"
 	}
+
 	return fmt.Sprint(s)
 }
 
-func (p *BOP_BootInfoAcknowledge) Pack() []byte {
+func (p *BootOptionParam_BootInfoAcknowledge) Pack() []byte {
 	var out = make([]byte, 2)
 
 	var b uint8 = 0x00
@@ -391,7 +377,7 @@ func (p *BOP_BootInfoAcknowledge) Pack() []byte {
 	return out
 }
 
-func (p *BOP_BootInfoAcknowledge) Unpack(parameterData []byte) error {
+func (p *BootOptionParam_BootInfoAcknowledge) Unpack(parameterData []byte) error {
 	if len(parameterData) != 2 {
 		return fmt.Errorf("the parameter data length must be 2 bytes")
 	}
@@ -405,7 +391,7 @@ func (p *BOP_BootInfoAcknowledge) Unpack(parameterData []byte) error {
 	return nil
 }
 
-type BOP_BootFlags struct {
+type BootOptionParam_BootFlags struct {
 	// 1b = boot flags valid.
 	// The bit should be set to indicate that valid flag data is present.
 	// This bit may be automatically cleared based on the boot flag valid bit clearing parameter, above.
@@ -436,7 +422,11 @@ type BOP_BootFlags struct {
 	DeviceInstanceSelector uint8 // only 5 bits
 }
 
-func (p *BOP_BootFlags) Pack() []byte {
+func (p *BootOptionParam_BootFlags) BootOptionParameter() (paramSelector BootOptionParamSelector, setSelector uint8, blockSelector uint8) {
+	return BootOptionParamSelector_BootFlags, 0, 0
+}
+
+func (p *BootOptionParam_BootFlags) Pack() []byte {
 	out := make([]byte, 5)
 
 	var b1 uint8
@@ -495,7 +485,7 @@ func (p *BOP_BootFlags) Pack() []byte {
 	return out
 }
 
-func (p *BOP_BootFlags) Unpack(parameterData []byte) error {
+func (p *BootOptionParam_BootFlags) Unpack(parameterData []byte) error {
 	if len(parameterData) != 5 {
 		return fmt.Errorf("the parameter data length must be 5 bytes")
 	}
@@ -530,8 +520,9 @@ func (p *BOP_BootFlags) Unpack(parameterData []byte) error {
 	return nil
 }
 
-func (p *BOP_BootFlags) Format() string {
-	var s string
+func (p *BootOptionParam_BootFlags) Format() string {
+	s := "\n"
+
 	s += fmt.Sprintf("   - Boot Flag %s\n", formatBool(p.BootFlagsValid, "Valid", "Invalid"))
 	s += fmt.Sprintf("   - Options apply to %s\n", formatBool(p.Persist, "all future boots", "only next boot"))
 	s += fmt.Sprintf("   - %s\n", p.BIOSBootType.String())
@@ -539,13 +530,17 @@ func (p *BOP_BootFlags) Format() string {
 	if p.CMOSClear {
 		s += "   - CMOS Clear\n"
 	}
+
 	if p.LockKeyboard {
 		s += "   - Lock Keyboard\n"
 	}
+
 	s += fmt.Sprintf("   - Boot Device Selector : %s\n", p.BootDeviceSelector.String())
+
 	if p.ScreenBlank {
 		s += "   - Screen blank\n"
 	}
+
 	if p.LockoutResetButton {
 		s += "   - Lock out Reset buttons\n"
 	}
@@ -553,26 +548,33 @@ func (p *BOP_BootFlags) Format() string {
 	if p.LockoutPowerOff {
 		s += "   - Lock out (power off/sleep request) via Power Button\n"
 	}
+
 	s += fmt.Sprintf("   - BIOS verbosity : %s\n", p.BIOSVerbosity.String())
+
 	if p.ForceProgressEventTraps {
 		s += "   - Force progress event traps\n"
 	}
+
 	if p.BypassUserPassword {
 		s += "   - User password bypass\n"
 	}
+
 	if p.LockoutSleepButton {
 		s += "   - Lock Out Sleep Button\n"
 	}
 
 	s += fmt.Sprintf("   - Console Redirection control : %s\n", p.ConsoleRedirectionControl.String())
+
 	if p.BIOSSharedModeOverride {
 		s += "   - BIOS Shared Mode Override\n"
 	}
-	s += fmt.Sprintf("   - BIOS Mux Control Override : %s", p.BIOSMuxControl.String())
+
+	s += fmt.Sprintf("   - BIOS Mux Control Override : %s\n", p.BIOSMuxControl.String())
+
 	return s
 }
 
-func (bootFlags *BOP_BootFlags) OptionsHelp() string {
+func (bootFlags *BootOptionParam_BootFlags) OptionsHelp() string {
 	supportedOptions := []struct {
 		name string
 		help string
@@ -606,12 +608,12 @@ func (bootFlags *BOP_BootFlags) OptionsHelp() string {
 	return buf.String()
 }
 
-func (bootFlags *BOP_BootFlags) ParseFromOptionsStr(optionsStr string) error {
+func (bootFlags *BootOptionParam_BootFlags) ParseFromOptionsStr(optionsStr string) error {
 	options := strings.Split(optionsStr, ",")
 	return bootFlags.ParseFromOptions(options)
 }
 
-func (bootFlags *BOP_BootFlags) ParseFromOptions(options []string) error {
+func (bootFlags *BootOptionParam_BootFlags) ParseFromOptions(options []string) error {
 	for _, option := range options {
 		switch option {
 		case "valid":
@@ -657,138 +659,24 @@ func (bootFlags *BOP_BootFlags) ParseFromOptions(options []string) error {
 
 }
 
-type BIOSVerbosity uint8 // only 2 bits, occupied 0-3
-
-const (
-	BIOSVerbosityDefault BIOSVerbosity = 0
-	BIOSVerbosityQuiet   BIOSVerbosity = 1
-	BIOSVerbosityVerbose BIOSVerbosity = 2
-)
-
-func (v BIOSVerbosity) String() string {
-	switch v {
-	case 0:
-		return "System Default"
-	case 1:
-		return "Request Quiet Display"
-	case 2:
-		return "Request Verbose Display"
-	default:
-		return "Flag error"
-	}
-}
-
-type BIOSBootType bool
-
-const (
-	BIOSBootTypeLegacy BIOSBootType = false // PC compatible boot (legacy)
-	BIOSBootTypeEFI    BIOSBootType = true  // Extensible Firmware Interface Boot (EFI)
-)
-
-func (t BIOSBootType) String() string {
-	if t {
-		return "BIOS EFI boot"
-	}
-	return "BIOS PC Compatible (legacy) boot"
-}
-
-type BootDeviceSelector uint8 // only 4 bits occupied
-
-const (
-	BootDeviceSelectorNoOverride               BootDeviceSelector = 0x00
-	BootDeviceSelectorForcePXE                 BootDeviceSelector = 0x01
-	BootDeviceSelectorForceHardDrive           BootDeviceSelector = 0x02
-	BootDeviceSelectorForceHardDriveSafe       BootDeviceSelector = 0x03
-	BootDeviceSelectorForceDiagnosticPartition BootDeviceSelector = 0x04
-	BootDeviceSelectorForceCDROM               BootDeviceSelector = 0x05
-	BootDeviceSelectorForceBIOSSetup           BootDeviceSelector = 0x06
-	BootDeviceSelectorForceRemoteFloppy        BootDeviceSelector = 0x07
-	BootDeviceSelectorForceRemoteCDROM         BootDeviceSelector = 0x08
-	BootDeviceSelectorForceRemoteMedia         BootDeviceSelector = 0x09
-	BootDeviceSelectorForceRemoteHardDrive     BootDeviceSelector = 0x0b
-	BootDeviceSelectorForceFloppy              BootDeviceSelector = 0x0f
-)
-
-func (s BootDeviceSelector) String() string {
-	switch s {
-	case 0x00:
-		return "No override"
-	case 0x01:
-		return "Force PXE"
-	case 0x02:
-		return "Force Boot from default Hard-Drive"
-	case 0x03:
-		return "Force Boot from default Hard-Drive, request Safe-Mode"
-	case 0x04:
-		return "Force Boot from Diagnostic Partition"
-	case 0x05:
-		return "Force Boot from CD/DVD"
-	case 0x06:
-		return "Force Boot into BIOS Setup"
-	case 0x07:
-		return "Force Boot from remotely connected Floppy/primary removable media"
-	case 0x08:
-		return "Force Boot from remotely connected CD/DVD"
-	case 0x09:
-		return "Force Boot from primary remote media"
-	case 0x0b:
-		return "Force Boot from remotely connected Hard-Drive"
-	case 0x0f:
-		return "Force Boot from Floppy/primary removable media"
-	default:
-		return "Flag error"
-	}
-}
-
-type ConsoleRedirectionControl uint8
-
-const (
-	ConsoleRedirectionControl_Default ConsoleRedirectionControl = 0
-	ConsoleRedirectionControl_Skip    ConsoleRedirectionControl = 1
-	ConsoleRedirectionControl_Enable  ConsoleRedirectionControl = 2
-)
-
-func (c ConsoleRedirectionControl) String() string {
-	switch c {
-	case 0:
-		return "Console redirection occurs per BIOS configuration setting (default)"
-	case 1:
-		return "Suppress (skip) console redirection if enabled"
-	case 2:
-		return "Request console redirection be enabled"
-	default:
-		return "Flag error"
-	}
-}
-
-type BIOSMuxControl uint8
-
-func (b BIOSMuxControl) String() string {
-	switch b {
-	case 0:
-		return "BIOS uses recommended setting of the mux at the end of POST"
-	case 1:
-		return "Requests BIOS to force mux to BMC at conclusion of POST/start of OS boot"
-	case 2:
-		return "Requests BIOS to force mux to system at conclusion of POST/start of OS boot"
-	default:
-		return "Flag error"
-	}
-}
-
-type BOP_BootInitiatorInfo struct {
+type BootOptionParam_BootInitiatorInfo struct {
 	ChannelNumber     uint8
 	SessionID         uint32
 	BootInfoTimestamp time.Time
 }
 
-func (p *BOP_BootInitiatorInfo) Format() string {
-	return fmt.Sprintf(`     Channel Number : %d
-     Session Id     : %d
-     Timestamp      : %s`, p.ChannelNumber, p.SessionID, p.BootInfoTimestamp)
+func (p *BootOptionParam_BootInitiatorInfo) BootOptionParameter() (paramSelector BootOptionParamSelector, setSelector uint8, blockSelector uint8) {
+	return BootOptionParamSelector_BootInitiatorInfo, 0, 0
 }
 
-func (p *BOP_BootInitiatorInfo) Pack() []byte {
+func (p *BootOptionParam_BootInitiatorInfo) Format() string {
+	return fmt.Sprintf(`
+    Channel Number : %d
+    Session Id     : %d
+    Timestamp      : %s`, p.ChannelNumber, p.SessionID, p.BootInfoTimestamp)
+}
+
+func (p *BootOptionParam_BootInitiatorInfo) Pack() []byte {
 	out := make([]byte, 9)
 	packUint8(p.ChannelNumber, out, 0)
 	packUint32L(p.SessionID, out, 1)
@@ -798,7 +686,7 @@ func (p *BOP_BootInitiatorInfo) Pack() []byte {
 	return out
 }
 
-func (p *BOP_BootInitiatorInfo) Unpack(parameterData []byte) error {
+func (p *BootOptionParam_BootInitiatorInfo) Unpack(parameterData []byte) error {
 	if len(parameterData) != 9 {
 		return fmt.Errorf("the parameter data length must be 9 bytes")
 	}
@@ -811,24 +699,30 @@ func (p *BOP_BootInitiatorInfo) Unpack(parameterData []byte) error {
 	return nil
 }
 
-type BOP_BootInitiatorMailbox struct {
+type BootOptionParam_BootInitiatorMailbox struct {
 	SetSelector uint8
 	BlockData   []byte
 }
 
-func (p *BOP_BootInitiatorMailbox) Format() string {
-	// Todo
-	return ""
+func (p *BootOptionParam_BootInitiatorMailbox) BootOptionParameter() (paramSelector BootOptionParamSelector, setSelector uint8, blockSelector uint8) {
+	return BootOptionParamSelector_BootInitiatorMailbox, 0, 0
 }
 
-func (p *BOP_BootInitiatorMailbox) Pack() []byte {
+func (p *BootOptionParam_BootInitiatorMailbox) Format() string {
+	return fmt.Sprintf(`
+    Selector   : %d
+    Block Data : %02x
+`, p.SetSelector, p.BlockData)
+}
+
+func (p *BootOptionParam_BootInitiatorMailbox) Pack() []byte {
 	out := make([]byte, 1+len(p.BlockData))
 	packUint8(p.SetSelector, out, 0)
 	packBytes(p.BlockData, out, 1)
 	return out
 }
 
-func (p *BOP_BootInitiatorMailbox) Unpack(parameterData []byte) error {
+func (p *BootOptionParam_BootInitiatorMailbox) Unpack(parameterData []byte) error {
 	if len(parameterData) < 1 {
 		return fmt.Errorf("the parameter data length must be at least 1 bytes")
 	}

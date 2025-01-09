@@ -7,9 +7,9 @@ import (
 
 // 28.13 Get System Boot Options Command
 type GetSystemBootOptionsRequest struct {
-	ParameterSelector BootOptionParameterSelector
-	SetSelector       uint8
-	BlockSelector     uint8
+	ParamSelector BootOptionParamSelector
+	SetSelector   uint8
+	BlockSelector uint8
 }
 
 // Table 28-14, Boot Option Parameters
@@ -21,17 +21,16 @@ type GetSystemBootOptionsResponse struct {
 	// 0b = mark parameter valid / unlocked
 	ParameterInValid bool
 	// [6:0] - boot option parameter selector
-	ParameterSelector BootOptionParameterSelector
+	ParamSelector BootOptionParamSelector
 
-	parameterData []byte // origin parameter data
+	ParamData []byte // origin parameter data
 
-	// parameterData is automatically parsed to BootOptionParameter
-	BootOptionParameter *BootOptionParameter
+	Parameter BootOptionParameter
 }
 
 func (req *GetSystemBootOptionsRequest) Pack() []byte {
 	out := make([]byte, 3)
-	packUint8(uint8(req.ParameterSelector), out, 0)
+	packUint8(uint8(req.ParamSelector), out, 0)
 	packUint8(req.SetSelector, out, 1)
 	packUint8(req.BlockSelector, out, 2)
 	return out
@@ -48,49 +47,159 @@ func (res *GetSystemBootOptionsResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetSystemBootOptionsResponse) Unpack(msg []byte) error {
-	if len(msg) < 2 {
-		return ErrUnpackedDataTooShortWith(len(msg), 2)
+	if len(msg) < 3 {
+		return ErrUnpackedDataTooShortWith(len(msg), 3)
 	}
 	res.ParameterVersion, _, _ = unpackUint8(msg, 0)
 	b, _, _ := unpackUint8(msg, 1)
 	res.ParameterInValid = isBit7Set(b)
-	res.ParameterSelector = BootOptionParameterSelector(b & 0x7f) // clear bit 7
+	res.ParamSelector = BootOptionParamSelector(b & 0x7f) // clear bit 7
 
-	if len(msg) > 2 {
-		parameterData, _, _ := unpackBytes(msg, 2, len(msg)-2)
-		res.parameterData = parameterData
+	res.ParamData, _, _ = unpackBytes(msg, 2, len(msg)-2)
+	return nil
+}
 
-		bop, err := ParseBootOptionParameterData(res.ParameterSelector, parameterData)
-		if err != nil {
-			return fmt.Errorf("parse ParameterData failed, err: %s", err)
+func (res *GetSystemBootOptionsResponse) Format() string {
+
+	var paramDataFormatted string
+
+	var param BootOptionParameter
+
+	switch res.ParamSelector {
+	case BootOptionParamSelector_SetInProgress:
+		param = &BootOptionParam_SetInProgress{}
+	case BootOptionParamSelector_ServicePartitionSelector:
+		param = &BootOptionParam_ServicePartitionSelector{}
+	case BootOptionParamSelector_ServicePartitionScan:
+		param = &BootOptionParam_ServicePartitionScan{}
+	case BootOptionParamSelector_BMCBootFlagValidBitClear:
+		param = &BootOptionParam_BMCBootFlagValidBitClear{}
+	case BootOptionParamSelector_BootInfoAcknowledge:
+		param = &BootOptionParam_BootInfoAcknowledge{}
+	case BootOptionParamSelector_BootFlags:
+		param = &BootOptionParam_BootFlags{}
+	case BootOptionParamSelector_BootInitiatorInfo:
+		param = &BootOptionParam_BootInitiatorInfo{}
+	case BootOptionParamSelector_BootInitiatorMailbox:
+		param = &BootOptionParam_BootInitiatorMailbox{}
+	}
+
+	if param != nil {
+		if err := param.Unpack(res.ParamData); err == nil {
+			paramDataFormatted = param.Format()
 		}
-		res.BootOptionParameter = bop
+	}
+
+	return fmt.Sprintf(`Boot parameter version: %d
+Boot parameter %d is %s
+Boot parameter data: %02x
+  %s : %s`,
+		res.ParameterVersion,
+		res.ParamSelector, formatBool(res.ParameterInValid, "invalid/locked", "valid/unlocked"),
+		res.ParamData,
+		res.ParamSelector.String(),
+		paramDataFormatted,
+	)
+}
+
+func (c *Client) GetSystemBootOptions(ctx context.Context, paramSelector BootOptionParamSelector, setSelector uint8, blockSelector uint8) (response *GetSystemBootOptionsResponse, err error) {
+	request := &GetSystemBootOptionsRequest{
+		ParamSelector: paramSelector,
+		SetSelector:   setSelector,
+		BlockSelector: blockSelector,
+	}
+	response = &GetSystemBootOptionsResponse{}
+	err = c.Exchange(ctx, request, response)
+	return
+}
+
+func (c *Client) GetSystemBootOptionsFor(ctx context.Context, param BootOptionParameter) error {
+	paramSelector, setSelector, blockSelector := param.BootOptionParameter()
+
+	response, err := c.GetSystemBootOptions(ctx, paramSelector, setSelector, blockSelector)
+	if err != nil {
+		return fmt.Errorf("GetSystemBootOptions for param (%s[%d]) failed, err: %w", paramSelector.String(), paramSelector, err)
+	}
+
+	if err := param.Unpack(response.ParamData); err != nil {
+		return fmt.Errorf("unpack param (%s[%d]) failed, err: %w", paramSelector.String(), paramSelector, err)
 	}
 
 	return nil
 }
 
-func (res *GetSystemBootOptionsResponse) Format() string {
-	return fmt.Sprintf(`Boot parameter version: %d
-Boot parameter %d is %s
-Boot parameter data: %02x
-%s`,
-		res.ParameterVersion,
-		res.ParameterSelector, formatBool(res.ParameterInValid, "invalid/locked", "valid/unlocked"),
-		res.parameterData,
-		res.BootOptionParameter.Format(res.ParameterSelector))
+// GetBootOptions get all parameters for boot options.
+func (c *Client) GetBootOptions(ctx context.Context) (*BootOptions, error) {
+	bootOptions := &BootOptions{
+		SetInProgress:            &BootOptionParam_SetInProgress{},
+		ServicePartitionSelector: &BootOptionParam_ServicePartitionSelector{},
+		ServicePartitionScan:     &BootOptionParam_ServicePartitionScan{},
+		BMCBootFlagValidBitClear: &BootOptionParam_BMCBootFlagValidBitClear{},
+		BootInfoAcknowledge:      &BootOptionParam_BootInfoAcknowledge{},
+		BootFlags:                &BootOptionParam_BootFlags{},
+		BootInitiatorInfo:        &BootOptionParam_BootInitiatorInfo{},
+		BootInitiatorMailbox:     &BootOptionParam_BootInitiatorMailbox{},
+	}
+
+	if err := c.GetBootOptionsFor(ctx, bootOptions); err != nil {
+		return nil, fmt.Errorf("GetBootOptionsFor failed, err: %s", err)
+	}
+
+	return bootOptions, nil
 }
 
-// This command is used to set parameters that direct the system boot following a system power up or reset.
-// The boot flags only apply for one system restart. It is the responsibility of the system BIOS
-// to read these settings from the BMC and then clear the boot flags
-func (c *Client) GetSystemBootOptions(ctx context.Context, parameterSelector BootOptionParameterSelector) (response *GetSystemBootOptionsResponse, err error) {
-	request := &GetSystemBootOptionsRequest{
-		ParameterSelector: parameterSelector,
-		SetSelector:       0x00,
-		BlockSelector:     0x00,
+func (c *Client) GetBootOptionsFor(ctx context.Context, bootOptions *BootOptions) error {
+	if bootOptions == nil {
+		return nil
 	}
-	response = &GetSystemBootOptionsResponse{}
-	err = c.Exchange(ctx, request, response)
-	return
+
+	if bootOptions.SetInProgress != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.SetInProgress); err != nil {
+			return err
+		}
+	}
+
+	if bootOptions.ServicePartitionSelector != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.ServicePartitionSelector); err != nil {
+			return err
+		}
+	}
+
+	if bootOptions.ServicePartitionScan != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.ServicePartitionScan); err != nil {
+			return err
+		}
+	}
+
+	if bootOptions.BMCBootFlagValidBitClear != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.BMCBootFlagValidBitClear); err != nil {
+			return err
+		}
+	}
+
+	if bootOptions.BootInfoAcknowledge != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.BootInfoAcknowledge); err != nil {
+			return err
+		}
+	}
+
+	if bootOptions.BootFlags != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.BootFlags); err != nil {
+			return err
+		}
+	}
+
+	if bootOptions.BootInitiatorInfo != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.BootInitiatorInfo); err != nil {
+			return err
+		}
+
+	}
+
+	if bootOptions.BootInitiatorMailbox != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.BootInitiatorMailbox); err != nil {
+			return err
+		}
+	}
+	return nil
 }

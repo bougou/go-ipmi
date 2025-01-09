@@ -5,76 +5,70 @@ import (
 	"fmt"
 )
 
-func (c *Client) SetBootParamSetInProgressState(ctx context.Context, progressState BOP_SetInProgressState) error {
-	r := &SetSystemBootOptionsRequest{
-		MarkParameterInvalid: false,
-		ParameterSelector:    BOPS_SetInProgressState,
-
-		BootOptionParameter: BootOptionParameter{
-			SetInProgressState: &progressState,
-		},
+func (c *Client) SetBootParamSetInProgress(ctx context.Context, setInProgress SetInProgress) error {
+	param := &BootOptionParam_SetInProgress{
+		Value: setInProgress,
 	}
 
-	_, err := c.SetSystemBootOptions(ctx, r)
-	if err != nil {
-		return fmt.Errorf("SetSystemBootOptions failed, err: %s", err)
+	if err := c.SetSystemBootOptionsFor(ctx, param); err != nil {
+		return fmt.Errorf("SetSystemBootOptionsFor failed, err: %s", err)
 	}
 
 	return nil
 }
 
-func (c *Client) SetBootParamBootFlags(ctx context.Context, bootFlags *BOP_BootFlags) error {
-	if err := c.SetBootParamSetInProgressState(ctx, SetInProgressState_SetInProgress); err != nil {
+func (c *Client) SetBootParamBootFlags(ctx context.Context, bootFlags *BootOptionParam_BootFlags) error {
+	if err := c.SetBootParamSetInProgress(ctx, SetInProgress_SetInProgress); err != nil {
 		goto OUT
 	} else {
-		r := &SetSystemBootOptionsRequest{
-			MarkParameterInvalid: false,
-			ParameterSelector:    BOPS_BootFlags,
-			BootOptionParameter: BootOptionParameter{
-				BootFlags: bootFlags,
-			},
-		}
-
-		_, err := c.SetSystemBootOptions(ctx, r)
-		if err != nil {
+		if err := c.SetSystemBootOptionsFor(ctx, bootFlags); err != nil {
 			return fmt.Errorf("SetSystemBootOptions failed, err: %s", err)
 		}
 	}
 
 OUT:
-	if err := c.SetBootParamSetInProgressState(ctx, SetInProgressState_SetComplete); err != nil {
-		return fmt.Errorf("SetBootParamSetInProgressState failed, err: %s", err)
+	if err := c.SetBootParamSetInProgress(ctx, SetInProgress_SetComplete); err != nil {
+		return fmt.Errorf("SetBootParamSetInProgress failed, err: %s", err)
 	}
 
 	return nil
 }
 
 func (c *Client) SetBootParamClearAck(ctx context.Context, by BootInfoAcknowledgeBy) error {
-	ack := &BOP_BootInfoAcknowledge{}
+	param := &BootOptionParam_BootInfoAcknowledge{}
 
 	switch by {
 	case BootInfoAcknowledgeByBIOSPOST:
-		ack.ByBIOSPOST = true
+		param.ByBIOSPOST = true
 	case BootInfoAcknowledgeByOSLoader:
-		ack.ByOSLoader = true
+		param.ByOSLoader = true
 	case BootInfoAcknowledgeByOSServicePartition:
-		ack.ByOSServicePartition = true
+		param.ByOSServicePartition = true
 	case BootInfoAcknowledgeBySMS:
-		ack.BySMS = true
+		param.BySMS = true
 	case BootInfoAcknowledgeByOEM:
-		ack.ByOEM = true
+		param.ByOEM = true
 	}
 
-	r := &SetSystemBootOptionsRequest{
-		MarkParameterInvalid: false,
-		ParameterSelector:    BOPS_BootInfoAcknowledge,
-		BootOptionParameter: BootOptionParameter{
-			BootInfoAcknowledge: ack,
-		},
+	if err := c.SetSystemBootOptionsFor(ctx, param); err != nil {
+		return fmt.Errorf("SetSystemBootOptionsFor failed, err: %s", err)
 	}
 
-	_, err := c.SetSystemBootOptions(ctx, r)
-	if err != nil {
+	return nil
+}
+
+// SetBootDevice set the boot device for next boot.
+// persist of false means it applies to next boot only.
+// persist of true means this setting is persistent for all future boots.
+func (c *Client) SetBootDevice(ctx context.Context, bootDeviceSelector BootDeviceSelector, bootType BIOSBootType, persist bool) error {
+	param := &BootOptionParam_BootFlags{
+		BootFlagsValid:     true,
+		Persist:            persist,
+		BIOSBootType:       bootType,
+		BootDeviceSelector: bootDeviceSelector,
+	}
+
+	if err := c.SetSystemBootOptionsFor(ctx, param); err != nil {
 		return fmt.Errorf("SetSystemBootOptions failed, err: %s", err)
 	}
 

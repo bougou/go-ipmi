@@ -26,7 +26,7 @@ func (c *Client) SOLInfo(ctx context.Context, channelNumber uint8) (*SOLConfigPa
 			return nil, fmt.Errorf("GetSOLConfigParams for %d failed, err: %s", uint8(param), err)
 		}
 
-		if err = ParseSOLParamData(param, res.ParameterData, solConfigParam); err != nil {
+		if err = ParseSOLParamData(param, res.ParamData, solConfigParam); err != nil {
 			return nil, fmt.Errorf("ParseSOLParamData failed, err: %s", err)
 		}
 	}

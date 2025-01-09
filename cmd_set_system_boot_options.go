@@ -7,21 +7,14 @@ import (
 
 // 28.12 Set System Boot Options Command
 type SetSystemBootOptionsRequest struct {
-	// Thus, the BMC will automatically clear a 'boot flags valid bit' if
-	// a system restart is not initiated by a Chassis Control command
-	// within 60 seconds +/- 10% of the valid flag being set.
-	//
-	// The BMC will also clear the bit on any system resets or power-cycles that
-	// are not triggered by a System Control command.
-	//
-	// This default behavior can be temporarily overridden using the 'BMC boot flag valid bit clearing' parameter.
-	// [7] - 1b = mark parameter invalid / locked
-	// 0b = mark parameter valid / unlocked
+	// Parameter valid
+	//  - 1b = mark parameter invalid / locked
+	//  - 0b = mark parameter valid / unlocked
 	MarkParameterInvalid bool
 	// [6:0] - boot option parameter selector
-	ParameterSelector BootOptionParameterSelector
+	ParamSelector BootOptionParamSelector
 
-	BootOptionParameter BootOptionParameter
+	ParamData []byte
 }
 
 // Table 28-14, Boot Option Parameters
@@ -30,11 +23,10 @@ type SetSystemBootOptionsResponse struct {
 }
 
 func (req *SetSystemBootOptionsRequest) Pack() []byte {
-	parameterData := req.BootOptionParameter.Pack(req.ParameterSelector)
 
-	out := make([]byte, 1+len(parameterData))
+	out := make([]byte, 1+len(req.ParamData))
 
-	b := uint8(req.ParameterSelector)
+	b := uint8(req.ParamSelector)
 	if req.MarkParameterInvalid {
 		b = setBit7(b)
 	} else {
@@ -42,7 +34,7 @@ func (req *SetSystemBootOptionsRequest) Pack() []byte {
 	}
 	packUint8(b, out, 0)
 
-	packBytes(parameterData, out, 1)
+	packBytes(req.ParamData, out, 1)
 
 	return out
 }
@@ -76,24 +68,19 @@ func (c *Client) SetSystemBootOptions(ctx context.Context, request *SetSystemBoo
 	return
 }
 
-// SetBootDevice set the boot device for next boot.
-// persist of false means it applies to next boot only.
-// persist of true means this setting is persistent for all future boots.
-func (c *Client) SetBootDevice(ctx context.Context, bootDeviceSelector BootDeviceSelector, bootType BIOSBootType, persist bool) error {
-	req := &SetSystemBootOptionsRequest{
+func (c *Client) SetSystemBootOptionsFor(ctx context.Context, param BootOptionParameter) error {
+	paramSelector, _, _ := param.BootOptionParameter()
+	paramData := param.Pack()
+
+	request := &SetSystemBootOptionsRequest{
 		MarkParameterInvalid: false,
-		ParameterSelector:    BOPS_BootFlags,
-		BootOptionParameter: BootOptionParameter{
-			BootFlags: &BOP_BootFlags{
-				BootFlagsValid:     true,
-				Persist:            persist,
-				BIOSBootType:       bootType,
-				BootDeviceSelector: bootDeviceSelector,
-			},
-		},
+		ParamSelector:        paramSelector,
+		ParamData:            paramData,
 	}
-	if _, err := c.SetSystemBootOptions(ctx, req); err != nil {
+
+	if _, err := c.SetSystemBootOptions(ctx, request); err != nil {
 		return fmt.Errorf("SetSystemBootOptions failed, err: %s", err)
 	}
+
 	return nil
 }

@@ -37,6 +37,7 @@ func NewCmdX() *cobra.Command {
 	cmd.AddCommand(NewCmdXGetLanConfigFor())
 	cmd.AddCommand(NewCmdXGetLanConfigFull())
 	cmd.AddCommand(NewCmdXGetDCMIConfig())
+	cmd.AddCommand(NewCmdXGetBootOptions())
 
 	return cmd
 }
@@ -287,6 +288,24 @@ func NewCmdXGetDCMIConfig() *cobra.Command {
 			}
 
 			fmt.Println(dcmiConfig.Format())
+		},
+	}
+
+	return cmd
+}
+
+func NewCmdXGetBootOptions() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "get-boot-options",
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
+			bootOptions, err := client.GetBootOptions(ctx)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			fmt.Println(bootOptions.Format())
 		},
 	}
 

@@ -6,14 +6,14 @@ import "context"
 type GetSOLConfigParamsRequest struct {
 	GetParameterRevisionOnly bool
 	ChannelNumber            uint8
-	ParameterSelector        SOLConfigParamSelector
+	ParamSelector            SOLConfigParamSelector
 	SetSelector              uint8
 	BlockSelector            uint8
 }
 
 type GetSOLConfigParamsResponse struct {
 	ParameterRevision uint8
-	ParameterData     []byte
+	ParamData         []byte
 }
 
 func (req *GetSOLConfigParamsRequest) Command() Command {
@@ -28,7 +28,7 @@ func (req *GetSOLConfigParamsRequest) Pack() []byte {
 	}
 
 	packUint8(b, out, 0)
-	packUint8(uint8(req.ParameterSelector), out, 1)
+	packUint8(uint8(req.ParamSelector), out, 1)
 	packUint8(req.SetSelector, out, 2)
 	packUint8(req.BlockSelector, out, 3)
 	return out
@@ -44,7 +44,7 @@ func (res *GetSOLConfigParamsResponse) Unpack(msg []byte) error {
 	}
 
 	res.ParameterRevision = msg[0]
-	res.ParameterData, _, _ = unpackBytes(msg, 1, len(msg)-1)
+	res.ParamData, _, _ = unpackBytes(msg, 1, len(msg)-1)
 	return nil
 }
 
@@ -54,10 +54,10 @@ func (res *GetSOLConfigParamsResponse) Format() string {
 
 func (c *Client) GetSOLConfigParams(ctx context.Context, channelNumber uint8, paramSelector SOLConfigParamSelector) (response *GetSOLConfigParamsResponse, err error) {
 	request := &GetSOLConfigParamsRequest{
-		ChannelNumber:     channelNumber,
-		ParameterSelector: paramSelector,
-		SetSelector:       0x00,
-		BlockSelector:     0x00,
+		ChannelNumber: channelNumber,
+		ParamSelector: paramSelector,
+		SetSelector:   0x00,
+		BlockSelector: 0x00,
 	}
 	response = &GetSOLConfigParamsResponse{}
 	err = c.Exchange(ctx, request, response)
