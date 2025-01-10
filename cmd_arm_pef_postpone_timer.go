@@ -59,8 +59,10 @@ func (res *ArmPEFPostponeTimerResponse) Format() string {
 	)
 }
 
-func (c *Client) ArmPEFPostponeTimer(ctx context.Context) (response *ArmPEFPostponeTimerResponse, err error) {
-	request := &ArmPEFPostponeTimerRequest{}
+func (c *Client) ArmPEFPostponeTimer(ctx context.Context, timeout uint8) (response *ArmPEFPostponeTimerResponse, err error) {
+	request := &ArmPEFPostponeTimerRequest{
+		Timeout: timeout,
+	}
 	response = &ArmPEFPostponeTimerResponse{}
 	err = c.Exchange(ctx, request, response)
 	return

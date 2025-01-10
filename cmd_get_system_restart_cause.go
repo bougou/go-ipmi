@@ -7,7 +7,7 @@ import (
 
 // 28.11 Get System Restart Cause Command
 type GetSystemRestartCauseRequest struct {
-	// no data
+	// empty
 }
 
 type GetSystemRestartCauseResponse struct {

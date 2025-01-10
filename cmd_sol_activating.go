@@ -38,8 +38,7 @@ func (res *SOLActivatingResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SOLActivating(ctx context.Context) (response *SOLActivatingResponse, err error) {
-	request := &SOLActivatingRequest{}
+func (c *Client) SOLActivating(ctx context.Context, request *SOLActivatingRequest) (response *SOLActivatingResponse, err error) {
 	response = &SOLActivatingResponse{}
 	err = c.Exchange(ctx, request, response)
 	return

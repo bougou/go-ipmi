@@ -7,6 +7,7 @@ import (
 
 // 31.11a Get SEL Time UTC Offset
 type GetSELTimeUTCOffsetRequest struct {
+	// empty
 }
 
 type GetSELTimeUTCOffsetResponse struct {

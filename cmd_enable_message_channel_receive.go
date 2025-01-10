@@ -53,8 +53,11 @@ func (res *EnableMessageChannelReceiveResponse) Format() string {
 	return ""
 }
 
-func (c *Client) EnableMessageChannelReceive(ctx context.Context) (response *EnableMessageChannelReceiveResponse, err error) {
-	request := &EnableMessageChannelReceiveRequest{}
+func (c *Client) EnableMessageChannelReceive(ctx context.Context, channelNumber uint8, channelState uint8) (response *EnableMessageChannelReceiveResponse, err error) {
+	request := &EnableMessageChannelReceiveRequest{
+		ChannelNumber: channelNumber,
+		ChannelState:  channelState,
+	}
 	response = &EnableMessageChannelReceiveResponse{}
 	err = c.Exchange(ctx, request, response)
 	return

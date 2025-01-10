@@ -7,6 +7,7 @@ import (
 
 // 27.7 Get Watchdog Timer Command
 type GetWatchdogTimerRequest struct {
+	// empty
 }
 
 func (req *GetWatchdogTimerRequest) Pack() []byte {

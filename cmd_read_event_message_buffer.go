@@ -4,6 +4,7 @@ import "context"
 
 // 22.8 Read Event Message Buffer Command
 type ReadEventMessageBufferRequest struct {
+	// empty
 }
 
 type ReadEventMessageBufferResponse struct {

@@ -47,8 +47,11 @@ func (res *SetLastProcessedEventIdResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetLastProcessedEventId(ctx context.Context) (response *SetLastProcessedEventIdResponse, err error) {
-	request := &SetLastProcessedEventIdRequest{}
+func (c *Client) SetLastProcessedEventId(ctx context.Context, recordID uint16, byBMC bool) (response *SetLastProcessedEventIdResponse, err error) {
+	request := &SetLastProcessedEventIdRequest{
+		ByBMC:    byBMC,
+		RecordID: recordID,
+	}
 	response = &SetLastProcessedEventIdResponse{}
 	err = c.Exchange(ctx, request, response)
 	return

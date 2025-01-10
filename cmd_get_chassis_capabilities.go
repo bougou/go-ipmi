@@ -4,7 +4,7 @@ import "context"
 
 // 28.1 Get Chassis Capabilities Command
 type GetChassisCapabilitiesRequest struct {
-	// no request data
+	// empty
 }
 
 type GetChassisCapabilitiesResponse struct {

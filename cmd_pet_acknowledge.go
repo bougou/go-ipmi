@@ -73,8 +73,7 @@ func (res *PETAcknowledgeResponse) Format() string {
 	return ""
 }
 
-func (c *Client) PETAcknowledge(ctx context.Context) (response *PETAcknowledgeResponse, err error) {
-	request := &PETAcknowledgeRequest{}
+func (c *Client) PETAcknowledge(ctx context.Context, request *PETAcknowledgeRequest) (response *PETAcknowledgeResponse, err error) {
 	response = &PETAcknowledgeResponse{}
 	err = c.Exchange(ctx, request, response)
 	return

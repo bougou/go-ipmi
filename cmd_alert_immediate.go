@@ -21,6 +21,7 @@ const (
 	AlertImmediateStatusInProgress    AlertImmediateStatus = 0xff
 )
 
+// 30.7 Alert Immediate Command
 type AlertImmediateRequest struct {
 	ChannelNumber uint8
 
@@ -69,8 +70,7 @@ func (res *AlertImmediateResponse) Format() string {
 	return ""
 }
 
-func (c *Client) AlertImmediate(ctx context.Context) (response *AlertImmediateResponse, err error) {
-	request := &AlertImmediateRequest{}
+func (c *Client) AlertImmediate(ctx context.Context, request *AlertImmediateRequest) (response *AlertImmediateResponse, err error) {
 	response = &AlertImmediateResponse{}
 	err = c.Exchange(ctx, request, response)
 	return

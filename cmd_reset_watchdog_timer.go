@@ -4,6 +4,7 @@ import "context"
 
 // 27.5 Reset Watchdog Timer Command
 type ResetWatchdogTimerRequest struct {
+	// empty
 }
 
 type ResetWatchdogTimerResponse struct {

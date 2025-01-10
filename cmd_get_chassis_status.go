@@ -7,7 +7,7 @@ import (
 
 // 28.2 Get Chassis Status Command
 type GetChassisStatusRequest struct {
-	// no data
+	// empty
 }
 
 type GetChassisStatusResponse struct {

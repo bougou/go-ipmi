@@ -57,8 +57,7 @@ func (res *ClearMessageFlagsResponse) Format() string {
 	return ""
 }
 
-func (c *Client) ClearMessageFlags(ctx context.Context) (response *ClearMessageFlagsResponse, err error) {
-	request := &ClearMessageFlagsRequest{}
+func (c *Client) ClearMessageFlags(ctx context.Context, request *ClearMessageFlagsRequest) (response *ClearMessageFlagsResponse, err error) {
 	response = &ClearMessageFlagsResponse{}
 	err = c.Exchange(ctx, request, response)
 	return

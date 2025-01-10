@@ -48,8 +48,11 @@ func (res *SetPEFConfigParamsResponse) Format() string {
 }
 
 // Todo
-func (c *Client) SetPEFConfigParams(ctx context.Context) (response *SetPEFConfigParamsResponse, err error) {
-	request := &SetPEFConfigParamsRequest{}
+func (c *Client) SetPEFConfigParams(ctx context.Context, paramSelector PEFConfigParamSelector, paramData []byte) (response *SetPEFConfigParamsResponse, err error) {
+	request := &SetPEFConfigParamsRequest{
+		ParamSelector: paramSelector,
+		ParamData:     paramData,
+	}
 	response = &SetPEFConfigParamsResponse{}
 	err = c.Exchange(ctx, request, response)
 	return

@@ -8,6 +8,7 @@ import (
 
 // 31.10 Get SEL Time Command
 type GetSELTimeRequest struct {
+	// empty
 }
 
 type GetSELTimeResponse struct {

@@ -8,7 +8,7 @@ import (
 
 // GetSELInfoRequest (31.2) command returns the number of entries in the SEL.
 type GetSELInfoRequest struct {
-	// no request data
+	// empty
 }
 
 type GetSELInfoResponse struct {

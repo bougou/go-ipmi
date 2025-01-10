@@ -4,6 +4,7 @@ import "context"
 
 // 22.4 Get Message Flags Command
 type GetMessageFlagsRequest struct {
+	// empty
 }
 
 type GetMessageFlagsResponse struct {

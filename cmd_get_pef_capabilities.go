@@ -7,7 +7,7 @@ import (
 
 // 30.1 Get PEF Capabilities Command
 type GetPEFCapabilitiesRequest struct {
-	// no request data
+	// empty
 }
 
 type GetPEFCapabilitiesResponse struct {

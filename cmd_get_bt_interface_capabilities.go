@@ -4,6 +4,7 @@ import "context"
 
 // 22.10 Get BT Interface Capabilities Command
 type GetBTInterfaceCapabilitiesRequest struct {
+	// empty
 }
 
 type GetBTInterfaceCapabilitiesResponse struct {
