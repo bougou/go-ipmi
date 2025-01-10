@@ -14,8 +14,8 @@ type GetLanConfigParamsRequest struct {
 }
 
 type GetLanConfigParamsResponse struct {
-	ParameterVersion uint8
-	ConfigData       []byte
+	ParameterRevision uint8
+	ParamData         []byte
 }
 
 func (req *GetLanConfigParamsRequest) Pack() []byte {
@@ -41,19 +41,19 @@ func (res *GetLanConfigParamsResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
-	res.ParameterVersion, _, _ = unpackUint8(msg, 0)
-	res.ConfigData, _, _ = unpackBytes(msg, 1, len(msg)-1)
+	res.ParameterRevision, _, _ = unpackUint8(msg, 0)
+	res.ParamData, _, _ = unpackBytes(msg, 1, len(msg)-1)
 	return nil
 }
 
 func (res *GetLanConfigParamsResponse) Format() string {
 	out := `
-ParameterVersion:      %d
-ConfigData:            %v
-Length of Config Data: %d
+Parameter Revision    : %d
+Param Data            : %v
+Length of Config Data : %d
 `
 
-	return fmt.Sprintf(out, res.ParameterVersion, res.ConfigData, len(res.ConfigData))
+	return fmt.Sprintf(out, res.ParameterRevision, res.ParamData, len(res.ParamData))
 }
 
 func (c *Client) GetLanConfigParams(ctx context.Context, channelNumber uint8, paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) (response *GetLanConfigParamsResponse, err error) {
@@ -82,8 +82,8 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 		return err
 	}
 
-	c.DebugBytes(fmt.Sprintf("<< Got param data for (%s[%d]) ", paramSelector.String(), paramSelector), response.ConfigData, 8)
-	if err := param.Unpack(response.ConfigData); err != nil {
+	c.DebugBytes(fmt.Sprintf("<< Got param data for (%s[%d]) ", paramSelector.String(), paramSelector), response.ParamData, 8)
+	if err := param.Unpack(response.ParamData); err != nil {
 		return fmt.Errorf("unpack lan config param (%s [%d]) failed, err: %w", paramSelector.String(), paramSelector, err)
 	}
 

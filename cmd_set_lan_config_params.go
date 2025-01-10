@@ -9,7 +9,7 @@ import (
 type SetLanConfigParamsRequest struct {
 	ChannelNumber uint8
 	ParamSelector LanConfigParamSelector
-	ConfigData    []byte
+	ParamData     []byte
 }
 
 type SetLanConfigParamsResponse struct {
@@ -17,7 +17,13 @@ type SetLanConfigParamsResponse struct {
 }
 
 func (req *SetLanConfigParamsRequest) Pack() []byte {
-	return []byte{}
+	out := make([]byte, 2+len(req.ParamData))
+
+	packUint8(req.ChannelNumber, out, 0)
+	packUint8(uint8(req.ParamSelector), out, 1)
+	packBytes(req.ParamData, out, 2)
+
+	return out
 }
 
 func (req *SetLanConfigParamsRequest) Command() Command {
@@ -45,7 +51,7 @@ func (c *Client) SetLanConfigParams(ctx context.Context, channelNumber uint8, pa
 	request := &SetLanConfigParamsRequest{
 		ChannelNumber: channelNumber,
 		ParamSelector: paramSelector,
-		ConfigData:    configData,
+		ParamData:     configData,
 	}
 	response = &SetLanConfigParamsResponse{}
 	err = c.Exchange(ctx, request, response)

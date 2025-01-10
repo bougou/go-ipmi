@@ -5,7 +5,7 @@ import "context"
 // 30.3 Set PEF Configuration Parameters Command
 type SetPEFConfigParamsRequest struct {
 	ParamSelector uint8
-	ConfigData    []byte
+	ParamData     []byte
 }
 
 type SetPEFConfigParamsResponse struct {
@@ -19,12 +19,12 @@ func (req *SetPEFConfigParamsRequest) Command() Command {
 func (req *SetPEFConfigParamsRequest) Pack() []byte {
 	// empty request data
 
-	out := make([]byte, 1+len(req.ConfigData))
+	out := make([]byte, 1+len(req.ParamData))
 
 	// out[0] = req.ParamSelector
 	packUint8(uint8(req.ParamSelector), out, 0)
-	if len(req.ConfigData) > 0 {
-		packBytes(req.ConfigData, out, 1)
+	if len(req.ParamData) > 0 {
+		packBytes(req.ParamData, out, 1)
 	}
 	return out
 }

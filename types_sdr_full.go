@@ -529,10 +529,8 @@ func (full *SDRFull) HasAnalogReading() bool {
 		return true
 	}
 
-	// for non-threshold sensors
-
 	if full.SensorUnit.IsAnalog() {
-		return false
+		return true
 	}
 
 	// for non-threshold sensors, but the analog data format indicates analog.
