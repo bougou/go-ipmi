@@ -9,8 +9,8 @@ import (
 type GetPEFConfigParamsRequest struct {
 	// [7] - 1b = get parameter revision only. 0b = get parameter
 	// [6:0] - Parameter selector
-	GetRevisionOnly bool
-	ParamSelector   PEFConfigParamSelector
+	GetParamRevisionOnly bool
+	ParamSelector        PEFConfigParamSelector
 
 	SetSelector   uint8 // 00h if parameter does not require a Set Selector
 	BlockSelector uint8 // 00h if parameter does not require a block number
@@ -23,9 +23,9 @@ type GetPEFConfigParamsResponse struct {
 	//  - MSN = present revision.
 	//  - LSN = oldest revision parameter is backward compatible with.
 	//  - 11h for parameters in this specification.
-	Revision uint8
+	ParamRevision uint8
 
-	// ParamData not returned when GetRevisionOnly is true
+	// ParamData not returned when GetParamRevisionOnly is true
 	ParamData []byte
 }
 
@@ -39,7 +39,7 @@ func (req *GetPEFConfigParamsRequest) Pack() []byte {
 	out := make([]byte, 3)
 
 	b0 := uint8(req.ParamSelector) & 0x3f
-	if req.GetRevisionOnly {
+	if req.GetParamRevisionOnly {
 		b0 = setBit7(b0)
 	}
 	packUint8(b0, out, 0)
@@ -54,7 +54,7 @@ func (res *GetPEFConfigParamsResponse) Unpack(msg []byte) error {
 		return ErrUnpackedDataTooShort
 	}
 
-	res.Revision = msg[0]
+	res.ParamRevision = msg[0]
 
 	if len(msg) > 1 {
 		res.ParamData, _, _ = unpackBytes(msg, 1, len(msg)-1)
@@ -73,17 +73,17 @@ func (res *GetPEFConfigParamsResponse) Format() string {
 	return fmt.Sprintf(`
 Parameter Revision           : %#02x (%d)
 Configuration Parameter Data : %# 02x`,
-		res.Revision, res.Revision,
+		res.ParamRevision, res.ParamRevision,
 		res.ParamData,
 	)
 }
 
 func (c *Client) GetPEFConfigParams(ctx context.Context, getRevisionOnly bool, paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) (response *GetPEFConfigParamsResponse, err error) {
 	request := &GetPEFConfigParamsRequest{
-		GetRevisionOnly: getRevisionOnly,
-		ParamSelector:   paramSelector,
-		SetSelector:     setSelector,
-		BlockSelector:   blockSelector,
+		GetParamRevisionOnly: getRevisionOnly,
+		ParamSelector:        paramSelector,
+		SetSelector:          setSelector,
+		BlockSelector:        blockSelector,
 	}
 	response = &GetPEFConfigParamsResponse{}
 	err = c.Exchange(ctx, request, response)

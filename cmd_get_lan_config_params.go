@@ -14,8 +14,8 @@ type GetLanConfigParamsRequest struct {
 }
 
 type GetLanConfigParamsResponse struct {
-	ParameterRevision uint8
-	ParamData         []byte
+	ParamRevision uint8
+	ParamData     []byte
 }
 
 func (req *GetLanConfigParamsRequest) Pack() []byte {
@@ -41,7 +41,7 @@ func (res *GetLanConfigParamsResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
-	res.ParameterRevision, _, _ = unpackUint8(msg, 0)
+	res.ParamRevision, _, _ = unpackUint8(msg, 0)
 	res.ParamData, _, _ = unpackBytes(msg, 1, len(msg)-1)
 	return nil
 }
@@ -53,7 +53,7 @@ Param Data            : %v
 Length of Config Data : %d
 `
 
-	return fmt.Sprintf(out, res.ParameterRevision, res.ParamData, len(res.ParamData))
+	return fmt.Sprintf(out, res.ParamRevision, res.ParamData, len(res.ParamData))
 }
 
 func (c *Client) GetLanConfigParams(ctx context.Context, channelNumber uint8, paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) (response *GetLanConfigParamsResponse, err error) {

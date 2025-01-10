@@ -7,16 +7,16 @@ import (
 
 // 26.3 Get SOL Configuration Parameters Command
 type GetSOLConfigParamsRequest struct {
-	GetParameterRevisionOnly bool
-	ChannelNumber            uint8
-	ParamSelector            SOLConfigParamSelector
-	SetSelector              uint8
-	BlockSelector            uint8
+	GetParamRevisionOnly bool
+	ChannelNumber        uint8
+	ParamSelector        SOLConfigParamSelector
+	SetSelector          uint8
+	BlockSelector        uint8
 }
 
 type GetSOLConfigParamsResponse struct {
-	ParameterRevision uint8
-	ParamData         []byte
+	ParamRevision uint8
+	ParamData     []byte
 }
 
 func (req *GetSOLConfigParamsRequest) Command() Command {
@@ -26,7 +26,7 @@ func (req *GetSOLConfigParamsRequest) Command() Command {
 func (req *GetSOLConfigParamsRequest) Pack() []byte {
 	out := make([]byte, 4)
 	b := req.ChannelNumber
-	if req.GetParameterRevisionOnly {
+	if req.GetParamRevisionOnly {
 		b = setBit7(b)
 	}
 
@@ -46,8 +46,11 @@ func (res *GetSOLConfigParamsResponse) Unpack(msg []byte) error {
 		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
-	res.ParameterRevision = msg[0]
-	res.ParamData, _, _ = unpackBytes(msg, 1, len(msg)-1)
+	res.ParamRevision = msg[0]
+	if len(msg) > 1 {
+		res.ParamData, _, _ = unpackBytes(msg, 1, len(msg)-1)
+	}
+
 	return nil
 }
 
