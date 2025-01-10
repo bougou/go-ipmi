@@ -54,7 +54,7 @@ func NewCmdPEFCapabilities() *cobra.Command {
 			ctx := context.Background()
 			res, err := client.GetPEFCapabilities(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetPEFCapabilities failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetPEFCapabilities failed, err: %w", err))
 			}
 
 			fmt.Println(res.Format())
@@ -73,7 +73,7 @@ func NewCmdPEFStatus() *cobra.Command {
 			{
 				res, err := client.GetLastProcessedEventId(ctx)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetLastProcessedEventId failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetLastProcessedEventId failed, err: %w", err))
 				}
 				fmt.Println(res.Format())
 			}
@@ -81,7 +81,7 @@ func NewCmdPEFStatus() *cobra.Command {
 			{
 				param := &ipmi.PEFConfigParam_Control{}
 				if err := client.GetPEFConfigParamsFor(ctx, param); err != nil {
-					CheckErr(fmt.Errorf("GetLastProcessedEventId failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetLastProcessedEventId failed, err: %w", err))
 				}
 				fmt.Println(param.Format())
 			}
@@ -89,7 +89,7 @@ func NewCmdPEFStatus() *cobra.Command {
 			{
 				param := &ipmi.PEFConfigParam_ActionGlobalControl{}
 				if err := client.GetPEFConfigParamsFor(ctx, param); err != nil {
-					CheckErr(fmt.Errorf("GetLastProcessedEventId failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetLastProcessedEventId failed, err: %w", err))
 				}
 				fmt.Println(param.Format())
 			}
@@ -125,7 +125,7 @@ func NewCmdPEFFilterList() *cobra.Command {
 			{
 				param := &ipmi.PEFConfigParam_EventFiltersCount{}
 				if err := client.GetPEFConfigParamsFor(ctx, param); err != nil {
-					CheckErr(fmt.Errorf("get number of event filters failed, err: %s", err))
+					CheckErr(fmt.Errorf("get number of event filters failed, err: %w", err))
 				}
 				numberOfEventFilters = param.Value
 			}

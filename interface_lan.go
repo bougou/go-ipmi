@@ -122,7 +122,7 @@ func (c *Client) buildRawPayload(ctx context.Context, reqCmd Request) (PayloadTy
 		// Standard Payload Types
 		ipmiReq, err := c.BuildIPMIRequest(ctx, reqCmd)
 		if err != nil {
-			return 0, nil, fmt.Errorf("BuildIPMIRequest failed, err: %s", err)
+			return 0, nil, fmt.Errorf("BuildIPMIRequest failed, err: %w", err)
 		}
 
 		c.Debug(">>>> IPMI Request", ipmiReq)
@@ -137,7 +137,7 @@ func (c *Client) exchangeLAN(ctx context.Context, request Request, response Resp
 
 	rmcp, err := c.BuildRmcpRequest(ctx, request)
 	if err != nil {
-		return fmt.Errorf("build RMCP+ request msg failed, err: %s", err)
+		return fmt.Errorf("build RMCP+ request msg failed, err: %w", err)
 	}
 	c.Debug(">>>>>> RMCP Request", rmcp)
 	sent := rmcp.Pack()
@@ -145,7 +145,7 @@ func (c *Client) exchangeLAN(ctx context.Context, request Request, response Resp
 
 	recv, err := c.udpClient.Exchange(ctx, bytes.NewReader(sent))
 	if err != nil {
-		return fmt.Errorf("client udp exchange msg failed, err: %s", err)
+		return fmt.Errorf("client udp exchange msg failed, err: %w", err)
 	}
 	c.DebugBytes("recv", recv, 16)
 
@@ -178,19 +178,19 @@ func (c *Client) Connect15(ctx context.Context) error {
 
 	_, err = c.GetChannelAuthenticationCapabilities(ctx, channelNumber, c.maxPrivilegeLevel)
 	if err != nil {
-		return fmt.Errorf("GetChannelAuthenticationCapabilities failed, err: %s", err)
+		return fmt.Errorf("GetChannelAuthenticationCapabilities failed, err: %w", err)
 	}
 
 	_, err = c.GetSessionChallenge(ctx)
 	if err != nil {
-		return fmt.Errorf("GetSessionChallenge failed, err: %s", err)
+		return fmt.Errorf("GetSessionChallenge failed, err: %w", err)
 	}
 
 	c.session.v15.preSession = true
 
 	_, err = c.ActivateSession(ctx)
 	if err != nil {
-		return fmt.Errorf("ActivateSession failed, err: %s", err)
+		return fmt.Errorf("ActivateSession failed, err: %w", err)
 	}
 
 	_, err = c.SetSessionPrivilegeLevel(ctx, c.maxPrivilegeLevel)
@@ -219,7 +219,7 @@ func (c *Client) Connect20(ctx context.Context) error {
 
 	_, err = c.GetChannelAuthenticationCapabilities(ctx, channelNumber, c.maxPrivilegeLevel)
 	if err != nil {
-		return fmt.Errorf("cmd: Get Channel Authentication Capabilities failed, err: %s", err)
+		return fmt.Errorf("cmd: Get Channel Authentication Capabilities failed, err: %w", err)
 	}
 
 	tryCiphers := c.findBestCipherSuites(ctx)
@@ -295,7 +295,7 @@ func (c *Client) ConnectAuto(ctx context.Context) error {
 	c.v20 = false
 	cap, err := c.GetChannelAuthenticationCapabilities(ctx, channelNumber, privilegeLevel)
 	if err != nil {
-		return fmt.Errorf("cmd: Get Channel Authentication Capabilities failed, err: %s", err)
+		return fmt.Errorf("cmd: Get Channel Authentication Capabilities failed, err: %w", err)
 	}
 	if cap.SupportIPMIv20 {
 		c.v20 = true
@@ -323,11 +323,11 @@ func (c *Client) closeLAN(ctx context.Context) error {
 		SessionID: sessionID,
 	}
 	if _, err := c.CloseSession(ctx, request); err != nil {
-		return fmt.Errorf("CloseSession failed, err: %s", err)
+		return fmt.Errorf("CloseSession failed, err: %w", err)
 	}
 
 	if err := c.udpClient.Close(); err != nil {
-		return fmt.Errorf("close udp connection failed, err: %s", err)
+		return fmt.Errorf("close udp connection failed, err: %w", err)
 	}
 
 	return nil
@@ -344,7 +344,7 @@ func (c *Client) keepSessionAlive(ctx context.Context, intervalSec int) {
 		select {
 		case <-ticker.C:
 			if _, err := c.GetCurrentSessionInfo(ctx); err != nil {
-				c.DebugfRed("keepSessionAlive failed, GetCurrentSessionInfo failed, err: %s", err)
+				c.DebugfRed("keepSessionAlive failed, GetCurrentSessionInfo failed, err: %w", err)
 			}
 		case <-c.closedCh:
 			c.Debugf("got close signal, keepSessionAlive stopped")

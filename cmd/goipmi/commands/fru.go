@@ -34,7 +34,7 @@ func NewCmdFRUPrint() *cobra.Command {
 			if len(args) < 1 {
 				frus, err := client.GetFRUs(ctx)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetFRUs failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetFRUs failed, err: %w", err))
 				}
 
 				for _, fru := range frus {
@@ -43,13 +43,13 @@ func NewCmdFRUPrint() *cobra.Command {
 			} else {
 				id, err := parseStringToInt64(args[0])
 				if err != nil {
-					CheckErr(fmt.Errorf("invalid FRU Device ID passed, err: %s", err))
+					CheckErr(fmt.Errorf("invalid FRU Device ID passed, err: %w", err))
 				}
 				fruID := uint8(id)
 
 				fru, err := client.GetFRU(ctx, fruID, "")
 				if err != nil {
-					CheckErr(fmt.Errorf("GetFRU failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetFRU failed, err: %w", err))
 				}
 				fmt.Println(fru.String())
 			}

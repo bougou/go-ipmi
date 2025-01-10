@@ -62,7 +62,7 @@ func (res *GetSELEntryResponse) Format() string {
 // The reservationID is only required for partial Get, use 0000h otherwise.
 func (c *Client) GetSELEntry(ctx context.Context, reservationID uint16, recordID uint16) (response *GetSELEntryResponse, err error) {
 	if _, err := c.GetSELInfo(ctx); err != nil {
-		return nil, fmt.Errorf("GetSELInfo failed, err: %s", err)
+		return nil, fmt.Errorf("GetSELInfo failed, err: %w", err)
 	}
 
 	request := &GetSELEntryRequest{
@@ -92,7 +92,7 @@ func (c *Client) GetSELEntries(ctx context.Context, startRecordID uint16) ([]*SE
 	//
 	// This extra GetSELInfo can avoid it. (I don't known why!)
 	if _, err := c.GetSELInfo(ctx); err != nil {
-		return nil, fmt.Errorf("GetSELInfo failed, err: %s", err)
+		return nil, fmt.Errorf("GetSELInfo failed, err: %w", err)
 	}
 
 	var out = make([]*SEL, 0)
@@ -100,13 +100,13 @@ func (c *Client) GetSELEntries(ctx context.Context, startRecordID uint16) ([]*SE
 	for {
 		selEntry, err := c.GetSELEntry(ctx, 0, recordID)
 		if err != nil {
-			return nil, fmt.Errorf("GetSELEntry failed, err: %s", err)
+			return nil, fmt.Errorf("GetSELEntry failed, err: %w", err)
 		}
 		c.DebugBytes("sel entry record data", selEntry.Data, 16)
 
 		sel, err := ParseSEL(selEntry.Data)
 		if err != nil {
-			return nil, fmt.Errorf("unpackSEL record failed, err: %s", err)
+			return nil, fmt.Errorf("unpackSEL record failed, err: %w", err)
 		}
 		out = append(out, sel)
 

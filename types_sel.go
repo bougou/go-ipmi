@@ -62,15 +62,15 @@ func ParseSEL(msg []byte) (*SEL, error) {
 	switch recordTypeRange {
 	case SELRecordTypeRangeStandard:
 		if err := parseSELDefault(msg, sel); err != nil {
-			return nil, fmt.Errorf("parseSELDefault failed, err: %s", err)
+			return nil, fmt.Errorf("parseSELDefault failed, err: %w", err)
 		}
 	case SELRecordTypeRangeTimestampedOEM:
 		if err := parseSELOEMTimestamped(msg, sel); err != nil {
-			return nil, fmt.Errorf("parseSELOEMTimestamped failed, err: %s", err)
+			return nil, fmt.Errorf("parseSELOEMTimestamped failed, err: %w", err)
 		}
 	case SELRecordTypeRangeNonTimestampedOEM:
 		if err := parseSELOEMNonTimestamped(msg, sel); err != nil {
-			return nil, fmt.Errorf("parseSELOEMNonTimestamped failed, err: %s", err)
+			return nil, fmt.Errorf("parseSELOEMNonTimestamped failed, err: %w", err)
 		}
 	}
 	return sel, nil

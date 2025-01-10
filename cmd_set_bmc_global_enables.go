@@ -71,7 +71,7 @@ func (res *SetBMCGlobalEnablesResponse) Format() string {
 func (c *Client) SetBMCGlobalEnables(ctx context.Context, enableSystemEventLogging bool, enableEventMessageBuffer bool, enableEventMessageBufferFullInterrupt bool, enableReceiveMessageQueueInterrupt bool) (response *SetBMCGlobalEnablesResponse, err error) {
 	getRes, err := c.GetBMCGlobalEnables(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("GetBMCGlobalEnables failed, err: %s", err)
+		return nil, fmt.Errorf("GetBMCGlobalEnables failed, err: %w", err)
 	}
 
 	request := &SetBMCGlobalEnablesRequest{

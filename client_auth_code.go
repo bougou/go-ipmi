@@ -186,7 +186,7 @@ func (c *Client) generate_sik() ([]byte, error) {
 
 	b, err := generate_auth_hmac(c.session.v20.authAlg, input, hmacKey)
 	if err != nil {
-		return nil, fmt.Errorf("generate hmac failed, err: %s", err)
+		return nil, fmt.Errorf("generate hmac failed, err: %w", err)
 	}
 
 	c.DebugBytes("sik mac computed by the remote console:", b, 16)
@@ -211,7 +211,7 @@ func (c *Client) generate_k1() ([]byte, error) {
 	hmacKey := c.session.v20.sik
 	b, err := generate_auth_hmac(c.session.v20.authAlg, CONST_1[:], hmacKey)
 	if err != nil {
-		return nil, fmt.Errorf("generate hmac failed, err: %s", err)
+		return nil, fmt.Errorf("generate hmac failed, err: %w", err)
 	}
 
 	c.DebugBytes("generated k1:", b, 16)
@@ -236,7 +236,7 @@ func (c *Client) generate_k2() ([]byte, error) {
 	hmacKey := c.session.v20.sik
 	b, err := generate_auth_hmac(c.session.v20.authAlg, CONST_2[:], hmacKey)
 	if err != nil {
-		return nil, fmt.Errorf("generate hmac failed, err: %s", err)
+		return nil, fmt.Errorf("generate hmac failed, err: %w", err)
 	}
 	c.DebugBytes("generated k2:", b, 16)
 
@@ -266,7 +266,7 @@ func (c *Client) generate_rakp2_authcode() ([]byte, error) {
 
 	b, err := generate_auth_hmac(c.session.v20.authAlg, buffer, hmacKey)
 	if err != nil {
-		return nil, fmt.Errorf("generate hmac failed, err: %s", err)
+		return nil, fmt.Errorf("generate hmac failed, err: %w", err)
 	}
 
 	c.DebugBytes("rakp2 generated authcode", b, 16)
@@ -326,7 +326,7 @@ func (c *Client) generate_rakp3_authcode() ([]byte, error) {
 
 	b, err := generate_auth_hmac(c.session.v20.authAlg, input, hmacKey)
 	if err != nil {
-		return nil, fmt.Errorf("generate hmac failed, err: %s", err)
+		return nil, fmt.Errorf("generate hmac failed, err: %w", err)
 	}
 
 	c.DebugBytes("rakp3 generated authcode", b, 16)
@@ -356,7 +356,7 @@ func (c *Client) generate_rakp4_authcode() ([]byte, error) {
 
 	b, err := generate_auth_hmac(c.session.v20.integrityAlg, input, hmacKey)
 	if err != nil {
-		return nil, fmt.Errorf("generate hmac failed, err: %s", err)
+		return nil, fmt.Errorf("generate hmac failed, err: %w", err)
 	}
 
 	c.DebugBytes("rakp4 generated authcode", b, 16)

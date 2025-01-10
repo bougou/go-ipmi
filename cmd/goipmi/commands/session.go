@@ -49,7 +49,7 @@ func NewCmdSessionInfo() *cobra.Command {
 				}
 				res, err := client.GetSessionInfo(ctx, request)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetSessionInfo failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetSessionInfo failed, err: %w", err))
 				}
 				fmt.Println(res.Format())
 			}

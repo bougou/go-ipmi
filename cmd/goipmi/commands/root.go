@@ -38,14 +38,14 @@ func initClient() error {
 	case "", "open":
 		c, err := ipmi.NewOpenClient()
 		if err != nil {
-			return fmt.Errorf("create open client failed, err: %s", err)
+			return fmt.Errorf("create open client failed, err: %w", err)
 		}
 		client = c
 
 	case "lan", "lanplus":
 		c, err := ipmi.NewClient(host, port, username, password)
 		if err != nil {
-			return fmt.Errorf("create lan or lanplus client failed, err: %s", err)
+			return fmt.Errorf("create lan or lanplus client failed, err: %w", err)
 		}
 		client = c
 	case "tool":
@@ -78,7 +78,7 @@ func initClient() error {
 	ctx := context.Background()
 
 	if err := client.Connect(ctx); err != nil {
-		return fmt.Errorf("client connect failed, err: %s", err)
+		return fmt.Errorf("client connect failed, err: %w", err)
 	}
 	return nil
 }
@@ -86,7 +86,7 @@ func initClient() error {
 func closeClient() error {
 	ctx := context.Background()
 	if err := client.Close(ctx); err != nil {
-		return fmt.Errorf("close client failed, err: %s", err)
+		return fmt.Errorf("close client failed, err: %w", err)
 	}
 	return nil
 }

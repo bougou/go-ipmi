@@ -49,7 +49,7 @@ func (r *Rmcp) Unpack(msg []byte) error {
 	rmcpHeader := &RmcpHeader{}
 	err := rmcpHeader.Unpack(msg[:4])
 	if err != nil {
-		return fmt.Errorf("unpack RmcpHeader failed, err: %s", err)
+		return fmt.Errorf("unpack RmcpHeader failed, err: %w", err)
 	}
 	r.RmcpHeader = rmcpHeader
 
@@ -61,7 +61,7 @@ func (r *Rmcp) Unpack(msg []byte) error {
 		asf := &ASF{}
 		err := asf.Unpack(msg[4:])
 		if err != nil {
-			return fmt.Errorf("unpack ASF failed, err: %s", err)
+			return fmt.Errorf("unpack ASF failed, err: %w", err)
 		}
 		r.ASF = asf
 		return nil
@@ -73,7 +73,7 @@ func (r *Rmcp) Unpack(msg []byte) error {
 		s20 := &Session20{}
 		err = s20.Unpack(msg[4:])
 		if err != nil {
-			return fmt.Errorf("unpack IPMI 2.0 Session failed, err: %s", err)
+			return fmt.Errorf("unpack IPMI 2.0 Session failed, err: %w", err)
 		}
 		r.Session20 = s20
 	} else {
@@ -81,7 +81,7 @@ func (r *Rmcp) Unpack(msg []byte) error {
 		s15 := &Session15{}
 		err = s15.Unpack(msg[4:])
 		if err != nil {
-			return fmt.Errorf("unpack IPMI 1.5 Session failed, err: %s", err)
+			return fmt.Errorf("unpack IPMI 1.5 Session failed, err: %w", err)
 		}
 		r.Session15 = s15
 	}
@@ -289,7 +289,7 @@ func (asf *ASF) Unpack(msg []byte) error {
 func (c *Client) BuildRmcpRequest(ctx context.Context, reqCmd Request) (*Rmcp, error) {
 	payloadType, rawPayload, err := c.buildRawPayload(ctx, reqCmd)
 	if err != nil {
-		return nil, fmt.Errorf("buildRawPayload failed, err: %s", err)
+		return nil, fmt.Errorf("buildRawPayload failed, err: %w", err)
 	}
 	c.DebugBytes("rawPayload", rawPayload, 16)
 
@@ -312,7 +312,7 @@ func (c *Client) BuildRmcpRequest(ctx context.Context, reqCmd Request) (*Rmcp, e
 	if c.v20 {
 		session20, err := c.genSession20(payloadType, rawPayload)
 		if err != nil {
-			return nil, fmt.Errorf("genSession20 failed, err: %s", err)
+			return nil, fmt.Errorf("genSession20 failed, err: %w", err)
 		}
 
 		rmcp := &Rmcp{
@@ -325,7 +325,7 @@ func (c *Client) BuildRmcpRequest(ctx context.Context, reqCmd Request) (*Rmcp, e
 	// IPMI 1.5
 	session15, err := c.genSession15(rawPayload)
 	if err != nil {
-		return nil, fmt.Errorf("genSession15 failed, err: %s", err)
+		return nil, fmt.Errorf("genSession15 failed, err: %w", err)
 	}
 
 	rmcp := &Rmcp{
@@ -340,7 +340,7 @@ func (c *Client) BuildRmcpRequest(ctx context.Context, reqCmd Request) (*Rmcp, e
 func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response Response) error {
 	rmcp := &Rmcp{}
 	if err := rmcp.Unpack(msg); err != nil {
-		return fmt.Errorf("unpack rmcp failed, err: %s", err)
+		return fmt.Errorf("unpack rmcp failed, err: %w", err)
 	}
 	c.Debug("<<<<<< RMCP Response", rmcp)
 
@@ -349,7 +349,7 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response Res
 			return fmt.Errorf("asf Data Length not equal")
 		}
 		if err := response.Unpack(rmcp.ASF.Data); err != nil {
-			return fmt.Errorf("unpack asf response failed, err: %s", err)
+			return fmt.Errorf("unpack asf response failed, err: %w", err)
 		}
 		return nil
 	}
@@ -359,7 +359,7 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response Res
 
 		ipmiRes := IPMIResponse{}
 		if err := ipmiRes.Unpack(ipmiPayload); err != nil {
-			return fmt.Errorf("unpack ipmiRes failed, err: %s", err)
+			return fmt.Errorf("unpack ipmiRes failed, err: %w", err)
 		}
 		c.Debug("<<<< IPMI Response", ipmiRes)
 
@@ -375,7 +375,7 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response Res
 		if err := response.Unpack(ipmiRes.Data); err != nil {
 			return &ResponseError{
 				completionCode: 0x00,
-				description:    fmt.Sprintf("unpack response failed, err: %s", err),
+				description:    fmt.Sprintf("unpack response failed, err: %w", err),
 			}
 		}
 	}
@@ -391,7 +391,7 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response Res
 			// Session Setup Payload Types
 
 			if err := response.Unpack(rmcp.Session20.SessionPayload); err != nil {
-				return fmt.Errorf("unpack session setup response failed, err: %s", err)
+				return fmt.Errorf("unpack session setup response failed, err: %w", err)
 			}
 			return nil
 
@@ -402,7 +402,7 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response Res
 				c.DebugBytes("decrypting", ipmiPayload, 16)
 				d, err := c.decryptPayload(rmcp.Session20.SessionPayload)
 				if err != nil {
-					return fmt.Errorf("decrypt session payload failed, err: %s", err)
+					return fmt.Errorf("decrypt session payload failed, err: %w", err)
 				}
 				ipmiPayload = d
 				c.DebugBytes("decrypted", ipmiPayload, 16)
@@ -410,7 +410,7 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response Res
 
 			ipmiRes := IPMIResponse{}
 			if err := ipmiRes.Unpack(ipmiPayload); err != nil {
-				return fmt.Errorf("unpack ipmiRes failed, err: %s", err)
+				return fmt.Errorf("unpack ipmiRes failed, err: %w", err)
 			}
 			c.Debug("<<<< IPMI Response", ipmiRes)
 
@@ -426,7 +426,7 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response Res
 			if err := response.Unpack(ipmiRes.Data); err != nil {
 				return &ResponseError{
 					completionCode: 0x00,
-					description:    fmt.Sprintf("unpack response failed, err: %s", err),
+					description:    fmt.Sprintf("unpack response failed, err: %w", err),
 				}
 			}
 		}

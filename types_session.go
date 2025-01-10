@@ -120,7 +120,7 @@ func (s *Session15) Unpack(msg []byte) error {
 	sessionHeader := &SessionHeader15{}
 	err := sessionHeader.Unpack(msg)
 	if err != nil {
-		return fmt.Errorf("unpack SessionHeader15 failed, err: %s", err)
+		return fmt.Errorf("unpack SessionHeader15 failed, err: %w", err)
 	}
 	s.SessionHeader15 = sessionHeader
 
@@ -248,7 +248,7 @@ func (s *Session20) Pack() []byte {
 func (s *Session20) Unpack(msg []byte) error {
 	sessionHeader := &SessionHeader20{}
 	if err := sessionHeader.Unpack(msg); err != nil {
-		return fmt.Errorf("unpack SessionHeader failed, err: %s", err)
+		return fmt.Errorf("unpack SessionHeader failed, err: %w", err)
 	}
 	s.SessionHeader20 = sessionHeader
 
@@ -273,7 +273,7 @@ func (s *Session20) Unpack(msg []byte) error {
 		sessionTrailer := &SessionTrailer{}
 		_, err := sessionTrailer.Unpack(msg, sessionTrailerIndex, padSize)
 		if err != nil {
-			return fmt.Errorf("unpack SessionTrailer failed, err: %s", err)
+			return fmt.Errorf("unpack SessionTrailer failed, err: %w", err)
 		}
 
 		s.SessionTrailer = sessionTrailer
@@ -397,7 +397,7 @@ func (c *Client) genSession20(payloadType PayloadType, rawPayload []byte) (*Sess
 	if c.session.v20.state == SessionStateActive && sessionHeader.PayloadEncrypted {
 		e, err := c.encryptPayload(rawPayload, nil)
 		if err != nil {
-			return nil, fmt.Errorf("encrypt payload failed, err: %s", err)
+			return nil, fmt.Errorf("encrypt payload failed, err: %w", err)
 		}
 		sessionPayload = e
 	}
@@ -418,7 +418,7 @@ func (c *Client) genSession20(payloadType PayloadType, rawPayload []byte) (*Sess
 	if sessionHeader.PayloadAuthenticated && sessionHeader.SessionID != 0 {
 		sessionTrailer, err = c.genSessionTrailer(sessionHeaderBytes, sessionPayload)
 		if err != nil {
-			return nil, fmt.Errorf("genSessionTrailer failed, err: %s", err)
+			return nil, fmt.Errorf("genSessionTrailer failed, err: %w", err)
 		}
 	}
 
@@ -474,7 +474,7 @@ func (c *Client) genSessionTrailer(sessionHeader []byte, sessionPayload []byte) 
 
 	authCode, err := c.genIntegrityAuthCode(input)
 	if err != nil {
-		return nil, fmt.Errorf("generate integrity authcode failed, err: %s", err)
+		return nil, fmt.Errorf("generate integrity authcode failed, err: %w", err)
 	}
 
 	c.DebugBytes("generated auth code", authCode, 16)
@@ -525,7 +525,7 @@ func (c *Client) encryptPayload(rawPayload []byte, iv []byte) ([]byte, error) {
 
 		encryptedPayload, err := encryptAES(paddedData, cipherKey, iv)
 		if err != nil {
-			return nil, fmt.Errorf("encrypt payload with AES_CBC_128 failed, err: %s", err)
+			return nil, fmt.Errorf("encrypt payload with AES_CBC_128 failed, err: %w", err)
 		}
 		c.DebugBytes("encrypted data", encryptedPayload, 16)
 
@@ -579,7 +579,7 @@ func (c *Client) encryptPayload(rawPayload []byte, iv []byte) ([]byte, error) {
 
 		encryptedPayload, err := encryptRC4(rawPayload, cipherKey, iv)
 		if err != nil {
-			return nil, fmt.Errorf("encrypt payload with xRC4_40 or xRC4_128 failed, err: %s", err)
+			return nil, fmt.Errorf("encrypt payload with xRC4_40 or xRC4_128 failed, err: %w", err)
 		}
 		// write Encrypted Payload
 		out = append(out, encryptedPayload...)
@@ -606,7 +606,7 @@ func (c *Client) decryptPayload(data []byte) ([]byte, error) {
 		cipherKey := c.session.v20.k2[0:16]
 		d, err := decryptAES(cipherText, cipherKey, iv)
 		if err != nil {
-			return nil, fmt.Errorf("decrypt payload with AES_CBC_128 failed, err: %s", err)
+			return nil, fmt.Errorf("decrypt payload with AES_CBC_128 failed, err: %w", err)
 		}
 		padLength := d[len(d)-1]
 		dEnd := len(d) - int(padLength) - 1
@@ -635,7 +635,7 @@ func (c *Client) decryptPayload(data []byte) ([]byte, error) {
 		payloadData := data[20:]
 		b, err := decryptRC4(payloadData, cipherKey, iv)
 		if err != nil {
-			return nil, fmt.Errorf("decrypt payload with xRC4_128 failed, err: %s", err)
+			return nil, fmt.Errorf("decrypt payload with xRC4_128 failed, err: %w", err)
 		}
 		return b, nil
 

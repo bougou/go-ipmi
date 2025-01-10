@@ -406,7 +406,7 @@ func (param *PEFConfigParam_EventFilter) Unpack(data []byte) error {
 
 	eventFilter := &PEFEventFilter{}
 	if err := eventFilter.Unpack(data[1:21]); err != nil {
-		return fmt.Errorf("unpack entry failed, err: %s", err)
+		return fmt.Errorf("unpack entry failed, err: %w", err)
 	}
 	param.Filter = eventFilter
 

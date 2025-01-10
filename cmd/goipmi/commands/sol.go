@@ -33,7 +33,7 @@ func NewCmdSOLInfo() *cobra.Command {
 			ctx := context.Background()
 			solConfig, err := client.GetSOLConfig(ctx, 0x0e)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetDeviceID failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetDeviceID failed, err: %w", err))
 			}
 			fmt.Println(solConfig.Format())
 		},

@@ -75,11 +75,11 @@ func (c *Client) GetSOLConfigParamsFor(ctx context.Context, channelNumber uint8,
 	res, err := c.GetSOLConfigParams(ctx, channelNumber, paramSelector, setSelector, blockSelector)
 
 	if err != nil {
-		return fmt.Errorf("GetSOLConfigParams for param (%s[%2d]) failed, err: %s", paramSelector.String(), paramSelector, err)
+		return fmt.Errorf("GetSOLConfigParams for param (%s[%2d]) failed, err: %w", paramSelector.String(), paramSelector, err)
 	}
 
 	if err := param.Unpack(res.ParamData); err != nil {
-		return fmt.Errorf("unpack param (%s[%2d]) failed, err: %s", paramSelector.String(), paramSelector, err)
+		return fmt.Errorf("unpack param (%s[%2d]) failed, err: %w", paramSelector.String(), paramSelector, err)
 	}
 
 	return nil
@@ -99,7 +99,7 @@ func (c *Client) GetSOLConfig(ctx context.Context, channelNumber uint8) (*SOLCon
 	}
 
 	if err := c.GetSOLConfigFor(ctx, channelNumber, solConfig); err != nil {
-		return nil, fmt.Errorf("GetSOLConfigParamsFor failed, err: %s", err)
+		return nil, fmt.Errorf("GetSOLConfigParamsFor failed, err: %w", err)
 	}
 
 	return solConfig, nil

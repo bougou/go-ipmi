@@ -77,7 +77,7 @@ func (c *Client) readFRUDataByLength(ctx context.Context, deviceID uint8, offset
 
 		res, err := c.tryReadFRUData(ctx, deviceID, offset, length)
 		if err != nil {
-			return nil, fmt.Errorf("tryReadFRUData failed, err: %s", err)
+			return nil, fmt.Errorf("tryReadFRUData failed, err: %w", err)
 		}
 		c.Debug("", res.Format())
 		data = append(data, res.Data...)
@@ -114,7 +114,7 @@ func (c *Client) tryReadFRUData(ctx context.Context, deviceID uint8, readOffset 
 
 		resErr, ok := err.(*ResponseError)
 		if !ok {
-			return nil, fmt.Errorf("ReadFRUData failed, err: %s", err)
+			return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
 		}
 
 		cc := resErr.CompletionCode()
@@ -122,7 +122,7 @@ func (c *Client) tryReadFRUData(ctx context.Context, deviceID uint8, readOffset 
 			readCount -= 1
 			continue
 		} else {
-			return nil, fmt.Errorf("ReadFRUData failed, err: %s", err)
+			return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
 		}
 	}
 }

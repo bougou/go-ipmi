@@ -41,7 +41,7 @@ func NewCmdUserList() *cobra.Command {
 			if len(args) > 1 {
 				id, err := parseStringToInt64(args[0])
 				if err != nil {
-					CheckErr(fmt.Errorf("invalid channel number passed, err: %s", err))
+					CheckErr(fmt.Errorf("invalid channel number passed, err: %w", err))
 				}
 				channelNumber = uint8(id)
 			}
@@ -49,7 +49,7 @@ func NewCmdUserList() *cobra.Command {
 			ctx := context.Background()
 			users, err := client.ListUser(ctx, channelNumber)
 			if err != nil {
-				CheckErr(fmt.Errorf("ListUser failed, err: %s", err))
+				CheckErr(fmt.Errorf("ListUser failed, err: %w", err))
 			}
 
 			fmt.Println(ipmi.FormatUsers(users))
@@ -71,7 +71,7 @@ func NewCmdUserSummary() *cobra.Command {
 			if len(args) > 1 {
 				id, err := parseStringToInt64(args[0])
 				if err != nil {
-					CheckErr(fmt.Errorf("invalid channel number passed, err: %s", err))
+					CheckErr(fmt.Errorf("invalid channel number passed, err: %w", err))
 				}
 				channelNumber = uint8(id)
 			}
@@ -80,7 +80,7 @@ func NewCmdUserSummary() *cobra.Command {
 
 			res, err := client.GetUserAccess(ctx, channelNumber, 0x01)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetUserAccess failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetUserAccess failed, err: %w", err))
 			}
 			fmt.Println(res.Format())
 		},

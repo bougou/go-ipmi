@@ -5,6 +5,7 @@ import (
 	"encoding/base32"
 	"encoding/base64"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -669,4 +670,24 @@ func formatTable(headers []string, rows [][]string) string {
 
 	table.Render()
 	return buf.String()
+}
+
+func buildCanSafeIgnoreFn(codes ...uint8) func(err error) error {
+	return func(err error) error {
+		if err == nil {
+			return nil
+		}
+
+		var respErr *ResponseError
+		if errors.As(err, &respErr) {
+			cc := respErr.CompletionCode()
+			for _, code := range codes {
+				if uint8(cc) == code {
+					return nil
+				}
+			}
+		}
+
+		return err
+	}
 }

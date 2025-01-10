@@ -95,11 +95,11 @@ func (c *Client) GetPEFConfigParamsFor(ctx context.Context, param PEFConfigParam
 
 	res, err := c.GetPEFConfigParams(ctx, false, paramSelector, setSelector, blockSelector)
 	if err != nil {
-		return fmt.Errorf("GetPEFConfigParameters for param (%s) failed, err: %s", paramSelector, err)
+		return fmt.Errorf("GetPEFConfigParameters for param (%s) failed, err: %w", paramSelector, err)
 	}
 
 	if err := param.Unpack(res.ParamData); err != nil {
-		return fmt.Errorf("unpack failed for param (%s), err: %s", paramSelector, err)
+		return fmt.Errorf("unpack failed for param (%s), err: %w", paramSelector, err)
 	}
 
 	return nil
@@ -126,7 +126,7 @@ func (c *Client) GetPEFConfig(ctx context.Context) (pefConfig *PEFConfig, err er
 	}
 
 	if err = c.GetPEFConfigFor(ctx, pefConfig); err != nil {
-		return nil, fmt.Errorf("GetPEFConfig failed, err: %s", err)
+		return nil, fmt.Errorf("GetPEFConfig failed, err: %w", err)
 	}
 
 	return pefConfig, nil

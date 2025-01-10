@@ -39,7 +39,7 @@ func NewCmdChannelInfo() *cobra.Command {
 			if len(args) >= 1 {
 				i, err := parseStringToInt64(args[0])
 				if err != nil {
-					CheckErr(fmt.Errorf("invalid channel number, err: %s", err))
+					CheckErr(fmt.Errorf("invalid channel number, err: %w", err))
 				}
 				channelNumber = uint8(i)
 			}
@@ -47,7 +47,7 @@ func NewCmdChannelInfo() *cobra.Command {
 			ctx := context.Background()
 			res, err := client.GetChannelInfo(ctx, channelNumber)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetChannelInfo failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetChannelInfo failed, err: %w", err))
 			}
 
 			fmt.Println(res.Format())
@@ -58,14 +58,14 @@ func NewCmdChannelInfo() *cobra.Command {
 
 			res2, err := client.GetChannelAccess(ctx, channelNumber, ipmi.ChannelAccessOption_Volatile)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetChannelAccess failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetChannelAccess failed, err: %w", err))
 			}
 			fmt.Println("  Volatile(active) Settings")
 			fmt.Println(res2.Format())
 
 			res3, err := client.GetChannelAccess(ctx, channelNumber, ipmi.ChannelAccessOption_NonVolatile)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetChannelAccess failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetChannelAccess failed, err: %w", err))
 			}
 			fmt.Println("  Non-Volatile Settings")
 			fmt.Println(res3.Format())
@@ -86,7 +86,7 @@ func NewCmdChannelGetCiphers() *cobra.Command {
 			if len(args) >= 1 {
 				i, err := parseStringToInt64(args[0])
 				if err != nil {
-					CheckErr(fmt.Errorf("invalid channel number, err: %s", err))
+					CheckErr(fmt.Errorf("invalid channel number, err: %w", err))
 				}
 				channelNumber = uint8(i)
 			}
@@ -94,7 +94,7 @@ func NewCmdChannelGetCiphers() *cobra.Command {
 			ctx := context.Background()
 			cipherSuiteRecords, err := client.GetAllChannelCipherSuites(ctx, channelNumber)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetChannelInfo failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetChannelInfo failed, err: %w", err))
 			}
 
 			fmt.Println("ID   IANA    Auth Alg        Integrity Alg   Confidentiality Alg")

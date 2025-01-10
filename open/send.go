@@ -33,7 +33,7 @@ func SendCommand(file *os.File, req *IPMI_REQ, timeout time.Duration) ([]byte, e
 		case err == syscall.EINTR:
 			continue
 		case err != nil:
-			return nil, fmt.Errorf("SetReq failed, err: %s", err)
+			return nil, fmt.Errorf("SetReq failed, err: %w", err)
 		}
 		break
 	}
@@ -53,7 +53,7 @@ func SendCommand(file *os.File, req *IPMI_REQ, timeout time.Duration) ([]byte, e
 
 	readMsgFunc := func(fd uintptr) bool {
 		if err := GetRecv(fd, IPMICTL_RECEIVE_MSG_TRUNC, recv); err != nil {
-			rerr = fmt.Errorf("GetRecv failed, err: %s", err)
+			rerr = fmt.Errorf("GetRecv failed, err: %w", err)
 			return false
 		}
 

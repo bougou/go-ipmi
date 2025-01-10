@@ -142,7 +142,7 @@ func (c *Client) GetBootOptions(ctx context.Context) (*BootOptions, error) {
 	}
 
 	if err := c.GetBootOptionsFor(ctx, bootOptions); err != nil {
-		return nil, fmt.Errorf("GetBootOptionsFor failed, err: %s", err)
+		return nil, fmt.Errorf("GetBootOptionsFor failed, err: %w", err)
 	}
 
 	return bootOptions, nil

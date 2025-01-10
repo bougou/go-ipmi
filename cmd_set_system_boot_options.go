@@ -79,7 +79,7 @@ func (c *Client) SetSystemBootOptionsFor(ctx context.Context, param BootOptionPa
 	}
 
 	if _, err := c.SetSystemBootOptions(ctx, request); err != nil {
-		return fmt.Errorf("SetSystemBootOptions failed, err: %s", err)
+		return fmt.Errorf("SetSystemBootOptions failed, err: %w", err)
 	}
 
 	return nil

@@ -72,7 +72,7 @@ func NewCmdDCMIDiscover() *cobra.Command {
 			ctx := context.Background()
 			dcmiCap, err := client.GetDCMICapabilities(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetDCMIPowerReading failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetDCMIPowerReading failed, err: %w", err))
 			}
 			fmt.Println(dcmiCap.Format())
 		},
@@ -89,7 +89,7 @@ func NewCmdDCMIGetConfigParam() *cobra.Command {
 			ctx := context.Background()
 			dcmiConfig, err := client.GetDCMIConfig(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetDCMIConfig failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetDCMIConfig failed, err: %w", err))
 			}
 			fmt.Println(dcmiConfig.Format())
 		},
@@ -124,7 +124,7 @@ func newCmdDCMIPowerRead() *cobra.Command {
 			ctx := context.Background()
 			resp, err := client.GetDCMIPowerReading(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetDCMIPowerReading failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetDCMIPowerReading failed, err: %w", err))
 			}
 			fmt.Println(resp.Format())
 		},
@@ -140,7 +140,7 @@ func newCmdDCMIPowerGetLimit() *cobra.Command {
 			ctx := context.Background()
 			resp, err := client.GetDCMIPowerLimit(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetDCMIPowerLimit failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetDCMIPowerLimit failed, err: %w", err))
 			}
 			fmt.Println(resp.Format())
 		},
@@ -179,7 +179,7 @@ set_limit <parameter> <value>
 			{
 				resp, err := client.GetDCMIPowerLimit(ctx)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetDCMIPowerLimit failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetDCMIPowerLimit failed, err: %w", err))
 				}
 
 				req.ExceptionAction = resp.ExceptionAction
@@ -227,12 +227,12 @@ set_limit <parameter> <value>
 
 			_, err := client.SetDCMIPowerLimit(ctx, req)
 			if err != nil {
-				CheckErr(fmt.Errorf("SetDCMIPowerLimit failed, err: %s", err))
+				CheckErr(fmt.Errorf("SetDCMIPowerLimit failed, err: %w", err))
 			}
 
 			resp, err := client.GetDCMIPowerLimit(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetDCMIPowerLimit failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetDCMIPowerLimit failed, err: %w", err))
 			}
 
 			fmt.Println(resp.Format())
@@ -249,7 +249,7 @@ func newCmdDCMIPowerActivate() *cobra.Command {
 			ctx := context.Background()
 			_, err := client.ActivateDCMIPowerLimit(ctx, true)
 			if err != nil {
-				CheckErr(fmt.Errorf("ActivateDCMIPowerLimit (activate) failed, err: %s", err))
+				CheckErr(fmt.Errorf("ActivateDCMIPowerLimit (activate) failed, err: %w", err))
 			}
 			fmt.Println("Power limit successfully activated")
 		},
@@ -265,7 +265,7 @@ func newCmdDCMIPowerDeactivate() *cobra.Command {
 			ctx := context.Background()
 			_, err := client.ActivateDCMIPowerLimit(ctx, false)
 			if err != nil {
-				CheckErr(fmt.Errorf("ActivateDCMIPowerLimit (deactivate) failed, err: %s", err))
+				CheckErr(fmt.Errorf("ActivateDCMIPowerLimit (deactivate) failed, err: %w", err))
 			}
 			fmt.Println("Power limit successfully deactivated")
 		},
@@ -281,12 +281,12 @@ func NewCmdDCMIAssetTag() *cobra.Command {
 			ctx := context.Background()
 			assetTagRaw, typeLength, err := client.GetDCMIAssetTagFull(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetDCMIAssetTagFull failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetDCMIAssetTagFull failed, err: %w", err))
 			}
 
 			assetTag, err := typeLength.Chars(assetTagRaw)
 			if err != nil {
-				CheckErr(fmt.Errorf("convert raw to chars failed, err: %s", err))
+				CheckErr(fmt.Errorf("convert raw to chars failed, err: %w", err))
 
 			}
 			fmt.Printf("Asset tag: %s\nTypeLength: %s\n", assetTag, typeLength)
@@ -309,7 +309,7 @@ func NewCmdDCMISetAssetTag() *cobra.Command {
 			ctx := context.Background()
 
 			if err := client.SetDCMIAssetTagFull(ctx, assetTag); err != nil {
-				CheckErr(fmt.Errorf("SetDCMIAssetTagFull failed, err: %s", err))
+				CheckErr(fmt.Errorf("SetDCMIAssetTagFull failed, err: %w", err))
 			}
 		},
 	}
@@ -375,7 +375,7 @@ func NewCmdDCMIGetMCIDString() *cobra.Command {
 			ctx := context.Background()
 			id, err := client.GetDCMIMgmtControllerIdentifierFull(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetDCMIMgmtControllerIdentifierFull failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetDCMIMgmtControllerIdentifierFull failed, err: %w", err))
 			}
 
 			fmt.Printf("Management Controller Identifier String: %s\n", id)
@@ -398,7 +398,7 @@ func NewCmdDCMISetMCIDString() *cobra.Command {
 			ctx := context.Background()
 
 			if err := client.SetDCMIMgmtControllerIdentifierFull(ctx, idStr); err != nil {
-				CheckErr(fmt.Errorf("SetDCMIMgmtControllerIdentifierFull failed, err: %s", err))
+				CheckErr(fmt.Errorf("SetDCMIMgmtControllerIdentifierFull failed, err: %w", err))
 			}
 		},
 	}
@@ -443,7 +443,7 @@ func newCmdDCMIThermalPolicyGet() *cobra.Command {
 			ctx := context.Background()
 			resp, err := client.GetDCMIThermalLimit(ctx, ipmi.EntityID(entityID), ipmi.EntityInstance(entityInstance))
 			if err != nil {
-				CheckErr(fmt.Errorf("GetDCMIThermalLimit failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetDCMIThermalLimit failed, err: %w", err))
 			}
 			fmt.Println(resp.Format())
 		},
@@ -530,7 +530,7 @@ thermalpolicy instance parameters:
 
 			ctx := context.Background()
 			if _, err := client.SetDCMIThermalLimit(ctx, req); err != nil {
-				CheckErr(fmt.Errorf("SetDCMIThermalLimit failed, err: %s", err))
+				CheckErr(fmt.Errorf("SetDCMIThermalLimit failed, err: %w", err))
 			}
 
 			fmt.Println("SetDCMIThermalLimit succeeded:")

@@ -10,7 +10,7 @@ import (
 func (c *Client) GetFRUData(ctx context.Context, deviceID uint8) ([]byte, error) {
 	fruAreaInfoRes, err := c.GetFRUInventoryAreaInfo(ctx, deviceID)
 	if err != nil {
-		return nil, fmt.Errorf("GetFRUInventoryAreaInfo failed, err: %s", err)
+		return nil, fmt.Errorf("GetFRUInventoryAreaInfo failed, err: %w", err)
 	}
 
 	c.Debug("", fruAreaInfoRes.Format())
@@ -20,7 +20,7 @@ func (c *Client) GetFRUData(ctx context.Context, deviceID uint8) ([]byte, error)
 
 	data, err := c.readFRUDataByLength(ctx, deviceID, 0, fruAreaInfoRes.AreaSizeBytes)
 	if err != nil {
-		return nil, fmt.Errorf("read full fru area data failed, err: %s", err)
+		return nil, fmt.Errorf("read full fru area data failed, err: %w", err)
 	}
 	c.Debugf("Got %d fru data\n", len(data))
 
@@ -46,7 +46,7 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 				return fru, nil
 			}
 		}
-		return nil, fmt.Errorf("GetFRUInventoryAreaInfo failed, err: %s", err)
+		return nil, fmt.Errorf("GetFRUInventoryAreaInfo failed, err: %w", err)
 	}
 
 	c.Debug("", fruAreaInfoRes.Format())
@@ -69,12 +69,12 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 				return fru, nil
 			}
 		}
-		return nil, fmt.Errorf("ReadFRUData failed, err: %s", err)
+		return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
 	}
 
 	fruHeader := &FRUCommonHeader{}
 	if err := fruHeader.Unpack(readFRURes.Data); err != nil {
-		return nil, fmt.Errorf("unpack fru data failed, err: %s", err)
+		return nil, fmt.Errorf("unpack fru data failed, err: %w", err)
 	}
 	if fruHeader.FormatVersion != FRUFormatVersion {
 		return nil, fmt.Errorf("unknown FRU header version %#02x", fruHeader.FormatVersion)
@@ -87,7 +87,7 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 		c.Debugf("Get FRU Area Chassis, offset (%d)\n", offset)
 		fruChassis, err := c.GetFRUAreaChassis(ctx, deviceID, offset)
 		if err != nil {
-			return nil, fmt.Errorf("GetFRUAreaChassis failed, err: %s", err)
+			return nil, fmt.Errorf("GetFRUAreaChassis failed, err: %w", err)
 		}
 
 		c.Debug("FRU Area Chassis", fruChassis)
@@ -98,7 +98,7 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 		c.Debugf("Get FRU Area Board, offset (%d)\n", offset)
 		fruBoard, err := c.GetFRUAreaBoard(ctx, deviceID, offset)
 		if err != nil {
-			return nil, fmt.Errorf("GetFRUAreaBoard failed, err: %s", err)
+			return nil, fmt.Errorf("GetFRUAreaBoard failed, err: %w", err)
 		}
 		c.Debug("FRU Area Board", fruBoard)
 		fru.BoardInfoArea = fruBoard
@@ -108,7 +108,7 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 		c.Debugf("Get FRU Area Product, offset (%d)\n", offset)
 		fruProduct, err := c.GetFRUAreaProduct(ctx, deviceID, offset)
 		if err != nil {
-			return nil, fmt.Errorf("GetFRUAreaProduct failed, err: %s", err)
+			return nil, fmt.Errorf("GetFRUAreaProduct failed, err: %w", err)
 		}
 		c.Debug("FRU Area Product", fruProduct)
 		fru.ProductInfoArea = fruProduct
@@ -118,7 +118,7 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 		c.Debugf("Get FRU Area Multi Records, offset (%d)\n", offset)
 		fruMultiRecords, err := c.GetFRUAreaMultiRecords(ctx, deviceID, offset)
 		if err != nil {
-			return nil, fmt.Errorf("GetFRUAreaMultiRecord failed, err: %s", err)
+			return nil, fmt.Errorf("GetFRUAreaMultiRecord failed, err: %w", err)
 		}
 		c.Debug("FRU Area MultiRecords", fruMultiRecords)
 		fru.MultiRecords = fruMultiRecords
@@ -134,7 +134,7 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*FRU, error) {
 	// Do a Get Device ID command to determine device support
 	deviceRes, err := c.GetDeviceID(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("GetDeviceID failed, err: %s", err)
+		return nil, fmt.Errorf("GetDeviceID failed, err: %w", err)
 	}
 
 	c.Debug("deviceRes", deviceRes)
@@ -155,7 +155,7 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*FRU, error) {
 	// For MC devices, issue FRU commands to the satellite controller to print FRU data.
 	sdrs, err := c.GetSDRs(ctx, SDRRecordTypeFRUDeviceLocator, SDRRecordTypeManagementControllerDeviceLocator)
 	if err != nil {
-		return nil, fmt.Errorf("GetSDRS failed, err: %s", err)
+		return nil, fmt.Errorf("GetSDRS failed, err: %w", err)
 	}
 
 	for _, sdr := range sdrs {
@@ -236,20 +236,20 @@ func (c *Client) GetFRUAreaChassis(ctx context.Context, deviceID uint8, offset u
 	// read enough (2 bytes) to check the length field
 	res, err := c.ReadFRUData(ctx, deviceID, offset, 2)
 	if err != nil {
-		return nil, fmt.Errorf("ReadFRUData failed, err: %s", err)
+		return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
 	}
 	length := uint16(res.Data[1]) * 8 // in multiples of 8 bytes
 
 	// now read full area data
 	data, err := c.readFRUDataByLength(ctx, deviceID, offset, length)
 	if err != nil {
-		return nil, fmt.Errorf("read full fru area data failed, err: %s", err)
+		return nil, fmt.Errorf("read full fru area data failed, err: %w", err)
 	}
 	c.Debugf("Got %d fru data\n", len(data))
 
 	fruChassis := &FRUChassisInfoArea{}
 	if err := fruChassis.Unpack(data); err != nil {
-		return nil, fmt.Errorf("unpack fru chassis failed, err: %s", err)
+		return nil, fmt.Errorf("unpack fru chassis failed, err: %w", err)
 	}
 
 	return fruChassis, nil
@@ -259,20 +259,20 @@ func (c *Client) GetFRUAreaBoard(ctx context.Context, deviceID uint8, offset uin
 	// read enough (2 bytes) to check the length field
 	res, err := c.ReadFRUData(ctx, deviceID, offset, 2)
 	if err != nil {
-		return nil, fmt.Errorf("ReadFRUData failed, err: %s", err)
+		return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
 	}
 	length := uint16(res.Data[1]) * 8 // in multiples of 8 bytes
 
 	// now read full area data
 	data, err := c.readFRUDataByLength(ctx, deviceID, offset, length)
 	if err != nil {
-		return nil, fmt.Errorf("read full fru area data failed, err: %s", err)
+		return nil, fmt.Errorf("read full fru area data failed, err: %w", err)
 	}
 	c.Debugf("Got %d fru data\n", len(data))
 
 	fruBoard := &FRUBoardInfoArea{}
 	if err := fruBoard.Unpack(data); err != nil {
-		return nil, fmt.Errorf("unpack fru board failed, err: %s", err)
+		return nil, fmt.Errorf("unpack fru board failed, err: %w", err)
 	}
 
 	return fruBoard, nil
@@ -282,20 +282,20 @@ func (c *Client) GetFRUAreaProduct(ctx context.Context, deviceID uint8, offset u
 	// read enough (2 bytes) to check the length field
 	res, err := c.ReadFRUData(ctx, deviceID, offset, 2)
 	if err != nil {
-		return nil, fmt.Errorf("ReadFRUData failed, err: %s", err)
+		return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
 	}
 	length := uint16(res.Data[1]) * 8 // in multiples of 8 bytes
 
 	// now read full area data
 	data, err := c.readFRUDataByLength(ctx, deviceID, offset, length)
 	if err != nil {
-		return nil, fmt.Errorf("read full fru area data failed, err: %s", err)
+		return nil, fmt.Errorf("read full fru area data failed, err: %w", err)
 	}
 	c.Debugf("Got %d fru data\n", len(data))
 
 	fruProduct := &FRUProductInfoArea{}
 	if err := fruProduct.Unpack(data); err != nil {
-		return nil, fmt.Errorf("unpack fru board failed, err: %s", err)
+		return nil, fmt.Errorf("unpack fru board failed, err: %w", err)
 	}
 
 	return fruProduct, nil
@@ -312,7 +312,7 @@ func (c *Client) GetFRUAreaMultiRecords(ctx context.Context, deviceID uint8, off
 		// see: FRU/16.1 Record Header
 		res, err := c.ReadFRUData(ctx, deviceID, offset, 5)
 		if err != nil {
-			return nil, fmt.Errorf("ReadFRUData failed, err: %s", err)
+			return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
 		}
 		length := uint16(res.Data[2])
 
@@ -320,13 +320,13 @@ func (c *Client) GetFRUAreaMultiRecords(ctx context.Context, deviceID uint8, off
 		recordSize := 5 + length // Record Header + Data Length
 		data, err := c.readFRUDataByLength(ctx, deviceID, offset, recordSize)
 		if err != nil {
-			return nil, fmt.Errorf("read full fru area data failed, err: %s", err)
+			return nil, fmt.Errorf("read full fru area data failed, err: %w", err)
 		}
 		c.Debugf("Got %d fru data\n", len(data))
 
 		record := &FRUMultiRecord{}
 		if err := record.Unpack(data); err != nil {
-			return nil, fmt.Errorf("unpack fru multi record failed, err: %s", err)
+			return nil, fmt.Errorf("unpack fru multi record failed, err: %w", err)
 		}
 		c.Debug("Multi record", record)
 		records = append(records, record)

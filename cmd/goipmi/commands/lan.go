@@ -42,7 +42,7 @@ stats clear [<channel number>]
 			action := args[0]
 			id, err := parseStringToInt64(args[1])
 			if err != nil {
-				CheckErr(fmt.Errorf("invalid channel number passed, err: %s", err))
+				CheckErr(fmt.Errorf("invalid channel number passed, err: %w", err))
 			}
 			channelNumber := uint8(id)
 
@@ -51,13 +51,13 @@ stats clear [<channel number>]
 			case "get":
 				res, err := client.GetIPStatistics(ctx, channelNumber, false)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetIPStatistics failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetIPStatistics failed, err: %w", err))
 				}
 				fmt.Println(res.Format())
 			case "clear":
 				res, err := client.GetIPStatistics(ctx, channelNumber, true)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetIPStatistics failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetIPStatistics failed, err: %w", err))
 				}
 				fmt.Println(res.Format())
 			default:
@@ -82,14 +82,14 @@ print [<channel number>]
 
 			id, err := parseStringToInt64(args[0])
 			if err != nil {
-				CheckErr(fmt.Errorf("invalid channel number passed, err: %s", err))
+				CheckErr(fmt.Errorf("invalid channel number passed, err: %w", err))
 			}
 			channelNumber := uint8(id)
 
 			ctx := context.Background()
 			lanConfig, err := client.GetLanConfig(ctx, channelNumber)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetLanConfig failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetLanConfig failed, err: %w", err))
 			}
 
 			client.Debug("Lan Config", lanConfig)

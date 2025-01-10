@@ -42,7 +42,7 @@ func NewCmdSensorDeviceSDRInfo() *cobra.Command {
 			ctx := context.Background()
 			res, err := client.GetDeviceSDRInfo(ctx, true)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetDeviceSDRInfo failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetDeviceSDRInfo failed, err: %w", err))
 			}
 			fmt.Println(res.Format())
 		},
@@ -72,7 +72,7 @@ func NewCmdSensorList() *cobra.Command {
 			ctx := context.Background()
 			sensors, err := client.GetSensors(ctx, filterOptions...)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSensors failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetSensors failed, err: %w", err))
 			}
 
 			fmt.Println(ipmi.FormatSensors(extended, sensors...))
@@ -109,13 +109,13 @@ func NewCmdSensorGet() *cobra.Command {
 				// suppose args is sensor name
 				sensor, err = client.GetSensorByName(ctx, args[0])
 				if err != nil {
-					CheckErr(fmt.Errorf("GetSensorByName failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetSensorByName failed, err: %w", err))
 				}
 			} else {
 				sensorNumber = uint8(id)
 				sensor, err = client.GetSensorByID(ctx, sensorNumber)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetSensorByID failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetSensorByID failed, err: %w", err))
 				}
 			}
 
@@ -142,7 +142,7 @@ sensor threshold get <sensor_number>
 			var sensorNumber uint8
 			i, err := parseStringToInt64(args[1])
 			if err != nil {
-				CheckErr(fmt.Errorf("invalid sensor number, err: %s", err))
+				CheckErr(fmt.Errorf("invalid sensor number, err: %w", err))
 			}
 			sensorNumber = uint8(i)
 
@@ -151,7 +151,7 @@ sensor threshold get <sensor_number>
 			case "get":
 				res, err := client.GetSensorThresholds(ctx, sensorNumber)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetSensorThresholds failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetSensorThresholds failed, err: %w", err))
 				}
 				fmt.Println(res.Format())
 			case "set":
@@ -180,7 +180,7 @@ sensor event-status get <sensor_number>
 			var sensorNumber uint8
 			i, err := parseStringToInt64(args[1])
 			if err != nil {
-				CheckErr(fmt.Errorf("invalid sensor number, err: %s", err))
+				CheckErr(fmt.Errorf("invalid sensor number, err: %w", err))
 			}
 			sensorNumber = uint8(i)
 
@@ -189,7 +189,7 @@ sensor event-status get <sensor_number>
 			case "get":
 				res, err := client.GetSensorEventStatus(ctx, sensorNumber)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetSensorEventStatus failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetSensorEventStatus failed, err: %w", err))
 				}
 				fmt.Println(res.Format())
 			case "set":
@@ -218,7 +218,7 @@ sensor event-enable get <sensor_number>
 			var sensorNumber uint8
 			i, err := parseStringToInt64(args[1])
 			if err != nil {
-				CheckErr(fmt.Errorf("invalid sensor number, err: %s", err))
+				CheckErr(fmt.Errorf("invalid sensor number, err: %w", err))
 			}
 			sensorNumber = uint8(i)
 
@@ -227,7 +227,7 @@ sensor event-enable get <sensor_number>
 			case "get":
 				res, err := client.GetSensorEventEnable(ctx, sensorNumber)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetSensorEventEnable failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetSensorEventEnable failed, err: %w", err))
 				}
 				fmt.Println(res.Format())
 			case "set":
@@ -256,7 +256,7 @@ sensor reading get <sensor_number>
 			var sensorNumber uint8
 			i, err := parseStringToInt64(args[1])
 			if err != nil {
-				CheckErr(fmt.Errorf("invalid sensor number, err: %s", err))
+				CheckErr(fmt.Errorf("invalid sensor number, err: %w", err))
 			}
 			sensorNumber = uint8(i)
 
@@ -265,7 +265,7 @@ sensor reading get <sensor_number>
 			case "get":
 				res, err := client.GetSensorReading(ctx, sensorNumber)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetSensorReading failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetSensorReading failed, err: %w", err))
 				}
 				fmt.Println(res.Format())
 			case "set":
@@ -294,7 +294,7 @@ sensor reading-factors get <sensor_number>
 			var sensorNumber uint8
 			i, err := parseStringToInt64(args[1])
 			if err != nil {
-				CheckErr(fmt.Errorf("invalid sensor number, err: %s", err))
+				CheckErr(fmt.Errorf("invalid sensor number, err: %w", err))
 			}
 			sensorNumber = uint8(i)
 
@@ -303,13 +303,13 @@ sensor reading-factors get <sensor_number>
 			case "get":
 				res0, err := client.GetSensorReading(ctx, sensorNumber)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetSensorReading failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetSensorReading failed, err: %w", err))
 				}
 				fmt.Println(res0.Format())
 
 				res, err := client.GetSensorReadingFactors(ctx, sensorNumber, res0.Reading)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetSensorReadingFactors failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetSensorReadingFactors failed, err: %w", err))
 				}
 				fmt.Println(res.Format())
 			case "set":
@@ -340,7 +340,7 @@ sensor detail <sensor_number>
 			if len(args) >= 1 {
 				i, err := parseStringToInt64(args[0])
 				if err != nil {
-					CheckErr(fmt.Errorf("invalid sensor number, err: %s", err))
+					CheckErr(fmt.Errorf("invalid sensor number, err: %w", err))
 				}
 				sensorNumber = uint8(i)
 			}
@@ -348,7 +348,7 @@ sensor detail <sensor_number>
 			ctx := context.Background()
 			sensor, err := client.GetSensorByID(ctx, sensorNumber)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSensorByID failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetSensorByID failed, err: %w", err))
 			}
 			fmt.Println(sensor)
 		},

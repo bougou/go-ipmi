@@ -67,7 +67,7 @@ func (c *Client) GetDCMIMgmtControllerIdentifierFull(ctx context.Context) ([]byt
 	for {
 		resp, err := c.GetDCMIMgmtControllerIdentifier(ctx, offset)
 		if err != nil {
-			return nil, fmt.Errorf("GetDCMIMgmtControllerIdentifier failed, err: %s", err)
+			return nil, fmt.Errorf("GetDCMIMgmtControllerIdentifier failed, err: %w", err)
 		}
 		id = append(id, resp.IDStr...)
 		if resp.IDStrLength <= offset+uint8(len(resp.IDStr)) {

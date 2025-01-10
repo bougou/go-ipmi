@@ -41,13 +41,13 @@ func (c *Client) GetSensors(ctx context.Context, filterOptions ...SensorFilterOp
 
 	sdrs, err := c.GetSDRs(ctx, SDRRecordTypeFullSensor, SDRRecordTypeCompactSensor)
 	if err != nil {
-		return nil, fmt.Errorf("GetSDRs failed, err: %s", err)
+		return nil, fmt.Errorf("GetSDRs failed, err: %w", err)
 	}
 
 	for _, sdr := range sdrs {
 		sensor, err := c.sdrToSensor(ctx, sdr)
 		if err != nil {
-			return nil, fmt.Errorf("sdrToSensor failed, err: %s", err)
+			return nil, fmt.Errorf("sdrToSensor failed, err: %w", err)
 		}
 
 		var choose bool = true
@@ -79,13 +79,13 @@ func (c *Client) GetSensorsAny(ctx context.Context, filterOptions ...SensorFilte
 
 	sdrs, err := c.GetSDRs(ctx, SDRRecordTypeFullSensor, SDRRecordTypeCompactSensor)
 	if err != nil {
-		return nil, fmt.Errorf("GetSDRs failed, err: %s", err)
+		return nil, fmt.Errorf("GetSDRs failed, err: %w", err)
 	}
 
 	for _, sdr := range sdrs {
 		sensor, err := c.sdrToSensor(ctx, sdr)
 		if err != nil {
-			return nil, fmt.Errorf("sdrToSensor failed, err: %s", err)
+			return nil, fmt.Errorf("sdrToSensor failed, err: %w", err)
 		}
 
 		var choose bool = false
@@ -108,12 +108,12 @@ func (c *Client) GetSensorsAny(ctx context.Context, filterOptions ...SensorFilte
 func (c *Client) GetSensorByID(ctx context.Context, sensorNumber uint8) (*Sensor, error) {
 	sdr, err := c.GetSDRBySensorID(ctx, sensorNumber)
 	if err != nil {
-		return nil, fmt.Errorf("GetSDRBySensorID failed, err: %s", err)
+		return nil, fmt.Errorf("GetSDRBySensorID failed, err: %w", err)
 	}
 
 	sensor, err := c.sdrToSensor(ctx, sdr)
 	if err != nil {
-		return nil, fmt.Errorf("GetSensorFromSDR failed, err: %s", err)
+		return nil, fmt.Errorf("GetSensorFromSDR failed, err: %w", err)
 	}
 
 	return sensor, nil
@@ -123,12 +123,12 @@ func (c *Client) GetSensorByID(ctx context.Context, sensorNumber uint8) (*Sensor
 func (c *Client) GetSensorByName(ctx context.Context, sensorName string) (*Sensor, error) {
 	sdr, err := c.GetSDRBySensorName(ctx, sensorName)
 	if err != nil {
-		return nil, fmt.Errorf("GetSDRBySensorName failed, err: %s", err)
+		return nil, fmt.Errorf("GetSDRBySensorName failed, err: %w", err)
 	}
 
 	sensor, err := c.sdrToSensor(ctx, sdr)
 	if err != nil {
-		return nil, fmt.Errorf("GetSensorFromSDR failed, err: %s", err)
+		return nil, fmt.Errorf("GetSensorFromSDR failed, err: %w", err)
 	}
 
 	return sensor, nil
@@ -183,7 +183,7 @@ func (c *Client) sdrToSensor(ctx context.Context, sdr *SDR) (*Sensor, error) {
 	c.Debug("Get Sensor", fmt.Sprintf("Sensor Name: %s, Sensor Number: %#02x\n", sensor.Name, sensor.Number))
 
 	if err := c.fillSensorReading(ctx, sensor); err != nil {
-		return nil, fmt.Errorf("fillSensorReading failed, err: %s", err)
+		return nil, fmt.Errorf("fillSensorReading failed, err: %w", err)
 	}
 
 	// scanningDisabled is filled/set by fillSensorReading
@@ -195,11 +195,11 @@ func (c *Client) sdrToSensor(ctx context.Context, sdr *SDR) (*Sensor, error) {
 
 	if !sensor.EventReadingType.IsThreshold() || !sensor.SensorUnit.IsAnalog() {
 		if err := c.fillSensorDiscrete(ctx, sensor); err != nil {
-			return nil, fmt.Errorf("fillSensorDiscrete failed, err: %s", err)
+			return nil, fmt.Errorf("fillSensorDiscrete failed, err: %w", err)
 		}
 	} else {
 		if err := c.fillSensorThreshold(ctx, sensor); err != nil {
-			return nil, fmt.Errorf("fillSensorThreshold failed, err: %s", err)
+			return nil, fmt.Errorf("fillSensorThreshold failed, err: %w", err)
 		}
 	}
 

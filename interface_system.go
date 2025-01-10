@@ -59,7 +59,7 @@ func (c *Client) ConnectOpen(ctx context.Context, devnum int32) error {
 
 	var receiveEvents uint32 = 1
 	if err := open.IOCTL(c.openipmi.file.Fd(), open.IPMICTL_SET_GETS_EVENTS_CMD, uintptr(unsafe.Pointer(&receiveEvents))); err != nil {
-		return fmt.Errorf("ioctl failed, cloud not enable event receiver, err: %s", err)
+		return fmt.Errorf("ioctl failed, cloud not enable event receiver, err: %w", err)
 	}
 
 	return nil
@@ -68,7 +68,7 @@ func (c *Client) ConnectOpen(ctx context.Context, devnum int32) error {
 // closeOpen closes the ipmi dev file.
 func (c *Client) closeOpen(ctx context.Context) error {
 	if err := c.openipmi.file.Close(); err != nil {
-		return fmt.Errorf("close open file failed, err: %s", err)
+		return fmt.Errorf("close open file failed, err: %w", err)
 	}
 	return nil
 }
@@ -83,7 +83,7 @@ func (c *Client) exchangeOpen(ctx context.Context, request Request, response Res
 
 	recv, err := c.openSendRequest(ctx, request)
 	if err != nil {
-		return fmt.Errorf("openSendRequest failed, err: %s", err)
+		return fmt.Errorf("openSendRequest failed, err: %w", err)
 	}
 
 	c.DebugBytes("recv data", recv, 16)
@@ -110,7 +110,7 @@ func (c *Client) exchangeOpen(ctx context.Context, request Request, response Res
 	if err := response.Unpack(unpackData); err != nil {
 		return &ResponseError{
 			completionCode: CompletionCode(recv[0]),
-			description:    fmt.Sprintf("unpack response failed, err: %s", err),
+			description:    fmt.Sprintf("unpack response failed, err: %w", err),
 		}
 	}
 

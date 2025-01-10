@@ -91,7 +91,7 @@ func (c *Client) SetDCMIAssetTagFull(ctx context.Context, assetTag []byte) (err 
 		offsetEnd := offset + writeBytes
 		_, err := c.SetDCMIAssetTag(ctx, offset, writeBytes, assetTag[offset:offsetEnd])
 		if err != nil {
-			return fmt.Errorf("SetDCMIAssetTag failed, err: %s", err)
+			return fmt.Errorf("SetDCMIAssetTag failed, err: %w", err)
 		}
 
 		offset = offset + writeBytes

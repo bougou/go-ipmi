@@ -76,7 +76,7 @@ func (c *Client) GetAllChannelCipherSuites(ctx context.Context, channelNumber ui
 	for ; index < MaxCipherSuiteListIndex; index++ {
 		res, err := c.GetChannelCipherSuites(ctx, channelNumber, index)
 		if err != nil {
-			return nil, fmt.Errorf("cmd GetChannelCipherSuites failed, err: %s", err)
+			return nil, fmt.Errorf("cmd GetChannelCipherSuites failed, err: %w", err)
 		}
 		cipherSuitesData = append(cipherSuitesData, res.CipherSuiteRecords...)
 		if len(res.CipherSuiteRecords) < 16 {

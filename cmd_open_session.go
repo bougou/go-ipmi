@@ -172,7 +172,7 @@ func (c *Client) OpenSession(ctx context.Context) (response *OpenSessionResponse
 
 	err = c.Exchange(ctx, request, response)
 	if err != nil {
-		return nil, fmt.Errorf("client exchange failed, err: %s", err)
+		return nil, fmt.Errorf("client exchange failed, err: %w", err)
 	}
 
 	c.Debug("OPEN SESSION RESPONSE", response.Format())

@@ -186,47 +186,47 @@ func ParseSDR(data []byte, nextRecordID uint16) (*SDR, error) {
 	switch sdrHeader.RecordType {
 	case SDRRecordTypeFullSensor:
 		if err := parseSDRFullSensor(data, sdr); err != nil {
-			return nil, fmt.Errorf("parseSDRFullSensor failed, err: %s", err)
+			return nil, fmt.Errorf("parseSDRFullSensor failed, err: %w", err)
 		}
 	case SDRRecordTypeCompactSensor:
 		if err := parseSDRCompactSensor(data, sdr); err != nil {
-			return nil, fmt.Errorf("parseSDRCompactSensor failed, err: %s", err)
+			return nil, fmt.Errorf("parseSDRCompactSensor failed, err: %w", err)
 		}
 	case SDRRecordTypeEventOnly:
 		if err := parseSDREventOnly(data, sdr); err != nil {
-			return nil, fmt.Errorf("parseSDREventOnly failed, err: %s", err)
+			return nil, fmt.Errorf("parseSDREventOnly failed, err: %w", err)
 		}
 	case SDRRecordTypeEntityAssociation:
 		if err := parseSDREntityAssociation(data, sdr); err != nil {
-			return nil, fmt.Errorf("parseSDREntityAssociation failed, err: %s", err)
+			return nil, fmt.Errorf("parseSDREntityAssociation failed, err: %w", err)
 		}
 	case SDRRecordTypeDeviceRelativeEntityAssociation:
 		if err := parseSDRDeviceRelativeEntityAssociation(data, sdr); err != nil {
-			return nil, fmt.Errorf("parseSDRDeviceRelativeEntityAssociation failed, err: %s", err)
+			return nil, fmt.Errorf("parseSDRDeviceRelativeEntityAssociation failed, err: %w", err)
 		}
 	case SDRRecordTypeGenericLocator:
 		if err := parseSDRGenericLocator(data, sdr); err != nil {
-			return nil, fmt.Errorf("parseSDRGenericLocator failed, err: %s", err)
+			return nil, fmt.Errorf("parseSDRGenericLocator failed, err: %w", err)
 		}
 	case SDRRecordTypeFRUDeviceLocator:
 		if err := parseSDRFRUDeviceLocator(data, sdr); err != nil {
-			return nil, fmt.Errorf("parseSDRFRUDeviceLocator failed, err: %s", err)
+			return nil, fmt.Errorf("parseSDRFRUDeviceLocator failed, err: %w", err)
 		}
 	case SDRRecordTypeManagementControllerDeviceLocator:
 		if err := parseSDRManagementControllerDeviceLocator(data, sdr); err != nil {
-			return nil, fmt.Errorf("parseSDRManagementControllerDeviceLocator failed, err: %s", err)
+			return nil, fmt.Errorf("parseSDRManagementControllerDeviceLocator failed, err: %w", err)
 		}
 	case SDRRecordTypeManagementControllerConfirmation:
 		if err := parseSDRManagementControllerConfirmation(data, sdr); err != nil {
-			return nil, fmt.Errorf("parseSDRManagementControllerConfirmation failed, err: %s", err)
+			return nil, fmt.Errorf("parseSDRManagementControllerConfirmation failed, err: %w", err)
 		}
 	case SDRRecordTypeBMCMessageChannelInfo:
 		if err := parseSDRBMCMessageChannelInfo(data, sdr); err != nil {
-			return nil, fmt.Errorf("parseSDRBMCMessageChannelInfo failed, err: %s", err)
+			return nil, fmt.Errorf("parseSDRBMCMessageChannelInfo failed, err: %w", err)
 		}
 	case SDRRecordTypeOEM:
 		if err := parseSDROEM(data, sdr); err != nil {
-			return nil, fmt.Errorf("parseSDROEM failed, err: %s", err)
+			return nil, fmt.Errorf("parseSDROEM failed, err: %w", err)
 		}
 	}
 
@@ -884,7 +884,7 @@ func (c *Client) enhanceSDR(ctx context.Context, sdr *SDR) error {
 
 	sensor, err := c.sdrToSensor(ctx, sdr)
 	if err != nil {
-		return fmt.Errorf("sdrToSensor failed, err: %s", err)
+		return fmt.Errorf("sdrToSensor failed, err: %w", err)
 	}
 
 	switch sdr.RecordHeader.RecordType {

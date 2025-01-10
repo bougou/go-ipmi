@@ -38,13 +38,13 @@ func NewCmdSELInfo() *cobra.Command {
 			ctx := context.Background()
 			selInfo, err := client.GetSELInfo(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSELInfo failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetSELInfo failed, err: %w", err))
 			}
 			fmt.Println(selInfo.Format())
 
 			selAllocInfo, err := client.GetSELAllocInfo(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSELInfo failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetSELInfo failed, err: %w", err))
 			}
 			fmt.Println(selAllocInfo.Format())
 		},
@@ -62,19 +62,19 @@ func NewCmdSELGet() *cobra.Command {
 			}
 			id, err := parseStringToInt64(args[0])
 			if err != nil {
-				CheckErr(fmt.Errorf("invalid Record ID passed, err: %s", err))
+				CheckErr(fmt.Errorf("invalid Record ID passed, err: %w", err))
 			}
 			recordID := uint16(id)
 
 			ctx := context.Background()
 			selEntryRes, err := client.GetSELEntry(ctx, 0x0, recordID)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSELEntry failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetSELEntry failed, err: %w", err))
 			}
 
 			sel, err := ipmi.ParseSEL(selEntryRes.Data)
 			if err != nil {
-				CheckErr(fmt.Errorf("ParseSEL failed, err: %s", err))
+				CheckErr(fmt.Errorf("ParseSEL failed, err: %w", err))
 			}
 			fmt.Println(ipmi.FormatSELs([]*ipmi.SEL{sel}, nil))
 		},
@@ -90,7 +90,7 @@ func NewCmdSELList() *cobra.Command {
 			ctx := context.Background()
 			selEntries, err := client.GetSELEntries(ctx, 0)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSELInfo failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetSELInfo failed, err: %w", err))
 			}
 
 			fmt.Println(ipmi.FormatSELs(selEntries, nil))
@@ -107,12 +107,12 @@ func NewCmdSELElist() *cobra.Command {
 			ctx := context.Background()
 			sdrsMap, err := client.GetSDRsMap(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSDRsMap failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetSDRsMap failed, err: %w", err))
 			}
 
 			selEntries, err := client.GetSELEntries(ctx, 0)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSELInfo failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetSELInfo failed, err: %w", err))
 			}
 
 			fmt.Println(ipmi.FormatSELs(selEntries, sdrsMap))

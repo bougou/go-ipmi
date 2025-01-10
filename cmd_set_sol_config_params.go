@@ -61,7 +61,7 @@ func (c *Client) SetSOLConfigParamsFor(ctx context.Context, channelNumber uint8,
 
 	_, err := c.SetSOLConfigParams(ctx, channelNumber, paramSelector, paramData)
 	if err != nil {
-		return fmt.Errorf("SetSOLConfigParams failed, err: %s", err)
+		return fmt.Errorf("SetSOLConfigParams failed, err: %w", err)
 	}
 
 	return nil

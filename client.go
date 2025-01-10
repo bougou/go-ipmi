@@ -198,7 +198,7 @@ func (c *Client) Connect(ctx context.Context) error {
 	// Optional RMCP Ping/Pong mechanism
 	// pongRes, err := c.RmcpPing()
 	// if err != nil {
-	// return fmt.Errorf("RMCP Ping failed, err: %s", err)
+	// return fmt.Errorf("RMCP Ping failed, err: %w", err)
 	// }
 	// if pongRes.IPMISupported {
 	// return fmt.Errorf("ipmi not supported")

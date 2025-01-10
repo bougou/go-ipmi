@@ -162,7 +162,7 @@ func (c *Client) ValidateRAKP2(ctx context.Context, rakp2 *RAKPMessage2) (bool, 
 	// rakp2 authcode is valid
 	authcode, err := c.generate_rakp2_authcode()
 	if err != nil {
-		return false, fmt.Errorf("generate rakp2 authcode failed, err: %s", err)
+		return false, fmt.Errorf("generate rakp2 authcode failed, err: %w", err)
 	}
 
 	c.DebugBytes("rakp2 returned auth code", rakp2.KeyExchangeAuthenticationCode, 16)
@@ -206,7 +206,7 @@ func (c *Client) RAKPMessage1(ctx context.Context) (response *RAKPMessage2, err 
 	c.session.v20.bmcRand = response.ManagedSystemRandomNumber // will be used in rakp3 to generate authCode
 
 	if _, err = c.ValidateRAKP2(ctx, response); err != nil {
-		err = fmt.Errorf("validate rakp2 message failed, err: %s", err)
+		err = fmt.Errorf("validate rakp2 message failed, err: %w", err)
 		return
 	}
 

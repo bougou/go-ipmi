@@ -79,11 +79,11 @@ func (c *Client) GetSDREnhanced(ctx context.Context, recordID uint16) (*SDR, err
 
 	sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
 	if err != nil {
-		return nil, fmt.Errorf("ParseSDR failed, err: %s", err)
+		return nil, fmt.Errorf("ParseSDR failed, err: %w", err)
 	}
 
 	if err := c.enhanceSDR(ctx, sdr); err != nil {
-		return sdr, fmt.Errorf("enhanceSDR failed, err: %s", err)
+		return sdr, fmt.Errorf("enhanceSDR failed, err: %w", err)
 	}
 
 	return sdr, nil
@@ -162,7 +162,7 @@ func (c *Client) GetSDRBySensorID(ctx context.Context, sensorNumber uint8) (*SDR
 		}
 		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
 		if err != nil {
-			return nil, fmt.Errorf("ParseSDR failed, err: %s", err)
+			return nil, fmt.Errorf("ParseSDR failed, err: %w", err)
 		}
 		if uint8(sdr.SensorNumber()) != sensorNumber {
 			recordID = sdr.NextRecordID
@@ -173,7 +173,7 @@ func (c *Client) GetSDRBySensorID(ctx context.Context, sensorNumber uint8) (*SDR
 		}
 
 		if err := c.enhanceSDR(ctx, sdr); err != nil {
-			return sdr, fmt.Errorf("enhanceSDR failed, err: %s", err)
+			return sdr, fmt.Errorf("enhanceSDR failed, err: %w", err)
 		}
 		return sdr, nil
 	}
@@ -190,7 +190,7 @@ func (c *Client) GetSDRBySensorName(ctx context.Context, sensorName string) (*SD
 		}
 		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
 		if err != nil {
-			return nil, fmt.Errorf("ParseSDR failed, err: %s", err)
+			return nil, fmt.Errorf("ParseSDR failed, err: %w", err)
 		}
 
 		if sdr.SensorName() != sensorName {
@@ -202,7 +202,7 @@ func (c *Client) GetSDRBySensorName(ctx context.Context, sensorName string) (*SD
 		}
 
 		if err := c.enhanceSDR(ctx, sdr); err != nil {
-			return sdr, fmt.Errorf("enhanceSDR failed, err: %s", err)
+			return sdr, fmt.Errorf("enhanceSDR failed, err: %w", err)
 		}
 		return sdr, nil
 	}

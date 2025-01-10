@@ -53,7 +53,7 @@ func (c *Client) exchangeTool(ctx context.Context, request Request, response Res
 			if len(submatches) == 7 && len(submatches[5]) == 2 {
 				code, err := strconv.ParseUint(string(submatches[5]), 16, 0)
 				if err != nil {
-					return fmt.Errorf("CompletionCode parse failed, err: %s", err)
+					return fmt.Errorf("CompletionCode parse failed, err: %w", err)
 				}
 				return &ResponseError{
 					completionCode: CompletionCode(uint8(code)),
@@ -61,16 +61,16 @@ func (c *Client) exchangeTool(ctx context.Context, request Request, response Res
 				}
 			}
 		}
-		return fmt.Errorf("ipmitool run failed, err: %s", err)
+		return fmt.Errorf("ipmitool run failed, err: %w", err)
 	}
 
 	output := stdout.String()
 	resp, err := rawDecode(strings.TrimSpace(output))
 	if err != nil {
-		return fmt.Errorf("decode response failed, err: %s", err)
+		return fmt.Errorf("decode response failed, err: %w", err)
 	}
 	if err := response.Unpack(resp); err != nil {
-		return fmt.Errorf("unpack response failed, err: %s", err)
+		return fmt.Errorf("unpack response failed, err: %w", err)
 	}
 
 	return nil

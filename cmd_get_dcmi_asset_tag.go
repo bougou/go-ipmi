@@ -97,7 +97,7 @@ func (c *Client) GetDCMIAssetTagFull(ctx context.Context) (assetTagRaw []byte, t
 				case 0x83:
 					typeCode = 0x11
 				default:
-					return nil, 0, fmt.Errorf("GetDCMIAssetTag failed, err: %s", err)
+					return nil, 0, fmt.Errorf("GetDCMIAssetTag failed, err: %w", err)
 				}
 			}
 		}

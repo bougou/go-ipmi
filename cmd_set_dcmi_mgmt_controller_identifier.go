@@ -86,7 +86,7 @@ func (c *Client) SetDCMIMgmtControllerIdentifierFull(ctx context.Context, idStr 
 		offsetEnd := offset + writeBytes
 		_, err := c.SetDCMIMgmtControllerIdentifier(ctx, offset, writeBytes, idStr[offset:offsetEnd])
 		if err != nil {
-			return fmt.Errorf("SetDCMIMgmtControllerIdentifier failed, err: %s", err)
+			return fmt.Errorf("SetDCMIMgmtControllerIdentifier failed, err: %w", err)
 		}
 
 		offset = offset + writeBytes

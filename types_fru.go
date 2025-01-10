@@ -254,17 +254,17 @@ func (fruChassis *FRUChassisInfoArea) Unpack(msg []byte) error {
 
 	offset, fruChassis.PartNumberTypeLength, fruChassis.PartNumber, err = getFRUTypeLengthField(msg, offset)
 	if err != nil {
-		return fmt.Errorf("get fru chassis part number field failed, err: %s", err)
+		return fmt.Errorf("get fru chassis part number field failed, err: %w", err)
 	}
 
 	offset, fruChassis.SerialNumberTypeLength, fruChassis.SerialNumber, err = getFRUTypeLengthField(msg, offset)
 	if err != nil {
-		return fmt.Errorf("get fru chassis serial number field failed, err: %s", err)
+		return fmt.Errorf("get fru chassis serial number field failed, err: %w", err)
 	}
 
 	fruChassis.Custom, fruChassis.Unused, fruChassis.Checksum, err = getFRUCustomUnusedChecksumFields(msg, offset)
 	if err != nil {
-		return fmt.Errorf("getFRUCustomUnusedChecksumFields failed, err: %s", err)
+		return fmt.Errorf("getFRUCustomUnusedChecksumFields failed, err: %w", err)
 	}
 
 	return nil
@@ -410,32 +410,32 @@ func (fruBoard *FRUBoardInfoArea) Unpack(msg []byte) error {
 
 	offset, fruBoard.ManufacturerTypeLength, fruBoard.Manufacturer, err = getFRUTypeLengthField(msg, offset)
 	if err != nil {
-		return fmt.Errorf("get fru board manufacturer field failed, err: %s", err)
+		return fmt.Errorf("get fru board manufacturer field failed, err: %w", err)
 	}
 
 	offset, fruBoard.ProductNameTypeLength, fruBoard.ProductName, err = getFRUTypeLengthField(msg, offset)
 	if err != nil {
-		return fmt.Errorf("get fru board product name field failed, err: %s", err)
+		return fmt.Errorf("get fru board product name field failed, err: %w", err)
 	}
 
 	offset, fruBoard.SerialNumberTypeLength, fruBoard.SerialNumber, err = getFRUTypeLengthField(msg, offset)
 	if err != nil {
-		return fmt.Errorf("get fru board serial number field failed, err: %s", err)
+		return fmt.Errorf("get fru board serial number field failed, err: %w", err)
 	}
 
 	offset, fruBoard.PartNumberTypeLength, fruBoard.PartNumber, err = getFRUTypeLengthField(msg, offset)
 	if err != nil {
-		return fmt.Errorf("get fru board part number field failed, err: %s", err)
+		return fmt.Errorf("get fru board part number field failed, err: %w", err)
 	}
 
 	offset, fruBoard.FRUFileIDTypeLength, fruBoard.FRUFileID, err = getFRUTypeLengthField(msg, offset)
 	if err != nil {
-		return fmt.Errorf("get fru board file id field failed, err: %s", err)
+		return fmt.Errorf("get fru board file id field failed, err: %w", err)
 	}
 
 	fruBoard.Custom, fruBoard.Unused, fruBoard.Checksum, err = getFRUCustomUnusedChecksumFields(msg, offset)
 	if err != nil {
-		return fmt.Errorf("getFRUCustomUnusedChecksumFields failed, err: %s", err)
+		return fmt.Errorf("getFRUCustomUnusedChecksumFields failed, err: %w", err)
 	}
 
 	return nil
@@ -514,42 +514,42 @@ func (fruProduct *FRUProductInfoArea) Unpack(msg []byte) error {
 
 	offset, fruProduct.ManufacturerTypeLength, fruProduct.Manufacturer, err = getFRUTypeLengthField(msg, offset)
 	if err != nil {
-		return fmt.Errorf("get fru product manufacturer field failed, err: %s", err)
+		return fmt.Errorf("get fru product manufacturer field failed, err: %w", err)
 	}
 
 	offset, fruProduct.NameTypeLength, fruProduct.Name, err = getFRUTypeLengthField(msg, offset)
 	if err != nil {
-		return fmt.Errorf("get fru product name field failed, err: %s", err)
+		return fmt.Errorf("get fru product name field failed, err: %w", err)
 	}
 
 	offset, fruProduct.PartModelTypeLength, fruProduct.PartModel, err = getFRUTypeLengthField(msg, offset)
 	if err != nil {
-		return fmt.Errorf("get fru product part model field failed, err: %s", err)
+		return fmt.Errorf("get fru product part model field failed, err: %w", err)
 	}
 
 	offset, fruProduct.VersionTypeLength, fruProduct.Version, err = getFRUTypeLengthField(msg, offset)
 	if err != nil {
-		return fmt.Errorf("get fru product version field failed, err: %s", err)
+		return fmt.Errorf("get fru product version field failed, err: %w", err)
 	}
 
 	offset, fruProduct.SerialNumberTypeLength, fruProduct.SerialNumber, err = getFRUTypeLengthField(msg, offset)
 	if err != nil {
-		return fmt.Errorf("get fru product serial number field failed, err: %s", err)
+		return fmt.Errorf("get fru product serial number field failed, err: %w", err)
 	}
 
 	offset, fruProduct.AssetTagTypeLength, fruProduct.AssetTag, err = getFRUTypeLengthField(msg, offset)
 	if err != nil {
-		return fmt.Errorf("get fru product asset tag field failed, err: %s", err)
+		return fmt.Errorf("get fru product asset tag field failed, err: %w", err)
 	}
 
 	offset, fruProduct.FRUFileIDTypeLength, fruProduct.FRUFileID, err = getFRUTypeLengthField(msg, offset)
 	if err != nil {
-		return fmt.Errorf("get fru product file id field failed, err: %s", err)
+		return fmt.Errorf("get fru product file id field failed, err: %w", err)
 	}
 
 	fruProduct.Custom, fruProduct.Unused, fruProduct.Checksum, err = getFRUCustomUnusedChecksumFields(msg, offset)
 	if err != nil {
-		return fmt.Errorf("getFRUCustomUnusedChecksumFields failed, err: %s", err)
+		return fmt.Errorf("getFRUCustomUnusedChecksumFields failed, err: %w", err)
 	}
 
 	return nil
@@ -1001,7 +1001,7 @@ func getFRUTypeLengthField(fruData []byte, offset uint16) (nextOffset uint16, ty
 
 	fieldData, err = typeLength.Chars(fieldDataRaw)
 	if err != nil {
-		err = fmt.Errorf("get chars from typelength failed, err: %s", err)
+		err = fmt.Errorf("get chars from typelength failed, err: %w", err)
 		return
 	}
 

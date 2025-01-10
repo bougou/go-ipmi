@@ -104,28 +104,28 @@ func (c *Client) RAKPMessage3(ctx context.Context) (response *RAKPMessage4, err 
 	// create session integrity key
 	sik, err := c.generate_sik()
 	if err != nil {
-		err = fmt.Errorf("generate sik failed, err: %s", err)
+		err = fmt.Errorf("generate sik failed, err: %w", err)
 		return
 	}
 	c.session.v20.sik = sik
 
 	k1, err := c.generate_k1()
 	if err != nil {
-		err = fmt.Errorf("generate k1 failed, err: %s", err)
+		err = fmt.Errorf("generate k1 failed, err: %w", err)
 		return
 	}
 	c.session.v20.k1 = k1
 
 	k2, err := c.generate_k2()
 	if err != nil {
-		err = fmt.Errorf("generate k2 failed, err: %s", err)
+		err = fmt.Errorf("generate k2 failed, err: %w", err)
 		return
 	}
 	c.session.v20.k2 = k2
 
 	authCode, err := c.generate_rakp3_authcode()
 	if err != nil {
-		return nil, fmt.Errorf("generate rakp3 auth code failed, err: %s", err)
+		return nil, fmt.Errorf("generate rakp3 auth code failed, err: %w", err)
 	}
 
 	request := &RAKPMessage3{
@@ -146,7 +146,7 @@ func (c *Client) RAKPMessage3(ctx context.Context) (response *RAKPMessage4, err 
 	}
 
 	if _, err = c.ValidateRAKP4(ctx, response); err != nil {
-		return nil, fmt.Errorf("validate rakp4 failed, err: %s", err)
+		return nil, fmt.Errorf("validate rakp4 failed, err: %w", err)
 	}
 
 	c.session.v20.state = SessionStateActive
@@ -165,7 +165,7 @@ func (c *Client) ValidateRAKP4(ctx context.Context, response *RAKPMessage4) (boo
 
 	authCode, err := c.generate_rakp4_authcode()
 	if err != nil {
-		return false, fmt.Errorf("generate rakp4 auth code failed, err: %s", err)
+		return false, fmt.Errorf("generate rakp4 auth code failed, err: %w", err)
 	}
 
 	c.DebugBytes("rakp4 console computed authcode", authCode, 16)

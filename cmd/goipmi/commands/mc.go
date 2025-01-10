@@ -37,7 +37,7 @@ func NewCmdMCInfo() *cobra.Command {
 			ctx := context.Background()
 			res, err := client.GetDeviceID(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetDeviceID failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetDeviceID failed, err: %w", err))
 			}
 			fmt.Println(res.Format())
 		},
@@ -59,12 +59,12 @@ func NewCmdMCReset() *cobra.Command {
 			switch args[0] {
 			case "warm":
 				if err := client.WarmReset(ctx); err != nil {
-					CheckErr(fmt.Errorf("WarmReset failed, err: %s", err))
+					CheckErr(fmt.Errorf("WarmReset failed, err: %w", err))
 				}
 
 			case "cold":
 				if err := client.ColdReset(ctx); err != nil {
-					CheckErr(fmt.Errorf("ColdReset failed, err: %s", err))
+					CheckErr(fmt.Errorf("ColdReset failed, err: %w", err))
 				}
 			default:
 				CheckErr(fmt.Errorf("usage: %s", usage))
@@ -89,7 +89,7 @@ func NewCmdMC_ACPI() *cobra.Command {
 			case "get":
 				res, err := client.GetACPIPowerState(ctx)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetACPIPowerState failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetACPIPowerState failed, err: %w", err))
 				}
 				fmt.Println(res.Format())
 			case "set":
@@ -110,7 +110,7 @@ func NewCmdMC_GUID() *cobra.Command {
 			ctx := context.Background()
 			res, err := client.GetSystemGUID(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSystemGUID failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetSystemGUID failed, err: %w", err))
 			}
 			fmt.Println(res.Format())
 		},
@@ -137,12 +137,12 @@ func NewCmdMC_Watchdog() *cobra.Command {
 			case "get":
 				res, err := client.GetWatchdogTimer(ctx)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetWatchdogTimer failed, err: %s", err))
+					CheckErr(fmt.Errorf("GetWatchdogTimer failed, err: %w", err))
 				}
 				fmt.Println(res.Format())
 			case "reset":
 				if _, err := client.ResetWatchdogTimer(ctx); err != nil {
-					CheckErr(fmt.Errorf("ResetWatchdogTimer failed, err: %s", err))
+					CheckErr(fmt.Errorf("ResetWatchdogTimer failed, err: %w", err))
 				}
 			case "off":
 				//

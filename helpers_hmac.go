@@ -23,7 +23,7 @@ func generate_hmac(alg string, data []byte, key []byte) ([]byte, error) {
 		h := hmac.New(md5.New, key)
 		_, err := h.Write(data)
 		if err != nil {
-			return nil, fmt.Errorf("hmac md5 failed, err: %s", err)
+			return nil, fmt.Errorf("hmac md5 failed, err: %w", err)
 		}
 		return h.Sum(nil), nil
 
@@ -31,7 +31,7 @@ func generate_hmac(alg string, data []byte, key []byte) ([]byte, error) {
 		h := hmac.New(sha1.New, key)
 		_, err := h.Write(data)
 		if err != nil {
-			return nil, fmt.Errorf("hmac sha1 failed, err: %s", err)
+			return nil, fmt.Errorf("hmac sha1 failed, err: %w", err)
 		}
 		return h.Sum(nil), nil
 
@@ -39,7 +39,7 @@ func generate_hmac(alg string, data []byte, key []byte) ([]byte, error) {
 		h := hmac.New(sha256.New, key)
 		_, err := h.Write(data)
 		if err != nil {
-			return nil, fmt.Errorf("hmac sha256 failed, err: %s", err)
+			return nil, fmt.Errorf("hmac sha256 failed, err: %w", err)
 		}
 		return h.Sum(nil), nil
 
@@ -96,7 +96,7 @@ func encryptAES(plainText []byte, cipherKey []byte, iv []byte) ([]byte, error) {
 
 	cipherBlock, err := aes.NewCipher(cipherKey)
 	if err != nil {
-		return nil, fmt.Errorf("NewCipher failed, err: %s", err)
+		return nil, fmt.Errorf("NewCipher failed, err: %w", err)
 	}
 
 	cipherText := make([]byte, len(plainText))
@@ -115,7 +115,7 @@ func decryptAES(cipherText []byte, cipherKey []byte, iv []byte) ([]byte, error) 
 
 	cipherBlock, err := aes.NewCipher(cipherKey)
 	if err != nil {
-		return nil, fmt.Errorf("NewCipher failed, err: %s", err)
+		return nil, fmt.Errorf("NewCipher failed, err: %w", err)
 	}
 
 	plainText := make([]byte, len(cipherText))
@@ -128,7 +128,7 @@ func decryptAES(cipherText []byte, cipherKey []byte, iv []byte) ([]byte, error) 
 func encryptRC4(plainText []byte, cipherKey []byte, iv []byte) ([]byte, error) {
 	rc4Cipher, err := rc4.NewCipher(cipherKey)
 	if err != nil {
-		return nil, fmt.Errorf("NewCipher failed, err: %s", err)
+		return nil, fmt.Errorf("NewCipher failed, err: %w", err)
 	}
 
 	cipherText := make([]byte, len(plainText))
@@ -139,7 +139,7 @@ func encryptRC4(plainText []byte, cipherKey []byte, iv []byte) ([]byte, error) {
 func decryptRC4(cipherText []byte, cipherKey []byte, iv []byte) ([]byte, error) {
 	rc4Cipher, err := rc4.NewCipher(cipherKey)
 	if err != nil {
-		return nil, fmt.Errorf("NewCipher failed, err: %s", err)
+		return nil, fmt.Errorf("NewCipher failed, err: %w", err)
 	}
 
 	plainText := make([]byte, len(cipherText))

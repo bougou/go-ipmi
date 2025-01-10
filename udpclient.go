@@ -46,7 +46,7 @@ func (c *UDPClient) initConn() error {
 	if c.proxy != nil {
 		conn, err := c.proxy.Dial("udp", fmt.Sprintf("%s:%d", c.Host, c.Port))
 		if err != nil {
-			return fmt.Errorf("udp proxy dial failed, err: %s", err)
+			return fmt.Errorf("udp proxy dial failed, err: %w", err)
 		}
 		c.conn = conn
 		return nil
@@ -54,11 +54,11 @@ func (c *UDPClient) initConn() error {
 
 	remoteAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", c.Host, c.Port))
 	if err != nil {
-		return fmt.Errorf("resolve addr failed, err: %s", err)
+		return fmt.Errorf("resolve addr failed, err: %w", err)
 	}
 	conn, err := net.DialUDP("udp", nil, remoteAddr)
 	if err != nil {
-		return fmt.Errorf("udp dial failed, err: %s", err)
+		return fmt.Errorf("udp dial failed, err: %w", err)
 	}
 	c.conn = conn
 
@@ -108,7 +108,7 @@ func (c *UDPClient) Close() error {
 	}
 
 	if err := c.conn.Close(); err != nil {
-		return fmt.Errorf("close udp conn failed, err: %s", err)
+		return fmt.Errorf("close udp conn failed, err: %w", err)
 	}
 
 	c.conn = nil
@@ -121,7 +121,7 @@ func (c *UDPClient) Close() error {
 // The sent content is read from reader.
 func (c *UDPClient) Exchange(ctx context.Context, reader io.Reader) ([]byte, error) {
 	if err := c.initConn(); err != nil {
-		return nil, fmt.Errorf("init udp connection failed, err: %s", err)
+		return nil, fmt.Errorf("init udp connection failed, err: %w", err)
 	}
 
 	c.lock.Lock()
