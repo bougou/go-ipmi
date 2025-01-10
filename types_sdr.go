@@ -877,6 +877,11 @@ func (c *Client) enhanceSDR(ctx context.Context, sdr *SDR) error {
 		return nil
 	}
 
+	if sdr.RecordHeader.RecordType != SDRRecordTypeFullSensor &&
+		sdr.RecordHeader.RecordType != SDRRecordTypeCompactSensor {
+		return nil
+	}
+
 	sensor, err := c.sdrToSensor(ctx, sdr)
 	if err != nil {
 		return fmt.Errorf("sdrToSensor failed, err: %s", err)
@@ -890,7 +895,7 @@ func (c *Client) enhanceSDR(ctx context.Context, sdr *SDR) error {
 	case SDRRecordTypeCompactSensor:
 		sdr.Compact.SensorValue = sensor.Value
 		sdr.Compact.SensorStatus = sensor.Status()
-
 	}
+
 	return nil
 }

@@ -217,13 +217,9 @@ func (c *Client) GetSDRs(ctx context.Context, recordTypes ...SDRRecordType) ([]*
 	var recordID uint16 = 0
 	var out = make([]*SDR, 0)
 	for {
-		res, err := c.GetSDR(ctx, recordID)
+		sdr, err := c.GetSDREnhanced(ctx, recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %s", recordID, err)
-		}
-		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
-		if err != nil {
-			return nil, fmt.Errorf("ParseSDR failed, err: %s", err)
 		}
 
 		if len(recordTypes) == 0 {
@@ -254,13 +250,9 @@ func (c *Client) GetSDRsMap(ctx context.Context) (SDRMapBySensorNumber, error) {
 
 	var recordID uint16 = 0
 	for {
-		res, err := c.GetSDR(ctx, recordID)
+		sdr, err := c.GetSDREnhanced(ctx, recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %s", recordID, err)
-		}
-		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
-		if err != nil {
-			return nil, fmt.Errorf("ParseSDR failed, err: %s", err)
 		}
 
 		var generatorID GeneratorID
