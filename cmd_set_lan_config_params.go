@@ -59,7 +59,7 @@ func (c *Client) SetLanConfigParams(ctx context.Context, channelNumber uint8, pa
 }
 
 func (c *Client) SetLanConfigParamsFor(ctx context.Context, channelNumber uint8, param LanConfigParameter) error {
-	paramSelector, _, _ := param.LanConfigParamSelector()
+	paramSelector, _, _ := param.LanConfigParameter()
 	c.DebugBytes(fmt.Sprintf(">> Set param data for (%s[%d]) ", paramSelector.String(), paramSelector), param.Pack(), 8)
 
 	if _, err := c.SetLanConfigParams(ctx, channelNumber, paramSelector, param.Pack()); err != nil {

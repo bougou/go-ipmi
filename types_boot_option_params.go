@@ -73,12 +73,11 @@ type BootOptions struct {
 func (bootOptions *BootOptions) Format() string {
 	format := func(param BootOptionParameter) string {
 		paramSelector, _, _ := param.BootOptionParameter()
-
 		content := param.Format()
 		if content[len(content)-1] != '\n' {
 			content += "\n"
 		}
-		return fmt.Sprintf("[%02d] %-24s: %s", paramSelector, paramSelector.String(), content)
+		return fmt.Sprintf("[%02d] %-24s : %s", paramSelector, paramSelector.String(), content)
 	}
 
 	out := ""

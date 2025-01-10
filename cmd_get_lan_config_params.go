@@ -72,7 +72,7 @@ func (c *Client) GetLanConfigParams(ctx context.Context, channelNumber uint8, pa
 //
 // The param is a pointer to a struct that implements the LanConfigParameter interface.
 func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8, param LanConfigParameter) error {
-	paramSelector, setSelector, blockSelector := param.LanConfigParamSelector()
+	paramSelector, setSelector, blockSelector := param.LanConfigParameter()
 	c.Debugf(">> Get LanConfigParam for paramSelector (%d) %s, setSelector %d, blockSelector %d\n", uint8(paramSelector), paramSelector, setSelector, blockSelector)
 
 	response, err := c.GetLanConfigParams(ctx, channelNumber, paramSelector, setSelector, blockSelector)

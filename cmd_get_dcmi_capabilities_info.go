@@ -96,7 +96,7 @@ func (c *Client) GetDCMICapabilitiesInfo(ctx context.Context, paramSelector DCMI
 }
 
 func (c *Client) GetDCMICapabilitiesInfoFor(ctx context.Context, param DCMICapParameter) error {
-	paramSelector := param.DCMICapParamSelector()
+	paramSelector := param.DCMICapParameter()
 
 	request := &GetDCMICapabilitiesInfoRequest{ParamSelector: paramSelector}
 	response := &GetDCMICapabilitiesInfoResponse{}

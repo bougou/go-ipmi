@@ -4,7 +4,7 @@ import "context"
 
 // 30.3 Set PEF Configuration Parameters Command
 type SetPEFConfigParamsRequest struct {
-	ParamSelector uint8
+	ParamSelector PEFConfigParamSelector
 	ParamData     []byte
 }
 

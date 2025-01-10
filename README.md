@@ -297,25 +297,28 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 
 ### Serial/Modem Device Commands
 
-| Method                 | Status             | corresponding ipmitool usage |
-| ---------------------- | ------------------ | ---------------------------- |
-| SetSerialConfig        |                    |
-| GetSerialConfig        |                    |
-| SetSerialMux           |                    |
-| GetTapResponseCodes    |                    |
-| SetPPPTransmitData     |                    |
-| GetPPPTransmitData     |                    |
-| SendPPPPacket          |                    |
-| GetPPPReceiveData      |                    |
-| SerialConnectionActive |                    |
-| Callback               |                    |
-| SetUserCallbackOptions |                    |
-| GetUserCallbackOptions |                    |
-| SetSerialRoutingMux    |                    |
-| SOLActivating          | :white_check_mark: |
-| GetSOLConfigParams     | :white_check_mark: |
-| SetSOLConfigParams     | :white_check_mark: |
-| SOLInfo                | :white_check_mark: | sol info                     |
+| Method                    | Status             | corresponding ipmitool usage |
+| ------------------------- | ------------------ | ---------------------------- |
+| SetSerialConfig           |                    |
+| GetSerialConfig           |                    |
+| SetSerialMux              |                    |
+| GetTapResponseCodes       |                    |
+| SetPPPTransmitData        |                    |
+| GetPPPTransmitData        |                    |
+| SendPPPPacket             |                    |
+| GetPPPReceiveData         |                    |
+| SerialConnectionActive    |                    |
+| Callback                  |                    |
+| SetUserCallbackOptions    |                    |
+| GetUserCallbackOptions    |                    |
+| SetSerialRoutingMux       |                    |
+| SOLActivating             | :white_check_mark: |
+| GetSOLConfigParams        | :white_check_mark: |
+| GetSOLConfigParamsFor (*) | :white_check_mark: |
+| SetSOLConfigParams        | :white_check_mark: |
+| SetSOLConfigParamsFor (*) | :white_check_mark: |
+| GetSOLConfig (*)          | :white_check_mark: | sol info                     |
+| GetSOLConfigFor (*)       | :white_check_mark: | sol info                     |
 
 ### Command Forwarding Commands
 

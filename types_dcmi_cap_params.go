@@ -5,7 +5,7 @@ import (
 )
 
 type DCMICapParameter interface {
-	DCMICapParamSelector() DCMICapParamSelector
+	DCMICapParameter() DCMICapParamSelector
 	Parameter
 }
 
@@ -53,7 +53,7 @@ type DCMICapabilities struct {
 
 func (dcmiCap *DCMICapabilities) Format() string {
 	format := func(param DCMICapParameter) string {
-		paramSelector := param.DCMICapParamSelector()
+		paramSelector := param.DCMICapParameter()
 		content := param.Format()
 		if content[len(content)-1] != '\n' {
 			content += "\n"
@@ -94,7 +94,7 @@ type DCMICapParam_SupportedDCMICapabilities struct {
 	SupportOutOfBandLAN    bool
 }
 
-func (dcmiCap *DCMICapParam_SupportedDCMICapabilities) DCMICapParamSelector() DCMICapParamSelector {
+func (dcmiCap *DCMICapParam_SupportedDCMICapabilities) DCMICapParameter() DCMICapParamSelector {
 	return DCMICapParamSelector_SupportedDCMICapabilities
 }
 
@@ -140,7 +140,7 @@ type DCMICapParam_MandatoryPlatformAttributes struct {
 	TemperatrureSamplingFrequencySec uint8
 }
 
-func (dcmiCap *DCMICapParam_MandatoryPlatformAttributes) DCMICapParamSelector() DCMICapParamSelector {
+func (dcmiCap *DCMICapParam_MandatoryPlatformAttributes) DCMICapParameter() DCMICapParamSelector {
 	return DCMICapParamSelector_MandatoryPlatformAttributes
 }
 
@@ -189,7 +189,7 @@ type DCMICapParam_OptionalPlatformAttributes struct {
 	DeviceRevision                   uint8
 }
 
-func (dcmiCap *DCMICapParam_OptionalPlatformAttributes) DCMICapParamSelector() DCMICapParamSelector {
+func (dcmiCap *DCMICapParam_OptionalPlatformAttributes) DCMICapParameter() DCMICapParamSelector {
 	return DCMICapParamSelector_OptionalPlatformAttributes
 }
 
@@ -229,7 +229,7 @@ type DCMICapParam_ManageabilityAccessAttributes struct {
 	SerialChannelNumber       uint8
 }
 
-func (dcmiCap *DCMICapParam_ManageabilityAccessAttributes) DCMICapParamSelector() DCMICapParamSelector {
+func (dcmiCap *DCMICapParam_ManageabilityAccessAttributes) DCMICapParameter() DCMICapParamSelector {
 	return DCMICapParamSelector_ManageabilityAccessAttributes
 }
 
@@ -268,7 +268,7 @@ type DCMICapParam_EnhancedSystemPowerStatisticsAttributes struct {
 	RollingAverageTimePeriodsSec []int
 }
 
-func (dcmiCap *DCMICapParam_EnhancedSystemPowerStatisticsAttributes) DCMICapParamSelector() DCMICapParamSelector {
+func (dcmiCap *DCMICapParam_EnhancedSystemPowerStatisticsAttributes) DCMICapParameter() DCMICapParamSelector {
 	return DCMICapParamSelector_EnhancedSystemPowerStatisticsAttributes
 }
 

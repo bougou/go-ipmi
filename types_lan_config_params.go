@@ -8,7 +8,7 @@ import (
 )
 
 type LanConfigParameter interface {
-	LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8)
+	LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8)
 	Parameter
 }
 
@@ -216,7 +216,7 @@ type LanConfigParam_SetInProgress struct {
 	Value SetInProgress
 }
 
-func (param *LanConfigParam_SetInProgress) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_SetInProgress) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_SetInProgress, 0, 0
 }
 
@@ -245,7 +245,7 @@ type LanConfigParam_AuthTypeSupport struct {
 	None     bool
 }
 
-func (param *LanConfigParam_AuthTypeSupport) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_AuthTypeSupport) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_AuthTypeSupport, 0, 0
 }
 
@@ -289,12 +289,7 @@ func (param *LanConfigParam_AuthTypeSupport) Format() string {
 		s = "None"
 	}
 
-	return fmt.Sprintf(`%s,
-                    OEM      : %v,
-                    Password : %v,
-                    MD5      : %v,
-                    MD2      : %v,
-                    Non      : %v`,
+	return fmt.Sprintf(`%s, (OEM: %v, Password: %v, MD5: %v, MD2: %v, Non: %v)`,
 		s, param.OEM, param.Password, param.MD5, param.MD2, param.None)
 }
 
@@ -306,7 +301,7 @@ type LanConfigParam_AuthTypeEnables struct {
 	OEM      *AuthTypesEnabled
 }
 
-func (param *LanConfigParam_AuthTypeEnables) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_AuthTypeEnables) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_AuthTypeEnables, 0, 0
 }
 
@@ -345,7 +340,7 @@ type LanConfigParam_IP struct {
 	IP net.IP
 }
 
-func (param *LanConfigParam_IP) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IP) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IP, 0, 0
 }
 
@@ -371,7 +366,7 @@ type LanConfigParam_IPSource struct {
 	Source LanIPAddressSource
 }
 
-func (param *LanConfigParam_IPSource) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPSource) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPSource, 0, 0
 }
 
@@ -396,7 +391,7 @@ type LanConfigParam_MAC struct {
 	MAC net.HardwareAddr
 }
 
-func (param *LanConfigParam_MAC) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_MAC) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_MAC, 0, 0
 }
 
@@ -422,7 +417,7 @@ type LanConfigParam_SubnetMask struct {
 	SubnetMask net.IP
 }
 
-func (param *LanConfigParam_SubnetMask) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_SubnetMask) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_SubnetMask, 0, 0
 }
 
@@ -466,7 +461,7 @@ type LanConfigParam_IPv4HeaderParams struct {
 	TOS uint8
 }
 
-func (param *LanConfigParam_IPv4HeaderParams) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv4HeaderParams) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv4HeaderParams, 0, 0
 }
 
@@ -502,7 +497,7 @@ type LanConfigParam_PrimaryRMCPPort struct {
 	Port uint16
 }
 
-func (param *LanConfigParam_PrimaryRMCPPort) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_PrimaryRMCPPort) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_PrimaryRMCPPort, 0, 0
 }
 
@@ -532,7 +527,7 @@ type LanConfigParam_SecondaryRMCPPort struct {
 	Port uint16
 }
 
-func (param *LanConfigParam_SecondaryRMCPPort) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_SecondaryRMCPPort) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_SecondaryRMCPPort, 0, 0
 }
 
@@ -563,7 +558,7 @@ type LanConfigParam_ARPControl struct {
 	GratuitousARPEnabled bool
 }
 
-func (param *LanConfigParam_ARPControl) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_ARPControl) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_ARPControl, 0, 0
 }
 
@@ -597,7 +592,7 @@ type LanConfigParam_GratuitousARPInterval struct {
 	MilliSec uint32
 }
 
-func (param *LanConfigParam_GratuitousARPInterval) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_GratuitousARPInterval) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_GratuitousARPInterval, 0, 0
 }
 
@@ -623,7 +618,7 @@ type LanConfigParam_DefaultGatewayIP struct {
 	IP net.IP
 }
 
-func (param *LanConfigParam_DefaultGatewayIP) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_DefaultGatewayIP) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_DefaultGatewayIP, 0, 0
 }
 
@@ -656,7 +651,7 @@ type LanConfigParam_DefaultGatewayMAC struct {
 	MAC net.HardwareAddr
 }
 
-func (param *LanConfigParam_DefaultGatewayMAC) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_DefaultGatewayMAC) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_DefaultGatewayMAC, 0, 0
 }
 
@@ -691,7 +686,7 @@ type LanConfigParam_BackupGatewayIP struct {
 	IP net.IP
 }
 
-func (param *LanConfigParam_BackupGatewayIP) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_BackupGatewayIP) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_BackupGatewayIP, 0, 0
 }
 
@@ -724,7 +719,7 @@ type LanConfigParam_BackupGatewayMAC struct {
 	MAC net.HardwareAddr
 }
 
-func (param *LanConfigParam_BackupGatewayMAC) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_BackupGatewayMAC) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_BackupGatewayMAC, 0, 0
 }
 
@@ -759,7 +754,7 @@ type LanConfigParam_CommunityString struct {
 	CommunityString CommunityString
 }
 
-func (param *LanConfigParam_CommunityString) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_CommunityString) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_CommunityString, 0, 0
 }
 
@@ -801,7 +796,7 @@ type LanConfigParam_AlertDestinationsCount struct {
 	Count uint8
 }
 
-func (param *LanConfigParam_AlertDestinationsCount) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_AlertDestinationsCount) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_AlertDestinationsCount, 0, 0
 }
 
@@ -856,7 +851,7 @@ type LanConfigParam_AlertDestinationType struct {
 	Retries uint8
 }
 
-func (param *LanConfigParam_AlertDestinationType) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_AlertDestinationType) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_AlertDestinationType, param.SetSelector, 0
 }
 
@@ -916,7 +911,7 @@ type LanConfigParam_AlertDestinationAddress struct {
 	IPv6 net.IP
 }
 
-func (param *LanConfigParam_AlertDestinationAddress) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_AlertDestinationAddress) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_AlertDestinationAddress, param.SetSelector, 0
 }
 
@@ -964,7 +959,7 @@ type LanConfigParam_VLANID struct {
 	ID      uint16
 }
 
-func (param *LanConfigParam_VLANID) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_VLANID) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_VLANID, 0, 0
 }
 
@@ -1003,7 +998,7 @@ type LanConfigParam_VLANPriority struct {
 	Priority uint8
 }
 
-func (param *LanConfigParam_VLANPriority) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_VLANPriority) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_VLANPriority, 0, 0
 }
 
@@ -1034,7 +1029,7 @@ type LanConfigParam_CipherSuitesSupport struct {
 	Count uint8
 }
 
-func (param *LanConfigParam_CipherSuitesSupport) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_CipherSuitesSupport) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_CipherSuitesSupport, 0, 0
 }
 
@@ -1064,7 +1059,7 @@ type LanConfigParam_CipherSuitesID struct {
 	IDs [16]uint8
 }
 
-func (param *LanConfigParam_CipherSuitesID) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_CipherSuitesID) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_CipherSuitesID, 0, 0
 }
 
@@ -1107,7 +1102,7 @@ type LanConfigParam_CipherSuitesPrivLevel struct {
 	PrivLevels [16]PrivilegeLevel
 }
 
-func (param *LanConfigParam_CipherSuitesPrivLevel) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_CipherSuitesPrivLevel) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_CipherSuitesPrivLevel, 0, 0
 }
 
@@ -1182,7 +1177,7 @@ type LanConfigParam_AlertDestinationVLAN struct {
 	Priority uint8
 }
 
-func (param *LanConfigParam_AlertDestinationVLAN) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_AlertDestinationVLAN) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_AlertDestinationVLAN, param.SetSelector, 0
 }
 
@@ -1259,7 +1254,7 @@ type LanConfigParam_BadPasswordThreshold struct {
 	UserLockoutIntervalSec uint32
 }
 
-func (param *LanConfigParam_BadPasswordThreshold) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_BadPasswordThreshold) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_BadPasswordThreshold, 0, 0
 }
 
@@ -1297,10 +1292,12 @@ func (param *LanConfigParam_BadPasswordThreshold) Unpack(data []byte) error {
 }
 
 func (param *LanConfigParam_BadPasswordThreshold) Format() string {
-	return fmt.Sprintf(`%d,
-     Generate Session Audit Event            : %v
-     Attempt Count Reset Interval            : %d
-     User Lockout Interval                   : %d`,
+	return fmt.Sprintf(`
+        Threshold                    : %d
+        Generate Session Audit Event : %v
+        Attempt Count Reset Interval : %d
+        User Lockout Interval        : %d
+`,
 		param.Threshold,
 		param.GenerateSessionAuditEvent,
 		param.AttemptCountResetIntervalSec,
@@ -1317,7 +1314,7 @@ type LanConfigParam_IPv6Support struct {
 	CanUseIPv6Only bool
 }
 
-func (param *LanConfigParam_IPv6Support) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6Support) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6Support, 0, 0
 }
 
@@ -1371,7 +1368,7 @@ func (enableMode LanIPv6EnableMode) String() string {
 	return "Unknown"
 }
 
-func (param *LanConfigParam_IPv6Enables) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6Enables) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6Enables, 0, 0
 }
 
@@ -1399,7 +1396,7 @@ type LanConfigParam_IPv6StaticTrafficClass struct {
 	TrafficClass uint8
 }
 
-func (param *LanConfigParam_IPv6StaticTrafficClass) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6StaticTrafficClass) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6StaticTrafficClass, 0, 0
 }
 
@@ -1427,7 +1424,7 @@ type LanConfigParam_IPv6StaticHopLimit struct {
 	HopLimit uint8
 }
 
-func (param *LanConfigParam_IPv6StaticHopLimit) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6StaticHopLimit) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6StaticHopLimit, 0, 0
 }
 
@@ -1462,7 +1459,7 @@ type LanConfigParam_IPv6FlowLabel struct {
 	FlowLabel uint32
 }
 
-func (param *LanConfigParam_IPv6FlowLabel) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6FlowLabel) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6FlowLabel, 0, 0
 }
 
@@ -1506,7 +1503,7 @@ type LanConfigParam_IPv6Status struct {
 	SupportDHCPv6Addressing bool
 }
 
-func (param *LanConfigParam_IPv6Status) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6Status) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6Status, 0, 0
 }
 
@@ -1563,7 +1560,7 @@ type LanConfigParam_IPv6StaticAddress struct {
 	Status LanIPv6AddressStatus
 }
 
-func (param *LanConfigParam_IPv6StaticAddress) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6StaticAddress) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6StaticAddress, param.SetSelector, 0
 }
 
@@ -1615,7 +1612,7 @@ type LanConfigParam_IPv6DHCPv6StaticDUIDCount struct {
 	Max uint8
 }
 
-func (param *LanConfigParam_IPv6DHCPv6StaticDUIDCount) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6DHCPv6StaticDUIDCount) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6DHCPv6StaticDUIDCount, 0, 0
 }
 
@@ -1644,7 +1641,7 @@ type LanConfigParam_IPv6DHCPv6StaticDUID struct {
 	DUID [16]byte
 }
 
-func (param *LanConfigParam_IPv6DHCPv6StaticDUID) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6DHCPv6StaticDUID) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6DHCPv6StaticDUID, param.SetSelector, param.BlockSelector
 }
 
@@ -1683,7 +1680,7 @@ type LanConfigParam_IPv6DynamicAddress struct {
 	Status LanIPv6AddressStatus
 }
 
-func (param *LanConfigParam_IPv6DynamicAddress) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6DynamicAddress) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6DynamicAddress, param.SetSelector, 0
 }
 
@@ -1735,7 +1732,7 @@ type LanConfigParam_IPv6DHCPv6DynamicDUIDCount struct {
 	Max uint8
 }
 
-func (param *LanConfigParam_IPv6DHCPv6DynamicDUIDCount) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6DHCPv6DynamicDUIDCount) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6DHCPv6DynamicDUIDCount, 0, 0
 }
 
@@ -1764,7 +1761,7 @@ type LanConfigParam_IPv6DHCPv6DynamicDUID struct {
 	DUID [16]byte
 }
 
-func (param *LanConfigParam_IPv6DHCPv6DynamicDUID) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6DHCPv6DynamicDUID) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6DHCPv6DynamicDUID, param.SetSelector, param.BlockSelector
 }
 
@@ -1794,7 +1791,7 @@ type LanConfigParam_IPv6DHCPv6TimingConfigSupport struct {
 	Mode LanIPv6DHCPv6TimingConfigMode
 }
 
-func (param *LanConfigParam_IPv6DHCPv6TimingConfigSupport) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6DHCPv6TimingConfigSupport) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6DHCPv6TimingConfigSupport, 0, 0
 }
 
@@ -1821,7 +1818,7 @@ type LanConfigParam_IPv6DHCPv6TimingConfig struct {
 	BlockSelector uint8
 }
 
-func (param *LanConfigParam_IPv6DHCPv6TimingConfig) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6DHCPv6TimingConfig) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6DHCPv6TimingConfig, param.SetSelector, param.BlockSelector
 }
 
@@ -1853,7 +1850,7 @@ type LanConfigParam_IPv6RouterAddressConfigControl struct {
 	EnableStatic bool
 }
 
-func (param *LanConfigParam_IPv6RouterAddressConfigControl) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6RouterAddressConfigControl) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6RouterAddressConfigControl, 0, 0
 }
 
@@ -1888,7 +1885,7 @@ type LanConfigParam_IPv6StaticRouter1IP struct {
 	IPv6 net.IP
 }
 
-func (param *LanConfigParam_IPv6StaticRouter1IP) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6StaticRouter1IP) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6StaticRouter1IP, 0, 0
 }
 
@@ -1914,7 +1911,7 @@ type LanConfigParam_IPv6StaticRouter1MAC struct {
 	MAC net.HardwareAddr
 }
 
-func (param *LanConfigParam_IPv6StaticRouter1MAC) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6StaticRouter1MAC) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6StaticRouter1MAC, 0, 0
 }
 
@@ -1940,7 +1937,7 @@ type LanConfigParam_IPv6StaticRouter1PrefixLength struct {
 	PrefixLength uint8
 }
 
-func (param *LanConfigParam_IPv6StaticRouter1PrefixLength) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6StaticRouter1PrefixLength) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6StaticRouter1PrefixLength, 0, 0
 }
 
@@ -1966,7 +1963,7 @@ type LanConfigParam_IPv6StaticRouter1PrefixValue struct {
 	PrefixValue [16]byte
 }
 
-func (param *LanConfigParam_IPv6StaticRouter1PrefixValue) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6StaticRouter1PrefixValue) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6StaticRouter1PrefixValue, 0, 0
 }
 func (param *LanConfigParam_IPv6StaticRouter1PrefixValue) Pack() []byte {
@@ -1991,7 +1988,7 @@ type LanConfigParam_IPv6StaticRouter2IP struct {
 	IPv6 net.IP
 }
 
-func (param *LanConfigParam_IPv6StaticRouter2IP) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6StaticRouter2IP) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6StaticRouter2IP, 0, 0
 }
 
@@ -2017,7 +2014,7 @@ type LanConfigParam_IPv6StaticRouter2MAC struct {
 	MAC net.HardwareAddr
 }
 
-func (param *LanConfigParam_IPv6StaticRouter2MAC) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6StaticRouter2MAC) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6StaticRouter2MAC, 0, 0
 }
 
@@ -2043,7 +2040,7 @@ type LanConfigParam_IPv6StaticRouter2PrefixLength struct {
 	PrefixLength uint8
 }
 
-func (param *LanConfigParam_IPv6StaticRouter2PrefixLength) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6StaticRouter2PrefixLength) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6StaticRouter2PrefixLength, 0, 0
 }
 
@@ -2069,7 +2066,7 @@ type LanConfigParam_IPv6StaticRouter2PrefixValue struct {
 	PrefixValue [16]byte
 }
 
-func (param *LanConfigParam_IPv6StaticRouter2PrefixValue) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6StaticRouter2PrefixValue) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6StaticRouter2PrefixValue, 0, 0
 }
 func (param *LanConfigParam_IPv6StaticRouter2PrefixValue) Pack() []byte {
@@ -2095,7 +2092,7 @@ type LanConfigParam_IPv6DynamicRouterInfoSets struct {
 	Count uint8
 }
 
-func (param *LanConfigParam_IPv6DynamicRouterInfoSets) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6DynamicRouterInfoSets) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6DynamicRouterInfoCount, 0, 0
 }
 
@@ -2122,7 +2119,7 @@ type LanConfigParam_IPv6DynamicRouterInfoIP struct {
 	IPv6        net.IP
 }
 
-func (param *LanConfigParam_IPv6DynamicRouterInfoIP) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6DynamicRouterInfoIP) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6DynamicRouterInfoIP, param.SetSelector, 0
 }
 
@@ -2151,7 +2148,7 @@ type LanConfigParam_IPv6DynamicRouterInfoMAC struct {
 	MAC         net.HardwareAddr
 }
 
-func (param *LanConfigParam_IPv6DynamicRouterInfoMAC) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6DynamicRouterInfoMAC) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6DynamicRouterInfoMAC, param.SetSelector, 0
 }
 
@@ -2180,7 +2177,7 @@ type LanConfigParam_IPv6DynamicRouterInfoPrefixLength struct {
 	PrefixLength uint8
 }
 
-func (param *LanConfigParam_IPv6DynamicRouterInfoPrefixLength) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6DynamicRouterInfoPrefixLength) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6DynamicRouterInfoPrefixLength, param.SetSelector, 0
 }
 
@@ -2209,7 +2206,7 @@ type LanConfigParam_IPv6DynamicRouterInfoPrefixValue struct {
 	PrefixValue [16]byte
 }
 
-func (param *LanConfigParam_IPv6DynamicRouterInfoPrefixValue) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6DynamicRouterInfoPrefixValue) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6DynamicRouterInfoPrefixValue, param.SetSelector, 0
 }
 
@@ -2237,7 +2234,7 @@ type LanConfigParam_IPv6DynamicRouterReceivedHopLimit struct {
 	HopLimit uint8
 }
 
-func (param *LanConfigParam_IPv6DynamicRouterReceivedHopLimit) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6DynamicRouterReceivedHopLimit) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6DynamicRouterReceivedHopLimit, 0, 0
 }
 
@@ -2263,7 +2260,7 @@ type LanConfigParam_IPv6NDSLAACTimingConfigSupport struct {
 	Mode LanIPv6NDSLAACTimingConfigMode
 }
 
-func (param *LanConfigParam_IPv6NDSLAACTimingConfigSupport) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6NDSLAACTimingConfigSupport) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6NDSLAACTimingConfigSupport, 0, 0
 }
 
@@ -2290,7 +2287,7 @@ type LanConfigParam_IPv6NDSLAACTimingConfig struct {
 	BlockSelector uint8
 }
 
-func (param *LanConfigParam_IPv6NDSLAACTimingConfig) LanConfigParamSelector() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *LanConfigParam_IPv6NDSLAACTimingConfig) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return LanConfigParamSelector_IPv6NDSLAACTimingConfig, param.SetSelector, param.BlockSelector
 }
 

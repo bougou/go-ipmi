@@ -1,11 +1,14 @@
 package ipmi
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // 26.2 Set SOL Configuration Parameters Command
 type SetSOLConfigParamsRequest struct {
 	ChannelNumber uint8
-	ParamSelector uint8
+	ParamSelector SOLConfigParamSelector
 	ParamData     []byte
 }
 
@@ -19,7 +22,7 @@ func (req *SetSOLConfigParamsRequest) Command() Command {
 func (req *SetSOLConfigParamsRequest) Pack() []byte {
 	out := make([]byte, 2+len(req.ParamData))
 	packUint8(req.ChannelNumber, out, 0)
-	packUint8(req.ParamSelector, out, 1)
+	packUint8(uint8(req.ParamSelector), out, 1)
 	packBytes(req.ParamData, out, 2)
 	return out
 }
@@ -41,7 +44,7 @@ func (res *SetSOLConfigParamsResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetSOLConfigParams(ctx context.Context, channelNumber uint8, paramSelector uint8, paramData []byte) (response *SetSOLConfigParamsResponse, err error) {
+func (c *Client) SetSOLConfigParams(ctx context.Context, channelNumber uint8, paramSelector SOLConfigParamSelector, paramData []byte) (response *SetSOLConfigParamsResponse, err error) {
 	request := &SetSOLConfigParamsRequest{
 		ChannelNumber: channelNumber,
 		ParamSelector: paramSelector,
@@ -50,4 +53,16 @@ func (c *Client) SetSOLConfigParams(ctx context.Context, channelNumber uint8, pa
 	response = &SetSOLConfigParamsResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
+}
+
+func (c *Client) SetSOLConfigParamsFor(ctx context.Context, channelNumber uint8, param SOLConfigParameter) error {
+	paramSelector, _, _ := param.SOLConfigParameter()
+	paramData := param.Pack()
+
+	_, err := c.SetSOLConfigParams(ctx, channelNumber, paramSelector, paramData)
+	if err != nil {
+		return fmt.Errorf("SetSOLConfigParams failed, err: %s", err)
+	}
+
+	return nil
 }

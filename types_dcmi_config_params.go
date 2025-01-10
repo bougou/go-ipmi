@@ -50,17 +50,16 @@ type DCMIConfig struct {
 }
 
 func (dcmiConfig *DCMIConfig) Format() string {
-	out := ""
-
 	format := func(param DCMIConfigParameter) string {
 		paramSelector, _ := param.DCMIConfigParameter()
-
 		content := param.Format()
 		if content[len(content)-1] != '\n' {
 			content += "\n"
 		}
 		return fmt.Sprintf("[%02d] %-24s: %s", paramSelector, paramSelector.String(), content)
 	}
+
+	out := ""
 
 	if dcmiConfig.ActivateDHCP != nil {
 		out = format(dcmiConfig.ActivateDHCP)

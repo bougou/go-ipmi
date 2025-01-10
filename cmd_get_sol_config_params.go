@@ -1,6 +1,9 @@
 package ipmi
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // 26.3 Get SOL Configuration Parameters Command
 type GetSOLConfigParamsRequest struct {
@@ -52,7 +55,7 @@ func (res *GetSOLConfigParamsResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetSOLConfigParams(ctx context.Context, channelNumber uint8, paramSelector SOLConfigParamSelector) (response *GetSOLConfigParamsResponse, err error) {
+func (c *Client) GetSOLConfigParams(ctx context.Context, channelNumber uint8, paramSelector SOLConfigParamSelector, setSelector, blockSelector uint8) (response *GetSOLConfigParamsResponse, err error) {
 	request := &GetSOLConfigParamsRequest{
 		ChannelNumber: channelNumber,
 		ParamSelector: paramSelector,
@@ -62,4 +65,101 @@ func (c *Client) GetSOLConfigParams(ctx context.Context, channelNumber uint8, pa
 	response = &GetSOLConfigParamsResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
+}
+
+func (c *Client) GetSOLConfigParamsFor(ctx context.Context, channelNumber uint8, param SOLConfigParameter) error {
+	paramSelector, setSelector, blockSelector := param.SOLConfigParameter()
+	res, err := c.GetSOLConfigParams(ctx, channelNumber, paramSelector, setSelector, blockSelector)
+
+	if err != nil {
+		return fmt.Errorf("GetSOLConfigParams for param (%s[%2d]) failed, err: %s", paramSelector.String(), paramSelector, err)
+	}
+
+	if err := param.Unpack(res.ParamData); err != nil {
+		return fmt.Errorf("unpack param (%s[%2d]) failed, err: %s", paramSelector.String(), paramSelector, err)
+	}
+
+	return nil
+}
+
+func (c *Client) GetSOLConfig(ctx context.Context, channelNumber uint8) (*SOLConfig, error) {
+	solConfig := &SOLConfig{
+		SetInProgress:      &SOLConfigParam_SetInProgress{},
+		SOLEnable:          &SOLConfigParam_SOLEnable{},
+		SOLAuthentication:  &SOLConfigParam_SOLAuthentication{},
+		Character:          &SOLConfigParam_Character{},
+		SOLRetry:           &SOLConfigParam_SOLRetry{},
+		NonVolatileBitRate: &SOLConfigParam_NonVolatileBitRate{},
+		VolatileBitRate:    &SOLConfigParam_VolatileBitRate{},
+		PayloadChannel:     &SOLConfigParam_PayloadChannel{},
+		PayloadPort:        &SOLConfigParam_PayloadPort{},
+	}
+
+	if err := c.GetSOLConfigFor(ctx, channelNumber, solConfig); err != nil {
+		return nil, fmt.Errorf("GetSOLConfigParamsFor failed, err: %s", err)
+	}
+
+	return solConfig, nil
+}
+
+func (c *Client) GetSOLConfigFor(ctx context.Context, channelNumber uint8, solConfig *SOLConfig) error {
+	if solConfig == nil {
+		return nil
+	}
+
+	if solConfig.SetInProgress != nil {
+		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.SetInProgress); err != nil {
+			return err
+		}
+	}
+
+	if solConfig.SOLEnable != nil {
+		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.SOLEnable); err != nil {
+			return err
+		}
+	}
+
+	if solConfig.SOLAuthentication != nil {
+		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.SOLAuthentication); err != nil {
+			return err
+		}
+	}
+
+	if solConfig.Character != nil {
+		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.Character); err != nil {
+			return err
+		}
+	}
+
+	if solConfig.SOLRetry != nil {
+		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.SOLRetry); err != nil {
+			return err
+		}
+	}
+
+	if solConfig.NonVolatileBitRate != nil {
+		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.NonVolatileBitRate); err != nil {
+			return err
+		}
+	}
+
+	if solConfig.VolatileBitRate != nil {
+		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.VolatileBitRate); err != nil {
+			return err
+		}
+	}
+
+	if solConfig.PayloadChannel != nil {
+		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.PayloadChannel); err != nil {
+			return err
+		}
+	}
+
+	if solConfig.PayloadPort != nil {
+		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.PayloadPort); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

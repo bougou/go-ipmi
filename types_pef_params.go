@@ -56,7 +56,7 @@ func (p PEFConfigParamSelector) String() string {
 }
 
 type PEFConfigParameter interface {
-	PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8)
+	PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8)
 	Parameter
 }
 
@@ -100,9 +100,13 @@ type PEFConfig struct {
 func (pefConfig *PEFConfig) Format() string {
 	var out string
 
-	format := func(p PEFConfigParameter) string {
-		paramSelector, _, _ := p.PEFConfigParamSelector()
-		return fmt.Sprintf("[%2d] %s : %s\n", paramSelector, paramSelector.String(), p.Format())
+	format := func(param PEFConfigParameter) string {
+		paramSelector, _, _ := param.PEFConfigParameter()
+		content := param.Format()
+		if content[len(content)-1] != '\n' {
+			content += "\n"
+		}
+		return fmt.Sprintf("[%2d] %s : %s", paramSelector, paramSelector.String(), content)
 	}
 
 	if pefConfig.SetInProgress != nil {
@@ -173,7 +177,7 @@ type PEFConfigParam_SetInProgress struct {
 	Value SetInProgress
 }
 
-func (param *PEFConfigParam_SetInProgress) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_SetInProgress) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_SetInProgress, 0, 0
 }
 
@@ -201,7 +205,7 @@ type PEFConfigParam_Control struct {
 	EnablePEF                  bool
 }
 
-func (param *PEFConfigParam_Control) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_Control) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_Control, 0, 0
 }
 
@@ -252,7 +256,7 @@ type PEFConfigParam_ActionGlobalControl struct {
 	AlertActionEnabled         bool
 }
 
-func (param *PEFConfigParam_ActionGlobalControl) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_ActionGlobalControl) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_ActionGlobalControl, 0, 0
 }
 
@@ -306,7 +310,7 @@ type PEFConfigParam_StartupDelay struct {
 	DelaySec uint8
 }
 
-func (param *PEFConfigParam_StartupDelay) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_StartupDelay) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_StartupDelay, 0, 0
 }
 
@@ -332,7 +336,7 @@ type PEFConfigParam_AlertStartupDelay struct {
 	DelaySec uint8
 }
 
-func (param *PEFConfigParam_AlertStartupDelay) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_AlertStartupDelay) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_AlertStartDelay, 0, 0
 }
 
@@ -361,7 +365,7 @@ type PEFConfigParam_EventFiltersCount struct {
 	Value uint8
 }
 
-func (param *PEFConfigParam_EventFiltersCount) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_EventFiltersCount) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_EventFiltersCount, 0, 0
 }
 
@@ -389,7 +393,7 @@ type PEFConfigParam_EventFilter struct {
 	Filter *PEFEventFilter
 }
 
-func (param *PEFConfigParam_EventFilter) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_EventFilter) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_EventFilter, param.SetSelector, 0
 }
 
@@ -449,7 +453,7 @@ type PEFConfigParam_EventFilterData1 struct {
 	FilterType PEFEventFilterType
 }
 
-func (param *PEFConfigParam_EventFilterData1) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_EventFilterData1) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_EventFilterData1, param.SetSelector, 0
 }
 
@@ -491,7 +495,7 @@ type PEFConfigParam_AlertPoliciesCount struct {
 	Value uint8
 }
 
-func (param *PEFConfigParam_AlertPoliciesCount) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_AlertPoliciesCount) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_AlertPoliciesCount, 0, 0
 }
 
@@ -522,7 +526,7 @@ type PEFConfigParam_AlertPolicy struct {
 	Policy *PEFAlertPolicy
 }
 
-func (param *PEFConfigParam_AlertPolicy) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_AlertPolicy) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_AlertPolicy, param.SetSelector, 0
 }
 
@@ -569,7 +573,7 @@ type PEFConfigParam_SystemGUID struct {
 	GUID    [16]byte
 }
 
-func (param *PEFConfigParam_SystemGUID) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_SystemGUID) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_SystemGUID, 0, 0
 }
 
@@ -615,7 +619,7 @@ type PEFConfigParam_AlertStringsCount struct {
 	Value uint8
 }
 
-func (param *PEFConfigParam_AlertStringsCount) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_AlertStringsCount) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_AlertStringsCount, 0, 0
 }
 
@@ -654,7 +658,7 @@ type PEFConfigParam_AlertStringKey struct {
 	AlertStringSet uint8
 }
 
-func (param *PEFConfigParam_AlertStringKey) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_AlertStringKey) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_AlertStringKey, param.SetSelector, 0
 }
 
@@ -692,7 +696,7 @@ type PEFConfigParam_AlertString struct {
 	StringData []byte
 }
 
-func (param *PEFConfigParam_AlertString) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_AlertString) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_AlertString, param.SetSelector, param.BlockSelector
 }
 
@@ -727,7 +731,7 @@ type PEFConfigParam_GroupControlsCount struct {
 	Value uint8
 }
 
-func (param *PEFConfigParam_GroupControlsCount) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_GroupControlsCount) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_GroupControlsCount, 0, 0
 }
 
@@ -778,7 +782,7 @@ type PEFConfigParam_GroupControl struct {
 	Operation uint8
 }
 
-func (param *PEFConfigParam_GroupControl) PEFConfigParamSelector() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
+func (param *PEFConfigParam_GroupControl) PEFConfigParameter() (paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) {
 	return PEFConfigParamSelector_GroupControl, param.SetSelector, 0
 }
 

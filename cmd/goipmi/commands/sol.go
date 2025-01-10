@@ -31,11 +31,11 @@ func NewCmdSOLInfo() *cobra.Command {
 		Short: "info",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
-			sol, err := client.SOLInfo(ctx, 0x0e)
+			solConfig, err := client.GetSOLConfig(ctx, 0x0e)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetDeviceID failed, err: %s", err))
 			}
-			fmt.Println(sol.Format())
+			fmt.Println(solConfig.Format())
 		},
 	}
 	return cmd

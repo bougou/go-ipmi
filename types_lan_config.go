@@ -331,8 +331,12 @@ type LanConfig struct {
 
 func (lanConfigParams *LanConfig) Format() string {
 	format := func(param LanConfigParameter) string {
-		paramSelector, _, _ := param.LanConfigParamSelector()
-		return fmt.Sprintf("[%2d] %-40s: %s\n", paramSelector, paramSelector.String(), param.Format())
+		paramSelector, _, _ := param.LanConfigParameter()
+		content := param.Format()
+		if content[len(content)-1] != '\n' {
+			content += "\n"
+		}
+		return fmt.Sprintf("[%2d] %-40s: %s", paramSelector, paramSelector.String(), content)
 	}
 
 	out := ""

@@ -91,7 +91,7 @@ func (c *Client) GetPEFConfigParams(ctx context.Context, getRevisionOnly bool, p
 }
 
 func (c *Client) GetPEFConfigParamsFor(ctx context.Context, param PEFConfigParameter) error {
-	paramSelector, setSelector, blockSelector := param.PEFConfigParamSelector()
+	paramSelector, setSelector, blockSelector := param.PEFConfigParameter()
 
 	res, err := c.GetPEFConfigParams(ctx, false, paramSelector, setSelector, blockSelector)
 	if err != nil {
