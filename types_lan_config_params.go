@@ -212,6 +212,130 @@ var (
 	_ LanConfigParameter = (*LanConfigParam_IPv6NDSLAACTimingConfig)(nil)
 )
 
+func isNilLanConfigParameter(param LanConfigParameter) bool {
+	switch v := param.(type) {
+	// MUST not put multiple types on the same case.
+	case *LanConfigParam_SetInProgress:
+		return v == nil
+	case *LanConfigParam_AuthTypeSupport:
+		return v == nil
+	case *LanConfigParam_AuthTypeEnables:
+		return v == nil
+	case *LanConfigParam_IP:
+		return v == nil
+	case *LanConfigParam_IPSource:
+		return v == nil
+	case *LanConfigParam_MAC:
+		return v == nil
+	case *LanConfigParam_SubnetMask:
+		return v == nil
+	case *LanConfigParam_IPv4HeaderParams:
+		return v == nil
+	case *LanConfigParam_PrimaryRMCPPort:
+		return v == nil
+	case *LanConfigParam_SecondaryRMCPPort:
+		return v == nil
+	case *LanConfigParam_ARPControl:
+		return v == nil
+	case *LanConfigParam_GratuitousARPInterval:
+		return v == nil
+	case *LanConfigParam_DefaultGatewayIP:
+		return v == nil
+	case *LanConfigParam_DefaultGatewayMAC:
+		return v == nil
+	case *LanConfigParam_BackupGatewayIP:
+		return v == nil
+	case *LanConfigParam_BackupGatewayMAC:
+		return v == nil
+	case *LanConfigParam_CommunityString:
+		return v == nil
+	case *LanConfigParam_AlertDestinationsCount:
+		return v == nil
+	case *LanConfigParam_AlertDestinationType:
+		return v == nil
+	case *LanConfigParam_AlertDestinationAddress:
+		return v == nil
+	case *LanConfigParam_VLANID:
+		return v == nil
+	case *LanConfigParam_VLANPriority:
+		return v == nil
+	case *LanConfigParam_CipherSuitesSupport:
+		return v == nil
+	case *LanConfigParam_CipherSuitesID:
+		return v == nil
+	case *LanConfigParam_CipherSuitesPrivLevel:
+		return v == nil
+	case *LanConfigParam_AlertDestinationVLAN:
+		return v == nil
+	case *LanConfigParam_BadPasswordThreshold:
+		return v == nil
+	case *LanConfigParam_IPv6Support:
+		return v == nil
+	case *LanConfigParam_IPv6Enables:
+		return v == nil
+	case *LanConfigParam_IPv6StaticTrafficClass:
+		return v == nil
+	case *LanConfigParam_IPv6StaticHopLimit:
+		return v == nil
+	case *LanConfigParam_IPv6FlowLabel:
+		return v == nil
+	case *LanConfigParam_IPv6Status:
+		return v == nil
+	case *LanConfigParam_IPv6StaticAddress:
+		return v == nil
+	case *LanConfigParam_IPv6DHCPv6StaticDUIDCount:
+		return v == nil
+	case *LanConfigParam_IPv6DHCPv6StaticDUID:
+		return v == nil
+	case *LanConfigParam_IPv6DynamicAddress:
+		return v == nil
+	case *LanConfigParam_IPv6DHCPv6DynamicDUIDCount:
+		return v == nil
+	case *LanConfigParam_IPv6DHCPv6DynamicDUID:
+		return v == nil
+	case *LanConfigParam_IPv6DHCPv6TimingConfigSupport:
+		return v == nil
+	case *LanConfigParam_IPv6DHCPv6TimingConfig:
+		return v == nil
+	case *LanConfigParam_IPv6RouterAddressConfigControl:
+		return v == nil
+	case *LanConfigParam_IPv6StaticRouter1IP:
+		return v == nil
+	case *LanConfigParam_IPv6StaticRouter1MAC:
+		return v == nil
+	case *LanConfigParam_IPv6StaticRouter1PrefixLength:
+		return v == nil
+	case *LanConfigParam_IPv6StaticRouter1PrefixValue:
+		return v == nil
+	case *LanConfigParam_IPv6StaticRouter2IP:
+		return v == nil
+	case *LanConfigParam_IPv6StaticRouter2MAC:
+		return v == nil
+	case *LanConfigParam_IPv6StaticRouter2PrefixLength:
+		return v == nil
+	case *LanConfigParam_IPv6StaticRouter2PrefixValue:
+		return v == nil
+	case *LanConfigParam_IPv6DynamicRouterInfoSets:
+		return v == nil
+	case *LanConfigParam_IPv6DynamicRouterInfoIP:
+		return v == nil
+	case *LanConfigParam_IPv6DynamicRouterInfoMAC:
+		return v == nil
+	case *LanConfigParam_IPv6DynamicRouterInfoPrefixLength:
+		return v == nil
+	case *LanConfigParam_IPv6DynamicRouterInfoPrefixValue:
+		return v == nil
+	case *LanConfigParam_IPv6DynamicRouterReceivedHopLimit:
+		return v == nil
+	case *LanConfigParam_IPv6NDSLAACTimingConfigSupport:
+		return v == nil
+	case *LanConfigParam_IPv6NDSLAACTimingConfig:
+		return v == nil
+	default:
+		return false
+	}
+}
+
 type LanConfigParam_SetInProgress struct {
 	Value SetInProgress
 }
@@ -1056,7 +1180,7 @@ func (param *LanConfigParam_CipherSuitesSupport) Format() string {
 }
 
 type LanConfigParam_CipherSuitesID struct {
-	IDs [16]uint8
+	IDs [16]CipherSuiteID
 }
 
 func (param *LanConfigParam_CipherSuitesID) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
@@ -1064,10 +1188,12 @@ func (param *LanConfigParam_CipherSuitesID) LanConfigParameter() (paramSelector 
 }
 
 func (param *LanConfigParam_CipherSuitesID) Pack() []byte {
-	out := make([]byte, 17)
+	out := make([]uint8, 17)
 	out[0] = 0
 
-	copy(out[1:], param.IDs[:])
+	for i, id := range param.IDs {
+		out[i+1] = uint8(id)
+	}
 
 	return out
 }
@@ -1083,7 +1209,7 @@ func (param *LanConfigParam_CipherSuitesID) Unpack(data []byte) error {
 			continue
 		}
 
-		param.IDs[i-1] = v
+		param.IDs[i-1] = CipherSuiteID(v)
 	}
 
 	return nil
@@ -1091,7 +1217,11 @@ func (param *LanConfigParam_CipherSuitesID) Unpack(data []byte) error {
 
 func (param *LanConfigParam_CipherSuitesID) Format() string {
 	ss := make([]string, 0)
-	for _, v := range param.IDs[:] {
+	for i, v := range param.IDs[:] {
+		if i != 0 && v == 0 {
+			// Only the first ID can be CipherSuiteID0, all other 0s means empty slot.
+			continue
+		}
 		ss = append(ss, strconv.Itoa(int(v)))
 	}
 

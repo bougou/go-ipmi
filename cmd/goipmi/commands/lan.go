@@ -87,9 +87,9 @@ print [<channel number>]
 			channelNumber := uint8(id)
 
 			ctx := context.Background()
-			lanConfig, err := client.GetLanConfig(ctx, channelNumber)
+			lanConfig, err := client.GetLanConfigParams(ctx, channelNumber)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetLanConfig failed, err: %w", err))
+				CheckErr(fmt.Errorf("GetLanConfigParams failed, err: %w", err))
 			}
 
 			client.Debug("Lan Config", lanConfig)

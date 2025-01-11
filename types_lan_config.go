@@ -2,6 +2,7 @@ package ipmi
 
 import (
 	"fmt"
+	"net"
 )
 
 type SetInProgress uint8
@@ -268,7 +269,7 @@ func (mode LanIPv6NDSLAACTimingConfigMode) String() string {
 	return "reserved"
 }
 
-type LanConfig struct {
+type LanConfigParams struct {
 	SetInProgress                     *LanConfigParam_SetInProgress                       // #0, Read Only
 	AuthTypeSupport                   *LanConfigParam_AuthTypeSupport                     // #1
 	AuthTypeEnables                   *LanConfigParam_AuthTypeEnables                     // #2
@@ -276,7 +277,7 @@ type LanConfig struct {
 	IPSource                          *LanConfigParam_IPSource                            // #4
 	MAC                               *LanConfigParam_MAC                                 // #5, can be Read Only. An implementation can either allow this parameter to be settable, or it can be implemented as Read Only.
 	SubnetMask                        *LanConfigParam_SubnetMask                          // #6
-	IPHeaderParams                    *LanConfigParam_IPv4HeaderParams                    // #7
+	IPv4HeaderParams                  *LanConfigParam_IPv4HeaderParams                    // #7
 	PrimaryRMCPPort                   *LanConfigParam_PrimaryRMCPPort                     // #8
 	SecondaryRMCPPort                 *LanConfigParam_SecondaryRMCPPort                   // #9
 	ARPControl                        *LanConfigParam_ARPControl                          // #10
@@ -329,8 +330,141 @@ type LanConfig struct {
 	IPv6NDSLAACTimingConfig           []*LanConfigParam_IPv6NDSLAACTimingConfig           // #80
 }
 
-func (lanConfig *LanConfig) Format() string {
+type LanConfig struct {
+	SetInProgress                 SetInProgress                        // #0, Read Only
+	AuthTypeSupport               LanConfigParam_AuthTypeSupport       // #1
+	AuthTypeEnables               LanConfigParam_AuthTypeEnables       // #2
+	IP                            net.IP                               // #3
+	IPSource                      LanIPAddressSource                   // #4
+	MAC                           net.HardwareAddr                     // #5, can be Read Only.
+	SubnetMask                    net.IP                               // #6
+	IPv4HeaderParams              LanConfigParam_IPv4HeaderParams      // #7
+	PrimaryRMCPPort               uint16                               // #8
+	SecondaryRMCPPort             uint16                               // #9
+	ARPControl                    LanConfigParam_ARPControl            // #10
+	GratuitousARPIntervalMilliSec uint32                               // #11
+	DefaultGatewayIP              net.IP                               // #12
+	DefaultGatewayMAC             net.HardwareAddr                     // #13
+	BackupGatewayIP               net.IP                               // #14
+	BackupGatewayMAC              net.HardwareAddr                     // #15
+	CommunityString               CommunityString                      // #16
+	AlertDestinationsCount        uint8                                // #17, Read Only
+	VLANEnabled                   bool                                 // #20
+	VLANID                        uint16                               // #20
+	VLANPriority                  uint8                                // #21
+	CipherSuitesSupport           uint8                                // #22, Read Only
+	CipherSuitesID                LanConfigParam_CipherSuitesID        // #23, Read Only
+	CipherSuitesPrivLevel         LanConfigParam_CipherSuitesPrivLevel // #24
+	BadPasswordThreshold          LanConfigParam_BadPasswordThreshold  // #26
+}
+
+func (lanConfigParams *LanConfigParams) ToLanConfig() *LanConfig {
+	lanConfig := &LanConfig{}
+	if lanConfigParams.SetInProgress != nil {
+		lanConfig.SetInProgress = lanConfigParams.SetInProgress.Value
+	}
+
+	if lanConfigParams.AuthTypeSupport != nil {
+		lanConfig.AuthTypeSupport = *lanConfigParams.AuthTypeSupport
+	}
+
+	if lanConfigParams.AuthTypeEnables != nil {
+		lanConfig.AuthTypeEnables = *lanConfigParams.AuthTypeEnables
+	}
+
+	if lanConfigParams.IP != nil {
+		lanConfig.IP = lanConfigParams.IP.IP
+	}
+
+	if lanConfigParams.IPSource != nil {
+		lanConfig.IPSource = lanConfigParams.IPSource.Source
+	}
+
+	if lanConfigParams.MAC != nil {
+		lanConfig.MAC = lanConfigParams.MAC.MAC
+	}
+
+	if lanConfigParams.SubnetMask != nil {
+		lanConfig.SubnetMask = lanConfigParams.SubnetMask.SubnetMask
+	}
+
+	if lanConfigParams.IPv4HeaderParams != nil {
+		lanConfig.IPv4HeaderParams = *lanConfigParams.IPv4HeaderParams
+	}
+
+	if lanConfigParams.PrimaryRMCPPort != nil {
+		lanConfig.PrimaryRMCPPort = lanConfigParams.PrimaryRMCPPort.Port
+	}
+
+	if lanConfigParams.SecondaryRMCPPort != nil {
+		lanConfig.SecondaryRMCPPort = lanConfigParams.SecondaryRMCPPort.Port
+	}
+
+	if lanConfigParams.ARPControl != nil {
+		lanConfig.ARPControl = *lanConfigParams.ARPControl
+	}
+
+	if lanConfigParams.GratuitousARPInterval != nil {
+		lanConfig.GratuitousARPIntervalMilliSec = lanConfigParams.GratuitousARPInterval.MilliSec
+	}
+
+	if lanConfigParams.DefaultGatewayIP != nil {
+		lanConfig.DefaultGatewayIP = lanConfigParams.DefaultGatewayIP.IP
+	}
+
+	if lanConfigParams.DefaultGatewayMAC != nil {
+		lanConfig.DefaultGatewayMAC = lanConfigParams.DefaultGatewayMAC.MAC
+	}
+
+	if lanConfigParams.BackupGatewayIP != nil {
+		lanConfig.BackupGatewayIP = lanConfigParams.BackupGatewayIP.IP
+	}
+
+	if lanConfigParams.BackupGatewayMAC != nil {
+		lanConfig.BackupGatewayMAC = lanConfigParams.BackupGatewayMAC.MAC
+	}
+
+	if lanConfigParams.CommunityString != nil {
+		lanConfig.CommunityString = lanConfigParams.CommunityString.CommunityString
+	}
+
+	if lanConfigParams.AlertDestinationsCount != nil {
+		lanConfig.AlertDestinationsCount = lanConfigParams.AlertDestinationsCount.Count
+	}
+
+	if lanConfigParams.VLANID != nil {
+		lanConfig.VLANEnabled = lanConfigParams.VLANID.Enabled
+		lanConfig.VLANID = lanConfigParams.VLANID.ID
+	}
+
+	if lanConfigParams.VLANPriority != nil {
+		lanConfig.VLANPriority = lanConfigParams.VLANPriority.Priority
+	}
+
+	if lanConfigParams.CipherSuitesSupport != nil {
+		lanConfig.CipherSuitesSupport = lanConfigParams.CipherSuitesSupport.Count
+	}
+
+	if lanConfigParams.CipherSuitesID != nil {
+		lanConfig.CipherSuitesID = *lanConfigParams.CipherSuitesID
+	}
+
+	if lanConfigParams.CipherSuitesPrivLevel != nil {
+		lanConfig.CipherSuitesPrivLevel = *lanConfigParams.CipherSuitesPrivLevel
+	}
+
+	if lanConfigParams.BadPasswordThreshold != nil {
+		lanConfig.BadPasswordThreshold = *lanConfigParams.BadPasswordThreshold
+	}
+
+	return lanConfig
+}
+
+func (lanConfigParams *LanConfigParams) Format() string {
 	format := func(param LanConfigParameter) string {
+		if isNilLanConfigParameter(param) {
+			return ""
+		}
 		paramSelector, _, _ := param.LanConfigParameter()
 		content := param.Format()
 		if content[len(content)-1] != '\n' {
@@ -341,206 +475,162 @@ func (lanConfig *LanConfig) Format() string {
 
 	out := ""
 
-	if lanConfig.SetInProgress != nil {
-		out += format(lanConfig.SetInProgress)
+	out += format(lanConfigParams.SetInProgress)
+	out += format(lanConfigParams.AuthTypeSupport)
+	out += format(lanConfigParams.AuthTypeEnables)
+	out += format(lanConfigParams.IP)
+	out += format(lanConfigParams.IPSource)
+	out += format(lanConfigParams.MAC)
+	out += format(lanConfigParams.SubnetMask)
+	out += format(lanConfigParams.IPv4HeaderParams)
+	out += format(lanConfigParams.PrimaryRMCPPort)
+	out += format(lanConfigParams.SecondaryRMCPPort)
+	out += format(lanConfigParams.ARPControl)
+	out += format(lanConfigParams.GratuitousARPInterval)
+	out += format(lanConfigParams.DefaultGatewayIP)
+	out += format(lanConfigParams.DefaultGatewayMAC)
+	out += format(lanConfigParams.BackupGatewayIP)
+	out += format(lanConfigParams.BackupGatewayMAC)
+	out += format(lanConfigParams.CommunityString)
+	out += format(lanConfigParams.AlertDestinationsCount)
+	for _, alertDestinationType := range lanConfigParams.AlertDestinationTypes {
+		out += format(alertDestinationType)
 	}
-	if lanConfig.AuthTypeSupport != nil {
-		out += format(lanConfig.AuthTypeSupport)
-	}
-	if lanConfig.AuthTypeEnables != nil {
-		out += format(lanConfig.AuthTypeEnables)
-	}
-	if lanConfig.IP != nil {
-		out += format(lanConfig.IP)
-	}
-	if lanConfig.IPSource != nil {
-		out += format(lanConfig.IPSource)
-	}
-	if lanConfig.MAC != nil {
-		out += format(lanConfig.MAC)
-	}
-	if lanConfig.SubnetMask != nil {
-		out += format(lanConfig.SubnetMask)
-	}
-	if lanConfig.IPHeaderParams != nil {
-		out += format(lanConfig.IPHeaderParams)
-	}
-	if lanConfig.PrimaryRMCPPort != nil {
-		out += format(lanConfig.PrimaryRMCPPort)
-	}
-	if lanConfig.SecondaryRMCPPort != nil {
-		out += format(lanConfig.SecondaryRMCPPort)
-	}
-	if lanConfig.ARPControl != nil {
-		out += format(lanConfig.ARPControl)
-	}
-	if lanConfig.GratuitousARPInterval != nil {
-		out += format(lanConfig.GratuitousARPInterval)
-	}
-	if lanConfig.DefaultGatewayIP != nil {
-		out += format(lanConfig.DefaultGatewayIP)
-	}
-	if lanConfig.DefaultGatewayMAC != nil {
-		out += format(lanConfig.DefaultGatewayMAC)
-	}
-	if lanConfig.BackupGatewayIP != nil {
-		out += format(lanConfig.BackupGatewayIP)
-	}
-	if lanConfig.BackupGatewayMAC != nil {
-		out += format(lanConfig.BackupGatewayMAC)
-	}
-	if lanConfig.CommunityString != nil {
-		out += format(lanConfig.CommunityString)
-	}
-	if lanConfig.AlertDestinationsCount != nil {
-		out += format(lanConfig.AlertDestinationsCount)
-	}
-	if lanConfig.AlertDestinationTypes != nil {
-		for _, alertDestinationType := range lanConfig.AlertDestinationTypes {
-			out += format(alertDestinationType)
-		}
-	}
-	if lanConfig.AlertDestinationAddresses != nil {
-		for _, alertDestinationAddress := range lanConfig.AlertDestinationAddresses {
+
+	if lanConfigParams.AlertDestinationAddresses != nil {
+		for _, alertDestinationAddress := range lanConfigParams.AlertDestinationAddresses {
 			out += format(alertDestinationAddress)
 		}
 	}
-	if lanConfig.VLANID != nil {
-		out += format(lanConfig.VLANID)
-	}
-	if lanConfig.VLANPriority != nil {
-		out += format(lanConfig.VLANPriority)
-	}
-	if lanConfig.CipherSuitesSupport != nil {
-		out += format(lanConfig.CipherSuitesSupport)
-	}
-	if lanConfig.CipherSuitesID != nil {
-		out += format(lanConfig.CipherSuitesID)
-	}
-	if lanConfig.CipherSuitesPrivLevel != nil {
-		out += format(lanConfig.CipherSuitesPrivLevel)
-	}
-	if lanConfig.AlertDestinationVLANs != nil {
-		for _, alertDestinationVLAN := range lanConfig.AlertDestinationVLANs {
+
+	out += format(lanConfigParams.VLANID)
+	out += format(lanConfigParams.VLANPriority)
+	out += format(lanConfigParams.CipherSuitesSupport)
+	out += format(lanConfigParams.CipherSuitesID)
+	out += format(lanConfigParams.CipherSuitesPrivLevel)
+
+	if lanConfigParams.AlertDestinationVLANs != nil {
+		for _, alertDestinationVLAN := range lanConfigParams.AlertDestinationVLANs {
 			out += format(alertDestinationVLAN)
 		}
 	}
-	if lanConfig.BadPasswordThreshold != nil {
-		out += format(lanConfig.BadPasswordThreshold)
-	}
-	if lanConfig.IPv6Support != nil {
-		out += format(lanConfig.IPv6Support)
-	}
-	if lanConfig.IPv6Enables != nil {
-		out += format(lanConfig.IPv6Enables)
-	}
-	if lanConfig.IPv6StaticTrafficClass != nil {
-		out += format(lanConfig.IPv6StaticTrafficClass)
-	}
-	if lanConfig.IPv6StaticHopLimit != nil {
-		out += format(lanConfig.IPv6StaticHopLimit)
-	}
-	if lanConfig.IPv6FlowLabel != nil {
-		out += format(lanConfig.IPv6FlowLabel)
-	}
-	if lanConfig.IPv6Status != nil {
-		out += format(lanConfig.IPv6Status)
-	}
-	if lanConfig.IPv6StaticAddresses != nil {
-		for _, ipv6StaticAddress := range lanConfig.IPv6StaticAddresses {
+
+	out += format(lanConfigParams.BadPasswordThreshold)
+	out += format(lanConfigParams.IPv6Support)
+	out += format(lanConfigParams.IPv6Enables)
+	out += format(lanConfigParams.IPv6StaticTrafficClass)
+	out += format(lanConfigParams.IPv6StaticHopLimit)
+	out += format(lanConfigParams.IPv6FlowLabel)
+	out += format(lanConfigParams.IPv6Status)
+
+	if lanConfigParams.IPv6StaticAddresses != nil {
+		for _, ipv6StaticAddress := range lanConfigParams.IPv6StaticAddresses {
 			out += format(ipv6StaticAddress)
 		}
 	}
-	if lanConfig.IPv6DHCPv6StaticDUIDCount != nil {
-		out += format(lanConfig.IPv6DHCPv6StaticDUIDCount)
-	}
-	if lanConfig.IPv6DHCPv6StaticDUIDs != nil {
-		for _, ipv6DHCPv6StaticDUID := range lanConfig.IPv6DHCPv6StaticDUIDs {
+
+	out += format(lanConfigParams.IPv6DHCPv6StaticDUIDCount)
+
+	if lanConfigParams.IPv6DHCPv6StaticDUIDs != nil {
+		for _, ipv6DHCPv6StaticDUID := range lanConfigParams.IPv6DHCPv6StaticDUIDs {
 			out += format(ipv6DHCPv6StaticDUID)
 		}
 	}
-	if lanConfig.IPv6DynamicAddresses != nil {
-		for _, ipv6DynamicAddress := range lanConfig.IPv6DynamicAddresses {
+
+	if lanConfigParams.IPv6DynamicAddresses != nil {
+		for _, ipv6DynamicAddress := range lanConfigParams.IPv6DynamicAddresses {
 			out += format(ipv6DynamicAddress)
 		}
 	}
-	if lanConfig.IPv6DHCPv6DynamicDUIDCount != nil {
-		out += format(lanConfig.IPv6DHCPv6DynamicDUIDCount)
-	}
-	if lanConfig.IPv6DHCPv6DynamicDUIDs != nil {
-		for _, ipv6DHCPv6DynamicDUID := range lanConfig.IPv6DHCPv6DynamicDUIDs {
+
+	out += format(lanConfigParams.IPv6DHCPv6DynamicDUIDCount)
+
+	if lanConfigParams.IPv6DHCPv6DynamicDUIDs != nil {
+		for _, ipv6DHCPv6DynamicDUID := range lanConfigParams.IPv6DHCPv6DynamicDUIDs {
 			out += format(ipv6DHCPv6DynamicDUID)
 		}
 	}
-	if lanConfig.IPv6DHCPv6TimingConfigSupport != nil {
-		out += format(lanConfig.IPv6DHCPv6TimingConfigSupport)
-	}
-	if lanConfig.IPv6DHCPv6TimingConfig != nil {
-		for _, ipv6DHCPv6TimingConfig := range lanConfig.IPv6DHCPv6TimingConfig {
+
+	out += format(lanConfigParams.IPv6DHCPv6TimingConfigSupport)
+
+	if lanConfigParams.IPv6DHCPv6TimingConfig != nil {
+		for _, ipv6DHCPv6TimingConfig := range lanConfigParams.IPv6DHCPv6TimingConfig {
 			out += format(ipv6DHCPv6TimingConfig)
 		}
 	}
-	if lanConfig.IPv6RouterAddressConfigControl != nil {
-		out += format(lanConfig.IPv6RouterAddressConfigControl)
-	}
-	if lanConfig.IPv6StaticRouter1IP != nil {
-		out += format(lanConfig.IPv6StaticRouter1IP)
-	}
-	if lanConfig.IPv6StaticRouter1MAC != nil {
-		out += format(lanConfig.IPv6StaticRouter1MAC)
-	}
-	if lanConfig.IPv6StaticRouter1PrefixLength != nil {
-		out += format(lanConfig.IPv6StaticRouter1PrefixLength)
-	}
-	if lanConfig.IPv6StaticRouter1PrefixValue != nil {
-		out += format(lanConfig.IPv6StaticRouter1PrefixValue)
-	}
-	if lanConfig.IPv6StaticRouter2IP != nil {
-		out += format(lanConfig.IPv6StaticRouter2IP)
-	}
-	if lanConfig.IPv6StaticRouter2MAC != nil {
-		out += format(lanConfig.IPv6StaticRouter2MAC)
-	}
-	if lanConfig.IPv6StaticRouter2PrefixLength != nil {
-		out += format(lanConfig.IPv6StaticRouter2PrefixLength)
-	}
-	if lanConfig.IPv6StaticRouter2PrefixValue != nil {
-		out += format(lanConfig.IPv6StaticRouter2PrefixValue)
-	}
-	if lanConfig.IPv6DynamicRouterInfoSets != nil {
-		out += format(lanConfig.IPv6DynamicRouterInfoSets)
-	}
-	if lanConfig.IPv6DynamicRouterInfoIP != nil {
-		for _, ipv6DynamicRouterInfoIP := range lanConfig.IPv6DynamicRouterInfoIP {
+
+	out += format(lanConfigParams.IPv6RouterAddressConfigControl)
+	out += format(lanConfigParams.IPv6StaticRouter1IP)
+	out += format(lanConfigParams.IPv6StaticRouter1MAC)
+	out += format(lanConfigParams.IPv6StaticRouter1PrefixLength)
+	out += format(lanConfigParams.IPv6StaticRouter1PrefixValue)
+	out += format(lanConfigParams.IPv6StaticRouter2IP)
+	out += format(lanConfigParams.IPv6StaticRouter2MAC)
+	out += format(lanConfigParams.IPv6StaticRouter2PrefixLength)
+	out += format(lanConfigParams.IPv6StaticRouter2PrefixValue)
+	out += format(lanConfigParams.IPv6DynamicRouterInfoSets)
+
+	if lanConfigParams.IPv6DynamicRouterInfoIP != nil {
+		for _, ipv6DynamicRouterInfoIP := range lanConfigParams.IPv6DynamicRouterInfoIP {
 			out += format(ipv6DynamicRouterInfoIP)
 		}
 	}
-	if lanConfig.IPv6DynamicRouterInfoMAC != nil {
-		for _, ipv6DynamicRouterInfoMAC := range lanConfig.IPv6DynamicRouterInfoMAC {
+
+	if lanConfigParams.IPv6DynamicRouterInfoMAC != nil {
+		for _, ipv6DynamicRouterInfoMAC := range lanConfigParams.IPv6DynamicRouterInfoMAC {
 			out += format(ipv6DynamicRouterInfoMAC)
 		}
 	}
-	if lanConfig.IPv6DynamicRouterInfoPrefixLength != nil {
-		for _, ipv6DynamicRouterInfoPrefixLength := range lanConfig.IPv6DynamicRouterInfoPrefixLength {
+
+	if lanConfigParams.IPv6DynamicRouterInfoPrefixLength != nil {
+		for _, ipv6DynamicRouterInfoPrefixLength := range lanConfigParams.IPv6DynamicRouterInfoPrefixLength {
 			out += format(ipv6DynamicRouterInfoPrefixLength)
 		}
 	}
-	if lanConfig.IPv6DynamicRouterInfoPrefixValue != nil {
-		for _, ipv6DynamicRouterInfoPrefixValue := range lanConfig.IPv6DynamicRouterInfoPrefixValue {
+	if lanConfigParams.IPv6DynamicRouterInfoPrefixValue != nil {
+		for _, ipv6DynamicRouterInfoPrefixValue := range lanConfigParams.IPv6DynamicRouterInfoPrefixValue {
 			out += format(ipv6DynamicRouterInfoPrefixValue)
 		}
 	}
-	if lanConfig.IPv6DynamicRouterReceivedHopLimit != nil {
-		out += format(lanConfig.IPv6DynamicRouterReceivedHopLimit)
-	}
-	if lanConfig.IPv6NDSLAACTimingConfigSupport != nil {
-		out += format(lanConfig.IPv6NDSLAACTimingConfigSupport)
-	}
-	if lanConfig.IPv6NDSLAACTimingConfig != nil {
-		for _, ipv6NDSLAACTimingConfig := range lanConfig.IPv6NDSLAACTimingConfig {
+
+	out += format(lanConfigParams.IPv6DynamicRouterReceivedHopLimit)
+	out += format(lanConfigParams.IPv6NDSLAACTimingConfigSupport)
+
+	if lanConfigParams.IPv6NDSLAACTimingConfig != nil {
+		for _, ipv6NDSLAACTimingConfig := range lanConfigParams.IPv6NDSLAACTimingConfig {
 			out += format(ipv6NDSLAACTimingConfig)
 		}
 	}
+
+	return out
+}
+
+func (lanConfig *LanConfig) Format() string {
+	out := ""
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_SetInProgress, lanConfig.SetInProgress)
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_AuthTypeSupport, lanConfig.AuthTypeSupport.Format())
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_AuthTypeEnables, lanConfig.AuthTypeEnables.Format())
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_IP, lanConfig.IP)
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_IPSource, lanConfig.IPSource)
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_MAC, lanConfig.MAC)
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_SubnetMask, lanConfig.SubnetMask)
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_IPv4HeaderParams, lanConfig.IPv4HeaderParams.Format())
+	out += fmt.Sprintf("%-40s : %d\n", LanConfigParamSelector_PrimaryRMCPPort, lanConfig.PrimaryRMCPPort)
+	out += fmt.Sprintf("%-40s : %d\n", LanConfigParamSelector_SecondaryRMCPPort, lanConfig.SecondaryRMCPPort)
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_ARPControl, lanConfig.ARPControl.Format())
+	out += fmt.Sprintf("%-40s : %d\n", LanConfigParamSelector_GratuitousARPInterval, lanConfig.GratuitousARPIntervalMilliSec)
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_DefaultGatewayIP, lanConfig.DefaultGatewayIP)
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_DefaultGatewayMAC, lanConfig.DefaultGatewayMAC)
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_BackupGatewayIP, lanConfig.BackupGatewayIP)
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_BackupGatewayMAC, lanConfig.BackupGatewayMAC)
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_CommunityString, lanConfig.CommunityString)
+	out += fmt.Sprintf("%-40s : %d\n", LanConfigParamSelector_AlertDestinationsCount, lanConfig.AlertDestinationsCount)
+	out += fmt.Sprintf("%-40s : %d\n", LanConfigParamSelector_VLANID, lanConfig.VLANID)
+	out += fmt.Sprintf("%-40s : %d\n", LanConfigParamSelector_VLANPriority, lanConfig.VLANPriority)
+	out += fmt.Sprintf("%-40s : %d\n", LanConfigParamSelector_CipherSuitesSupport, lanConfig.CipherSuitesSupport)
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_CipherSuitesID, lanConfig.CipherSuitesID.Format())
+	out += fmt.Sprintf("%-40s : %s\n", LanConfigParamSelector_CipherSuitesPrivLevel, lanConfig.CipherSuitesPrivLevel.Format())
+	out += fmt.Sprintf("%-40s : %d\n", LanConfigParamSelector_BadPasswordThreshold, lanConfig.BadPasswordThreshold.Threshold)
 
 	return out
 }

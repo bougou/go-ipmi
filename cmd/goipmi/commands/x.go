@@ -37,7 +37,8 @@ func NewCmdX() *cobra.Command {
 	cmd.AddCommand(NewCmdXGetSystemGUID())
 	cmd.AddCommand(NewCmdXGetPEFConfig())
 	cmd.AddCommand(NewCmdXGetLanConfigFor())
-	cmd.AddCommand(NewCmdXGetLanConfigFull())
+	cmd.AddCommand(NewCmdXGetLanConfigParamsFull())
+	cmd.AddCommand(NewCmdXGetLanConfig())
 	cmd.AddCommand(NewCmdXGetDCMIConfig())
 	cmd.AddCommand(NewCmdXGetBootOptions())
 	cmd.AddCommand(NewCmdXGetSystemInfoParams())
@@ -272,32 +273,32 @@ func NewCmdXGetLanConfigFor() *cobra.Command {
 
 			ctx := context.Background()
 
-			lanConfig := ipmi.LanConfig{
+			lanConfigParams := ipmi.LanConfigParams{
 				IP:               &ipmi.LanConfigParam_IP{},
 				SubnetMask:       &ipmi.LanConfigParam_SubnetMask{},
 				DefaultGatewayIP: &ipmi.LanConfigParam_DefaultGatewayIP{},
 			}
 
-			if err := client.GetLanConfigFor(ctx, channelNumber, &lanConfig); err != nil {
-				CheckErr(fmt.Errorf("GetLanConfig failed, err: %w", err))
+			if err := client.GetLanConfigParamsFor(ctx, channelNumber, &lanConfigParams); err != nil {
+				CheckErr(fmt.Errorf("GetLanConfigParamsFor failed, err: %w", err))
 			}
 
-			client.Debug("Lan Config", lanConfig)
+			client.Debug("Lan Config", lanConfigParams)
 
-			fmt.Println(lanConfig.Format())
+			fmt.Println(lanConfigParams.Format())
 		},
 	}
 	return cmd
 }
 
-func NewCmdXGetLanConfigFull() *cobra.Command {
+func NewCmdXGetLanConfigParamsFull() *cobra.Command {
 	usage := `
 	get-lan-config-for [<channel number>]
 	`
 
 	cmd := &cobra.Command{
-		Use:   "get-lan-config-full",
-		Short: "get-lan-config-full",
+		Use:   "get-lan-config-params-full",
+		Short: "get-lan-config-params-full",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) < 1 {
 				CheckErr(fmt.Errorf("usage: %s", usage))
@@ -311,18 +312,48 @@ func NewCmdXGetLanConfigFull() *cobra.Command {
 
 			ctx := context.Background()
 
-			lanConfig, err := client.GetLanConfigFull(ctx, channelNumber)
+			lanConfigParams, err := client.GetLanConfigParamsFull(ctx, channelNumber)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetLanConfig failed, err: %w", err))
+				CheckErr(fmt.Errorf("GetLanConfigParamsFull failed, err: %w", err))
 			}
 
-			client.Debug("Lan Config", lanConfig)
-
-			fmt.Println(lanConfig.Format())
+			client.Debug("Lan Config", lanConfigParams)
+			fmt.Println(lanConfigParams.Format())
 		},
 	}
 	return cmd
 
+}
+
+func NewCmdXGetLanConfig() *cobra.Command {
+	usage := `
+	get-lan-config [<channel number>]
+	`
+
+	cmd := &cobra.Command{
+		Use: "get-lan-config",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				CheckErr(fmt.Errorf("usage: %s", usage))
+			}
+
+			id, err := parseStringToInt64(args[0])
+			if err != nil {
+				CheckErr(fmt.Errorf("invalid channel number passed, err: %w", err))
+			}
+			channelNumber := uint8(id)
+
+			ctx := context.Background()
+			lanConfig, err := client.GetLanConfig(ctx, channelNumber)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			fmt.Println(lanConfig.Format())
+		},
+	}
+
+	return cmd
 }
 
 func NewCmdXGetDCMIConfig() *cobra.Command {

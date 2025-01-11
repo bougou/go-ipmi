@@ -288,16 +288,17 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 
 ### LAN Device Commands
 
-| Method                   | Status             | corresponding ipmitool usage |
-| ------------------------ | ------------------ | ---------------------------- |
-| SetLanConfigParam        | :white_check_mark: | lan set                      |
-| SetLanConfigParamFor (*) | :white_check_mark: | lan set                      |
-| GetLanConfigParam        | :white_check_mark: |                              |
-| GetLanConfigParamFor (*) | :white_check_mark: | lan print                    |
-| GetLanConfig (*)         | :white_check_mark: | lan print                    |
-| GetLanConfigFor (*)      | :white_check_mark: | lan print                    |
-| SuspendARPs              | :white_check_mark: |                              |
-| GetIPStatistics          | :white_check_mark: |                              |
+| Method                    | Status             | corresponding ipmitool usage |
+| ------------------------- | ------------------ | ---------------------------- |
+| SetLanConfigParam         | :white_check_mark: | lan set                      |
+| SetLanConfigParamFor (*)  | :white_check_mark: | lan set                      |
+| GetLanConfigParam         | :white_check_mark: |                              |
+| GetLanConfigParamFor (*)  | :white_check_mark: | lan print                    |
+| GetLanConfigParams (*)    | :white_check_mark: | lan print                    |
+| GetLanConfigParamsFor (*) | :white_check_mark: | lan print                    |
+| GetLanConfig (*)          | :white_check_mark: | lan print                    |
+| SuspendARPs               | :white_check_mark: |                              |
+| GetIPStatistics           | :white_check_mark: |                              |
 
 ### Serial/Modem Device Commands
 
