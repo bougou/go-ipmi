@@ -54,7 +54,32 @@ var (
 	_ SOLConfigParameter = (*SOLConfigParam_PayloadPort)(nil)
 )
 
-type SOLConfig struct {
+func isNilSOLConfigParameter(param SOLConfigParameter) bool {
+	switch v := param.(type) {
+	case *SOLConfigParam_SetInProgress:
+		return v == nil
+	case *SOLConfigParam_SOLEnable:
+		return v == nil
+	case *SOLConfigParam_SOLAuthentication:
+		return v == nil
+	case *SOLConfigParam_Character:
+		return v == nil
+	case *SOLConfigParam_SOLRetry:
+		return v == nil
+	case *SOLConfigParam_NonVolatileBitRate:
+		return v == nil
+	case *SOLConfigParam_VolatileBitRate:
+		return v == nil
+	case *SOLConfigParam_PayloadChannel:
+		return v == nil
+	case *SOLConfigParam_PayloadPort:
+		return v == nil
+	default:
+		return false
+	}
+}
+
+type SOLConfigParams struct {
 	SetInProgress      *SOLConfigParam_SetInProgress
 	SOLEnable          *SOLConfigParam_SOLEnable
 	SOLAuthentication  *SOLConfigParam_SOLAuthentication
@@ -66,8 +91,11 @@ type SOLConfig struct {
 	PayloadPort        *SOLConfigParam_PayloadPort
 }
 
-func (p *SOLConfig) Format() string {
+func (p *SOLConfigParams) Format() string {
 	format := func(param SOLConfigParameter) string {
+		if isNilSOLConfigParameter(param) {
+			return ""
+		}
 		paramSelector, _, _ := param.SOLConfigParameter()
 		content := param.Format()
 		if content[len(content)-1] != '\n' {
@@ -77,34 +105,15 @@ func (p *SOLConfig) Format() string {
 	}
 
 	out := ""
-
-	if p.SetInProgress != nil {
-		out += format(p.SetInProgress)
-	}
-	if p.SOLEnable != nil {
-		out += format(p.SOLEnable)
-	}
-	if p.SOLAuthentication != nil {
-		out += format(p.SOLAuthentication)
-	}
-	if p.Character != nil {
-		out += format(p.Character)
-	}
-	if p.SOLRetry != nil {
-		out += format(p.SOLRetry)
-	}
-	if p.NonVolatileBitRate != nil {
-		out += format(p.NonVolatileBitRate)
-	}
-	if p.VolatileBitRate != nil {
-		out += format(p.VolatileBitRate)
-	}
-	if p.PayloadChannel != nil {
-		out += format(p.PayloadChannel)
-	}
-	if p.PayloadPort != nil {
-		out += format(p.PayloadPort)
-	}
+	out += format(p.SetInProgress)
+	out += format(p.SOLEnable)
+	out += format(p.SOLAuthentication)
+	out += format(p.Character)
+	out += format(p.SOLRetry)
+	out += format(p.NonVolatileBitRate)
+	out += format(p.VolatileBitRate)
+	out += format(p.PayloadChannel)
+	out += format(p.PayloadPort)
 
 	return out
 }

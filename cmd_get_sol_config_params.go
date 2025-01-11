@@ -71,6 +71,9 @@ func (c *Client) GetSOLConfigParam(ctx context.Context, channelNumber uint8, par
 }
 
 func (c *Client) GetSOLConfigParamFor(ctx context.Context, channelNumber uint8, param SOLConfigParameter) error {
+	if isNilSOLConfigParameter(param) {
+		return nil
+	}
 	paramSelector, setSelector, blockSelector := param.SOLConfigParameter()
 	res, err := c.GetSOLConfigParam(ctx, channelNumber, paramSelector, setSelector, blockSelector)
 
@@ -85,8 +88,8 @@ func (c *Client) GetSOLConfigParamFor(ctx context.Context, channelNumber uint8, 
 	return nil
 }
 
-func (c *Client) GetSOLConfig(ctx context.Context, channelNumber uint8) (*SOLConfig, error) {
-	solConfig := &SOLConfig{
+func (c *Client) GetSOLConfigParams(ctx context.Context, channelNumber uint8) (*SOLConfigParams, error) {
+	solConfigParams := &SOLConfigParams{
 		SetInProgress:      &SOLConfigParam_SetInProgress{},
 		SOLEnable:          &SOLConfigParam_SOLEnable{},
 		SOLAuthentication:  &SOLConfigParam_SOLAuthentication{},
@@ -98,68 +101,68 @@ func (c *Client) GetSOLConfig(ctx context.Context, channelNumber uint8) (*SOLCon
 		PayloadPort:        &SOLConfigParam_PayloadPort{},
 	}
 
-	if err := c.GetSOLConfigFor(ctx, channelNumber, solConfig); err != nil {
+	if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfigParams); err != nil {
 		return nil, fmt.Errorf("GetSOLConfigParamFor failed, err: %w", err)
 	}
 
-	return solConfig, nil
+	return solConfigParams, nil
 }
 
-func (c *Client) GetSOLConfigFor(ctx context.Context, channelNumber uint8, solConfig *SOLConfig) error {
-	if solConfig == nil {
+func (c *Client) GetSOLConfigParamsFor(ctx context.Context, channelNumber uint8, solConfigParams *SOLConfigParams) error {
+	if solConfigParams == nil {
 		return nil
 	}
 
-	if solConfig.SetInProgress != nil {
-		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.SetInProgress); err != nil {
+	if solConfigParams.SetInProgress != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfigParams.SetInProgress); err != nil {
 			return err
 		}
 	}
 
-	if solConfig.SOLEnable != nil {
-		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.SOLEnable); err != nil {
+	if solConfigParams.SOLEnable != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfigParams.SOLEnable); err != nil {
 			return err
 		}
 	}
 
-	if solConfig.SOLAuthentication != nil {
-		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.SOLAuthentication); err != nil {
+	if solConfigParams.SOLAuthentication != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfigParams.SOLAuthentication); err != nil {
 			return err
 		}
 	}
 
-	if solConfig.Character != nil {
-		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.Character); err != nil {
+	if solConfigParams.Character != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfigParams.Character); err != nil {
 			return err
 		}
 	}
 
-	if solConfig.SOLRetry != nil {
-		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.SOLRetry); err != nil {
+	if solConfigParams.SOLRetry != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfigParams.SOLRetry); err != nil {
 			return err
 		}
 	}
 
-	if solConfig.NonVolatileBitRate != nil {
-		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.NonVolatileBitRate); err != nil {
+	if solConfigParams.NonVolatileBitRate != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfigParams.NonVolatileBitRate); err != nil {
 			return err
 		}
 	}
 
-	if solConfig.VolatileBitRate != nil {
-		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.VolatileBitRate); err != nil {
+	if solConfigParams.VolatileBitRate != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfigParams.VolatileBitRate); err != nil {
 			return err
 		}
 	}
 
-	if solConfig.PayloadChannel != nil {
-		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.PayloadChannel); err != nil {
+	if solConfigParams.PayloadChannel != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfigParams.PayloadChannel); err != nil {
 			return err
 		}
 	}
 
-	if solConfig.PayloadPort != nil {
-		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.PayloadPort); err != nil {
+	if solConfigParams.PayloadPort != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfigParams.PayloadPort); err != nil {
 			return err
 		}
 	}

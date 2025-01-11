@@ -56,6 +56,10 @@ func (c *Client) SetSOLConfigParam(ctx context.Context, channelNumber uint8, par
 }
 
 func (c *Client) SetSOLConfigParamFor(ctx context.Context, channelNumber uint8, param SOLConfigParameter) error {
+	if isNilSOLConfigParameter(param) {
+		return fmt.Errorf("param is nil")
+	}
+
 	paramSelector, _, _ := param.SOLConfigParameter()
 	paramData := param.Pack()
 
