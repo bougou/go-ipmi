@@ -1,6 +1,9 @@
 package ipmi
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // [DCMI specification v1.5] 6.1.2 Set DCMI Configuration Parameters
 type SetDCMIConfigParamRequest struct {
@@ -48,10 +51,7 @@ func (res *SetDCMIConfigParamResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetDCMIConfigParam(ctx context.Context, param DCMIConfigParameter) (response *SetDCMIConfigParamResponse, err error) {
-	paramSelector, setSelector := param.DCMIConfigParameter()
-	paramData := param.Pack()
-
+func (c *Client) SetDCMIConfigParam(ctx context.Context, paramSelector DCMIConfigParamSelector, setSelector uint8, paramData []byte) (response *SetDCMIConfigParamResponse, err error) {
 	request := &SetDCMIConfigParamRequest{
 		ParamSelector: paramSelector,
 		SetSelector:   setSelector,
@@ -59,5 +59,21 @@ func (c *Client) SetDCMIConfigParam(ctx context.Context, param DCMIConfigParamet
 	}
 	response = &SetDCMIConfigParamResponse{}
 	err = c.Exchange(ctx, request, response)
+	return
+}
+
+func (c *Client) SetDCMIConfigParamFor(ctx context.Context, param DCMIConfigParameter) (response *SetDCMIConfigParamResponse, err error) {
+	if isNilDCMIConfigParameter(param) {
+		return nil, fmt.Errorf("param is nil")
+	}
+
+	paramSelector, setSelector := param.DCMIConfigParameter()
+	paramData := param.Pack()
+
+	response, err = c.SetDCMIConfigParam(ctx, paramSelector, setSelector, paramData)
+	if err != nil {
+		return nil, fmt.Errorf("SetDCMIConfigParam failed, err: %w", err)
+	}
+
 	return
 }

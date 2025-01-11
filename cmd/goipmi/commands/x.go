@@ -39,7 +39,7 @@ func NewCmdX() *cobra.Command {
 	cmd.AddCommand(NewCmdXGetLanConfigFor())
 	cmd.AddCommand(NewCmdXGetLanConfigParamsFull())
 	cmd.AddCommand(NewCmdXGetLanConfig())
-	cmd.AddCommand(NewCmdXGetDCMIConfig())
+	cmd.AddCommand(NewCmdXGetDCMIConfigParams())
 	cmd.AddCommand(NewCmdXGetBootOptions())
 	cmd.AddCommand(NewCmdXGetSystemInfoParams())
 	cmd.AddCommand(NewCmdXGetSystemInfoParamsFor())
@@ -356,18 +356,18 @@ func NewCmdXGetLanConfig() *cobra.Command {
 	return cmd
 }
 
-func NewCmdXGetDCMIConfig() *cobra.Command {
+func NewCmdXGetDCMIConfigParams() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "get-dcmi-config",
+		Use: "get-dcmi-config-params",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
-			dcmiConfig, err := client.GetDCMIConfig(ctx)
+			dcmiConfigParams, err := client.GetDCMIConfigParams(ctx)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 
-			fmt.Println(dcmiConfig.Format())
+			fmt.Println(dcmiConfigParams.Format())
 		},
 	}
 

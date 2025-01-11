@@ -68,6 +68,10 @@ func (c *Client) GetDCMIConfigParam(ctx context.Context, paramSelector DCMIConfi
 }
 
 func (c *Client) GetDCMIConfigParamFor(ctx context.Context, param DCMIConfigParameter) error {
+	if isNilDCMIConfigParameter(param) {
+		return nil
+	}
+
 	paramSelector, setSelector := param.DCMIConfigParameter()
 
 	request := &GetDCMIConfigParamRequest{ParamSelector: paramSelector, SetSelector: setSelector}
@@ -83,8 +87,8 @@ func (c *Client) GetDCMIConfigParamFor(ctx context.Context, param DCMIConfigPara
 	return nil
 }
 
-func (c *Client) GetDCMIConfig(ctx context.Context) (*DCMIConfig, error) {
-	dcmiConfig := &DCMIConfig{
+func (c *Client) GetDCMIConfigParams(ctx context.Context) (*DCMIConfigParams, error) {
+	dcmiConfigParams := &DCMIConfigParams{
 		ActivateDHCP:           &DCMIConfigParam_ActivateDHCP{},
 		DiscoveryConfiguration: &DCMIConfigParam_DiscoveryConfiguration{},
 		DHCPTiming1:            &DCMIConfigParam_DHCPTiming1{},
@@ -92,44 +96,44 @@ func (c *Client) GetDCMIConfig(ctx context.Context) (*DCMIConfig, error) {
 		DHCPTiming3:            &DCMIConfigParam_DHCPTiming3{},
 	}
 
-	if err := c.GetDCMIConfigFor(ctx, dcmiConfig); err != nil {
+	if err := c.GetDCMIConfigParamsFor(ctx, dcmiConfigParams); err != nil {
 		return nil, err
 	}
 
-	return dcmiConfig, nil
+	return dcmiConfigParams, nil
 }
 
-func (c *Client) GetDCMIConfigFor(ctx context.Context, dcmiConfig *DCMIConfig) error {
-	if dcmiConfig == nil {
+func (c *Client) GetDCMIConfigParamsFor(ctx context.Context, dcmiConfigParams *DCMIConfigParams) error {
+	if dcmiConfigParams == nil {
 		return nil
 	}
 
-	if dcmiConfig.ActivateDHCP != nil {
-		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfig.ActivateDHCP); err != nil {
+	if dcmiConfigParams.ActivateDHCP != nil {
+		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfigParams.ActivateDHCP); err != nil {
 			return err
 		}
 	}
 
-	if dcmiConfig.DiscoveryConfiguration != nil {
-		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfig.DiscoveryConfiguration); err != nil {
+	if dcmiConfigParams.DiscoveryConfiguration != nil {
+		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfigParams.DiscoveryConfiguration); err != nil {
 			return err
 		}
 	}
 
-	if dcmiConfig.DHCPTiming1 != nil {
-		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfig.DHCPTiming1); err != nil {
+	if dcmiConfigParams.DHCPTiming1 != nil {
+		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfigParams.DHCPTiming1); err != nil {
 			return err
 		}
 	}
 
-	if dcmiConfig.DHCPTiming2 != nil {
-		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfig.DHCPTiming2); err != nil {
+	if dcmiConfigParams.DHCPTiming2 != nil {
+		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfigParams.DHCPTiming2); err != nil {
 			return err
 		}
 	}
 
-	if dcmiConfig.DHCPTiming3 != nil {
-		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfig.DHCPTiming3); err != nil {
+	if dcmiConfigParams.DHCPTiming3 != nil {
+		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfigParams.DHCPTiming3); err != nil {
 			return err
 		}
 	}

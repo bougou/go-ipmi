@@ -15,6 +15,24 @@ var (
 	_ DCMIConfigParameter = (*DCMIConfigParam_DHCPTiming3)(nil)
 )
 
+func isNilDCMIConfigParameter(param DCMIConfigParameter) bool {
+	switch v := param.(type) {
+	// MUST not put multiple types on the same case.
+	case *DCMIConfigParam_ActivateDHCP:
+		return v == nil
+	case *DCMIConfigParam_DiscoveryConfiguration:
+		return v == nil
+	case *DCMIConfigParam_DHCPTiming1:
+		return v == nil
+	case *DCMIConfigParam_DHCPTiming2:
+		return v == nil
+	case *DCMIConfigParam_DHCPTiming3:
+		return v == nil
+	default:
+		return false
+	}
+}
+
 type DCMIConfigParamSelector uint8
 
 const (
@@ -41,7 +59,7 @@ func (paramSelector DCMIConfigParamSelector) String() string {
 	return "Unknown"
 }
 
-type DCMIConfig struct {
+type DCMIConfigParams struct {
 	ActivateDHCP           *DCMIConfigParam_ActivateDHCP
 	DiscoveryConfiguration *DCMIConfigParam_DiscoveryConfiguration
 	DHCPTiming1            *DCMIConfigParam_DHCPTiming1
@@ -49,8 +67,11 @@ type DCMIConfig struct {
 	DHCPTiming3            *DCMIConfigParam_DHCPTiming3
 }
 
-func (dcmiConfig *DCMIConfig) Format() string {
+func (dcmiConfigParams *DCMIConfigParams) Format() string {
 	format := func(param DCMIConfigParameter) string {
+		if isNilDCMIConfigParameter(param) {
+			return ""
+		}
 		paramSelector, _ := param.DCMIConfigParameter()
 		content := param.Format()
 		if content[len(content)-1] != '\n' {
@@ -61,25 +82,11 @@ func (dcmiConfig *DCMIConfig) Format() string {
 
 	out := ""
 
-	if dcmiConfig.ActivateDHCP != nil {
-		out = format(dcmiConfig.ActivateDHCP)
-	}
-
-	if dcmiConfig.DiscoveryConfiguration != nil {
-		out += format(dcmiConfig.DiscoveryConfiguration)
-	}
-
-	if dcmiConfig.DHCPTiming1 != nil {
-		out += format(dcmiConfig.DHCPTiming1)
-	}
-
-	if dcmiConfig.DHCPTiming2 != nil {
-		out += format(dcmiConfig.DHCPTiming2)
-	}
-
-	if dcmiConfig.DHCPTiming3 != nil {
-		out += format(dcmiConfig.DHCPTiming3)
-	}
+	out = format(dcmiConfigParams.ActivateDHCP)
+	out += format(dcmiConfigParams.DiscoveryConfiguration)
+	out += format(dcmiConfigParams.DHCPTiming1)
+	out += format(dcmiConfigParams.DHCPTiming2)
+	out += format(dcmiConfigParams.DHCPTiming3)
 
 	return out
 }

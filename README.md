@@ -410,8 +410,8 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 | SetDCMIConfigParam              | :white_check_mark: | dcmi set_conf_param          |
 | GetDCMIConfigParam              | :white_check_mark: | dcmi get_conf_param          |
 | GetDCMIConfigParamFor (*)       | :white_check_mark: | dcmi get_conf_param          |
-| GetDCMIConfig (*)               | :white_check_mark: | dcmi get_conf_param          |
-| GetDCMIConfigFor (*)            | :white_check_mark: | dcmi get_conf_param          |
+| GetDCMIConfigParams (*)         | :white_check_mark: | dcmi get_conf_param          |
+| GetDCMIConfigParamsFor (*)      | :white_check_mark: | dcmi get_conf_param          |
 
 ## Reference
 
