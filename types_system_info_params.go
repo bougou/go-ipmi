@@ -86,7 +86,7 @@ type SystemInfoParams struct {
 }
 
 type SystemInfo struct {
-	SetInProgress         SetInProgress
+	SetInProgress         SetInProgressState
 	SystemFirmwareVersion string
 	SystemName            string
 	PrimaryOSName         string
@@ -184,7 +184,7 @@ Management URL          : %s
 }
 
 type SystemInfoParam_SetInProgress struct {
-	Value SetInProgress
+	Value SetInProgressState
 }
 
 func (p *SystemInfoParam_SetInProgress) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
@@ -199,7 +199,7 @@ func (p *SystemInfoParam_SetInProgress) Unpack(data []byte) error {
 	if len(data) < 1 {
 		return ErrUnpackedDataTooShortWith(len(data), 1)
 	}
-	p.Value = SetInProgress(data[0])
+	p.Value = SetInProgressState(data[0])
 	return nil
 }
 

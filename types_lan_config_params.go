@@ -336,7 +336,7 @@ func isNilLanConfigParameter(param LanConfigParameter) bool {
 }
 
 type LanConfigParam_SetInProgress struct {
-	Value SetInProgress
+	Value SetInProgressState
 }
 
 func (param *LanConfigParam_SetInProgress) LanConfigParameter() (paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) {
@@ -352,7 +352,7 @@ func (param *LanConfigParam_SetInProgress) Unpack(data []byte) error {
 		return ErrUnpackedDataTooShortWith(len(data), 1)
 	}
 
-	param.Value = SetInProgress(data[0])
+	param.Value = SetInProgressState(data[0])
 	return nil
 }
 

@@ -119,7 +119,7 @@ func (p *SOLConfigParams) Format() string {
 }
 
 type SOLConfigParam_SetInProgress struct {
-	Value SetInProgress
+	Value SetInProgressState
 }
 
 func (p *SOLConfigParam_SetInProgress) SOLConfigParameter() (paramSelector SOLConfigParamSelector, setSelector uint8, blockSelector uint8) {
@@ -130,7 +130,7 @@ func (p *SOLConfigParam_SetInProgress) Unpack(paramData []byte) error {
 	if len(paramData) != 1 {
 		return fmt.Errorf("the parameter data length must be 1 byte")
 	}
-	p.Value = SetInProgress(paramData[0])
+	p.Value = SetInProgressState(paramData[0])
 	return nil
 }
 

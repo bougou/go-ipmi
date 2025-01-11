@@ -62,7 +62,7 @@ func NewCmdXGetSDRs() *cobra.Command {
 				fmt.Printf("\n\nGet SDRs at %s\n", time.Now().Format(timeFormat))
 				res, err := client.GetSDRs(ctx)
 				if err != nil {
-					fmt.Printf("GetSDRs failed, err: %w", err)
+					fmt.Printf("GetSDRs failed, err: %s", err)
 					if loop {
 						goto WAIT
 					} else {
@@ -107,7 +107,7 @@ func NewCmdXGetSensors() *cobra.Command {
 				fmt.Printf("\n\nGet Sensors at %s\n", time.Now().Format(timeFormat))
 				res, err := client.GetSensors(ctx)
 				if err != nil {
-					fmt.Printf("GetSensors failed, err: %w", err)
+					fmt.Printf("GetSensors failed, err: %s", err)
 					if loop {
 						goto WAIT
 					} else {
@@ -149,7 +149,7 @@ func NewCmdXGetDeviceSDRs() *cobra.Command {
 			fmt.Printf("\n\nGet Device SDR at %s\n", time.Now().Format(timeFormat))
 			res, err := client.GetDeviceSDRs(ctx)
 			if err != nil {
-				fmt.Printf("GetDeviceSDRs failed, err: %w", err)
+				fmt.Printf("GetDeviceSDRs failed, err: %s", err)
 				return
 			}
 

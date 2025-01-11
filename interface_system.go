@@ -110,7 +110,7 @@ func (c *Client) exchangeOpen(ctx context.Context, request Request, response Res
 	if err := response.Unpack(unpackData); err != nil {
 		return &ResponseError{
 			completionCode: CompletionCode(recv[0]),
-			description:    fmt.Sprintf("unpack response failed, err: %w", err),
+			description:    fmt.Sprintf("unpack response failed, err: %s", err),
 		}
 	}
 

@@ -120,7 +120,7 @@ func (bootOptionsParams *BootOptionsParams) Format() string {
 }
 
 type BootOptionParam_SetInProgress struct {
-	Value SetInProgress
+	Value SetInProgressState
 }
 
 func (p *BootOptionParam_SetInProgress) BootOptionParameter() (paramSelector BootOptionParamSelector, setSelector uint8, blockSelector uint8) {
@@ -132,7 +132,7 @@ func (p *BootOptionParam_SetInProgress) Unpack(paramData []byte) error {
 		return fmt.Errorf("the parameter data length must be 1 byte")
 	}
 
-	p.Value = SetInProgress(paramData[0])
+	p.Value = SetInProgressState(paramData[0])
 	return nil
 }
 

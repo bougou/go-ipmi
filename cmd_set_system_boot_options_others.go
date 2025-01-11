@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func (c *Client) SetBootParamSetInProgress(ctx context.Context, setInProgress SetInProgress) error {
+func (c *Client) SetBootParamSetInProgress(ctx context.Context, setInProgress SetInProgressState) error {
 	param := &BootOptionParam_SetInProgress{
 		Value: setInProgress,
 	}

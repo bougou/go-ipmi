@@ -48,7 +48,7 @@ func Test_encryptAES(t *testing.T) {
 	for _, v := range cases {
 		got, err := encryptAES(v.ipmiRequestBody, v.key, v.iv)
 		if err != nil {
-			t.Errorf("encryptAES failed, err: %w", err)
+			t.Errorf("encryptAES failed, err: %s", err)
 		}
 		if !isByteSliceEqual(got, v.expected) {
 			t.Errorf("got does not match expected, got: %v, want: %v", got, v.expected)

@@ -5,17 +5,17 @@ import (
 	"net"
 )
 
-type SetInProgress uint8
+type SetInProgressState uint8
 
 const (
-	SetInProgress_SetComplete   SetInProgress = 0x00
-	SetInProgress_SetInProgress SetInProgress = 0x01
-	SetInProgress_CommitWrite   SetInProgress = 0x02
-	SetInProgress_Reserved      SetInProgress = 0x03
+	SetInProgress_SetComplete   SetInProgressState = 0x00
+	SetInProgress_SetInProgress SetInProgressState = 0x01
+	SetInProgress_CommitWrite   SetInProgressState = 0x02
+	SetInProgress_Reserved      SetInProgressState = 0x03
 )
 
-func (p SetInProgress) String() string {
-	m := map[SetInProgress]string{
+func (p SetInProgressState) String() string {
+	m := map[SetInProgressState]string{
 		0x00: "set complete",
 		0x01: "set in progress",
 		0x02: "commit write",
@@ -331,7 +331,7 @@ type LanConfigParams struct {
 }
 
 type LanConfig struct {
-	SetInProgress                 SetInProgress                        // #0, Read Only
+	SetInProgress                 SetInProgressState                   // #0, Read Only
 	AuthTypeSupport               LanConfigParam_AuthTypeSupport       // #1
 	AuthTypeEnables               LanConfigParam_AuthTypeEnables       // #2
 	IP                            net.IP                               // #3

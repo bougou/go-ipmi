@@ -375,7 +375,7 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response Res
 		if err := response.Unpack(ipmiRes.Data); err != nil {
 			return &ResponseError{
 				completionCode: 0x00,
-				description:    fmt.Sprintf("unpack response failed, err: %w", err),
+				description:    fmt.Sprintf("unpack response failed, err: %s", err),
 			}
 		}
 	}
@@ -426,7 +426,7 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response Res
 			if err := response.Unpack(ipmiRes.Data); err != nil {
 				return &ResponseError{
 					completionCode: 0x00,
-					description:    fmt.Sprintf("unpack response failed, err: %w", err),
+					description:    fmt.Sprintf("unpack response failed, err: %s", err),
 				}
 			}
 		}
