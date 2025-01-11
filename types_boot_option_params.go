@@ -58,8 +58,31 @@ var (
 	_ BootOptionParameter = (*BootOptionParam_BootInitiatorMailbox)(nil)
 )
 
+func isNilBootOptionParameter(param BootOptionParameter) bool {
+	switch v := param.(type) {
+	case *BootOptionParam_SetInProgress:
+		return v == nil
+	case *BootOptionParam_ServicePartitionSelector:
+		return v == nil
+	case *BootOptionParam_ServicePartitionScan:
+		return v == nil
+	case *BootOptionParam_BMCBootFlagValidBitClear:
+		return v == nil
+	case *BootOptionParam_BootInfoAcknowledge:
+		return v == nil
+	case *BootOptionParam_BootFlags:
+		return v == nil
+	case *BootOptionParam_BootInitiatorInfo:
+		return v == nil
+	case *BootOptionParam_BootInitiatorMailbox:
+		return v == nil
+	default:
+		return false
+	}
+}
+
 // Table 28-14, Boot Option Parameters
-type BootOptions struct {
+type BootOptionsParams struct {
 	SetInProgress            *BootOptionParam_SetInProgress
 	ServicePartitionSelector *BootOptionParam_ServicePartitionSelector
 	ServicePartitionScan     *BootOptionParam_ServicePartitionScan
@@ -70,8 +93,11 @@ type BootOptions struct {
 	BootInitiatorMailbox     *BootOptionParam_BootInitiatorMailbox
 }
 
-func (bootOptions *BootOptions) Format() string {
+func (bootOptionsParams *BootOptionsParams) Format() string {
 	format := func(param BootOptionParameter) string {
+		if isNilBootOptionParameter(param) {
+			return ""
+		}
 		paramSelector, _, _ := param.BootOptionParameter()
 		content := param.Format()
 		if content[len(content)-1] != '\n' {
@@ -81,38 +107,14 @@ func (bootOptions *BootOptions) Format() string {
 	}
 
 	out := ""
-
-	if bootOptions.SetInProgress != nil {
-		out += format(bootOptions.SetInProgress)
-	}
-
-	if bootOptions.ServicePartitionSelector != nil {
-		out += format(bootOptions.ServicePartitionSelector)
-	}
-
-	if bootOptions.ServicePartitionScan != nil {
-		out += format(bootOptions.ServicePartitionScan)
-	}
-
-	if bootOptions.BMCBootFlagValidBitClear != nil {
-		out += format(bootOptions.BMCBootFlagValidBitClear)
-	}
-
-	if bootOptions.BootInfoAcknowledge != nil {
-		out += format(bootOptions.BootInfoAcknowledge)
-	}
-
-	if bootOptions.BootFlags != nil {
-		out += format(bootOptions.BootFlags)
-	}
-
-	if bootOptions.BootInitiatorInfo != nil {
-		out += format(bootOptions.BootInitiatorInfo)
-	}
-
-	if bootOptions.BootInitiatorMailbox != nil {
-		out += format(bootOptions.BootInitiatorMailbox)
-	}
+	out += format(bootOptionsParams.SetInProgress)
+	out += format(bootOptionsParams.ServicePartitionSelector)
+	out += format(bootOptionsParams.ServicePartitionScan)
+	out += format(bootOptionsParams.BMCBootFlagValidBitClear)
+	out += format(bootOptionsParams.BootInfoAcknowledge)
+	out += format(bootOptionsParams.BootFlags)
+	out += format(bootOptionsParams.BootInitiatorInfo)
+	out += format(bootOptionsParams.BootInitiatorMailbox)
 
 	return out
 }

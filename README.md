@@ -170,25 +170,25 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 
 ### Chassis Device Commands
 
-| Method                      | Status             | corresponding ipmitool usage                      |
-| --------------------------- | ------------------ | ------------------------------------------------- |
-| GetChassisCapabilities      | :white_check_mark: |                                                   |
-| GetChassisStatus            | :white_check_mark: | chassis status, chassis power status              |
-| ChassisControl              | :white_check_mark: | chassis power on/off/cycle/reset/diag/soft        |
-| ChassisReset                | :white_check_mark: |                                                   |
-| ChassisIdentify             | :white_check_mark: | chassis identify                                  |
-| SetChassisCapabilities      | :white_check_mark: |                                                   |
-| SetPowerRestorePolicy       | :white_check_mark: | chassis policy list/always-on/previous/always-off |
-| GetSystemRestartCause       | :white_check_mark: | chassis restart_cause                             |
-| SetSystemBootOptions        | :white_check_mark: | chassis bootparam set                             |
-| SetBootParamBootFlags (*)   | :white_check_mark: | chassis bootdev                                   |
-| GetSystemBootOptions        | :white_check_mark: | chassis bootparam get                             |
-| GetSystemBootOptionsFor (*) | :white_check_mark: | chassis bootparam get                             |
-| GetBootOptions (*)          | :white_check_mark: | chassis bootparam get                             |
-| GetBootOptionsFor (*)       | :white_check_mark: | chassis bootparam get                             |
-| SetFrontPanelEnables        | :white_check_mark: |                                                   |
-| SetPowerCycleInterval       | :white_check_mark: |                                                   |
-| GetPOHCounter               | :white_check_mark: | chassis poh                                       |
+| Method                            | Status             | corresponding ipmitool usage                      |
+| --------------------------------- | ------------------ | ------------------------------------------------- |
+| GetChassisCapabilities            | :white_check_mark: |                                                   |
+| GetChassisStatus                  | :white_check_mark: | chassis status, chassis power status              |
+| ChassisControl                    | :white_check_mark: | chassis power on/off/cycle/reset/diag/soft        |
+| ChassisReset                      | :white_check_mark: |                                                   |
+| ChassisIdentify                   | :white_check_mark: | chassis identify                                  |
+| SetChassisCapabilities            | :white_check_mark: |                                                   |
+| SetPowerRestorePolicy             | :white_check_mark: | chassis policy list/always-on/previous/always-off |
+| GetSystemRestartCause             | :white_check_mark: | chassis restart_cause                             |
+| SetBootParamBootFlags (*)         | :white_check_mark: | chassis bootdev                                   |
+| SetSystemBootOptions              | :white_check_mark: | chassis bootparam set                             |
+| GetSystemBootOptions              | :white_check_mark: | chassis bootparam get                             |
+| GetSystemBootOptionsFor (*)       | :white_check_mark: | chassis bootparam get                             |
+| GetSystemBootOptionsParams (*)    | :white_check_mark: | chassis bootparam get                             |
+| GetSystemBootOptionsParamsFor (*) | :white_check_mark: | chassis bootparam get                             |
+| SetFrontPanelEnables              | :white_check_mark: |                                                   |
+| SetPowerCycleInterval             | :white_check_mark: |                                                   |
+| GetPOHCounter                     | :white_check_mark: | chassis poh                                       |
 
 ### Event Commands
 

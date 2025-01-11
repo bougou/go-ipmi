@@ -114,6 +114,9 @@ func (c *Client) GetSystemBootOptions(ctx context.Context, paramSelector BootOpt
 }
 
 func (c *Client) GetSystemBootOptionsFor(ctx context.Context, param BootOptionParameter) error {
+	if isNilBootOptionParameter(param) {
+		return nil
+	}
 	paramSelector, setSelector, blockSelector := param.BootOptionParameter()
 
 	response, err := c.GetSystemBootOptions(ctx, paramSelector, setSelector, blockSelector)
@@ -128,9 +131,9 @@ func (c *Client) GetSystemBootOptionsFor(ctx context.Context, param BootOptionPa
 	return nil
 }
 
-// GetBootOptions get all parameters for boot options.
-func (c *Client) GetBootOptions(ctx context.Context) (*BootOptions, error) {
-	bootOptions := &BootOptions{
+// GetSystemBootOptionsParams get all parameters of boot options.
+func (c *Client) GetSystemBootOptionsParams(ctx context.Context) (*BootOptionsParams, error) {
+	bootOptionsParams := &BootOptionsParams{
 		SetInProgress:            &BootOptionParam_SetInProgress{},
 		ServicePartitionSelector: &BootOptionParam_ServicePartitionSelector{},
 		ServicePartitionScan:     &BootOptionParam_ServicePartitionScan{},
@@ -141,63 +144,63 @@ func (c *Client) GetBootOptions(ctx context.Context) (*BootOptions, error) {
 		BootInitiatorMailbox:     &BootOptionParam_BootInitiatorMailbox{},
 	}
 
-	if err := c.GetBootOptionsFor(ctx, bootOptions); err != nil {
+	if err := c.GetSystemBootOptionsParamsFor(ctx, bootOptionsParams); err != nil {
 		return nil, fmt.Errorf("GetBootOptionsFor failed, err: %w", err)
 	}
 
-	return bootOptions, nil
+	return bootOptionsParams, nil
 }
 
-func (c *Client) GetBootOptionsFor(ctx context.Context, bootOptions *BootOptions) error {
-	if bootOptions == nil {
+func (c *Client) GetSystemBootOptionsParamsFor(ctx context.Context, bootOptionsParams *BootOptionsParams) error {
+	if bootOptionsParams == nil {
 		return nil
 	}
 
-	if bootOptions.SetInProgress != nil {
-		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.SetInProgress); err != nil {
+	if bootOptionsParams.SetInProgress != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptionsParams.SetInProgress); err != nil {
 			return err
 		}
 	}
 
-	if bootOptions.ServicePartitionSelector != nil {
-		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.ServicePartitionSelector); err != nil {
+	if bootOptionsParams.ServicePartitionSelector != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptionsParams.ServicePartitionSelector); err != nil {
 			return err
 		}
 	}
 
-	if bootOptions.ServicePartitionScan != nil {
-		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.ServicePartitionScan); err != nil {
+	if bootOptionsParams.ServicePartitionScan != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptionsParams.ServicePartitionScan); err != nil {
 			return err
 		}
 	}
 
-	if bootOptions.BMCBootFlagValidBitClear != nil {
-		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.BMCBootFlagValidBitClear); err != nil {
+	if bootOptionsParams.BMCBootFlagValidBitClear != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptionsParams.BMCBootFlagValidBitClear); err != nil {
 			return err
 		}
 	}
 
-	if bootOptions.BootInfoAcknowledge != nil {
-		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.BootInfoAcknowledge); err != nil {
+	if bootOptionsParams.BootInfoAcknowledge != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptionsParams.BootInfoAcknowledge); err != nil {
 			return err
 		}
 	}
 
-	if bootOptions.BootFlags != nil {
-		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.BootFlags); err != nil {
+	if bootOptionsParams.BootFlags != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptionsParams.BootFlags); err != nil {
 			return err
 		}
 	}
 
-	if bootOptions.BootInitiatorInfo != nil {
-		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.BootInitiatorInfo); err != nil {
+	if bootOptionsParams.BootInitiatorInfo != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptionsParams.BootInitiatorInfo); err != nil {
 			return err
 		}
 
 	}
 
-	if bootOptions.BootInitiatorMailbox != nil {
-		if err := c.GetSystemBootOptionsFor(ctx, bootOptions.BootInitiatorMailbox); err != nil {
+	if bootOptionsParams.BootInitiatorMailbox != nil {
+		if err := c.GetSystemBootOptionsFor(ctx, bootOptionsParams.BootInitiatorMailbox); err != nil {
 			return err
 		}
 	}

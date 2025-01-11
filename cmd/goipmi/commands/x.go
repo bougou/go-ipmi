@@ -379,13 +379,13 @@ func NewCmdXGetBootOptions() *cobra.Command {
 		Use: "get-boot-options",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
-			bootOptions, err := client.GetBootOptions(ctx)
+			bootOptionsParams, err := client.GetSystemBootOptionsParams(ctx)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 
-			fmt.Println(bootOptions.Format())
+			fmt.Println(bootOptionsParams.Format())
 		},
 	}
 

@@ -69,6 +69,9 @@ func (c *Client) SetSystemBootOptions(ctx context.Context, request *SetSystemBoo
 }
 
 func (c *Client) SetSystemBootOptionsFor(ctx context.Context, param BootOptionParameter) error {
+	if isNilBootOptionParameter(param) {
+		return fmt.Errorf("param is nil")
+	}
 	paramSelector, _, _ := param.BootOptionParameter()
 	paramData := param.Pack()
 
