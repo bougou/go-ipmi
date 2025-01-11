@@ -6,7 +6,7 @@ import (
 )
 
 // 26.3 Get SOL Configuration Parameters Command
-type GetSOLConfigParamsRequest struct {
+type GetSOLConfigParamRequest struct {
 	GetParamRevisionOnly bool
 	ChannelNumber        uint8
 	ParamSelector        SOLConfigParamSelector
@@ -14,16 +14,16 @@ type GetSOLConfigParamsRequest struct {
 	BlockSelector        uint8
 }
 
-type GetSOLConfigParamsResponse struct {
+type GetSOLConfigParamResponse struct {
 	ParamRevision uint8
 	ParamData     []byte
 }
 
-func (req *GetSOLConfigParamsRequest) Command() Command {
-	return CommandGetSOLConfigParams
+func (req *GetSOLConfigParamRequest) Command() Command {
+	return CommandGetSOLConfigParam
 }
 
-func (req *GetSOLConfigParamsRequest) Pack() []byte {
+func (req *GetSOLConfigParamRequest) Pack() []byte {
 	out := make([]byte, 4)
 	b := req.ChannelNumber
 	if req.GetParamRevisionOnly {
@@ -37,11 +37,11 @@ func (req *GetSOLConfigParamsRequest) Pack() []byte {
 	return out
 }
 
-func (res *GetSOLConfigParamsResponse) CompletionCodes() map[uint8]string {
+func (res *GetSOLConfigParamResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{}
 }
 
-func (res *GetSOLConfigParamsResponse) Unpack(msg []byte) error {
+func (res *GetSOLConfigParamResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
@@ -54,28 +54,28 @@ func (res *GetSOLConfigParamsResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *GetSOLConfigParamsResponse) Format() string {
+func (res *GetSOLConfigParamResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetSOLConfigParams(ctx context.Context, channelNumber uint8, paramSelector SOLConfigParamSelector, setSelector, blockSelector uint8) (response *GetSOLConfigParamsResponse, err error) {
-	request := &GetSOLConfigParamsRequest{
+func (c *Client) GetSOLConfigParam(ctx context.Context, channelNumber uint8, paramSelector SOLConfigParamSelector, setSelector, blockSelector uint8) (response *GetSOLConfigParamResponse, err error) {
+	request := &GetSOLConfigParamRequest{
 		ChannelNumber: channelNumber,
 		ParamSelector: paramSelector,
 		SetSelector:   0x00,
 		BlockSelector: 0x00,
 	}
-	response = &GetSOLConfigParamsResponse{}
+	response = &GetSOLConfigParamResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) GetSOLConfigParamsFor(ctx context.Context, channelNumber uint8, param SOLConfigParameter) error {
+func (c *Client) GetSOLConfigParamFor(ctx context.Context, channelNumber uint8, param SOLConfigParameter) error {
 	paramSelector, setSelector, blockSelector := param.SOLConfigParameter()
-	res, err := c.GetSOLConfigParams(ctx, channelNumber, paramSelector, setSelector, blockSelector)
+	res, err := c.GetSOLConfigParam(ctx, channelNumber, paramSelector, setSelector, blockSelector)
 
 	if err != nil {
-		return fmt.Errorf("GetSOLConfigParams for param (%s[%2d]) failed, err: %w", paramSelector.String(), paramSelector, err)
+		return fmt.Errorf("GetSOLConfigParam for param (%s[%2d]) failed, err: %w", paramSelector.String(), paramSelector, err)
 	}
 
 	if err := param.Unpack(res.ParamData); err != nil {
@@ -99,7 +99,7 @@ func (c *Client) GetSOLConfig(ctx context.Context, channelNumber uint8) (*SOLCon
 	}
 
 	if err := c.GetSOLConfigFor(ctx, channelNumber, solConfig); err != nil {
-		return nil, fmt.Errorf("GetSOLConfigParamsFor failed, err: %w", err)
+		return nil, fmt.Errorf("GetSOLConfigParamFor failed, err: %w", err)
 	}
 
 	return solConfig, nil
@@ -111,55 +111,55 @@ func (c *Client) GetSOLConfigFor(ctx context.Context, channelNumber uint8, solCo
 	}
 
 	if solConfig.SetInProgress != nil {
-		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.SetInProgress); err != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.SetInProgress); err != nil {
 			return err
 		}
 	}
 
 	if solConfig.SOLEnable != nil {
-		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.SOLEnable); err != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.SOLEnable); err != nil {
 			return err
 		}
 	}
 
 	if solConfig.SOLAuthentication != nil {
-		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.SOLAuthentication); err != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.SOLAuthentication); err != nil {
 			return err
 		}
 	}
 
 	if solConfig.Character != nil {
-		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.Character); err != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.Character); err != nil {
 			return err
 		}
 	}
 
 	if solConfig.SOLRetry != nil {
-		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.SOLRetry); err != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.SOLRetry); err != nil {
 			return err
 		}
 	}
 
 	if solConfig.NonVolatileBitRate != nil {
-		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.NonVolatileBitRate); err != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.NonVolatileBitRate); err != nil {
 			return err
 		}
 	}
 
 	if solConfig.VolatileBitRate != nil {
-		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.VolatileBitRate); err != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.VolatileBitRate); err != nil {
 			return err
 		}
 	}
 
 	if solConfig.PayloadChannel != nil {
-		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.PayloadChannel); err != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.PayloadChannel); err != nil {
 			return err
 		}
 	}
 
 	if solConfig.PayloadPort != nil {
-		if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfig.PayloadPort); err != nil {
+		if err := c.GetSOLConfigParamFor(ctx, channelNumber, solConfig.PayloadPort); err != nil {
 			return err
 		}
 	}

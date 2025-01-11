@@ -329,7 +329,7 @@ type LanConfig struct {
 	IPv6NDSLAACTimingConfig           []*LanConfigParam_IPv6NDSLAACTimingConfig           // #80
 }
 
-func (lanConfigParams *LanConfig) Format() string {
+func (lanConfig *LanConfig) Format() string {
 	format := func(param LanConfigParameter) string {
 		paramSelector, _, _ := param.LanConfigParameter()
 		content := param.Format()
@@ -341,203 +341,203 @@ func (lanConfigParams *LanConfig) Format() string {
 
 	out := ""
 
-	if lanConfigParams.SetInProgress != nil {
-		out += format(lanConfigParams.SetInProgress)
+	if lanConfig.SetInProgress != nil {
+		out += format(lanConfig.SetInProgress)
 	}
-	if lanConfigParams.AuthTypeSupport != nil {
-		out += format(lanConfigParams.AuthTypeSupport)
+	if lanConfig.AuthTypeSupport != nil {
+		out += format(lanConfig.AuthTypeSupport)
 	}
-	if lanConfigParams.AuthTypeEnables != nil {
-		out += format(lanConfigParams.AuthTypeEnables)
+	if lanConfig.AuthTypeEnables != nil {
+		out += format(lanConfig.AuthTypeEnables)
 	}
-	if lanConfigParams.IP != nil {
-		out += format(lanConfigParams.IP)
+	if lanConfig.IP != nil {
+		out += format(lanConfig.IP)
 	}
-	if lanConfigParams.IPSource != nil {
-		out += format(lanConfigParams.IPSource)
+	if lanConfig.IPSource != nil {
+		out += format(lanConfig.IPSource)
 	}
-	if lanConfigParams.MAC != nil {
-		out += format(lanConfigParams.MAC)
+	if lanConfig.MAC != nil {
+		out += format(lanConfig.MAC)
 	}
-	if lanConfigParams.SubnetMask != nil {
-		out += format(lanConfigParams.SubnetMask)
+	if lanConfig.SubnetMask != nil {
+		out += format(lanConfig.SubnetMask)
 	}
-	if lanConfigParams.IPHeaderParams != nil {
-		out += format(lanConfigParams.IPHeaderParams)
+	if lanConfig.IPHeaderParams != nil {
+		out += format(lanConfig.IPHeaderParams)
 	}
-	if lanConfigParams.PrimaryRMCPPort != nil {
-		out += format(lanConfigParams.PrimaryRMCPPort)
+	if lanConfig.PrimaryRMCPPort != nil {
+		out += format(lanConfig.PrimaryRMCPPort)
 	}
-	if lanConfigParams.SecondaryRMCPPort != nil {
-		out += format(lanConfigParams.SecondaryRMCPPort)
+	if lanConfig.SecondaryRMCPPort != nil {
+		out += format(lanConfig.SecondaryRMCPPort)
 	}
-	if lanConfigParams.ARPControl != nil {
-		out += format(lanConfigParams.ARPControl)
+	if lanConfig.ARPControl != nil {
+		out += format(lanConfig.ARPControl)
 	}
-	if lanConfigParams.GratuitousARPInterval != nil {
-		out += format(lanConfigParams.GratuitousARPInterval)
+	if lanConfig.GratuitousARPInterval != nil {
+		out += format(lanConfig.GratuitousARPInterval)
 	}
-	if lanConfigParams.DefaultGatewayIP != nil {
-		out += format(lanConfigParams.DefaultGatewayIP)
+	if lanConfig.DefaultGatewayIP != nil {
+		out += format(lanConfig.DefaultGatewayIP)
 	}
-	if lanConfigParams.DefaultGatewayMAC != nil {
-		out += format(lanConfigParams.DefaultGatewayMAC)
+	if lanConfig.DefaultGatewayMAC != nil {
+		out += format(lanConfig.DefaultGatewayMAC)
 	}
-	if lanConfigParams.BackupGatewayIP != nil {
-		out += format(lanConfigParams.BackupGatewayIP)
+	if lanConfig.BackupGatewayIP != nil {
+		out += format(lanConfig.BackupGatewayIP)
 	}
-	if lanConfigParams.BackupGatewayMAC != nil {
-		out += format(lanConfigParams.BackupGatewayMAC)
+	if lanConfig.BackupGatewayMAC != nil {
+		out += format(lanConfig.BackupGatewayMAC)
 	}
-	if lanConfigParams.CommunityString != nil {
-		out += format(lanConfigParams.CommunityString)
+	if lanConfig.CommunityString != nil {
+		out += format(lanConfig.CommunityString)
 	}
-	if lanConfigParams.AlertDestinationsCount != nil {
-		out += format(lanConfigParams.AlertDestinationsCount)
+	if lanConfig.AlertDestinationsCount != nil {
+		out += format(lanConfig.AlertDestinationsCount)
 	}
-	if lanConfigParams.AlertDestinationTypes != nil {
-		for _, alertDestinationType := range lanConfigParams.AlertDestinationTypes {
+	if lanConfig.AlertDestinationTypes != nil {
+		for _, alertDestinationType := range lanConfig.AlertDestinationTypes {
 			out += format(alertDestinationType)
 		}
 	}
-	if lanConfigParams.AlertDestinationAddresses != nil {
-		for _, alertDestinationAddress := range lanConfigParams.AlertDestinationAddresses {
+	if lanConfig.AlertDestinationAddresses != nil {
+		for _, alertDestinationAddress := range lanConfig.AlertDestinationAddresses {
 			out += format(alertDestinationAddress)
 		}
 	}
-	if lanConfigParams.VLANID != nil {
-		out += format(lanConfigParams.VLANID)
+	if lanConfig.VLANID != nil {
+		out += format(lanConfig.VLANID)
 	}
-	if lanConfigParams.VLANPriority != nil {
-		out += format(lanConfigParams.VLANPriority)
+	if lanConfig.VLANPriority != nil {
+		out += format(lanConfig.VLANPriority)
 	}
-	if lanConfigParams.CipherSuitesSupport != nil {
-		out += format(lanConfigParams.CipherSuitesSupport)
+	if lanConfig.CipherSuitesSupport != nil {
+		out += format(lanConfig.CipherSuitesSupport)
 	}
-	if lanConfigParams.CipherSuitesID != nil {
-		out += format(lanConfigParams.CipherSuitesID)
+	if lanConfig.CipherSuitesID != nil {
+		out += format(lanConfig.CipherSuitesID)
 	}
-	if lanConfigParams.CipherSuitesPrivLevel != nil {
-		out += format(lanConfigParams.CipherSuitesPrivLevel)
+	if lanConfig.CipherSuitesPrivLevel != nil {
+		out += format(lanConfig.CipherSuitesPrivLevel)
 	}
-	if lanConfigParams.AlertDestinationVLANs != nil {
-		for _, alertDestinationVLAN := range lanConfigParams.AlertDestinationVLANs {
+	if lanConfig.AlertDestinationVLANs != nil {
+		for _, alertDestinationVLAN := range lanConfig.AlertDestinationVLANs {
 			out += format(alertDestinationVLAN)
 		}
 	}
-	if lanConfigParams.BadPasswordThreshold != nil {
-		out += format(lanConfigParams.BadPasswordThreshold)
+	if lanConfig.BadPasswordThreshold != nil {
+		out += format(lanConfig.BadPasswordThreshold)
 	}
-	if lanConfigParams.IPv6Support != nil {
-		out += format(lanConfigParams.IPv6Support)
+	if lanConfig.IPv6Support != nil {
+		out += format(lanConfig.IPv6Support)
 	}
-	if lanConfigParams.IPv6Enables != nil {
-		out += format(lanConfigParams.IPv6Enables)
+	if lanConfig.IPv6Enables != nil {
+		out += format(lanConfig.IPv6Enables)
 	}
-	if lanConfigParams.IPv6StaticTrafficClass != nil {
-		out += format(lanConfigParams.IPv6StaticTrafficClass)
+	if lanConfig.IPv6StaticTrafficClass != nil {
+		out += format(lanConfig.IPv6StaticTrafficClass)
 	}
-	if lanConfigParams.IPv6StaticHopLimit != nil {
-		out += format(lanConfigParams.IPv6StaticHopLimit)
+	if lanConfig.IPv6StaticHopLimit != nil {
+		out += format(lanConfig.IPv6StaticHopLimit)
 	}
-	if lanConfigParams.IPv6FlowLabel != nil {
-		out += format(lanConfigParams.IPv6FlowLabel)
+	if lanConfig.IPv6FlowLabel != nil {
+		out += format(lanConfig.IPv6FlowLabel)
 	}
-	if lanConfigParams.IPv6Status != nil {
-		out += format(lanConfigParams.IPv6Status)
+	if lanConfig.IPv6Status != nil {
+		out += format(lanConfig.IPv6Status)
 	}
-	if lanConfigParams.IPv6StaticAddresses != nil {
-		for _, ipv6StaticAddress := range lanConfigParams.IPv6StaticAddresses {
+	if lanConfig.IPv6StaticAddresses != nil {
+		for _, ipv6StaticAddress := range lanConfig.IPv6StaticAddresses {
 			out += format(ipv6StaticAddress)
 		}
 	}
-	if lanConfigParams.IPv6DHCPv6StaticDUIDCount != nil {
-		out += format(lanConfigParams.IPv6DHCPv6StaticDUIDCount)
+	if lanConfig.IPv6DHCPv6StaticDUIDCount != nil {
+		out += format(lanConfig.IPv6DHCPv6StaticDUIDCount)
 	}
-	if lanConfigParams.IPv6DHCPv6StaticDUIDs != nil {
-		for _, ipv6DHCPv6StaticDUID := range lanConfigParams.IPv6DHCPv6StaticDUIDs {
+	if lanConfig.IPv6DHCPv6StaticDUIDs != nil {
+		for _, ipv6DHCPv6StaticDUID := range lanConfig.IPv6DHCPv6StaticDUIDs {
 			out += format(ipv6DHCPv6StaticDUID)
 		}
 	}
-	if lanConfigParams.IPv6DynamicAddresses != nil {
-		for _, ipv6DynamicAddress := range lanConfigParams.IPv6DynamicAddresses {
+	if lanConfig.IPv6DynamicAddresses != nil {
+		for _, ipv6DynamicAddress := range lanConfig.IPv6DynamicAddresses {
 			out += format(ipv6DynamicAddress)
 		}
 	}
-	if lanConfigParams.IPv6DHCPv6DynamicDUIDCount != nil {
-		out += format(lanConfigParams.IPv6DHCPv6DynamicDUIDCount)
+	if lanConfig.IPv6DHCPv6DynamicDUIDCount != nil {
+		out += format(lanConfig.IPv6DHCPv6DynamicDUIDCount)
 	}
-	if lanConfigParams.IPv6DHCPv6DynamicDUIDs != nil {
-		for _, ipv6DHCPv6DynamicDUID := range lanConfigParams.IPv6DHCPv6DynamicDUIDs {
+	if lanConfig.IPv6DHCPv6DynamicDUIDs != nil {
+		for _, ipv6DHCPv6DynamicDUID := range lanConfig.IPv6DHCPv6DynamicDUIDs {
 			out += format(ipv6DHCPv6DynamicDUID)
 		}
 	}
-	if lanConfigParams.IPv6DHCPv6TimingConfigSupport != nil {
-		out += format(lanConfigParams.IPv6DHCPv6TimingConfigSupport)
+	if lanConfig.IPv6DHCPv6TimingConfigSupport != nil {
+		out += format(lanConfig.IPv6DHCPv6TimingConfigSupport)
 	}
-	if lanConfigParams.IPv6DHCPv6TimingConfig != nil {
-		for _, ipv6DHCPv6TimingConfig := range lanConfigParams.IPv6DHCPv6TimingConfig {
+	if lanConfig.IPv6DHCPv6TimingConfig != nil {
+		for _, ipv6DHCPv6TimingConfig := range lanConfig.IPv6DHCPv6TimingConfig {
 			out += format(ipv6DHCPv6TimingConfig)
 		}
 	}
-	if lanConfigParams.IPv6RouterAddressConfigControl != nil {
-		out += format(lanConfigParams.IPv6RouterAddressConfigControl)
+	if lanConfig.IPv6RouterAddressConfigControl != nil {
+		out += format(lanConfig.IPv6RouterAddressConfigControl)
 	}
-	if lanConfigParams.IPv6StaticRouter1IP != nil {
-		out += format(lanConfigParams.IPv6StaticRouter1IP)
+	if lanConfig.IPv6StaticRouter1IP != nil {
+		out += format(lanConfig.IPv6StaticRouter1IP)
 	}
-	if lanConfigParams.IPv6StaticRouter1MAC != nil {
-		out += format(lanConfigParams.IPv6StaticRouter1MAC)
+	if lanConfig.IPv6StaticRouter1MAC != nil {
+		out += format(lanConfig.IPv6StaticRouter1MAC)
 	}
-	if lanConfigParams.IPv6StaticRouter1PrefixLength != nil {
-		out += format(lanConfigParams.IPv6StaticRouter1PrefixLength)
+	if lanConfig.IPv6StaticRouter1PrefixLength != nil {
+		out += format(lanConfig.IPv6StaticRouter1PrefixLength)
 	}
-	if lanConfigParams.IPv6StaticRouter1PrefixValue != nil {
-		out += format(lanConfigParams.IPv6StaticRouter1PrefixValue)
+	if lanConfig.IPv6StaticRouter1PrefixValue != nil {
+		out += format(lanConfig.IPv6StaticRouter1PrefixValue)
 	}
-	if lanConfigParams.IPv6StaticRouter2IP != nil {
-		out += format(lanConfigParams.IPv6StaticRouter2IP)
+	if lanConfig.IPv6StaticRouter2IP != nil {
+		out += format(lanConfig.IPv6StaticRouter2IP)
 	}
-	if lanConfigParams.IPv6StaticRouter2MAC != nil {
-		out += format(lanConfigParams.IPv6StaticRouter2MAC)
+	if lanConfig.IPv6StaticRouter2MAC != nil {
+		out += format(lanConfig.IPv6StaticRouter2MAC)
 	}
-	if lanConfigParams.IPv6StaticRouter2PrefixLength != nil {
-		out += format(lanConfigParams.IPv6StaticRouter2PrefixLength)
+	if lanConfig.IPv6StaticRouter2PrefixLength != nil {
+		out += format(lanConfig.IPv6StaticRouter2PrefixLength)
 	}
-	if lanConfigParams.IPv6StaticRouter2PrefixValue != nil {
-		out += format(lanConfigParams.IPv6StaticRouter2PrefixValue)
+	if lanConfig.IPv6StaticRouter2PrefixValue != nil {
+		out += format(lanConfig.IPv6StaticRouter2PrefixValue)
 	}
-	if lanConfigParams.IPv6DynamicRouterInfoSets != nil {
-		out += format(lanConfigParams.IPv6DynamicRouterInfoSets)
+	if lanConfig.IPv6DynamicRouterInfoSets != nil {
+		out += format(lanConfig.IPv6DynamicRouterInfoSets)
 	}
-	if lanConfigParams.IPv6DynamicRouterInfoIP != nil {
-		for _, ipv6DynamicRouterInfoIP := range lanConfigParams.IPv6DynamicRouterInfoIP {
+	if lanConfig.IPv6DynamicRouterInfoIP != nil {
+		for _, ipv6DynamicRouterInfoIP := range lanConfig.IPv6DynamicRouterInfoIP {
 			out += format(ipv6DynamicRouterInfoIP)
 		}
 	}
-	if lanConfigParams.IPv6DynamicRouterInfoMAC != nil {
-		for _, ipv6DynamicRouterInfoMAC := range lanConfigParams.IPv6DynamicRouterInfoMAC {
+	if lanConfig.IPv6DynamicRouterInfoMAC != nil {
+		for _, ipv6DynamicRouterInfoMAC := range lanConfig.IPv6DynamicRouterInfoMAC {
 			out += format(ipv6DynamicRouterInfoMAC)
 		}
 	}
-	if lanConfigParams.IPv6DynamicRouterInfoPrefixLength != nil {
-		for _, ipv6DynamicRouterInfoPrefixLength := range lanConfigParams.IPv6DynamicRouterInfoPrefixLength {
+	if lanConfig.IPv6DynamicRouterInfoPrefixLength != nil {
+		for _, ipv6DynamicRouterInfoPrefixLength := range lanConfig.IPv6DynamicRouterInfoPrefixLength {
 			out += format(ipv6DynamicRouterInfoPrefixLength)
 		}
 	}
-	if lanConfigParams.IPv6DynamicRouterInfoPrefixValue != nil {
-		for _, ipv6DynamicRouterInfoPrefixValue := range lanConfigParams.IPv6DynamicRouterInfoPrefixValue {
+	if lanConfig.IPv6DynamicRouterInfoPrefixValue != nil {
+		for _, ipv6DynamicRouterInfoPrefixValue := range lanConfig.IPv6DynamicRouterInfoPrefixValue {
 			out += format(ipv6DynamicRouterInfoPrefixValue)
 		}
 	}
-	if lanConfigParams.IPv6DynamicRouterReceivedHopLimit != nil {
-		out += format(lanConfigParams.IPv6DynamicRouterReceivedHopLimit)
+	if lanConfig.IPv6DynamicRouterReceivedHopLimit != nil {
+		out += format(lanConfig.IPv6DynamicRouterReceivedHopLimit)
 	}
-	if lanConfigParams.IPv6NDSLAACTimingConfigSupport != nil {
-		out += format(lanConfigParams.IPv6NDSLAACTimingConfigSupport)
+	if lanConfig.IPv6NDSLAACTimingConfigSupport != nil {
+		out += format(lanConfig.IPv6NDSLAACTimingConfigSupport)
 	}
-	if lanConfigParams.IPv6NDSLAACTimingConfig != nil {
-		for _, ipv6NDSLAACTimingConfig := range lanConfigParams.IPv6NDSLAACTimingConfig {
+	if lanConfig.IPv6NDSLAACTimingConfig != nil {
+		for _, ipv6NDSLAACTimingConfig := range lanConfig.IPv6NDSLAACTimingConfig {
 			out += format(ipv6NDSLAACTimingConfig)
 		}
 	}

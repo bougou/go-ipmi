@@ -80,7 +80,7 @@ func NewCmdPEFStatus() *cobra.Command {
 
 			{
 				param := &ipmi.PEFConfigParam_Control{}
-				if err := client.GetPEFConfigParamsFor(ctx, param); err != nil {
+				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 					CheckErr(fmt.Errorf("GetLastProcessedEventId failed, err: %w", err))
 				}
 				fmt.Println(param.Format())
@@ -88,7 +88,7 @@ func NewCmdPEFStatus() *cobra.Command {
 
 			{
 				param := &ipmi.PEFConfigParam_ActionGlobalControl{}
-				if err := client.GetPEFConfigParamsFor(ctx, param); err != nil {
+				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 					CheckErr(fmt.Errorf("GetLastProcessedEventId failed, err: %w", err))
 				}
 				fmt.Println(param.Format())
@@ -124,7 +124,7 @@ func NewCmdPEFFilterList() *cobra.Command {
 
 			{
 				param := &ipmi.PEFConfigParam_EventFiltersCount{}
-				if err := client.GetPEFConfigParamsFor(ctx, param); err != nil {
+				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 					CheckErr(fmt.Errorf("get number of event filters failed, err: %w", err))
 				}
 				numberOfEventFilters = param.Value
@@ -138,7 +138,7 @@ func NewCmdPEFFilterList() *cobra.Command {
 				param := &ipmi.PEFConfigParam_EventFilter{
 					SetSelector: filterNumber,
 				}
-				if err := client.GetPEFConfigParamsFor(ctx, param); err != nil {
+				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 					CheckErr(fmt.Errorf("get event filter entry %d failed, err: %s", filterNumber, err))
 				}
 
@@ -160,7 +160,7 @@ func NewCmdPEFInfo() *cobra.Command {
 
 			{
 				param := &ipmi.PEFConfigParam_SystemGUID{}
-				if err := client.GetPEFConfigParamsFor(ctx, param); err != nil {
+				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 					CheckErr(err)
 				}
 				fmt.Println(param.Format())
@@ -176,7 +176,7 @@ func NewCmdPEFInfo() *cobra.Command {
 
 			{
 				param := &ipmi.PEFConfigParam_AlertPoliciesCount{}
-				if err := client.GetPEFConfigParamsFor(ctx, param); err != nil {
+				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 					CheckErr(err)
 				}
 				fmt.Println(param.Format())
@@ -220,7 +220,7 @@ func NewCmdPEFPolicyList() *cobra.Command {
 			numberOfAlertPolicies := uint8(0)
 			{
 				param := &ipmi.PEFConfigParam_AlertPoliciesCount{}
-				if err := client.GetPEFConfigParamsFor(ctx, param); err != nil {
+				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 					CheckErr(err)
 				}
 				numberOfAlertPolicies = param.Value
@@ -246,7 +246,7 @@ func NewCmdPEFPolicyList() *cobra.Command {
 					param := &ipmi.PEFConfigParam_AlertPolicy{
 						SetSelector: entry,
 					}
-					if err := client.GetPEFConfigParamsFor(ctx, param); err != nil {
+					if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 						CheckErr(fmt.Errorf("get alert policy number (%d) failed, err: %s", entry, err))
 					}
 					alertPolicy := param.Policy

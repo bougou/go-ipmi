@@ -3,16 +3,16 @@ package ipmi
 import "context"
 
 // [DCMI specification v1.5] 6.1.2 Set DCMI Configuration Parameters
-type SetDCMIConfigParamsRequest struct {
+type SetDCMIConfigParamRequest struct {
 	ParamSelector DCMIConfigParamSelector
 	SetSelector   uint8 // use 00h for parameters that only have one set
 	ParamData     []byte
 }
 
-type SetDCMIConfigParamsResponse struct {
+type SetDCMIConfigParamResponse struct {
 }
 
-func (req *SetDCMIConfigParamsRequest) Pack() []byte {
+func (req *SetDCMIConfigParamRequest) Pack() []byte {
 	out := make([]byte, 3+len(req.ParamData))
 
 	packUint8(GroupExtensionDCMI, out, 0)
@@ -24,15 +24,15 @@ func (req *SetDCMIConfigParamsRequest) Pack() []byte {
 
 }
 
-func (req *SetDCMIConfigParamsRequest) Command() Command {
-	return CommandSetDCMIConfigParams
+func (req *SetDCMIConfigParamRequest) Command() Command {
+	return CommandSetDCMIConfigParam
 }
 
-func (res *SetDCMIConfigParamsResponse) CompletionCodes() map[uint8]string {
+func (res *SetDCMIConfigParamResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{}
 }
 
-func (res *SetDCMIConfigParamsResponse) Unpack(msg []byte) error {
+func (res *SetDCMIConfigParamResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
@@ -44,20 +44,20 @@ func (res *SetDCMIConfigParamsResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *SetDCMIConfigParamsResponse) Format() string {
+func (res *SetDCMIConfigParamResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetDCMIConfigParams(ctx context.Context, param DCMIConfigParameter) (response *SetDCMIConfigParamsResponse, err error) {
+func (c *Client) SetDCMIConfigParam(ctx context.Context, param DCMIConfigParameter) (response *SetDCMIConfigParamResponse, err error) {
 	paramSelector, setSelector := param.DCMIConfigParameter()
 	paramData := param.Pack()
 
-	request := &SetDCMIConfigParamsRequest{
+	request := &SetDCMIConfigParamRequest{
 		ParamSelector: paramSelector,
 		SetSelector:   setSelector,
 		ParamData:     paramData,
 	}
-	response = &SetDCMIConfigParamsResponse{}
+	response = &SetDCMIConfigParamResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }

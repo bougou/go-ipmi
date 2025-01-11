@@ -6,19 +6,19 @@ import (
 )
 
 // [DCMI specification v1.5] 6.1.3 Get DCMI Configuration Parameters Command
-type GetDCMIConfigParamsRequest struct {
+type GetDCMIConfigParamRequest struct {
 	ParamSelector DCMIConfigParamSelector
 	SetSelector   uint8 // use 00h for parameters that only have one set
 }
 
-type GetDCMIConfigParamsResponse struct {
+type GetDCMIConfigParamResponse struct {
 	MajorVersion  uint8
 	MinorVersion  uint8
 	ParamRevision uint8
 	ParamData     []byte
 }
 
-func (req *GetDCMIConfigParamsRequest) Pack() []byte {
+func (req *GetDCMIConfigParamRequest) Pack() []byte {
 	out := make([]byte, 3)
 
 	packUint8(GroupExtensionDCMI, out, 0)
@@ -28,15 +28,15 @@ func (req *GetDCMIConfigParamsRequest) Pack() []byte {
 	return out
 }
 
-func (req *GetDCMIConfigParamsRequest) Command() Command {
-	return CommandGetDCMIConfigParams
+func (req *GetDCMIConfigParamRequest) Command() Command {
+	return CommandGetDCMIConfigParam
 }
 
-func (res *GetDCMIConfigParamsResponse) CompletionCodes() map[uint8]string {
+func (res *GetDCMIConfigParamResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{}
 }
 
-func (res *GetDCMIConfigParamsResponse) Unpack(msg []byte) error {
+func (res *GetDCMIConfigParamResponse) Unpack(msg []byte) error {
 	if len(msg) < 5 {
 		return ErrUnpackedDataTooShortWith(len(msg), 5)
 	}
@@ -53,25 +53,25 @@ func (res *GetDCMIConfigParamsResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *GetDCMIConfigParamsResponse) Format() string {
+func (res *GetDCMIConfigParamResponse) Format() string {
 	return ""
 }
 
-func (c *Client) GetDCMIConfigParams(ctx context.Context, paramSelector DCMIConfigParamSelector, setSelector uint8) (response *GetDCMIConfigParamsResponse, err error) {
-	request := &GetDCMIConfigParamsRequest{
+func (c *Client) GetDCMIConfigParam(ctx context.Context, paramSelector DCMIConfigParamSelector, setSelector uint8) (response *GetDCMIConfigParamResponse, err error) {
+	request := &GetDCMIConfigParamRequest{
 		ParamSelector: paramSelector,
 		SetSelector:   setSelector,
 	}
-	response = &GetDCMIConfigParamsResponse{}
+	response = &GetDCMIConfigParamResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) GetDCMIConfigParamsFor(ctx context.Context, param DCMIConfigParameter) error {
+func (c *Client) GetDCMIConfigParamFor(ctx context.Context, param DCMIConfigParameter) error {
 	paramSelector, setSelector := param.DCMIConfigParameter()
 
-	request := &GetDCMIConfigParamsRequest{ParamSelector: paramSelector, SetSelector: setSelector}
-	response := &GetDCMIConfigParamsResponse{}
+	request := &GetDCMIConfigParamRequest{ParamSelector: paramSelector, SetSelector: setSelector}
+	response := &GetDCMIConfigParamResponse{}
 	if err := c.Exchange(ctx, request, response); err != nil {
 		return err
 	}
@@ -105,31 +105,31 @@ func (c *Client) GetDCMIConfigFor(ctx context.Context, dcmiConfig *DCMIConfig) e
 	}
 
 	if dcmiConfig.ActivateDHCP != nil {
-		if err := c.GetDCMIConfigParamsFor(ctx, dcmiConfig.ActivateDHCP); err != nil {
+		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfig.ActivateDHCP); err != nil {
 			return err
 		}
 	}
 
 	if dcmiConfig.DiscoveryConfiguration != nil {
-		if err := c.GetDCMIConfigParamsFor(ctx, dcmiConfig.DiscoveryConfiguration); err != nil {
+		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfig.DiscoveryConfiguration); err != nil {
 			return err
 		}
 	}
 
 	if dcmiConfig.DHCPTiming1 != nil {
-		if err := c.GetDCMIConfigParamsFor(ctx, dcmiConfig.DHCPTiming1); err != nil {
+		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfig.DHCPTiming1); err != nil {
 			return err
 		}
 	}
 
 	if dcmiConfig.DHCPTiming2 != nil {
-		if err := c.GetDCMIConfigParamsFor(ctx, dcmiConfig.DHCPTiming2); err != nil {
+		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfig.DHCPTiming2); err != nil {
 			return err
 		}
 	}
 
 	if dcmiConfig.DHCPTiming3 != nil {
-		if err := c.GetDCMIConfigParamsFor(ctx, dcmiConfig.DHCPTiming3); err != nil {
+		if err := c.GetDCMIConfigParamFor(ctx, dcmiConfig.DHCPTiming3); err != nil {
 			return err
 		}
 	}

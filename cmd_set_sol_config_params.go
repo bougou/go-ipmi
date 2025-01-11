@@ -6,20 +6,20 @@ import (
 )
 
 // 26.2 Set SOL Configuration Parameters Command
-type SetSOLConfigParamsRequest struct {
+type SetSOLConfigParamRequest struct {
 	ChannelNumber uint8
 	ParamSelector SOLConfigParamSelector
 	ParamData     []byte
 }
 
-type SetSOLConfigParamsResponse struct {
+type SetSOLConfigParamResponse struct {
 }
 
-func (req *SetSOLConfigParamsRequest) Command() Command {
-	return CommandSetSOLConfigParams
+func (req *SetSOLConfigParamRequest) Command() Command {
+	return CommandSetSOLConfigParam
 }
 
-func (req *SetSOLConfigParamsRequest) Pack() []byte {
+func (req *SetSOLConfigParamRequest) Pack() []byte {
 	out := make([]byte, 2+len(req.ParamData))
 	packUint8(req.ChannelNumber, out, 0)
 	packUint8(uint8(req.ParamSelector), out, 1)
@@ -27,7 +27,7 @@ func (req *SetSOLConfigParamsRequest) Pack() []byte {
 	return out
 }
 
-func (res *SetSOLConfigParamsResponse) CompletionCodes() map[uint8]string {
+func (res *SetSOLConfigParamResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{
 		0x80: "parameter not supported",
 		0x81: "attempt to set the 'set in progress' value",
@@ -36,32 +36,32 @@ func (res *SetSOLConfigParamsResponse) CompletionCodes() map[uint8]string {
 	}
 }
 
-func (res *SetSOLConfigParamsResponse) Unpack(msg []byte) error {
+func (res *SetSOLConfigParamResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *SetSOLConfigParamsResponse) Format() string {
+func (res *SetSOLConfigParamResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetSOLConfigParams(ctx context.Context, channelNumber uint8, paramSelector SOLConfigParamSelector, paramData []byte) (response *SetSOLConfigParamsResponse, err error) {
-	request := &SetSOLConfigParamsRequest{
+func (c *Client) SetSOLConfigParam(ctx context.Context, channelNumber uint8, paramSelector SOLConfigParamSelector, paramData []byte) (response *SetSOLConfigParamResponse, err error) {
+	request := &SetSOLConfigParamRequest{
 		ChannelNumber: channelNumber,
 		ParamSelector: paramSelector,
 		ParamData:     paramData,
 	}
-	response = &SetSOLConfigParamsResponse{}
+	response = &SetSOLConfigParamResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) SetSOLConfigParamsFor(ctx context.Context, channelNumber uint8, param SOLConfigParameter) error {
+func (c *Client) SetSOLConfigParamFor(ctx context.Context, channelNumber uint8, param SOLConfigParameter) error {
 	paramSelector, _, _ := param.SOLConfigParameter()
 	paramData := param.Pack()
 
-	_, err := c.SetSOLConfigParams(ctx, channelNumber, paramSelector, paramData)
+	_, err := c.SetSOLConfigParam(ctx, channelNumber, paramSelector, paramData)
 	if err != nil {
-		return fmt.Errorf("SetSOLConfigParams failed, err: %w", err)
+		return fmt.Errorf("SetSOLConfigParam failed, err: %w", err)
 	}
 
 	return nil

@@ -6,17 +6,17 @@ import (
 )
 
 // 23.1 Set LAN Configuration Parameters Command
-type SetLanConfigParamsRequest struct {
+type SetLanConfigParamRequest struct {
 	ChannelNumber uint8
 	ParamSelector LanConfigParamSelector
 	ParamData     []byte
 }
 
-type SetLanConfigParamsResponse struct {
+type SetLanConfigParamResponse struct {
 	// empty
 }
 
-func (req *SetLanConfigParamsRequest) Pack() []byte {
+func (req *SetLanConfigParamRequest) Pack() []byte {
 	out := make([]byte, 2+len(req.ParamData))
 
 	packUint8(req.ChannelNumber, out, 0)
@@ -26,11 +26,11 @@ func (req *SetLanConfigParamsRequest) Pack() []byte {
 	return out
 }
 
-func (req *SetLanConfigParamsRequest) Command() Command {
-	return CommandSetLanConfigParams
+func (req *SetLanConfigParamRequest) Command() Command {
+	return CommandSetLanConfigParam
 }
 
-func (res *SetLanConfigParamsResponse) CompletionCodes() map[uint8]string {
+func (res *SetLanConfigParamResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{
 		0x80: "parameter not supported.",
 		0x81: "attempt to set the 'set in progress' value (in parameter #0) when not in the 'set complete' state.",
@@ -39,30 +39,30 @@ func (res *SetLanConfigParamsResponse) CompletionCodes() map[uint8]string {
 	}
 }
 
-func (res *SetLanConfigParamsResponse) Unpack(msg []byte) error {
+func (res *SetLanConfigParamResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *SetLanConfigParamsResponse) Format() string {
+func (res *SetLanConfigParamResponse) Format() string {
 	return ""
 }
 
-func (c *Client) SetLanConfigParams(ctx context.Context, channelNumber uint8, paramSelector LanConfigParamSelector, configData []byte) (response *SetLanConfigParamsResponse, err error) {
-	request := &SetLanConfigParamsRequest{
+func (c *Client) SetLanConfigParam(ctx context.Context, channelNumber uint8, paramSelector LanConfigParamSelector, configData []byte) (response *SetLanConfigParamResponse, err error) {
+	request := &SetLanConfigParamRequest{
 		ChannelNumber: channelNumber,
 		ParamSelector: paramSelector,
 		ParamData:     configData,
 	}
-	response = &SetLanConfigParamsResponse{}
+	response = &SetLanConfigParamResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) SetLanConfigParamsFor(ctx context.Context, channelNumber uint8, param LanConfigParameter) error {
+func (c *Client) SetLanConfigParamFor(ctx context.Context, channelNumber uint8, param LanConfigParameter) error {
 	paramSelector, _, _ := param.LanConfigParameter()
 	c.DebugBytes(fmt.Sprintf(">> Set param data for (%s[%d]) ", paramSelector.String(), paramSelector), param.Pack(), 8)
 
-	if _, err := c.SetLanConfigParams(ctx, channelNumber, paramSelector, param.Pack()); err != nil {
+	if _, err := c.SetLanConfigParam(ctx, channelNumber, paramSelector, param.Pack()); err != nil {
 		c.Debugf("!!! Set LanConfigParam for paramSelector (%d) %s failed, err: %v\n", uint8(paramSelector), paramSelector, err)
 		return err
 	}

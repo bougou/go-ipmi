@@ -6,19 +6,19 @@ import (
 )
 
 // 23.2 Get LAN Configuration Parameters Command
-type GetLanConfigParamsRequest struct {
+type GetLanConfigParamRequest struct {
 	ChannelNumber uint8
 	ParamSelector LanConfigParamSelector
 	SetSelector   uint8
 	BlockSelector uint8
 }
 
-type GetLanConfigParamsResponse struct {
+type GetLanConfigParamResponse struct {
 	ParamRevision uint8
 	ParamData     []byte
 }
 
-func (req *GetLanConfigParamsRequest) Pack() []byte {
+func (req *GetLanConfigParamRequest) Pack() []byte {
 	out := make([]byte, 4)
 	packUint8(req.ChannelNumber, out, 0)
 	packUint8(uint8(req.ParamSelector), out, 1)
@@ -27,17 +27,17 @@ func (req *GetLanConfigParamsRequest) Pack() []byte {
 	return out
 }
 
-func (req *GetLanConfigParamsRequest) Command() Command {
-	return CommandGetLanConfigParams
+func (req *GetLanConfigParamRequest) Command() Command {
+	return CommandGetLanConfigParam
 }
 
-func (res *GetLanConfigParamsResponse) CompletionCodes() map[uint8]string {
+func (res *GetLanConfigParamResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{
 		0x80: "parameter not supported.",
 	}
 }
 
-func (res *GetLanConfigParamsResponse) Unpack(msg []byte) error {
+func (res *GetLanConfigParamResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
@@ -46,7 +46,7 @@ func (res *GetLanConfigParamsResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *GetLanConfigParamsResponse) Format() string {
+func (res *GetLanConfigParamResponse) Format() string {
 	out := `
 Parameter Revision    : %d
 Param Data            : %v
@@ -56,26 +56,26 @@ Length of Config Data : %d
 	return fmt.Sprintf(out, res.ParamRevision, res.ParamData, len(res.ParamData))
 }
 
-func (c *Client) GetLanConfigParams(ctx context.Context, channelNumber uint8, paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) (response *GetLanConfigParamsResponse, err error) {
-	request := &GetLanConfigParamsRequest{
+func (c *Client) GetLanConfigParam(ctx context.Context, channelNumber uint8, paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) (response *GetLanConfigParamResponse, err error) {
+	request := &GetLanConfigParamRequest{
 		ChannelNumber: channelNumber,
 		ParamSelector: paramSelector,
 		SetSelector:   setSelector,
 		BlockSelector: blockSelector,
 	}
-	response = &GetLanConfigParamsResponse{}
+	response = &GetLanConfigParamResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }
 
-// GetLanConfigParamsFor get the lan config for a specific parameter.
+// GetLanConfigParamFor get the lan config for a specific parameter.
 //
 // The param is a pointer to a struct that implements the LanConfigParameter interface.
-func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8, param LanConfigParameter) error {
+func (c *Client) GetLanConfigParamFor(ctx context.Context, channelNumber uint8, param LanConfigParameter) error {
 	paramSelector, setSelector, blockSelector := param.LanConfigParameter()
 	c.Debugf(">> Get LanConfigParam for paramSelector (%d) %s, setSelector %d, blockSelector %d\n", uint8(paramSelector), paramSelector, setSelector, blockSelector)
 
-	response, err := c.GetLanConfigParams(ctx, channelNumber, paramSelector, setSelector, blockSelector)
+	response, err := c.GetLanConfigParam(ctx, channelNumber, paramSelector, setSelector, blockSelector)
 	if err != nil {
 		c.Debugf("!!! Get LanConfigParam for paramSelector (%d) %s, setSelector %d failed, err: %v\n", uint8(paramSelector), paramSelector, setSelector, err)
 
@@ -253,110 +253,110 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 	}
 
 	if lanConfig.SetInProgress != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.SetInProgress); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.SetInProgress); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.AuthTypeSupport != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.AuthTypeSupport); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.AuthTypeSupport); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.AuthTypeEnables != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.AuthTypeEnables); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.AuthTypeEnables); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IP != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IP); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IP); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPSource != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPSource); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPSource); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.MAC != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.MAC); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.MAC); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.SubnetMask != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.SubnetMask); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.SubnetMask); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPHeaderParams != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPHeaderParams); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPHeaderParams); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.PrimaryRMCPPort != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.PrimaryRMCPPort); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.PrimaryRMCPPort); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.SecondaryRMCPPort != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.SecondaryRMCPPort); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.SecondaryRMCPPort); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.ARPControl != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.ARPControl); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.ARPControl); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.GratuitousARPInterval != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.GratuitousARPInterval); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.GratuitousARPInterval); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.DefaultGatewayIP != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.DefaultGatewayIP); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.DefaultGatewayIP); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.DefaultGatewayMAC != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.DefaultGatewayMAC); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.DefaultGatewayMAC); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.BackupGatewayIP != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.BackupGatewayIP); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.BackupGatewayIP); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.BackupGatewayMAC != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.BackupGatewayMAC); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.BackupGatewayMAC); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.CommunityString != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.CommunityString); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.CommunityString); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	alertDestinationsCount := uint8(0)
 	if lanConfig.AlertDestinationsCount != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.AlertDestinationsCount); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.AlertDestinationsCount); canIgnoreError(err) != nil {
 			return err
 		}
 		alertDestinationsCount = lanConfig.AlertDestinationsCount.Count
@@ -376,7 +376,7 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 		}
 
 		for _, alertDestinationType := range lanConfig.AlertDestinationTypes {
-			if err := c.GetLanConfigParamsFor(ctx, channelNumber, alertDestinationType); err != nil {
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, alertDestinationType); err != nil {
 				return err
 			}
 		}
@@ -396,38 +396,38 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 		}
 
 		for _, alertDestinationAddress := range lanConfig.AlertDestinationAddresses {
-			if err := c.GetLanConfigParamsFor(ctx, channelNumber, alertDestinationAddress); err != nil {
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, alertDestinationAddress); err != nil {
 				return err
 			}
 		}
 	}
 
 	if lanConfig.VLANID != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.VLANID); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.VLANID); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.VLANPriority != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.VLANPriority); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.VLANPriority); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.CipherSuitesSupport != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.CipherSuitesSupport); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.CipherSuitesSupport); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.CipherSuitesID != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.CipherSuitesID); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.CipherSuitesID); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.CipherSuitesPrivLevel != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.CipherSuitesPrivLevel); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.CipherSuitesPrivLevel); canIgnoreError(err) != nil {
 			return err
 		}
 	}
@@ -445,44 +445,44 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 		}
 
 		for _, alertDestinationVLAN := range lanConfig.AlertDestinationVLANs {
-			if err := c.GetLanConfigParamsFor(ctx, channelNumber, alertDestinationVLAN); err != nil {
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, alertDestinationVLAN); err != nil {
 				return err
 			}
 		}
 	}
 
 	if lanConfig.BadPasswordThreshold != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.BadPasswordThreshold); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.BadPasswordThreshold); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPv6Support != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6Support); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6Support); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPv6Enables != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6Enables); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6Enables); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPv6StaticTrafficClass != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticTrafficClass); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6StaticTrafficClass); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPv6StaticHopLimit != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticHopLimit); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6StaticHopLimit); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPv6FlowLabel != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6FlowLabel); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6FlowLabel); canIgnoreError(err) != nil {
 			return err
 		}
 	}
@@ -490,7 +490,7 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 	var ipv6StaticAddressMax uint8
 	var ipv6DynamicAddressMax uint8
 	if lanConfig.IPv6Status != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6Status); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6Status); canIgnoreError(err) != nil {
 			return err
 		}
 		ipv6StaticAddressMax = lanConfig.IPv6Status.StaticAddressMax
@@ -510,7 +510,7 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 		}
 
 		for _, ipv6StaticAddress := range lanConfig.IPv6StaticAddresses {
-			if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6StaticAddress); err != nil {
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6StaticAddress); err != nil {
 				return err
 			}
 		}
@@ -518,7 +518,7 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 
 	var ipv6DHCPv6StaticDUIDCount uint8
 	if lanConfig.IPv6DHCPv6StaticDUIDCount != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6DHCPv6StaticDUIDCount); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6DHCPv6StaticDUIDCount); canIgnoreError(err) != nil {
 			return err
 		}
 
@@ -538,7 +538,7 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 		}
 
 		for _, ipv6DHCPv6StaticDUID := range lanConfig.IPv6DHCPv6StaticDUIDs {
-			if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DHCPv6StaticDUID); err != nil {
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6DHCPv6StaticDUID); err != nil {
 				return err
 			}
 		}
@@ -557,7 +557,7 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 		}
 
 		for _, ipv6DynamicAddress := range lanConfig.IPv6DynamicAddresses {
-			if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DynamicAddress); err != nil {
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6DynamicAddress); err != nil {
 				return err
 			}
 		}
@@ -565,7 +565,7 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 
 	var ipv6DHCPv6DynamicDUIDCount uint8
 	if lanConfig.IPv6DHCPv6DynamicDUIDCount != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6DHCPv6DynamicDUIDCount); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6DHCPv6DynamicDUIDCount); canIgnoreError(err) != nil {
 			return err
 		}
 
@@ -586,7 +586,7 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 			// 	}
 
 			// 	for _, ipv6DHCPv6DynamicDUID := range lanConfig.IPv6DHCPv6DynamicDUIDs {
-			// 		if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DHCPv6DynamicDUID); err != nil {
+			// 		if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6DHCPv6DynamicDUID); err != nil {
 			// 			return err
 			// 		}
 			// 	}
@@ -594,7 +594,7 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 	}
 
 	if lanConfig.IPv6DHCPv6TimingConfigSupport != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6DHCPv6TimingConfigSupport); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6DHCPv6TimingConfigSupport); canIgnoreError(err) != nil {
 			return err
 		}
 	}
@@ -613,7 +613,7 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 		// 	}
 
 		// 	for _, ipv6DHCPv6TimingConfig := range lanConfig.IPv6DHCPv6TimingConfig {
-		// 		if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DHCPv6TimingConfig); err != nil {
+		// 		if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6DHCPv6TimingConfig); err != nil {
 		// 			return err
 		// 		}
 		// 	}
@@ -621,62 +621,62 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 	}
 
 	if lanConfig.IPv6RouterAddressConfigControl != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6RouterAddressConfigControl); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6RouterAddressConfigControl); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPv6StaticRouter1IP != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter1IP); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6StaticRouter1IP); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPv6StaticRouter1MAC != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter1MAC); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6StaticRouter1MAC); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPv6StaticRouter1PrefixLength != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter1PrefixLength); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6StaticRouter1PrefixLength); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPv6StaticRouter1PrefixValue != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter1PrefixValue); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6StaticRouter1PrefixValue); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPv6StaticRouter2IP != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter2IP); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6StaticRouter2IP); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPv6StaticRouter2MAC != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter2MAC); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6StaticRouter2MAC); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPv6StaticRouter2PrefixLength != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter2PrefixLength); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6StaticRouter2PrefixLength); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPv6StaticRouter2PrefixValue != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6StaticRouter2PrefixValue); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6StaticRouter2PrefixValue); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	var ipv6DynamicRouterInfoCount uint8
 	if lanConfig.IPv6DynamicRouterInfoSets != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6DynamicRouterInfoSets); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6DynamicRouterInfoSets); canIgnoreError(err) != nil {
 			return err
 		}
 
@@ -695,7 +695,7 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 			}
 
 			for _, ipv6DynamicRouterInfoIP := range lanConfig.IPv6DynamicRouterInfoIP {
-				if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DynamicRouterInfoIP); err != nil {
+				if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6DynamicRouterInfoIP); err != nil {
 					return err
 				}
 			}
@@ -714,7 +714,7 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 			}
 
 			for _, ipv6DynamicRouterInfoMAC := range lanConfig.IPv6DynamicRouterInfoMAC {
-				if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DynamicRouterInfoMAC); err != nil {
+				if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6DynamicRouterInfoMAC); err != nil {
 					return err
 				}
 			}
@@ -733,7 +733,7 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 			}
 
 			for _, ipv6DynamicRouterInfoPrefixLength := range lanConfig.IPv6DynamicRouterInfoPrefixLength {
-				if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DynamicRouterInfoPrefixLength); err != nil {
+				if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6DynamicRouterInfoPrefixLength); err != nil {
 					return err
 				}
 			}
@@ -752,7 +752,7 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 			}
 
 			for _, ipv6DynamicRouterInfoPrefixValue := range lanConfig.IPv6DynamicRouterInfoPrefixValue {
-				if err := c.GetLanConfigParamsFor(ctx, channelNumber, ipv6DynamicRouterInfoPrefixValue); err != nil {
+				if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6DynamicRouterInfoPrefixValue); err != nil {
 					return err
 				}
 			}
@@ -760,13 +760,13 @@ func (c *Client) GetLanConfigFor(ctx context.Context, channelNumber uint8, lanCo
 	}
 
 	if lanConfig.IPv6DynamicRouterReceivedHopLimit != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6DynamicRouterReceivedHopLimit); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6DynamicRouterReceivedHopLimit); canIgnoreError(err) != nil {
 			return err
 		}
 	}
 
 	if lanConfig.IPv6NDSLAACTimingConfigSupport != nil {
-		if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfig.IPv6NDSLAACTimingConfigSupport); canIgnoreError(err) != nil {
+		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfig.IPv6NDSLAACTimingConfigSupport); canIgnoreError(err) != nil {
 			return err
 		}
 	}

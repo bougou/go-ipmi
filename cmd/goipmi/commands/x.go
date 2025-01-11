@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bougou/go-ipmi"
+	"github.com/kr/pretty"
 	"github.com/spf13/cobra"
 )
 
@@ -39,6 +40,9 @@ func NewCmdX() *cobra.Command {
 	cmd.AddCommand(NewCmdXGetLanConfigFull())
 	cmd.AddCommand(NewCmdXGetDCMIConfig())
 	cmd.AddCommand(NewCmdXGetBootOptions())
+	cmd.AddCommand(NewCmdXGetSystemInfoParams())
+	cmd.AddCommand(NewCmdXGetSystemInfoParamsFor())
+	cmd.AddCommand(NewCmdXGetSystemInfo())
 
 	return cmd
 }
@@ -57,7 +61,7 @@ func NewCmdXGetSDRs() *cobra.Command {
 				fmt.Printf("\n\nGet SDRs at %s\n", time.Now().Format(timeFormat))
 				res, err := client.GetSDRs(ctx)
 				if err != nil {
-					fmt.Printf("GetSDRs failed, err: %s", err)
+					fmt.Printf("GetSDRs failed, err: %w", err)
 					if loop {
 						goto WAIT
 					} else {
@@ -102,7 +106,7 @@ func NewCmdXGetSensors() *cobra.Command {
 				fmt.Printf("\n\nGet Sensors at %s\n", time.Now().Format(timeFormat))
 				res, err := client.GetSensors(ctx)
 				if err != nil {
-					fmt.Printf("GetSensors failed, err: %s", err)
+					fmt.Printf("GetSensors failed, err: %w", err)
 					if loop {
 						goto WAIT
 					} else {
@@ -144,7 +148,7 @@ func NewCmdXGetDeviceSDRs() *cobra.Command {
 			fmt.Printf("\n\nGet Device SDR at %s\n", time.Now().Format(timeFormat))
 			res, err := client.GetDeviceSDRs(ctx)
 			if err != nil {
-				fmt.Printf("GetDeviceSDRs failed, err: %s", err)
+				fmt.Printf("GetDeviceSDRs failed, err: %w", err)
 				return
 			}
 
@@ -262,7 +266,7 @@ func NewCmdXGetLanConfigFor() *cobra.Command {
 
 			id, err := parseStringToInt64(args[0])
 			if err != nil {
-				CheckErr(fmt.Errorf("invalid channel number passed, err: %s", err))
+				CheckErr(fmt.Errorf("invalid channel number passed, err: %w", err))
 			}
 			channelNumber := uint8(id)
 
@@ -275,7 +279,7 @@ func NewCmdXGetLanConfigFor() *cobra.Command {
 			}
 
 			if err := client.GetLanConfigFor(ctx, channelNumber, &lanConfig); err != nil {
-				CheckErr(fmt.Errorf("GetLanConfig failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetLanConfig failed, err: %w", err))
 			}
 
 			client.Debug("Lan Config", lanConfig)
@@ -301,7 +305,7 @@ func NewCmdXGetLanConfigFull() *cobra.Command {
 
 			id, err := parseStringToInt64(args[0])
 			if err != nil {
-				CheckErr(fmt.Errorf("invalid channel number passed, err: %s", err))
+				CheckErr(fmt.Errorf("invalid channel number passed, err: %w", err))
 			}
 			channelNumber := uint8(id)
 
@@ -309,7 +313,7 @@ func NewCmdXGetLanConfigFull() *cobra.Command {
 
 			lanConfig, err := client.GetLanConfigFull(ctx, channelNumber)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetLanConfig failed, err: %s", err))
+				CheckErr(fmt.Errorf("GetLanConfig failed, err: %w", err))
 			}
 
 			client.Debug("Lan Config", lanConfig)
@@ -351,6 +355,65 @@ func NewCmdXGetBootOptions() *cobra.Command {
 			}
 
 			fmt.Println(bootOptions.Format())
+		},
+	}
+
+	return cmd
+}
+
+func NewCmdXGetSystemInfoParams() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "get-system-info-params",
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
+			systemInfoParams, err := client.GetSystemInfoParams(ctx)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			fmt.Println(systemInfoParams.Format())
+		},
+	}
+
+	return cmd
+}
+
+func NewCmdXGetSystemInfoParamsFor() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "get-system-info-params-for",
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
+			systemInfoParams := &ipmi.SystemInfoParams{
+				SetInProgress:          nil,
+				SystemFirmwareVersions: nil,
+				SystemNames:            make([]*ipmi.SystemInfoParam_SystemName, 0),
+			}
+			pretty.Println(systemInfoParams)
+			if err := client.GetSystemInfoParamsFor(ctx, systemInfoParams); err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			fmt.Println(systemInfoParams.Format())
+		},
+	}
+
+	return cmd
+}
+
+func NewCmdXGetSystemInfo() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "get-system-info",
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
+			systemInfo, err := client.GetSystemInfo(ctx)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			fmt.Println(systemInfo.Format())
 		},
 	}
 

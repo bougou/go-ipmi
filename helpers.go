@@ -672,7 +672,10 @@ func formatTable(headers []string, rows [][]string) string {
 	return buf.String()
 }
 
-func buildCanSafeIgnoreFn(codes ...uint8) func(err error) error {
+// buildCanIgnoreFn returns a `canIgnore` function that can be used to check if a err
+// is a ResponseError with CompletionCode in specified codes.
+// If so, the `canIgnore` function returns nil, otherwise it returns the original err.
+func buildCanIgnoreFn(codes ...uint8) func(err error) error {
 	return func(err error) error {
 		if err == nil {
 			return nil
@@ -690,4 +693,13 @@ func buildCanSafeIgnoreFn(codes ...uint8) func(err error) error {
 
 		return err
 	}
+}
+
+// Generic function to convert a slice of any type to a slice of interface{}
+func convertToInterfaceSlice[T any](input []T) []interface{} {
+	result := make([]interface{}, len(input))
+	for i, v := range input {
+		result[i] = v
+	}
+	return result
 }

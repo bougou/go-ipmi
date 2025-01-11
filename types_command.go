@@ -88,8 +88,8 @@ var (
 	CommandReadEventMessageBuffer         = Command{ID: 0x35, NetFn: NetFnAppRequest, Name: "Read Event Message Buffer"}
 	CommandGetBTInterfaceCapabilities     = Command{ID: 0x36, NetFn: NetFnAppRequest, Name: "Get BT Interface Capabilities"}
 	CommandGetSystemGUID                  = Command{ID: 0x37, NetFn: NetFnAppRequest, Name: "Get System GUID"}
-	CommandSetSystemInfoParams            = Command{ID: 0x58, NetFn: NetFnAppRequest, Name: "Set System Info Parameters"}
-	CommandGetSystemInfoParams            = Command{ID: 0x59, NetFn: NetFnAppRequest, Name: "Get System Info Parameters"}
+	CommandSetSystemInfoParam             = Command{ID: 0x58, NetFn: NetFnAppRequest, Name: "Set System Info Param"}
+	CommandGetSystemInfoParam             = Command{ID: 0x59, NetFn: NetFnAppRequest, Name: "Get System Info Param"}
 	CommandGetChannelAuthCapabilities     = Command{ID: 0x38, NetFn: NetFnAppRequest, Name: "Get Channel Authentication Capabilities"}
 	CommandGetSessionChallenge            = Command{ID: 0x39, NetFn: NetFnAppRequest, Name: "Get Session Challenge"}
 	CommandActivateSession                = Command{ID: 0x3a, NetFn: NetFnAppRequest, Name: "Activate Session"}
@@ -143,8 +143,8 @@ var (
 	// PEF and Alerting Commands
 	CommandGetPEFCapabilities      = Command{ID: 0x10, NetFn: NetFnSensorEventRequest, Name: "Get PEF Capabilities"}
 	CommandArmPEFPostponeTimer     = Command{ID: 0x11, NetFn: NetFnSensorEventRequest, Name: "Arm PEF Postpone Timer"}
-	CommandSetPEFConfigParams      = Command{ID: 0x12, NetFn: NetFnSensorEventRequest, Name: "Set PEF Configuration Parameters"}
-	CommandGetPEFConfigParams      = Command{ID: 0x13, NetFn: NetFnSensorEventRequest, Name: "Get PEF Configuration Parameters"}
+	CommandSetPEFConfigParam       = Command{ID: 0x12, NetFn: NetFnSensorEventRequest, Name: "Set PEF Configuration Param"}
+	CommandGetPEFConfigParam       = Command{ID: 0x13, NetFn: NetFnSensorEventRequest, Name: "Get PEF Configuration Param"}
 	CommandSetLastProcessedEventId = Command{ID: 0x14, NetFn: NetFnSensorEventRequest, Name: "Set Last Processed Event ID"}
 	CommandGetLastProcessedEventId = Command{ID: 0x15, NetFn: NetFnSensorEventRequest, Name: "Get Last Processed Event ID"}
 	CommandAlertImmediate          = Command{ID: 0x16, NetFn: NetFnSensorEventRequest, Name: "Alert Immediate"}
@@ -205,10 +205,10 @@ var (
 	CommandSetSELTimeUTCOffset = Command{ID: 0x5d, NetFn: NetFnStorageRequest, Name: "Set SEL Time UTC Offset"}
 
 	// LAN Device Commands
-	CommandSetLanConfigParams = Command{ID: 0x01, NetFn: NetFnTransportRequest, Name: "Set LAN Configuration Parameters"}
-	CommandGetLanConfigParams = Command{ID: 0x02, NetFn: NetFnTransportRequest, Name: "Get LAN Configuration Parameters"}
-	CommandSuspendARPs        = Command{ID: 0x03, NetFn: NetFnTransportRequest, Name: "Suspend BMC ARPs"}
-	CommandGetIPStatistics    = Command{ID: 0x04, NetFn: NetFnTransportRequest, Name: "Get IP/UDP/RMCP Statistics"}
+	CommandSetLanConfigParam = Command{ID: 0x01, NetFn: NetFnTransportRequest, Name: "Set LAN Configuration Param"}
+	CommandGetLanConfigParam = Command{ID: 0x02, NetFn: NetFnTransportRequest, Name: "Get LAN Configuration Param"}
+	CommandSuspendARPs       = Command{ID: 0x03, NetFn: NetFnTransportRequest, Name: "Suspend BMC ARPs"}
+	CommandGetIPStatistics   = Command{ID: 0x04, NetFn: NetFnTransportRequest, Name: "Get IP/UDP/RMCP Statistics"}
 
 	// Serial/Modem Device Commands
 	CommandSetSerialConfig        = Command{ID: 0x10, NetFn: NetFnTransportRequest, Name: "Set Serial/Modem Configuration"}
@@ -225,8 +225,8 @@ var (
 	CommandGetUserCallbackOptions = Command{ID: 0x1b, NetFn: NetFnTransportRequest, Name: "Get User Callback Options"}
 	CommandSetSerialRoutingMux    = Command{ID: 0x1c, NetFn: NetFnTransportRequest, Name: "Set Serial Routing Mux"}
 	CommandSOLActivating          = Command{ID: 0x20, NetFn: NetFnTransportRequest, Name: "SOL Activating"}
-	CommandSetSOLConfigParams     = Command{ID: 0x21, NetFn: NetFnTransportRequest, Name: "Set SOL Configuration Parameters"}
-	CommandGetSOLConfigParams     = Command{ID: 0x22, NetFn: NetFnTransportRequest, Name: "Get SOL Configuration Parameters"}
+	CommandSetSOLConfigParam      = Command{ID: 0x21, NetFn: NetFnTransportRequest, Name: "Set SOL Configuration Param"}
+	CommandGetSOLConfigParam      = Command{ID: 0x22, NetFn: NetFnTransportRequest, Name: "Get SOL Configuration Param"}
 
 	// Command Forwarding Commands
 	CommandForwarded       = Command{ID: 0x30, NetFn: NetFnTransportRequest, Name: "Forwarded Command"}
@@ -287,8 +287,8 @@ var (
 	CommandSetDCMIThermalLimit             = Command{ID: 0x0B, NetFn: NetFnGroupExtensionRequest, Name: "Set DCMI Thermal Limit"}
 	CommandGetDCMIThermalLimit             = Command{ID: 0x0C, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Thermal Limit"}
 	CommandGetDCMITemperatureReadings      = Command{ID: 0x10, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Temperature Readings"}
-	CommandSetDCMIConfigParams             = Command{ID: 0x12, NetFn: NetFnGroupExtensionRequest, Name: "Set DCMI Configuration Parameters"}
-	CommandGetDCMIConfigParams             = Command{ID: 0x13, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Configuration Parameters"}
+	CommandSetDCMIConfigParam              = Command{ID: 0x12, NetFn: NetFnGroupExtensionRequest, Name: "Set DCMI Configuration Param"}
+	CommandGetDCMIConfigParam              = Command{ID: 0x13, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Configuration Param"}
 
 	// Vendor Specific Commands
 	CommandGetSupermicroBiosVersion = Command{ID: 0xAC, NetFn: NetFnOEMSupermicroRequest, Name: "Get Supermicro BIOS Version"}

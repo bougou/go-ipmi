@@ -3,20 +3,20 @@ package ipmi
 import "context"
 
 // 30.3 Set PEF Configuration Parameters Command
-type SetPEFConfigParamsRequest struct {
+type SetPEFConfigParamRequest struct {
 	ParamSelector PEFConfigParamSelector
 	ParamData     []byte
 }
 
-type SetPEFConfigParamsResponse struct {
+type SetPEFConfigParamResponse struct {
 	// empty
 }
 
-func (req *SetPEFConfigParamsRequest) Command() Command {
-	return CommandSetPEFConfigParams
+func (req *SetPEFConfigParamRequest) Command() Command {
+	return CommandSetPEFConfigParam
 }
 
-func (req *SetPEFConfigParamsRequest) Pack() []byte {
+func (req *SetPEFConfigParamRequest) Pack() []byte {
 	// empty request data
 
 	out := make([]byte, 1+len(req.ParamData))
@@ -29,11 +29,11 @@ func (req *SetPEFConfigParamsRequest) Pack() []byte {
 	return out
 }
 
-func (res *SetPEFConfigParamsResponse) Unpack(msg []byte) error {
+func (res *SetPEFConfigParamResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *SetPEFConfigParamsResponse) CompletionCodes() map[uint8]string {
+func (r *SetPEFConfigParamResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{
 		0x80: "parameter not supported",
 		// (This completion code provides a way to recognize that another party has already 'claimed' the parameters)"
@@ -43,17 +43,17 @@ func (r *SetPEFConfigParamsResponse) CompletionCodes() map[uint8]string {
 	}
 }
 
-func (res *SetPEFConfigParamsResponse) Format() string {
+func (res *SetPEFConfigParamResponse) Format() string {
 	return ""
 }
 
 // Todo
-func (c *Client) SetPEFConfigParams(ctx context.Context, paramSelector PEFConfigParamSelector, paramData []byte) (response *SetPEFConfigParamsResponse, err error) {
-	request := &SetPEFConfigParamsRequest{
+func (c *Client) SetPEFConfigParam(ctx context.Context, paramSelector PEFConfigParamSelector, paramData []byte) (response *SetPEFConfigParamResponse, err error) {
+	request := &SetPEFConfigParamRequest{
 		ParamSelector: paramSelector,
 		ParamData:     paramData,
 	}
-	response = &SetPEFConfigParamsResponse{}
+	response = &SetPEFConfigParamResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }
