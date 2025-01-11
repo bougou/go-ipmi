@@ -53,7 +53,6 @@ var (
 
 func isNilSystemInfoParamete(param SystemInfoParameter) bool {
 	switch v := param.(type) {
-	// MUST not put multiple types on the same case.
 	case *SystemInfoParam_SetInProgress:
 		return v == nil
 	case *SystemInfoParam_SystemFirmwareVersion:

@@ -35,8 +35,8 @@ func NewCmdX() *cobra.Command {
 	cmd.AddCommand(NewCmdXGetPayloadActivationStatus())
 	cmd.AddCommand(NewCmdXGetDeviceGUID())
 	cmd.AddCommand(NewCmdXGetSystemGUID())
-	cmd.AddCommand(NewCmdXGetPEFConfig())
-	cmd.AddCommand(NewCmdXGetLanConfigFor())
+	cmd.AddCommand(NewCmdXGetPEFConfigParams())
+	cmd.AddCommand(NewCmdXGetLanConfigParamsFor())
 	cmd.AddCommand(NewCmdXGetLanConfigParamsFull())
 	cmd.AddCommand(NewCmdXGetLanConfig())
 	cmd.AddCommand(NewCmdXGetDCMIConfigParams())
@@ -234,32 +234,32 @@ func NewCmdXGetDeviceGUID() *cobra.Command {
 	return cmd
 }
 
-func NewCmdXGetPEFConfig() *cobra.Command {
+func NewCmdXGetPEFConfigParams() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "get-pef-config",
+		Use: "get-pef-config-params",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
-			pefConfig, err := client.GetPEFConfig(ctx)
+			pefConfigParams, err := client.GetPEFConfigParams(ctx)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 
-			fmt.Println(pefConfig.Format())
+			fmt.Println(pefConfigParams.Format())
 		},
 	}
 
 	return cmd
 }
 
-func NewCmdXGetLanConfigFor() *cobra.Command {
+func NewCmdXGetLanConfigParamsFor() *cobra.Command {
 	usage := `
-	get-lan-config-for [<channel number>]
+	get-lan-config-params-for [<channel number>]
 	`
 
 	cmd := &cobra.Command{
-		Use:   "get-lan-config-for",
-		Short: "get-lan-config-for",
+		Use:   "get-lan-config-params-for",
+		Short: "get-lan-config-params-for",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) < 1 {
 				CheckErr(fmt.Errorf("usage: %s", usage))
@@ -293,7 +293,7 @@ func NewCmdXGetLanConfigFor() *cobra.Command {
 
 func NewCmdXGetLanConfigParamsFull() *cobra.Command {
 	usage := `
-	get-lan-config-for [<channel number>]
+	get-lan-config-params-full [<channel number>]
 	`
 
 	cmd := &cobra.Command{

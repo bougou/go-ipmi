@@ -214,7 +214,6 @@ var (
 
 func isNilLanConfigParameter(param LanConfigParameter) bool {
 	switch v := param.(type) {
-	// MUST not put multiple types on the same case.
 	case *LanConfigParam_SetInProgress:
 		return v == nil
 	case *LanConfigParam_AuthTypeSupport:

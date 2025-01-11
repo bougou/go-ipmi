@@ -78,7 +78,44 @@ var (
 	_ PEFConfigParameter = (*PEFConfigParam_GroupControl)(nil)
 )
 
-type PEFConfig struct {
+func isNilPEFConfigParameter(param PEFConfigParameter) bool {
+	switch v := param.(type) {
+	case *PEFConfigParam_SetInProgress:
+		return v == nil
+	case *PEFConfigParam_Control:
+		return v == nil
+	case *PEFConfigParam_ActionGlobalControl:
+		return v == nil
+	case *PEFConfigParam_StartupDelay:
+		return v == nil
+	case *PEFConfigParam_AlertStartupDelay:
+		return v == nil
+	case *PEFConfigParam_EventFiltersCount:
+		return v == nil
+	case *PEFConfigParam_EventFilter:
+		return v == nil
+	case *PEFConfigParam_AlertPoliciesCount:
+		return v == nil
+	case *PEFConfigParam_AlertPolicy:
+		return v == nil
+	case *PEFConfigParam_SystemGUID:
+		return v == nil
+	case *PEFConfigParam_AlertStringsCount:
+		return v == nil
+	case *PEFConfigParam_AlertStringKey:
+		return v == nil
+	case *PEFConfigParam_AlertString:
+		return v == nil
+	case *PEFConfigParam_GroupControlsCount:
+		return v == nil
+	case *PEFConfigParam_GroupControl:
+		return v == nil
+	default:
+		return false
+	}
+}
+
+type PEFConfigParams struct {
 	SetInProgress       *PEFConfigParam_SetInProgress
 	Control             *PEFConfigParam_Control
 	ActionGlobalControl *PEFConfigParam_ActionGlobalControl
@@ -97,10 +134,13 @@ type PEFConfig struct {
 	GroupControls       []*PEFConfigParam_GroupControl
 }
 
-func (pefConfig *PEFConfig) Format() string {
+func (pefConfigParams *PEFConfigParams) Format() string {
 	var out string
 
 	format := func(param PEFConfigParameter) string {
+		if isNilPEFConfigParameter(param) {
+			return ""
+		}
 		paramSelector, _, _ := param.PEFConfigParameter()
 		content := param.Format()
 		if content[len(content)-1] != '\n' {
@@ -109,64 +149,64 @@ func (pefConfig *PEFConfig) Format() string {
 		return fmt.Sprintf("[%2d] %s : %s", paramSelector, paramSelector.String(), content)
 	}
 
-	if pefConfig.SetInProgress != nil {
-		out += format(pefConfig.SetInProgress)
+	if pefConfigParams.SetInProgress != nil {
+		out += format(pefConfigParams.SetInProgress)
 	}
-	if pefConfig.Control != nil {
-		out += format(pefConfig.Control)
+	if pefConfigParams.Control != nil {
+		out += format(pefConfigParams.Control)
 	}
-	if pefConfig.ActionGlobalControl != nil {
-		out += format(pefConfig.ActionGlobalControl)
+	if pefConfigParams.ActionGlobalControl != nil {
+		out += format(pefConfigParams.ActionGlobalControl)
 	}
-	if pefConfig.StartupDelay != nil {
-		out += format(pefConfig.StartupDelay)
+	if pefConfigParams.StartupDelay != nil {
+		out += format(pefConfigParams.StartupDelay)
 	}
-	if pefConfig.AlertStartupDelay != nil {
-		out += format(pefConfig.AlertStartupDelay)
+	if pefConfigParams.AlertStartupDelay != nil {
+		out += format(pefConfigParams.AlertStartupDelay)
 	}
-	if pefConfig.EventFiltersCount != nil {
-		out += format(pefConfig.EventFiltersCount)
+	if pefConfigParams.EventFiltersCount != nil {
+		out += format(pefConfigParams.EventFiltersCount)
 	}
-	if pefConfig.EventFilters != nil {
-		for i := range pefConfig.EventFilters {
-			out += format(pefConfig.EventFilters[i])
+	if pefConfigParams.EventFilters != nil {
+		for i := range pefConfigParams.EventFilters {
+			out += format(pefConfigParams.EventFilters[i])
 		}
 	}
-	if pefConfig.EventFiltersData1 != nil {
-		for i := range pefConfig.EventFiltersData1 {
-			out += format(pefConfig.EventFiltersData1[i])
+	if pefConfigParams.EventFiltersData1 != nil {
+		for i := range pefConfigParams.EventFiltersData1 {
+			out += format(pefConfigParams.EventFiltersData1[i])
 		}
 	}
-	if pefConfig.AlertPoliciesCount != nil {
-		out += format(pefConfig.AlertPoliciesCount)
+	if pefConfigParams.AlertPoliciesCount != nil {
+		out += format(pefConfigParams.AlertPoliciesCount)
 	}
-	if pefConfig.AlertPolicies != nil {
-		for i := range pefConfig.AlertPolicies {
-			out += format(pefConfig.AlertPolicies[i])
+	if pefConfigParams.AlertPolicies != nil {
+		for i := range pefConfigParams.AlertPolicies {
+			out += format(pefConfigParams.AlertPolicies[i])
 		}
 	}
-	if pefConfig.SystemGUID != nil {
-		out += format(pefConfig.SystemGUID)
+	if pefConfigParams.SystemGUID != nil {
+		out += format(pefConfigParams.SystemGUID)
 	}
-	if pefConfig.AlertStringsCount != nil {
-		out += format(pefConfig.AlertStringsCount)
+	if pefConfigParams.AlertStringsCount != nil {
+		out += format(pefConfigParams.AlertStringsCount)
 	}
-	if pefConfig.AlertStringKeys != nil {
-		for i := range pefConfig.AlertStringKeys {
-			out += format(pefConfig.AlertStringKeys[i])
+	if pefConfigParams.AlertStringKeys != nil {
+		for i := range pefConfigParams.AlertStringKeys {
+			out += format(pefConfigParams.AlertStringKeys[i])
 		}
 	}
-	if pefConfig.AlertStrings != nil {
-		for i := range pefConfig.AlertStrings {
-			out += format(pefConfig.AlertStrings[i])
+	if pefConfigParams.AlertStrings != nil {
+		for i := range pefConfigParams.AlertStrings {
+			out += format(pefConfigParams.AlertStrings[i])
 		}
 	}
-	if pefConfig.GroupControlsCount != nil {
-		out += format(pefConfig.GroupControlsCount)
+	if pefConfigParams.GroupControlsCount != nil {
+		out += format(pefConfigParams.GroupControlsCount)
 	}
-	if pefConfig.GroupControls != nil {
-		for i := range pefConfig.GroupControls {
-			out += format(pefConfig.GroupControls[i])
+	if pefConfigParams.GroupControls != nil {
+		for i := range pefConfigParams.GroupControls {
+			out += format(pefConfigParams.GroupControls[i])
 		}
 	}
 

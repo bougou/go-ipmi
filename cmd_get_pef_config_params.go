@@ -91,6 +91,10 @@ func (c *Client) GetPEFConfigParam(ctx context.Context, getRevisionOnly bool, pa
 }
 
 func (c *Client) GetPEFConfigParamFor(ctx context.Context, param PEFConfigParameter) error {
+	if isNilPEFConfigParameter(param) {
+		return nil
+	}
+
 	paramSelector, setSelector, blockSelector := param.PEFConfigParameter()
 
 	res, err := c.GetPEFConfigParam(ctx, false, paramSelector, setSelector, blockSelector)
@@ -105,8 +109,8 @@ func (c *Client) GetPEFConfigParamFor(ctx context.Context, param PEFConfigParame
 	return nil
 }
 
-func (c *Client) GetPEFConfig(ctx context.Context) (pefConfig *PEFConfig, err error) {
-	pefConfig = &PEFConfig{
+func (c *Client) GetPEFConfigParams(ctx context.Context) (pefConfigParams *PEFConfigParams, err error) {
+	pefConfigParams = &PEFConfigParams{
 		SetInProgress:       &PEFConfigParam_SetInProgress{},
 		Control:             &PEFConfigParam_Control{},
 		ActionGlobalControl: &PEFConfigParam_ActionGlobalControl{},
@@ -125,84 +129,84 @@ func (c *Client) GetPEFConfig(ctx context.Context) (pefConfig *PEFConfig, err er
 		// GroupControls:       []*PEFConfigParam_GroupControl{},
 	}
 
-	if err = c.GetPEFConfigFor(ctx, pefConfig); err != nil {
-		return nil, fmt.Errorf("GetPEFConfig failed, err: %w", err)
+	if err = c.GetPEFConfigParamsFor(ctx, pefConfigParams); err != nil {
+		return nil, fmt.Errorf("GetPEFConfigParamsFor failed, err: %w", err)
 	}
 
-	return pefConfig, nil
+	return pefConfigParams, nil
 }
 
-func (c *Client) GetPEFConfigFor(ctx context.Context, pefConfig *PEFConfig) error {
-	if pefConfig == nil {
+func (c *Client) GetPEFConfigParamsFor(ctx context.Context, pefConfigParams *PEFConfigParams) error {
+	if pefConfigParams == nil {
 		return nil
 	}
 
-	if pefConfig.SetInProgress != nil {
-		if err := c.GetPEFConfigParamFor(ctx, pefConfig.SetInProgress); err != nil {
+	if pefConfigParams.SetInProgress != nil {
+		if err := c.GetPEFConfigParamFor(ctx, pefConfigParams.SetInProgress); err != nil {
 			return err
 		}
 	}
 
-	if pefConfig.Control != nil {
-		if err := c.GetPEFConfigParamFor(ctx, pefConfig.Control); err != nil {
+	if pefConfigParams.Control != nil {
+		if err := c.GetPEFConfigParamFor(ctx, pefConfigParams.Control); err != nil {
 			return err
 		}
 	}
 
-	if pefConfig.ActionGlobalControl != nil {
-		if err := c.GetPEFConfigParamFor(ctx, pefConfig.ActionGlobalControl); err != nil {
+	if pefConfigParams.ActionGlobalControl != nil {
+		if err := c.GetPEFConfigParamFor(ctx, pefConfigParams.ActionGlobalControl); err != nil {
 			return err
 		}
 	}
 
-	if pefConfig.StartupDelay != nil {
-		if err := c.GetPEFConfigParamFor(ctx, pefConfig.StartupDelay); err != nil {
+	if pefConfigParams.StartupDelay != nil {
+		if err := c.GetPEFConfigParamFor(ctx, pefConfigParams.StartupDelay); err != nil {
 			return err
 		}
 	}
 
-	if pefConfig.AlertStartupDelay != nil {
-		if err := c.GetPEFConfigParamFor(ctx, pefConfig.AlertStartupDelay); err != nil {
+	if pefConfigParams.AlertStartupDelay != nil {
+		if err := c.GetPEFConfigParamFor(ctx, pefConfigParams.AlertStartupDelay); err != nil {
 			return err
 		}
 	}
 
 	eventFiltersCount := uint8(0)
-	if pefConfig.EventFiltersCount != nil {
-		if err := c.GetPEFConfigParamFor(ctx, pefConfig.AlertPoliciesCount); err != nil {
+	if pefConfigParams.EventFiltersCount != nil {
+		if err := c.GetPEFConfigParamFor(ctx, pefConfigParams.AlertPoliciesCount); err != nil {
 			return err
 		}
-		eventFiltersCount = pefConfig.EventFiltersCount.Value
+		eventFiltersCount = pefConfigParams.EventFiltersCount.Value
 	}
 
-	if pefConfig.EventFilters != nil {
-		if len(pefConfig.EventFilters) == 0 && eventFiltersCount > 0 {
-			pefConfig.EventFilters = make([]*PEFConfigParam_EventFilter, eventFiltersCount)
+	if pefConfigParams.EventFilters != nil {
+		if len(pefConfigParams.EventFilters) == 0 && eventFiltersCount > 0 {
+			pefConfigParams.EventFilters = make([]*PEFConfigParam_EventFilter, eventFiltersCount)
 			for i := uint8(0); i < eventFiltersCount; i++ {
-				pefConfig.EventFilters[i] = &PEFConfigParam_EventFilter{
+				pefConfigParams.EventFilters[i] = &PEFConfigParam_EventFilter{
 					SetSelector: i + 1,
 				}
 			}
 		}
 
-		for _, eventFilter := range pefConfig.EventFilters {
+		for _, eventFilter := range pefConfigParams.EventFilters {
 			if err := c.GetPEFConfigParamFor(ctx, eventFilter); err != nil {
 				return err
 			}
 		}
 	}
 
-	if pefConfig.EventFiltersData1 != nil {
-		if len(pefConfig.EventFiltersData1) == 0 && eventFiltersCount > 0 {
-			pefConfig.EventFiltersData1 = make([]*PEFConfigParam_EventFilterData1, eventFiltersCount)
+	if pefConfigParams.EventFiltersData1 != nil {
+		if len(pefConfigParams.EventFiltersData1) == 0 && eventFiltersCount > 0 {
+			pefConfigParams.EventFiltersData1 = make([]*PEFConfigParam_EventFilterData1, eventFiltersCount)
 			for i := uint8(0); i < eventFiltersCount; i++ {
-				pefConfig.EventFiltersData1[i] = &PEFConfigParam_EventFilterData1{
+				pefConfigParams.EventFiltersData1[i] = &PEFConfigParam_EventFilterData1{
 					SetSelector: i + 1,
 				}
 			}
 		}
 
-		for _, eventFilterData1 := range pefConfig.EventFiltersData1 {
+		for _, eventFilterData1 := range pefConfigParams.EventFiltersData1 {
 			if err := c.GetPEFConfigParamFor(ctx, eventFilterData1); err != nil {
 				return err
 			}
@@ -210,71 +214,71 @@ func (c *Client) GetPEFConfigFor(ctx context.Context, pefConfig *PEFConfig) erro
 	}
 
 	alertPoliciesCount := uint8(0)
-	if pefConfig.AlertPoliciesCount != nil {
-		if err := c.GetPEFConfigParamFor(ctx, pefConfig.AlertPoliciesCount); err != nil {
+	if pefConfigParams.AlertPoliciesCount != nil {
+		if err := c.GetPEFConfigParamFor(ctx, pefConfigParams.AlertPoliciesCount); err != nil {
 			return err
 		}
-		alertPoliciesCount = pefConfig.AlertPoliciesCount.Value
+		alertPoliciesCount = pefConfigParams.AlertPoliciesCount.Value
 	}
 
-	if pefConfig.AlertPolicies != nil {
-		if len(pefConfig.AlertPolicies) == 0 && alertPoliciesCount > 0 {
-			pefConfig.AlertPolicies = make([]*PEFConfigParam_AlertPolicy, alertPoliciesCount)
+	if pefConfigParams.AlertPolicies != nil {
+		if len(pefConfigParams.AlertPolicies) == 0 && alertPoliciesCount > 0 {
+			pefConfigParams.AlertPolicies = make([]*PEFConfigParam_AlertPolicy, alertPoliciesCount)
 			for i := uint8(0); i < alertPoliciesCount; i++ {
-				pefConfig.AlertPolicies[i] = &PEFConfigParam_AlertPolicy{
+				pefConfigParams.AlertPolicies[i] = &PEFConfigParam_AlertPolicy{
 					SetSelector: i + 1,
 				}
 			}
 		}
 
-		for _, alertPolicy := range pefConfig.AlertPolicies {
+		for _, alertPolicy := range pefConfigParams.AlertPolicies {
 			if err := c.GetPEFConfigParamFor(ctx, alertPolicy); err != nil {
 				return err
 			}
 		}
 	}
 
-	if pefConfig.SystemGUID != nil {
-		if err := c.GetPEFConfigParamFor(ctx, pefConfig.SystemGUID); err != nil {
+	if pefConfigParams.SystemGUID != nil {
+		if err := c.GetPEFConfigParamFor(ctx, pefConfigParams.SystemGUID); err != nil {
 			return err
 		}
 	}
 
 	alertStringsCount := uint8(0)
-	if pefConfig.AlertStringsCount != nil {
-		if err := c.GetPEFConfigParamFor(ctx, pefConfig.AlertStringsCount); err != nil {
+	if pefConfigParams.AlertStringsCount != nil {
+		if err := c.GetPEFConfigParamFor(ctx, pefConfigParams.AlertStringsCount); err != nil {
 			return err
 		}
 	}
 
-	if pefConfig.AlertStringKeys != nil {
-		if len(pefConfig.AlertStringKeys) == 0 && alertStringsCount > 0 {
-			pefConfig.AlertStringKeys = make([]*PEFConfigParam_AlertStringKey, alertStringsCount)
+	if pefConfigParams.AlertStringKeys != nil {
+		if len(pefConfigParams.AlertStringKeys) == 0 && alertStringsCount > 0 {
+			pefConfigParams.AlertStringKeys = make([]*PEFConfigParam_AlertStringKey, alertStringsCount)
 			for i := uint8(0); i < alertStringsCount; i++ {
-				pefConfig.AlertStringKeys[i] = &PEFConfigParam_AlertStringKey{
+				pefConfigParams.AlertStringKeys[i] = &PEFConfigParam_AlertStringKey{
 					SetSelector: i,
 				}
 			}
 		}
 
-		for _, alertStringKey := range pefConfig.AlertStringKeys {
+		for _, alertStringKey := range pefConfigParams.AlertStringKeys {
 			if err := c.GetPEFConfigParamFor(ctx, alertStringKey); err != nil {
 				return err
 			}
 		}
 	}
 
-	if pefConfig.AlertStrings != nil {
-		if len(pefConfig.AlertStrings) == 0 && alertStringsCount > 0 {
-			pefConfig.AlertStrings = make([]*PEFConfigParam_AlertString, alertStringsCount)
+	if pefConfigParams.AlertStrings != nil {
+		if len(pefConfigParams.AlertStrings) == 0 && alertStringsCount > 0 {
+			pefConfigParams.AlertStrings = make([]*PEFConfigParam_AlertString, alertStringsCount)
 			for i := uint8(0); i < alertStringsCount; i++ {
-				pefConfig.AlertStrings[i] = &PEFConfigParam_AlertString{
+				pefConfigParams.AlertStrings[i] = &PEFConfigParam_AlertString{
 					SetSelector: i,
 				}
 			}
 		}
 
-		for _, alertString := range pefConfig.AlertStrings {
+		for _, alertString := range pefConfigParams.AlertStrings {
 			if err := c.GetPEFConfigParamFor(ctx, alertString); err != nil {
 				return err
 			}
@@ -282,23 +286,23 @@ func (c *Client) GetPEFConfigFor(ctx context.Context, pefConfig *PEFConfig) erro
 	}
 
 	groupControlsCount := uint8(0)
-	if pefConfig.GroupControlsCount != nil {
-		if err := c.GetPEFConfigParamFor(ctx, pefConfig.GroupControlsCount); err != nil {
+	if pefConfigParams.GroupControlsCount != nil {
+		if err := c.GetPEFConfigParamFor(ctx, pefConfigParams.GroupControlsCount); err != nil {
 			return err
 		}
 	}
 
-	if pefConfig.GroupControls != nil {
-		if len(pefConfig.GroupControls) == 0 && groupControlsCount > 0 {
-			pefConfig.GroupControls = make([]*PEFConfigParam_GroupControl, groupControlsCount)
+	if pefConfigParams.GroupControls != nil {
+		if len(pefConfigParams.GroupControls) == 0 && groupControlsCount > 0 {
+			pefConfigParams.GroupControls = make([]*PEFConfigParam_GroupControl, groupControlsCount)
 			for i := uint8(0); i < groupControlsCount; i++ {
-				pefConfig.GroupControls[i] = &PEFConfigParam_GroupControl{
+				pefConfigParams.GroupControls[i] = &PEFConfigParam_GroupControl{
 					SetSelector: i,
 				}
 			}
 		}
 
-		for _, groupControl := range pefConfig.GroupControls {
+		for _, groupControl := range pefConfigParams.GroupControls {
 			if err := c.GetPEFConfigParamFor(ctx, groupControl); err != nil {
 				return err
 			}

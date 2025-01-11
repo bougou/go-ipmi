@@ -17,7 +17,6 @@ var (
 
 func isNilDCMIConfigParameter(param DCMIConfigParameter) bool {
 	switch v := param.(type) {
-	// MUST not put multiple types on the same case.
 	case *DCMIConfigParam_ActivateDHCP:
 		return v == nil
 	case *DCMIConfigParam_DiscoveryConfiguration:

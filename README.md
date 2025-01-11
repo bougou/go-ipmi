@@ -200,16 +200,19 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 
 ### PEF and Alerting Commands
 
-| Method                  | Status             | corresponding ipmitool usage |
-| ----------------------- | ------------------ | ---------------------------- |
-| GetPEFCapabilities      | :white_check_mark: | pef capabilities             |
-| ArmPEFPostponeTimer     |                    |                              |
-| SetPEFConfigParam       |                    |                              |
-| GetPEFConfigParam       |                    |                              |
-| SetLastProcessedEventId |                    |                              |
-| GetLastProcessedEventId |                    |                              |
-| AlertImmediate          |                    |                              |
-| PEFAck                  |                    |                              |
+| Method                    | Status             | corresponding ipmitool usage |
+| ------------------------- | ------------------ | ---------------------------- |
+| GetPEFCapabilities        | :white_check_mark: | pef capabilities             |
+| ArmPEFPostponeTimer       |                    |                              |
+| SetPEFConfigParam         |                    |                              |
+| GetPEFConfigParam         |                    |                              |
+| GetPEFConfigParamFor (*)  |                    |                              |
+| GetPEFConfigParams (*)    |                    |                              |
+| GetPEFConfigParamsFor (*) |                    |                              |
+| SetLastProcessedEventId   |                    |                              |
+| GetLastProcessedEventId   |                    |                              |
+| AlertImmediate            |                    |                              |
+| PEFAck                    |                    |                              |
 
 ### Sensor Device Commands
 

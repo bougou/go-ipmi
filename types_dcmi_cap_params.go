@@ -19,7 +19,6 @@ var (
 
 func isNilDCMICapParameter(param DCMICapParameter) bool {
 	switch v := param.(type) {
-	// MUST not put multiple types on the same case.
 	case *DCMICapParam_SupportedDCMICapabilities:
 		return v == nil
 	case *DCMICapParam_MandatoryPlatformAttributes:
