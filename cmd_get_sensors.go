@@ -209,12 +209,8 @@ func (c *Client) sdrToSensor(ctx context.Context, sdr *SDR) (*Sensor, error) {
 func (c *Client) fillSensorReading(ctx context.Context, sensor *Sensor) error {
 
 	readingRes, err := c.GetSensorReading(ctx, sensor.Number)
-	if err != nil {
-		if _canSafelyIgnoredResponseError(err) {
-			c.Debug(fmt.Sprintf("GetSensorReading for sensor %#02x failed but skipped", sensor.Number), err)
-			return nil
-		}
-		return fmt.Errorf("GetSensorReading for sensor %#02x failed, err: %s", sensor.Number, err)
+	if _canIgnoreSensorErr(err) != nil {
+		return fmt.Errorf("GetSensorReading for sensor %#02x failed, err: %w", sensor.Number, err)
 	}
 
 	sensor.Raw = readingRes.Reading
@@ -234,12 +230,8 @@ func (c *Client) fillSensorReading(ctx context.Context, sensor *Sensor) error {
 // fillSensorDiscrete retrieves and fills extra sensor attributes for given discrete sensor.
 func (c *Client) fillSensorDiscrete(ctx context.Context, sensor *Sensor) error {
 	statusRes, err := c.GetSensorEventStatus(ctx, sensor.Number)
-	if err != nil {
-		if _canSafelyIgnoredResponseError(err) {
-			c.Debug(fmt.Sprintf("GetSensorEventStatus for sensor %#02x failed but skipped", sensor.Number), err)
-			return nil
-		}
-		return fmt.Errorf("GetSensorEventStatus for sensor %#02x failed, err: %s", sensor.Number, err)
+	if _canIgnoreSensorErr(err) != nil {
+		return fmt.Errorf("GetSensorEventStatus for sensor %#02x failed, err: %w", sensor.Number, err)
 	}
 	sensor.OccurredEvents = statusRes.SensorEventFlag.TrueEvents()
 	return nil
@@ -255,23 +247,15 @@ func (c *Client) fillSensorThreshold(ctx context.Context, sensor *Sensor) error 
 	// see 36.2 Non-Linear Sensors
 	if sensor.Threshold.LinearizationFunc.IsNonLinear() {
 		factorsRes, err := c.GetSensorReadingFactors(ctx, sensor.Number, sensor.Raw)
-		if err != nil {
-			if _canSafelyIgnoredResponseError(err) {
-				c.Debug(fmt.Sprintf("GetSensorReadingFactors for sensor %#02x failed but skipped", sensor.Number), err)
-				return nil
-			}
-			return fmt.Errorf("GetSensorReadingFactors for sensor %#02x failed, err: %s", sensor.Number, err)
+		if _canIgnoreSensorErr(err) != nil {
+			return fmt.Errorf("GetSensorReadingFactors for sensor %#02x failed, err: %w", sensor.Number, err)
 		}
 		sensor.Threshold.ReadingFactors = factorsRes.ReadingFactors
 	}
 
 	thresholdRes, err := c.GetSensorThresholds(ctx, sensor.Number)
-	if err != nil {
-		if _canSafelyIgnoredResponseError(err) {
-			c.Debug(fmt.Sprintf("GetSensorThresholds for sensor %#02x failed but skipped", sensor.Number), err)
-			return nil
-		}
-		return fmt.Errorf("GetSensorThresholds for sensor %#02x failed, err: %s", sensor.Number, err)
+	if _canIgnoreSensorErr(err) != nil {
+		return fmt.Errorf("GetSensorThresholds for sensor %#02x failed, err: %w", sensor.Number, err)
 	}
 	sensor.Threshold.Mask.UNR.Readable = thresholdRes.UNR_Readable
 	sensor.Threshold.Mask.UCR.Readable = thresholdRes.UCR_Readable
@@ -293,12 +277,8 @@ func (c *Client) fillSensorThreshold(ctx context.Context, sensor *Sensor) error 
 	sensor.Threshold.UNR = sensor.ConvertReading(thresholdRes.UNR_Raw)
 
 	hysteresisRes, err := c.GetSensorHysteresis(ctx, sensor.Number)
-	if err != nil {
-		if _canSafelyIgnoredResponseError(err) {
-			c.Debug(fmt.Sprintf("GetSensorHysteresis for sensor %#02x failed but skipped", sensor.Number), err)
-			return nil
-		}
-		return fmt.Errorf("GetSensorHysteresis for sensor %#02x failed, err: %s", sensor.Number, err)
+	if _canIgnoreSensorErr(err) != nil {
+		return fmt.Errorf("GetSensorHysteresis for sensor %#02x failed, err: %w", sensor.Number, err)
 	}
 	sensor.Threshold.PositiveHysteresisRaw = hysteresisRes.PositiveRaw
 	sensor.Threshold.NegativeHysteresisRaw = hysteresisRes.NegativeRaw
@@ -308,16 +288,14 @@ func (c *Client) fillSensorThreshold(ctx context.Context, sensor *Sensor) error 
 	return nil
 }
 
-// If the err is a ResponseError and the completion code wrapped
-// in ResponseError can be safely ignored
-func _canSafelyIgnoredResponseError(err error) bool {
-	if respErr, ok := err.(*ResponseError); ok {
-		cc := respErr.CompletionCode()
-		if cc == CompletionCodeRequestedDataNotPresent || cc == CompletionCodeIllegalCommand || cc == CompletionCodeInvalidCommand {
-			// above completion codes CAN be ignored
-			// it normally means the sensor device does not exist or the sensor device does not recognize the IPMI command
-			return true
-		}
-	}
-	return false
+func _canIgnoreSensorErr(err error) error {
+	canIgnore := buildCanIgnoreFn(
+		// the following completion codes CAN be ignored,
+		// it normally means the sensor device does not exist or the sensor device does not recognize the IPMI command
+		uint8(CompletionCodeRequestedDataNotPresent),
+		uint8(CompletionCodeIllegalCommand),
+		uint8(CompletionCodeInvalidCommand),
+	)
+
+	return canIgnore(err)
 }

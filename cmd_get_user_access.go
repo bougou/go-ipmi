@@ -126,7 +126,6 @@ func (c *Client) ListUser(ctx context.Context, channelNumber uint8) ([]*User, er
 			if !ok || uint8(respErr.CompletionCode()) != 0xcc {
 				return nil, fmt.Errorf("get user name for userID %d failed, err: %s", userID, err)
 			}
-
 			// Completion Code is 0xcc, means this UserID is not set.
 			username = ""
 		} else {
