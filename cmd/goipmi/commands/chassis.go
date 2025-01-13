@@ -274,9 +274,9 @@ func NewCmdChassisBootParamGet() *cobra.Command {
 				CheckErr(fmt.Errorf("param %s must be a valid integer in range (0-127), err: %s", paramSelector, err))
 			}
 
-			res, err := client.GetSystemBootOptions(ctx, ipmi.BootOptionParamSelector(i), 0x00, 0x00)
+			res, err := client.GetSystemBootOptionsParam(ctx, ipmi.BootOptionParamSelector(i), 0x00, 0x00)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSystemBootOptions failed, err: %w", err))
+				CheckErr(fmt.Errorf("GetSystemBootOptionsParam failed, err: %w", err))
 			}
 
 			fmt.Println(res.Format())
@@ -329,7 +329,7 @@ func NewCmdChassisBootParamSet() *cobra.Command {
 			}
 
 			ctx := context.Background()
-			if err := client.SetSystemBootOptionsFor(ctx, param); err != nil {
+			if err := client.SetSystemBootOptionsParamFor(ctx, param); err != nil {
 				CheckErr(fmt.Errorf("SetSystemBootOptionsFor failed, err: %w", err))
 			}
 

@@ -181,9 +181,10 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 | SetPowerRestorePolicy             | :white_check_mark: | chassis policy list/always-on/previous/always-off |
 | GetSystemRestartCause             | :white_check_mark: | chassis restart_cause                             |
 | SetBootParamBootFlags (*)         | :white_check_mark: | chassis bootdev                                   |
-| SetSystemBootOptions              | :white_check_mark: | chassis bootparam set                             |
-| GetSystemBootOptions              | :white_check_mark: | chassis bootparam get                             |
-| GetSystemBootOptionsFor (*)       | :white_check_mark: | chassis bootparam get                             |
+| SetBootDevice (*)                 | :white_check_mark: | chassis bootdev                                   |
+| SetSystemBootOptionsParam         | :white_check_mark: | chassis bootparam set                             |
+| GetSystemBootOptionsParam         | :white_check_mark: | chassis bootparam get                             |
+| GetSystemBootOptionsParamFor (*)  | :white_check_mark: | chassis bootparam get                             |
 | GetSystemBootOptionsParams (*)    | :white_check_mark: | chassis bootparam get                             |
 | GetSystemBootOptionsParamsFor (*) | :white_check_mark: | chassis bootparam get                             |
 | SetFrontPanelEnables              | :white_check_mark: |                                                   |

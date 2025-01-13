@@ -10,7 +10,7 @@ func (c *Client) SetBootParamSetInProgress(ctx context.Context, setInProgress Se
 		Value: setInProgress,
 	}
 
-	if err := c.SetSystemBootOptionsFor(ctx, param); err != nil {
+	if err := c.SetSystemBootOptionsParamFor(ctx, param); err != nil {
 		return fmt.Errorf("SetSystemBootOptionsFor failed, err: %w", err)
 	}
 
@@ -21,7 +21,7 @@ func (c *Client) SetBootParamBootFlags(ctx context.Context, bootFlags *BootOptio
 	if err := c.SetBootParamSetInProgress(ctx, SetInProgress_SetInProgress); err != nil {
 		goto OUT
 	} else {
-		if err := c.SetSystemBootOptionsFor(ctx, bootFlags); err != nil {
+		if err := c.SetSystemBootOptionsParamFor(ctx, bootFlags); err != nil {
 			return fmt.Errorf("SetSystemBootOptions failed, err: %w", err)
 		}
 	}
@@ -50,7 +50,7 @@ func (c *Client) SetBootParamClearAck(ctx context.Context, by BootInfoAcknowledg
 		param.ByOEM = true
 	}
 
-	if err := c.SetSystemBootOptionsFor(ctx, param); err != nil {
+	if err := c.SetSystemBootOptionsParamFor(ctx, param); err != nil {
 		return fmt.Errorf("SetSystemBootOptionsFor failed, err: %w", err)
 	}
 
@@ -68,7 +68,7 @@ func (c *Client) SetBootDevice(ctx context.Context, bootDeviceSelector BootDevic
 		BootDeviceSelector: bootDeviceSelector,
 	}
 
-	if err := c.SetSystemBootOptionsFor(ctx, param); err != nil {
+	if err := c.SetSystemBootOptionsParamFor(ctx, param); err != nil {
 		return fmt.Errorf("SetSystemBootOptions failed, err: %w", err)
 	}
 
