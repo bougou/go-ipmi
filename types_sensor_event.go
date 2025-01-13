@@ -76,6 +76,8 @@ func (events SensorEvents) FilterDiscrete() SensorEvents {
 
 // SensorEventFlag holds a struct with fields indicating the specified sensor event is set or not.
 // SensorEventFlag was embedded in Sensor related commands.
+//
+// For sensors with discrete events, the fields named with prefix `SensorEvent_State_*` is meaningful. Other fields are for sensors with threshold based events.
 type SensorEventFlag struct {
 	SensorEvent_UNC_High_Assert bool
 	SensorEvent_UNC_Low_Assert  bool

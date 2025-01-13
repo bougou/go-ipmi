@@ -11,7 +11,7 @@ type GetCommandEnablesRequest struct {
 	LUN              uint8
 
 	CodeForNetFn2C uint8
-	OEM_IANA       uint32 // 3 bytes only
+	OEMIANA        uint32 // 3 bytes only
 }
 
 type GetCommandEnablesResponse struct {
@@ -38,7 +38,7 @@ func (req *GetCommandEnablesRequest) Pack() []byte {
 	}
 
 	if uint8(req.NetFn) == 0x2e {
-		packUint24L(req.OEM_IANA, out, 3)
+		packUint24L(req.OEMIANA, out, 3)
 		return out[0:6]
 	}
 
@@ -71,7 +71,7 @@ func (c *Client) GetCommandEnables(ctx context.Context, channelNumber uint8, com
 		NetFn:            netFn,
 		LUN:              lun,
 		CodeForNetFn2C:   code,
-		OEM_IANA:         oemIANA,
+		OEMIANA:          oemIANA,
 	}
 	response = &GetCommandEnablesResponse{}
 	err = c.Exchange(ctx, request, response)

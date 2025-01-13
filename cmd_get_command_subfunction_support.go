@@ -11,7 +11,7 @@ type GetCommandSubfunctionSupportRequest struct {
 	Cmd   uint8
 
 	CodeForNetFn2C uint8
-	OEM_IANA       uint32 // 3 bytes only
+	OEMIANA        uint32 // 3 bytes only
 }
 
 type GetCommandSubfunctionSupportResponse struct {
@@ -44,7 +44,7 @@ func (req *GetCommandSubfunctionSupportRequest) Pack() []byte {
 	}
 
 	if uint8(req.NetFn) == 0x2e {
-		packUint24L(req.OEM_IANA, out, 4)
+		packUint24L(req.OEMIANA, out, 4)
 		return out[0:7]
 	}
 
@@ -83,7 +83,7 @@ func (c *Client) GetCommandSubfunctionSupport(ctx context.Context, channelNumber
 		NetFn:          netFn,
 		LUN:            lun,
 		CodeForNetFn2C: code,
-		OEM_IANA:       oemIANA,
+		OEMIANA:        oemIANA,
 	}
 	response = &GetCommandSubfunctionSupportResponse{}
 	err = c.Exchange(ctx, request, response)

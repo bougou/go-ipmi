@@ -4,7 +4,7 @@
 
 # [go-ipmi](https://github.com/bougou/go-ipmi)
 
-[`go-ipmi`](https://github.com/bougou/go-ipmi) is a pure golang native IPMI library. It DOES NOT wraps `ipmitool`.
+[`go-ipmi`](https://github.com/bougou/go-ipmi) is a pure Golang native IPMI library. It DOES NOT wrap `ipmitool`.
 
 ## Usage
 
@@ -21,28 +21,28 @@ func main() {
 	password := "123456"
 
 	client, err := ipmi.NewClient(host, port, username, password)
-	// Support local mode client if runs directly on linux
+	// Supports local mode client when running directly on Linux
 	// client, err := ipmi.NewOpenClient()
 	if err != nil {
 		panic(err)
 	}
 
-	// you can optionally open debug switch
+	// You can optionally enable debug mode
 	// client.WithDebug(true)
 
-	// you can set interface type, enum range: open/lan/lanplus/tool, default open
+	// You can set the interface type. Valid options are: open/lan/lanplus/tool (default: open)
 	// client.WithInterface(ipmi.InterfaceLanplus)
 
-	// !!! Note !!!,
-	// From v0.6.0, all IPMI command methods of the Client accept a context as the first argument.
+	// !!! Note !!!
+	// From v0.6.0, all IPMI command methods of the Client require a context as the first argument.
 	ctx := context.Background()
 
-	// Connect will create an authenticated session for you.
+	// Connect creates an authenticated session
 	if err := client.Connect(ctx); err != nil {
 		panic(err)
 	}
 
-	// Now you can execute other IPMI commands that need authentication.
+	// Now you can execute other IPMI commands that require authentication
 
 	res, err := client.GetDeviceID(ctx)
 	if err != nil {
@@ -60,27 +60,27 @@ func main() {
 
 ## `goipmi` binary
 
-The `goipmi` is a binary tool which provides the same command usages like `ipmitool`.
-The `goipmi` calls `go-ipmi` library underlying.
+The `goipmi` binary provides command usage similar to `ipmitool`.
+The `goipmi` tool uses the `go-ipmi` library under the hood.
 
-The purpose of creating `goipmi` tool was not intended to substitute `ipmitool`.
-It was just used to verify the correctness of `go-ipmi` library.
+The purpose of creating the `goipmi` tool was not to substitute `ipmitool`.
+It was created to verify the correctness of the `go-ipmi` library.
 
 ## Functions Comparison with ipmitool
 
-Each command defined in the IPMI specification is a pair of request/response messages.
+Each command defined in the IPMI specification consists of a pair of request/response messages.
 These IPMI commands are implemented as methods of the `ipmi.Client` struct in this library.
 
-Some `ipmitool` cmdline usages are implemented by calling just one IPMI command,
-but others are not. Like `ipmitool sdr list`, it's a loop of `GetSDR` IPMI command.
+Some `ipmitool` command line operations are implemented by calling just one IPMI command,
+while others are not. For example, `ipmitool sdr list` involves a loop of `GetSDR` IPMI commands.
 
-So this library also implements some methods that are not IPMI commands defined
-in IPMI specification, but just some common helpers, like `GetSDRs` to get all SDRs.
-These methods are marked with an asterisk (*) after the method name in the following docs.
+This library also implements some helper methods that are not IPMI commands defined
+in the IPMI specification, but are common utilities, like `GetSDRs` to get all SDRs.
+These methods are marked with an asterisk (*) after the method name in the following documentation.
 
-The implementation logic of IPMI commands are almost same. See [Contributing](./CONTRIBUTING.md)
+The implementation logic of IPMI commands is largely consistent. See [Contributing](./CONTRIBUTING.md)
 
-> More commands are ongoing ...
+> More commands are in development...
 
 ### IPM Device Global Commands
 
@@ -97,13 +97,13 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 | GetDeviceGUID                      | :white_check_mark: |                               |
 | GetNetFnSupport                    | :white_check_mark: |                               |
 | GetCommandSupport                  | :white_check_mark: |                               |
-| GetCommandSubfunctionSupport       |                    |                               |
+| GetCommandSubfunctionSupport       | :white_check_mark: |                               |
 | GetConfigurableCommands            | :white_check_mark: |                               |
-| GetConfigurableCommandSubfunctions |                    |                               |
-| SetCommandEnables                  |                    |                               |
+| GetConfigurableCommandSubfunctions | :white_check_mark: |                               |
+| SetCommandEnables                  | :white_check_mark: |                               |
 | GetCommandEnables                  | :white_check_mark: |                               |
-| GetCommandSubfunctionsEnables      | :white_check_mark: |                               |
-| GetSubfunctionsEnables             |                    |                               |
+| SetCommandSubfunctionEnables       | :white_check_mark: |                               |
+| GetCommandSubfunctionEnables       | :white_check_mark: |                               |
 | GetOEMNetFnIanaSupport             |                    |                               |
 
 ### BMC Watchdog Timer Commands
@@ -126,9 +126,10 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 | GetMessage                     | :white_check_mark: |                              |
 | SendMessage                    | :white_check_mark: |                              |
 | ReadEventMessageBuffer         | :white_check_mark: |                              |
-| GetBTInterfaceCapabilities     |                    |                              |
+| GetBTInterfaceCapabilities     | :white_check_mark: |                              |
 | GetSystemGUID                  | :white_check_mark: | mc guid                      |
-| SetSystemInfoParam             |                    |                              |
+| SetSystemInfoParam             | :white_check_mark: |                              |
+| SetSystemInfoParamFor (*)      | :white_check_mark: |                              |
 | GetSystemInfoParam             | :white_check_mark: |                              |
 | GetSystemInfoParamFor (*)      | :white_check_mark: |                              |
 | GetSystemInfoParams (*)        | :white_check_mark: |                              |
@@ -153,19 +154,19 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 | GetUsername                    | :white_check_mark: |
 | SetUserPassword                | :white_check_mark: | user set password            |
 | TestUserPassword (*)           | :white_check_mark: | user test                    |
-| ActivatePayload                |                    |                              |
-| DeactivatePayload              |                    |                              |
-| GetPayloadActivationStatus     |                    |                              |
-| GetPayloadInstanceInfo         |                    |                              |
-| SetUserPayloadAccess           |                    |                              |
-| GetUserPayloadAccess           |                    | sol payload status           |
-| GetChannelPayloadSupport       |                    |                              |
-| GetChannelPayloadVersion       |                    |                              |
-| GetChannelOEMPayloadInfo       |                    |                              |
-| MasterWriteRead                |                    |                              |
+| ActivatePayload                | :white_check_mark: |                              |
+| DeactivatePayload              | :white_check_mark: |                              |
+| GetPayloadActivationStatus     | :white_check_mark: |                              |
+| GetPayloadInstanceInfo         | :white_check_mark: |                              |
+| SetUserPayloadAccess           | :white_check_mark: |                              |
+| GetUserPayloadAccess           | :white_check_mark: | sol payload status           |
+| GetChannelPayloadSupport       | :white_check_mark: |                              |
+| GetChannelPayloadVersion       | :white_check_mark: |                              |
+| GetChannelOEMPayloadInfo       | :white_check_mark: |                              |
+| MasterWriteRead                | :white_check_mark: |                              |
 | GetChannelCipherSuites         | :white_check_mark: |                              |
-| SuspendOrResumeEncryption      |                    |                              |
-| SetChannelCipherSuites         |                    |                              |
+| SuspendResumePayloadEncryption | :white_check_mark: |                              |
+| SetChannelSecurityKeys         | :white_check_mark: |                              |
 | GetSystemInterfaceCapabilities | :white_check_mark: |                              |
 
 ### Chassis Device Commands
@@ -204,16 +205,16 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 | Method                    | Status             | corresponding ipmitool usage |
 | ------------------------- | ------------------ | ---------------------------- |
 | GetPEFCapabilities        | :white_check_mark: | pef capabilities             |
-| ArmPEFPostponeTimer       |                    |                              |
-| SetPEFConfigParam         |                    |                              |
-| GetPEFConfigParam         |                    |                              |
-| GetPEFConfigParamFor (*)  |                    |                              |
-| GetPEFConfigParams (*)    |                    |                              |
-| GetPEFConfigParamsFor (*) |                    |                              |
-| SetLastProcessedEventId   |                    |                              |
-| GetLastProcessedEventId   |                    |                              |
-| AlertImmediate            |                    |                              |
-| PEFAck                    |                    |                              |
+| ArmPEFPostponeTimer       | :white_check_mark: |                              |
+| SetPEFConfigParam         | :white_check_mark: |                              |
+| GetPEFConfigParam         | :white_check_mark: |                              |
+| GetPEFConfigParamFor (*)  | :white_check_mark: |                              |
+| GetPEFConfigParams (*)    | :white_check_mark: |                              |
+| GetPEFConfigParamsFor (*) | :white_check_mark: |                              |
+| SetLastProcessedEventId   | :white_check_mark: |                              |
+| GetLastProcessedEventId   | :white_check_mark: |                              |
+| AlertImmediate            | :white_check_mark: |                              |
+| PETAcknowledge            | :white_check_mark: |                              |
 
 ### Sensor Device Commands
 
@@ -227,9 +228,9 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 | GetSensorHysteresis            | :white_check_mark: |                              |
 | SetSensorThresholds            | :white_check_mark: |                              |
 | GetSensorThresholds            | :white_check_mark: |                              |
-| SetSensorEventEnable           |                    |                              |
+| SetSensorEventEnable           | :white_check_mark: |                              |
 | GetSensorEventEnable           | :white_check_mark: |                              |
-| RearmSensorEvents              |                    |                              |
+| RearmSensorEvents              | :white_check_mark: |                              |
 | GetSensorEventStatus           | :white_check_mark: |                              |
 | GetSensorReading               | :white_check_mark: |                              |
 | SetSensorType                  | :white_check_mark: |                              |
