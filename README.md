@@ -394,10 +394,10 @@ The implementation logic of IPMI commands are almost same. See [Contributing](./
 
 | Method                          | Status             | corresponding ipmitool usage |
 | ------------------------------- | ------------------ | ---------------------------- |
-| GetDCMICapabilitiesInfo         | :white_check_mark: | dcmi discovery               |
-| GetDCMICapabilitiesInfoFor (*)  | :white_check_mark: | dcmi discovery               |
-| GetDCMICapabilities (*)         | :white_check_mark: | dcmi discovery               |
-| GetDCMICapabilitiesFor (*)      | :white_check_mark: | dcmi discovery               |
+| GetDCMICapParam                 | :white_check_mark: | dcmi discovery               |
+| GetDCMICapParamFor (*)          | :white_check_mark: | dcmi discovery               |
+| GetDCMICapParams (*)            | :white_check_mark: | dcmi discovery               |
+| GetDCMICapParamsFor (*)         | :white_check_mark: | dcmi discovery               |
 | GetDCMIPowerReading             | :white_check_mark: | dcmi power reading           |
 | GetDCMIPowerLimit               | :white_check_mark: | dcmi power get_limit         |
 | SetDCMIPowerLimit               | :white_check_mark: | dcmi power set_limit         |

@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// GetDCMICapabilitiesInfoRequest provides version information for DCMI and information about
+// GetDCMICapParamRequest provides version information for DCMI and information about
 // the mandatory and optional DCMI capabilities that are available on the particular platform.
 //
 // The command is session-less and can be called similar to the Get Authentication Capability command.
@@ -13,22 +13,22 @@ import (
 // the features are configured.
 //
 // [DCMI specification v1.5] 6.1.1 Get DCMI Capabilities Info Command
-type GetDCMICapabilitiesInfoRequest struct {
+type GetDCMICapParamRequest struct {
 	ParamSelector DCMICapParamSelector
 }
 
-type GetDCMICapabilitiesInfoResponse struct {
+type GetDCMICapParamResponse struct {
 	MajorVersion  uint8
 	MinorVersion  uint8
 	ParamRevision uint8
 	ParamData     []byte
 }
 
-func (req *GetDCMICapabilitiesInfoRequest) Pack() []byte {
+func (req *GetDCMICapParamRequest) Pack() []byte {
 	return []byte{GroupExtensionDCMI, byte(req.ParamSelector)}
 }
 
-func (req *GetDCMICapabilitiesInfoRequest) Unpack(msg []byte) error {
+func (req *GetDCMICapParamRequest) Unpack(msg []byte) error {
 	if len(msg) < 2 {
 		return ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
@@ -38,15 +38,15 @@ func (req *GetDCMICapabilitiesInfoRequest) Unpack(msg []byte) error {
 	return nil
 }
 
-func (req *GetDCMICapabilitiesInfoRequest) Command() Command {
-	return CommandGetDCMICapabilitiesInfo
+func (req *GetDCMICapParamRequest) Command() Command {
+	return CommandGetDCMICapParam
 }
 
-func (res *GetDCMICapabilitiesInfoResponse) CompletionCodes() map[uint8]string {
+func (res *GetDCMICapParamResponse) CompletionCodes() map[uint8]string {
 	return map[uint8]string{}
 }
 
-func (res *GetDCMICapabilitiesInfoResponse) Pack() []byte {
+func (res *GetDCMICapParamResponse) Pack() []byte {
 	out := make([]byte, 4+len(res.ParamData))
 
 	out[0] = GroupExtensionDCMI
@@ -58,7 +58,7 @@ func (res *GetDCMICapabilitiesInfoResponse) Pack() []byte {
 	return out
 }
 
-func (res *GetDCMICapabilitiesInfoResponse) Unpack(msg []byte) error {
+func (res *GetDCMICapParamResponse) Unpack(msg []byte) error {
 	if len(msg) < 5 {
 		return ErrUnpackedDataTooShortWith(len(msg), 5)
 	}
@@ -75,7 +75,7 @@ func (res *GetDCMICapabilitiesInfoResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *GetDCMICapabilitiesInfoResponse) Format() string {
+func (res *GetDCMICapParamResponse) Format() string {
 	return fmt.Sprintf(`
   Major version  : %d
   Minor version  : %d
@@ -88,22 +88,22 @@ func (res *GetDCMICapabilitiesInfoResponse) Format() string {
 	)
 }
 
-func (c *Client) GetDCMICapabilitiesInfo(ctx context.Context, paramSelector DCMICapParamSelector) (response *GetDCMICapabilitiesInfoResponse, err error) {
-	request := &GetDCMICapabilitiesInfoRequest{ParamSelector: paramSelector}
-	response = &GetDCMICapabilitiesInfoResponse{}
+func (c *Client) GetDCMICapParam(ctx context.Context, paramSelector DCMICapParamSelector) (response *GetDCMICapParamResponse, err error) {
+	request := &GetDCMICapParamRequest{ParamSelector: paramSelector}
+	response = &GetDCMICapParamResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) GetDCMICapabilitiesInfoFor(ctx context.Context, param DCMICapParameter) error {
+func (c *Client) GetDCMICapParamFor(ctx context.Context, param DCMICapParameter) error {
 	if isNilDCMICapParameter(param) {
 		return nil
 	}
 
 	paramSelector := param.DCMICapParameter()
 
-	request := &GetDCMICapabilitiesInfoRequest{ParamSelector: paramSelector}
-	response := &GetDCMICapabilitiesInfoResponse{}
+	request := &GetDCMICapParamRequest{ParamSelector: paramSelector}
+	response := &GetDCMICapParamResponse{}
 	if err := c.Exchange(ctx, request, response); err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func (c *Client) GetDCMICapabilitiesInfoFor(ctx context.Context, param DCMICapPa
 	return nil
 }
 
-func (c *Client) GetDCMICapabilities(ctx context.Context) (*DCMICapParams, error) {
+func (c *Client) GetDCMICapParams(ctx context.Context) (*DCMICapParams, error) {
 	dcmiCapParams := &DCMICapParams{
 		SupportedDCMICapabilities:               &DCMICapParam_SupportedDCMICapabilities{},
 		MandatoryPlatformAttributes:             &DCMICapParam_MandatoryPlatformAttributes{},
@@ -124,44 +124,44 @@ func (c *Client) GetDCMICapabilities(ctx context.Context) (*DCMICapParams, error
 		EnhancedSystemPowerStatisticsAttributes: &DCMICapParam_EnhancedSystemPowerStatisticsAttributes{},
 	}
 
-	if err := c.GetDCMICapabilitiesFor(ctx, dcmiCapParams); err != nil {
+	if err := c.GetDCMICapParamsFor(ctx, dcmiCapParams); err != nil {
 		return nil, err
 	}
 
 	return dcmiCapParams, nil
 }
 
-func (c *Client) GetDCMICapabilitiesFor(ctx context.Context, dcmiCapParams *DCMICapParams) error {
+func (c *Client) GetDCMICapParamsFor(ctx context.Context, dcmiCapParams *DCMICapParams) error {
 	if dcmiCapParams == nil {
 		return nil
 	}
 
 	if dcmiCapParams.SupportedDCMICapabilities != nil {
-		if err := c.GetDCMICapabilitiesInfoFor(ctx, dcmiCapParams.SupportedDCMICapabilities); err != nil {
+		if err := c.GetDCMICapParamFor(ctx, dcmiCapParams.SupportedDCMICapabilities); err != nil {
 			return err
 		}
 	}
 
 	if dcmiCapParams.MandatoryPlatformAttributes != nil {
-		if err := c.GetDCMICapabilitiesInfoFor(ctx, dcmiCapParams.MandatoryPlatformAttributes); err != nil {
+		if err := c.GetDCMICapParamFor(ctx, dcmiCapParams.MandatoryPlatformAttributes); err != nil {
 			return err
 		}
 	}
 
 	if dcmiCapParams.OptionalPlatformAttributes != nil {
-		if err := c.GetDCMICapabilitiesInfoFor(ctx, dcmiCapParams.OptionalPlatformAttributes); err != nil {
+		if err := c.GetDCMICapParamFor(ctx, dcmiCapParams.OptionalPlatformAttributes); err != nil {
 			return err
 		}
 	}
 
 	if dcmiCapParams.ManageabilityAccessAttributes != nil {
-		if err := c.GetDCMICapabilitiesInfoFor(ctx, dcmiCapParams.ManageabilityAccessAttributes); err != nil {
+		if err := c.GetDCMICapParamFor(ctx, dcmiCapParams.ManageabilityAccessAttributes); err != nil {
 			return err
 		}
 	}
 
 	if dcmiCapParams.EnhancedSystemPowerStatisticsAttributes != nil {
-		if err := c.GetDCMICapabilitiesInfoFor(ctx, dcmiCapParams.EnhancedSystemPowerStatisticsAttributes); err != nil {
+		if err := c.GetDCMICapParamFor(ctx, dcmiCapParams.EnhancedSystemPowerStatisticsAttributes); err != nil {
 			return err
 		}
 	}

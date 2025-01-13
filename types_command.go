@@ -274,7 +274,7 @@ var (
 	CommandErrorReport = Command{ID: 0xff, NetFn: NetFnBridgeRequest, Name: "Error Report"}
 
 	// Intel DCMI extensions (https://www.intel.com/content/dam/www/public/us/en/documents/technical-specifications/dcmi-v1-5-rev-spec.pdf)
-	CommandGetDCMICapabilitiesInfo         = Command{ID: 0x01, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Capabilities Info"}
+	CommandGetDCMICapParam                 = Command{ID: 0x01, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Cap Param"}
 	CommandGetDCMIPowerReading             = Command{ID: 0x02, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Power Reading"}
 	CommandGetDCMIPowerLimit               = Command{ID: 0x03, NetFn: NetFnGroupExtensionRequest, Name: "Get DCMI Power Limit"}
 	CommandSetDCMIPowerLimit               = Command{ID: 0x04, NetFn: NetFnGroupExtensionRequest, Name: "Set DCMI Power Limit"}
