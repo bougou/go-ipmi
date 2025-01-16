@@ -251,12 +251,13 @@ var (
 	CommandPrepareForDiscovery = Command{ID: 0x10, NetFn: NetFnBridgeRequest, Name: "Prepare For Discovery"}
 	CommandGetAddresses        = Command{ID: 0x11, NetFn: NetFnBridgeRequest, Name: "Get Addresses"}
 	CommandSetDiscovered       = Command{ID: 0x12, NetFn: NetFnBridgeRequest, Name: "Set Discovered"}
-	CommandGetChassisDeviceId  = Command{ID: 0x13, NetFn: NetFnBridgeRequest, Name: "Get Chassis DeviceId"}
-	CommandSetChassisDeviceId  = Command{ID: 0x14, NetFn: NetFnBridgeRequest, Name: "Set Chassis DeviceId"}
+	CommandGetChassisDeviceID  = Command{ID: 0x13, NetFn: NetFnBridgeRequest, Name: "Get Chassis Device ID"}
+	CommandSetChassisDeviceID  = Command{ID: 0x14, NetFn: NetFnBridgeRequest, Name: "Set Chassis Device ID"}
 
 	// Bridging Commands (ICMB)
-	CommandBridgeRequest = Command{ID: 0x20, NetFn: NetFnBridgeRequest, Name: "Bridge Request"}
-	CommandBridgeMessage = Command{ID: 0x21, NetFn: NetFnBridgeRequest, Name: "Bridge Message"}
+	CommandBridgeRequest       = Command{ID: 0x20, NetFn: NetFnBridgeRequest, Name: "Bridge Request"}
+	CommandBridgeMessage       = Command{ID: 0x21, NetFn: NetFnBridgeRequest, Name: "Bridge Message"}
+	CommandDeviceBridgeRequest = Command{ID: 0x22, NetFn: NetFnBridgeRequest, Name: "Device Bridge Request"}
 
 	// Event Commands (ICMB)
 	CommandGetEventCount          = Command{ID: 0x30, NetFn: NetFnBridgeRequest, Name: "Get Event Count"}
