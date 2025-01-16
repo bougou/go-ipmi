@@ -50,7 +50,7 @@ type IPMIResponse struct {
 	Checksum1 uint8
 
 	// Responder's Slave Address. 1 byte. LS bit is 0 for Slave Addresses and 1 for Software IDs. Upper 7-bits hold Slave Address or Software ID, respectively. This byte is always 20h when the BMC is the responder.
-	ResponderAddr uint8 // // SlaveAddress or SoftwareID
+	ResponderAddr uint8 // SlaveAddress or SoftwareID
 
 	// Sequence number. This field is used to verify that a response is for a particular instance of a request. Refer to [IPMB] for additional information on use and operation of the Seq field.
 	RequesterSequence uint8 // higher 6 bits
