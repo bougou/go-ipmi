@@ -172,7 +172,7 @@ func (typ EventReadingType) EventSeverity(sensorType SensorType, eventData Event
 		return EventSeverityInfo
 
 	case EventReadingTypeThreshold:
-		if eventDir {
+		if !eventDir {
 			if v, ok := event.AssertionSeverityMap[sensorType]; ok {
 				return v
 			}
@@ -191,14 +191,14 @@ func (typ EventReadingType) EventSeverity(sensorType SensorType, eventData Event
 		}
 
 	case EventReadingTypeSensorSpecific:
-		if eventDir {
+		if !eventDir {
 			return event.AssertionSeverity
 		}
 		return event.DeassertionSeverity
 
 	default:
 		if typ >= 0x02 && typ <= 0x0c {
-			if eventDir {
+			if !eventDir {
 				if v, ok := event.AssertionSeverityMap[sensorType]; ok {
 					return v
 				}
