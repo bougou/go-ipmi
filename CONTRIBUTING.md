@@ -3,31 +3,31 @@
 Each command defined in the IPMI specification is a pair of request/response messages.
 These IPMI commands are implemented as methods of the `ipmi.Client` struct in this library.
 
-`ipmitool` as example, some `ipmitool` cmdline are realized by calling just one underlying IPMI command,
-but many others are not. Like `ipmitool sdr list`, it's a loop of `GetSDR` IPMI command.
+Using `ipmitool` as an example, some `ipmitool` command lines are implemented by calling just one underlying IPMI command,
+while many others are not. For instance, `ipmitool sdr list` is a loop of `GetSDR` IPMI commands.
 
-So this library also implements some methods that are not IPMI commands defined
-in IPMI specification, but just some common helpers, like `GetSDRs` to get all SDRs.
+This library also implements some methods that are not IPMI commands defined
+in the IPMI specification, but rather common helpers, like `GetSDRs` to get all SDRs.
 
 ## IPMI Command Guideline
 
-For a IPMI Command `DoSomething`:
+For an IPMI Command `DoSomething`:
 
-- Must define `DoSomethingRequest` which conforms to the `ipmi.Request` interface, it holds the request message data.
-- Must define `DoSomethingResponse` which conforms to the `ipmi.Response` interface, it holds the response message data.
-- Must define `DoSomething` method on `ipmi.Client`
+- You must define `DoSomethingRequest` which conforms to the `ipmi.Request` interface; it holds the request message data.
+- You must define `DoSomethingResponse` which conforms to the `ipmi.Response` interface; it holds the response message data.
+- You must define the `DoSomething` method on `ipmi.Client`
 
-For `DoSomething` method, you can pass `DoSomethingRequest` directly as the input parameter, like:
+For the `DoSomething` method, you can pass `DoSomethingRequest` directly as the input parameter, like:
 
 ```go
 func (c *Client) DoSomething(ctx context.Context, request *DoSomethingRequest) (response *DoSomethingResponse, err error) {
   response = &DoSomethingResponse{}
-  err := c.Exchange(ctx,request, response)
+  err = c.Exchange(ctx, request, response)
   return
 }
 ```
 
-or, you can pass some plain parameters, and construct the `DoSomethingRequest` in method body, like:
+or, you can pass plain parameters and construct the `DoSomethingRequest` in the method body, like:
 
 ```go
 func (c *Client) DoSomething(ctx context.Context, param1 string, param2 string) (response *DoSomethingResponse, err error) {
@@ -35,12 +35,12 @@ func (c *Client) DoSomething(ctx context.Context, param1 string, param2 string) 
     // construct by using input params
   }
   response = &DoSomethingResponse{}
-  err := c.Exchange(ctx,request, response)
+  err = c.Exchange(ctx, request, response)
   return
 }
 ```
 
-Calling `Exchange` method of `ipmi.Client` will fullfil all other complex underlying works.
+Calling the `Exchange` method of `ipmi.Client` will handle all other complex underlying work.
 
 ## ipmi.Request interface
 
@@ -49,7 +49,7 @@ type Request interface {
 	// Pack encodes the object to data bytes
 	Pack() []byte
 	// Command return the IPMI command info (NetFn/Cmd).
-	// All IPMI specification specified commands are already predefined in this file.
+	// All IPMI specification specified commands are already predefined in this repo.
 	Command() Command
 }
 
@@ -71,5 +71,5 @@ type Response interface {
 
 ## IPMI Command Response
 
-- Define necessary fields per IPMI specification, but DO NOT define the completion code field in Response struct.
-- If there is no command-specific completion codes, just return an empty map for `CompletionCodes()` method.
+- Define necessary fields per IPMI specification, but DO NOT define the completion code field in the Response struct.
+- If there are no command-specific completion codes, just return an empty map for the `CompletionCodes()` method.

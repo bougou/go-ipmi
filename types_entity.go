@@ -129,7 +129,7 @@ func (e EntityInstance) Type() string {
 	if isEntityInstanceDeviceRelative(e) {
 		return "device-relative"
 	}
-	return "'"
+	return ""
 }
 
 func canonicalEntityString(entityID EntityID, entityInstance EntityInstance) string {
