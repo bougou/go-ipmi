@@ -7,6 +7,7 @@ import (
 	"unicode/utf16"
 )
 
+// 22.14b Get System Info Parameters Command
 type GetSystemInfoParamRequest struct {
 	GetParamRevisionOnly bool
 	ParamSelector        SystemInfoParamSelector
