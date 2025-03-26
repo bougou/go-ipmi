@@ -213,7 +213,7 @@ type SystemInfoParam_SystemFirmwareVersion struct {
 }
 
 func (p *SystemInfoParam_SystemFirmwareVersion) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
-	return SystemInfoParamSelector_SystemFirmwareVersion, 0, 0
+	return SystemInfoParamSelector_SystemFirmwareVersion, p.SetSelector, 0
 }
 
 func (p *SystemInfoParam_SystemFirmwareVersion) Pack() []byte {
@@ -245,7 +245,7 @@ type SystemInfoParam_SystemName struct {
 }
 
 func (p *SystemInfoParam_SystemName) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
-	return SystemInfoParamSelector_SystemName, 0, 0
+	return SystemInfoParamSelector_SystemName, p.SetSelector, 0
 }
 
 func (p *SystemInfoParam_SystemName) Pack() []byte {
@@ -277,7 +277,7 @@ type SystemInfoParam_PrimaryOSName struct {
 }
 
 func (p *SystemInfoParam_PrimaryOSName) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
-	return SystemInfoParamSelector_PrimaryOSName, 0, 0
+	return SystemInfoParamSelector_PrimaryOSName, p.SetSelector, 0
 }
 
 func (p *SystemInfoParam_PrimaryOSName) Pack() []byte {
@@ -309,7 +309,7 @@ type SystemInfoParam_OSName struct {
 }
 
 func (p *SystemInfoParam_OSName) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
-	return SystemInfoParamSelector_OSName, 0, 0
+	return SystemInfoParamSelector_OSName, p.SetSelector, 0
 }
 
 func (p *SystemInfoParam_OSName) Pack() []byte {
@@ -341,7 +341,7 @@ type SystemInfoParam_OSVersion struct {
 }
 
 func (p *SystemInfoParam_OSVersion) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
-	return SystemInfoParamSelector_OSVersion, 0, 0
+	return SystemInfoParamSelector_OSVersion, p.SetSelector, 0
 }
 
 func (p *SystemInfoParam_OSVersion) Pack() []byte {
@@ -373,7 +373,7 @@ type SystemInfoParam_BMCURL struct {
 }
 
 func (p *SystemInfoParam_BMCURL) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
-	return SystemInfoParamSelector_BMCURL, 0, 0
+	return SystemInfoParamSelector_BMCURL, p.SetSelector, 0
 }
 
 func (p *SystemInfoParam_BMCURL) Pack() []byte {
@@ -405,7 +405,7 @@ type SystemInfoParam_ManagementURL struct {
 }
 
 func (p *SystemInfoParam_ManagementURL) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
-	return SystemInfoParamSelector_ManagementURL, 0, 0
+	return SystemInfoParamSelector_ManagementURL, p.SetSelector, 0
 }
 
 func (p *SystemInfoParam_ManagementURL) Pack() []byte {
