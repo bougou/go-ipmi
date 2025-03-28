@@ -195,7 +195,7 @@ func (c *Client) Connect15(ctx context.Context) error {
 
 	_, err = c.SetSessionPrivilegeLevel(ctx, c.maxPrivilegeLevel)
 	if err != nil {
-		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %s", c.maxPrivilegeLevel, err)
+		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %w", c.maxPrivilegeLevel, err)
 	}
 
 	go func() {
@@ -242,19 +242,19 @@ func (c *Client) Connect20(ctx context.Context) error {
 
 		_, err = c.OpenSession(ctx)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("cmd: RMCP+ Open Session failed with cipher suite id (%v), err: %s", cipherSuiteID, err))
+			errs = append(errs, fmt.Errorf("cmd: RMCP+ Open Session failed with cipher suite id (%v), err: %w", cipherSuiteID, err))
 			continue
 		}
 
 		_, err = c.RAKPMessage1(ctx)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("cmd: rakp1 failed with cipher suite id (%v), err: %s", cipherSuiteID, err))
+			errs = append(errs, fmt.Errorf("cmd: rakp1 failed with cipher suite id (%v), err: %w", cipherSuiteID, err))
 			continue
 		}
 
 		_, err = c.RAKPMessage3(ctx)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("cmd: rakp3 failed with cipher suite id (%v), err: %s", cipherSuiteID, err))
+			errs = append(errs, fmt.Errorf("cmd: rakp3 failed with cipher suite id (%v), err: %w", cipherSuiteID, err))
 			continue
 		}
 
@@ -269,7 +269,7 @@ func (c *Client) Connect20(ctx context.Context) error {
 
 	_, err = c.SetSessionPrivilegeLevel(ctx, c.maxPrivilegeLevel)
 	if err != nil {
-		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %s", c.maxPrivilegeLevel, err)
+		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %w", c.maxPrivilegeLevel, err)
 	}
 
 	go func() {

@@ -150,12 +150,12 @@ func (c *Client) GetDeviceSDRBySensorID(ctx context.Context, sensorNumber uint8)
 	for {
 		res, err := c.GetDeviceSDR(ctx, recordID)
 		if err != nil {
-			return nil, fmt.Errorf("GetDeviceSDR for recordID (%#0x) failed, err: %s", recordID, err)
+			return nil, fmt.Errorf("GetDeviceSDR for recordID (%#0x) failed, err: %w", recordID, err)
 		}
 
 		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
 		if err != nil {
-			return nil, fmt.Errorf("ParseSDR for recordID (%#0x) failed, err: %s", recordID, err)
+			return nil, fmt.Errorf("ParseSDR for recordID (%#0x) failed, err: %w", recordID, err)
 		}
 		if uint8(sdr.SensorNumber()) == sensorNumber {
 			return sdr, nil
@@ -176,12 +176,12 @@ func (c *Client) GetDeviceSDRs(ctx context.Context, recordTypes ...SDRRecordType
 	for {
 		res, err := c.GetDeviceSDR(ctx, recordID)
 		if err != nil {
-			return nil, fmt.Errorf("GetDeviceSDR for recordID (%#0x) failed, err: %s", recordID, err)
+			return nil, fmt.Errorf("GetDeviceSDR for recordID (%#0x) failed, err: %w", recordID, err)
 		}
 
 		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
 		if err != nil {
-			return nil, fmt.Errorf("ParseSDR for recordID (%#0x) failed, err: %s", recordID, err)
+			return nil, fmt.Errorf("ParseSDR for recordID (%#0x) failed, err: %w", recordID, err)
 		}
 
 		if len(recordTypes) == 0 {

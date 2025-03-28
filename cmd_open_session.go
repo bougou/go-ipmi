@@ -136,7 +136,7 @@ func (c *Client) OpenSession(ctx context.Context) (response *OpenSessionResponse
 
 	authAlg, integrityAlg, cryptAlg, err := getCipherSuiteAlgorithms(cipherSuiteID)
 	if err != nil {
-		return nil, fmt.Errorf("get cipher suite for id %v failed, err: %s", cipherSuiteID, err)
+		return nil, fmt.Errorf("get cipher suite for id %v failed, err: %w", cipherSuiteID, err)
 	}
 	c.session.v20.requestedAuthAlg = authAlg
 	c.session.v20.requestedIntegrityAlg = integrityAlg

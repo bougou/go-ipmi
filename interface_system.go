@@ -39,7 +39,7 @@ func (c *Client) ConnectOpen(ctx context.Context, devnum int32) error {
 			return
 		}
 		if f, err := os.OpenFile(ipmiDev, os.O_RDWR, 0); err != nil {
-			c.Debugf("can not open ipmi dev (%s), err: %s\n", ipmiDev, err)
+			c.Debugf("can not open ipmi dev (%s), err: %w\n", ipmiDev, err)
 		} else {
 			file = f
 			c.Debugf("opened ipmi dev file: %v\n", ipmiDev)

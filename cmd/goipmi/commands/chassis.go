@@ -271,7 +271,7 @@ func NewCmdChassisBootParamGet() *cobra.Command {
 			paramSelector := args[0]
 			i, err := parseStringToInt64(paramSelector)
 			if err != nil {
-				CheckErr(fmt.Errorf("param %s must be a valid integer in range (0-127), err: %s", paramSelector, err))
+				CheckErr(fmt.Errorf("param %s must be a valid integer in range (0-127), err: %w", paramSelector, err))
 			}
 
 			res, err := client.GetSystemBootOptionsParam(ctx, ipmi.BootOptionParamSelector(i), 0x00, 0x00)

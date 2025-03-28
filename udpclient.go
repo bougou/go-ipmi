@@ -92,7 +92,7 @@ func (c *UDPClient) RemoteIP() string {
 }
 
 func (c *UDPClient) LocalIPPort() (string, int) {
-	conn, err := net.Dial("udp", fmt.Sprintf("%s:%d", c.Host, c.Port))
+	conn, err := net.Dial("udp", net.JoinHostPort(c.Host, strconv.Itoa(c.Port)))
 	if err != nil {
 		return "", 0
 	}

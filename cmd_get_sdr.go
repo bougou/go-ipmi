@@ -74,7 +74,7 @@ func (c *Client) GetSDR(ctx context.Context, recordID uint16) (response *GetSDRR
 func (c *Client) GetSDREnhanced(ctx context.Context, recordID uint16) (*SDR, error) {
 	res, err := c.GetSDR(ctx, recordID)
 	if err != nil {
-		return nil, fmt.Errorf("GetSDR failed for recordID (%#02x), err: %s", recordID, err)
+		return nil, fmt.Errorf("GetSDR failed for recordID (%#02x), err: %w", recordID, err)
 	}
 
 	sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
@@ -158,7 +158,7 @@ func (c *Client) GetSDRBySensorID(ctx context.Context, sensorNumber uint8) (*SDR
 	for {
 		res, err := c.GetSDR(ctx, recordID)
 		if err != nil {
-			return nil, fmt.Errorf("GetSDR failed for recordID (%#02x), err: %s", recordID, err)
+			return nil, fmt.Errorf("GetSDR failed for recordID (%#02x), err: %w", recordID, err)
 		}
 		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
 		if err != nil {
@@ -186,7 +186,7 @@ func (c *Client) GetSDRBySensorName(ctx context.Context, sensorName string) (*SD
 	for {
 		res, err := c.GetSDR(ctx, recordID)
 		if err != nil {
-			return nil, fmt.Errorf("GetSDR failed for recordID (%#02x), err: %s", recordID, err)
+			return nil, fmt.Errorf("GetSDR failed for recordID (%#02x), err: %w", recordID, err)
 		}
 		sdr, err := ParseSDR(res.RecordData, res.NextRecordID)
 		if err != nil {
@@ -219,7 +219,7 @@ func (c *Client) GetSDRs(ctx context.Context, recordTypes ...SDRRecordType) ([]*
 	for {
 		sdr, err := c.GetSDREnhanced(ctx, recordID)
 		if err != nil {
-			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %s", recordID, err)
+			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %w", recordID, err)
 		}
 
 		if len(recordTypes) == 0 {
@@ -252,7 +252,7 @@ func (c *Client) GetSDRsMap(ctx context.Context) (SDRMapBySensorNumber, error) {
 	for {
 		sdr, err := c.GetSDREnhanced(ctx, recordID)
 		if err != nil {
-			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %s", recordID, err)
+			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %w", recordID, err)
 		}
 
 		var generatorID GeneratorID

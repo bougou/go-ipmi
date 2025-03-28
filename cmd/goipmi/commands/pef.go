@@ -139,7 +139,7 @@ func NewCmdPEFFilterList() *cobra.Command {
 					SetSelector: filterNumber,
 				}
 				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
-					CheckErr(fmt.Errorf("get event filter entry %d failed, err: %s", filterNumber, err))
+					CheckErr(fmt.Errorf("get event filter entry %d failed, err: %w", filterNumber, err))
 				}
 
 				eventFilters[i] = param.Filter
@@ -247,14 +247,14 @@ func NewCmdPEFPolicyList() *cobra.Command {
 						SetSelector: entry,
 					}
 					if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
-						CheckErr(fmt.Errorf("get alert policy number (%d) failed, err: %s", entry, err))
+						CheckErr(fmt.Errorf("get alert policy number (%d) failed, err: %w", entry, err))
 					}
 					alertPolicy := param.Policy
 
 					channelNumber := param.Policy.ChannelNumber
 					resp, err := client.GetChannelInfo(ctx, channelNumber)
 					if err != nil {
-						CheckErr(fmt.Errorf("get channel info (%d) failed, err: %s", channelNumber, err))
+						CheckErr(fmt.Errorf("get channel info (%d) failed, err: %w", channelNumber, err))
 					}
 
 					// Todo Get Lan Config Param
