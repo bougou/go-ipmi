@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"time"
 )
 
@@ -143,7 +144,40 @@ func (c *Client) exchangeLAN(ctx context.Context, request Request, response Resp
 	sent := rmcp.Pack()
 	c.DebugBytes("sent", sent, 16)
 
-	recv, err := c.udpClient.Exchange(ctx, bytes.NewReader(sent))
+	var recv []byte
+	attempts := c.retryCount + 1 // initial try plus retries
+	c.Debugf("exchangeLAN timeout attempts: %d\n", attempts)
+
+	for attempt := 1; attempt <= attempts; attempt += 1 {
+		c.Debugf("Attempt %d/%d\n", attempt, attempts)
+		recv, err = c.udpClient.Exchange(ctx, bytes.NewReader(sent))
+		if err != nil {
+			var netErr *net.OpError
+			if errors.As(err, &netErr) {
+				c.Debugf("udp exchange error is net error, %s\n", err)
+
+				if netErr.Timeout() {
+					c.Debugf("udp exchange error is net timeout error: %v\n", err)
+
+					if attempt < attempts {
+						c.Debugf("Attempt %d/%d: timeout error: %v. Retrying...\n", attempt, attempts, err)
+						time.Sleep(c.retryInterval)
+						continue
+					}
+				}
+
+				c.Debugf("udp exchange error is net error but not timeout error, %s\n", err)
+				break
+			}
+
+			c.Debugf("udp exchange error is not net error, %s\n", err)
+			break
+		}
+
+		// no error
+		break
+	}
+
 	if err != nil {
 		return fmt.Errorf("client udp exchange msg failed, err: %w", err)
 	}
