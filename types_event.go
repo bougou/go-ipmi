@@ -49,12 +49,14 @@ func (typ SELRecordType) String() string {
 	return string(typ.Range())
 }
 
-// Event direction
+// Event direction, true for deassertion, false for assertion.
+//
+// see: 32.1 SEL Event Records Table (Byte 13)
 type EventDir bool
 
 const (
-	EventDirDeassertion = true
-	EventDirAssertion   = false
+	EventDirDeassertion EventDir = true
+	EventDirAssertion   EventDir = false
 )
 
 func (d EventDir) String() string {

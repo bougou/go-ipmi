@@ -94,7 +94,7 @@ func (e EntityID) String() string {
 		// These IDs are system specific and can be assigned by the Board-set provider
 		return fmt.Sprintf("Board-set specific Entities (#%#02x)", uint8(e))
 	}
-	if e >= 0xd0 && e <= 0xff {
+	if e >= 0xd0 {
 		// These IDs are system specific and can be assigned by the system integrator, or OEM.
 		return fmt.Sprintf("OEM System Integrator defined (#%#02x)", uint8(e))
 	}
@@ -129,7 +129,7 @@ func (e EntityInstance) Type() string {
 	if isEntityInstanceDeviceRelative(e) {
 		return "device-relative"
 	}
-	return "'"
+	return ""
 }
 
 func canonicalEntityString(entityID EntityID, entityInstance EntityInstance) string {
