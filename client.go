@@ -48,6 +48,12 @@ type Client struct {
 	timeout    time.Duration
 	bufferSize int
 
+	// retryCount specifies the number of additional attempts to make after an initial failure.
+	// For lan/lanplus interfaces, retries only occur when UDP exchanges timeout.
+	// A value of 0 means no retries (only one attempt), 1 means one retry (two attempts total), etc.
+	retryCount    int
+	retryInterval time.Duration
+
 	l sync.Mutex
 
 	// closedCh is closed when Client.Close() is called.
@@ -96,6 +102,9 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 		v20:        true,
 		timeout:    time.Second * time.Duration(DefaultExchangeTimeoutSec),
 		bufferSize: DefaultBufferSize,
+
+		retryCount:    0,
+		retryInterval: 0,
 
 		maxPrivilegeLevel: PrivilegeLevelUnspecified,
 
@@ -161,6 +170,12 @@ func (c *Client) WithBufferSize(bufferSize int) *Client {
 	if c.udpClient != nil {
 		c.udpClient.bufferSize = bufferSize
 	}
+	return c
+}
+
+func (c *Client) WithRetry(retryCount int, retryInterval time.Duration) *Client {
+	c.retryCount = retryCount
+	c.retryInterval = retryInterval
 	return c
 }
 

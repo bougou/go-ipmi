@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"time"
 )
 
@@ -143,9 +144,44 @@ func (c *Client) exchangeLAN(ctx context.Context, request Request, response Resp
 	sent := rmcp.Pack()
 	c.DebugBytes("sent", sent, 16)
 
-	recv, err := c.udpClient.Exchange(ctx, bytes.NewReader(sent))
+	var recv []byte
+	attempts := c.retryCount + 1 // initial try plus retries
+	c.Debugf("exchangeLAN timeout attempts: %d\n", attempts)
+
+	attemptCount := 0
+	for attempt := 1; attempt <= attempts; attempt += 1 {
+		attemptCount = attempt
+		c.Debugf("Attempt %d/%d\n", attempt, attempts)
+		recv, err = c.udpClient.Exchange(ctx, bytes.NewReader(sent))
+		if err != nil {
+			var netErr *net.OpError
+			if errors.As(err, &netErr) {
+				c.Debugf("udp exchange error is net error, %s\n", err)
+
+				if netErr.Timeout() {
+					c.Debugf("udp exchange error is net timeout error: %v\n", err)
+
+					if attempt < attempts {
+						c.Debugf("Attempt %d/%d: timeout error: %v. Retrying...\n", attempt, attempts, err)
+						time.Sleep(c.retryInterval)
+						continue
+					}
+				}
+
+				c.Debugf("udp exchange error is net error but not timeout error, %s\n", err)
+				break
+			}
+
+			c.Debugf("udp exchange error is not net error, %s\n", err)
+			break
+		}
+
+		// no error
+		break
+	}
+
 	if err != nil {
-		return fmt.Errorf("client udp exchange msg failed, err: %w", err)
+		return fmt.Errorf("client udp exchange msg failed, attempts %d times, err: %w", attemptCount, err)
 	}
 	c.DebugBytes("recv", recv, 16)
 
@@ -195,7 +231,7 @@ func (c *Client) Connect15(ctx context.Context) error {
 
 	_, err = c.SetSessionPrivilegeLevel(ctx, c.maxPrivilegeLevel)
 	if err != nil {
-		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %s", c.maxPrivilegeLevel, err)
+		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %w", c.maxPrivilegeLevel, err)
 	}
 
 	go func() {
@@ -242,19 +278,19 @@ func (c *Client) Connect20(ctx context.Context) error {
 
 		_, err = c.OpenSession(ctx)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("cmd: RMCP+ Open Session failed with cipher suite id (%v), err: %s", cipherSuiteID, err))
+			errs = append(errs, fmt.Errorf("cmd: RMCP+ Open Session failed with cipher suite id (%v), err: %w", cipherSuiteID, err))
 			continue
 		}
 
 		_, err = c.RAKPMessage1(ctx)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("cmd: rakp1 failed with cipher suite id (%v), err: %s", cipherSuiteID, err))
+			errs = append(errs, fmt.Errorf("cmd: rakp1 failed with cipher suite id (%v), err: %w", cipherSuiteID, err))
 			continue
 		}
 
 		_, err = c.RAKPMessage3(ctx)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("cmd: rakp3 failed with cipher suite id (%v), err: %s", cipherSuiteID, err))
+			errs = append(errs, fmt.Errorf("cmd: rakp3 failed with cipher suite id (%v), err: %w", cipherSuiteID, err))
 			continue
 		}
 
@@ -269,7 +305,7 @@ func (c *Client) Connect20(ctx context.Context) error {
 
 	_, err = c.SetSessionPrivilegeLevel(ctx, c.maxPrivilegeLevel)
 	if err != nil {
-		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %s", c.maxPrivilegeLevel, err)
+		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %w", c.maxPrivilegeLevel, err)
 	}
 
 	go func() {

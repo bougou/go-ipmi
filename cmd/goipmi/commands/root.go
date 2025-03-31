@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/bougou/go-ipmi"
 	"github.com/spf13/cobra"
@@ -58,6 +59,7 @@ func initClient() error {
 
 	client.WithDebug(debug)
 	client.WithInterface(ipmi.Interface(intf))
+	client.WithRetry(3, 2*time.Second)
 
 	var privLevel ipmi.PrivilegeLevel = ipmi.PrivilegeLevelUnspecified
 	switch strings.ToUpper(privilegeLevel) {
