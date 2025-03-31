@@ -145,7 +145,7 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*FRU, error) {
 		var deviceID uint8 = 0x00
 		fru, err := c.GetFRU(ctx, deviceID, "Builtin FRU")
 		if err != nil {
-			return nil, fmt.Errorf("GetFRU device id (%#02x) failed, err: %s", deviceID, err)
+			return nil, fmt.Errorf("GetFRU device id (%#02x) failed, err: %w", deviceID, err)
 		}
 		frus = append(frus, fru)
 	}
@@ -191,7 +191,7 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*FRU, error) {
 				// Todo, accessed using Read/Write FRU commands at LUN other than 00b
 				fru, err := c.GetFRU(ctx, deviceIDOrSlaveAddress, deviceName)
 				if err != nil {
-					return nil, fmt.Errorf("GetFRU sdr device id (%#02x) failed, err: %s", deviceIDOrSlaveAddress, err)
+					return nil, fmt.Errorf("GetFRU sdr device id (%#02x) failed, err: %w", deviceIDOrSlaveAddress, err)
 				}
 				frus = append(frus, fru)
 

@@ -52,7 +52,7 @@ func initClient() error {
 	case "tool":
 		c, err := ipmi.NewToolClient(host)
 		if err != nil {
-			return fmt.Errorf("create client based on ipmitool (%s) failed, err: %s", host, err)
+			return fmt.Errorf("create client based on ipmitool (%s) failed, err: %w", host, err)
 		}
 		client = c
 	}

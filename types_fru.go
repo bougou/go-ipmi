@@ -1024,7 +1024,7 @@ func getFRUCustomUnusedChecksumFields(fruData []byte, offset uint16) (custom [][
 		}
 		nextOffset, _, fieldData, e := getFRUTypeLengthField(fruData, offset)
 		if e != nil {
-			err = fmt.Errorf("getFRUTypeLengthField failed, err: %s", e)
+			err = fmt.Errorf("getFRUTypeLengthField failed, err: %w", e)
 			return
 		}
 		offset = nextOffset

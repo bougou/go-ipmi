@@ -331,7 +331,7 @@ func NewCmdDCMISensors() *cobra.Command {
 			{
 				sdrs, err := client.GetDCMISensors(ctx, EntityID_DCMI_Inlet)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetDCMISensors for entityID (%#02x) failed, err: %s", EntityID_DCMI_Inlet, err))
+					CheckErr(fmt.Errorf("GetDCMISensors for entityID (%#02x) failed, err: %w", EntityID_DCMI_Inlet, err))
 				}
 				fmt.Printf("Inlet: %d temperature sensors found\n", len(sdrs))
 				if len(sdrs) > 0 {
@@ -342,7 +342,7 @@ func NewCmdDCMISensors() *cobra.Command {
 			{
 				sdrs, err := client.GetDCMISensors(ctx, EntityID_DCMI_CPU)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetDCMISensors for entityID (%#02x) failed, err: %s", EntityID_DCMI_Inlet, err))
+					CheckErr(fmt.Errorf("GetDCMISensors for entityID (%#02x) failed, err: %w", EntityID_DCMI_Inlet, err))
 				}
 				fmt.Printf("CPU: %d temperature sensors found\n", len(sdrs))
 				if len(sdrs) > 0 {
@@ -353,7 +353,7 @@ func NewCmdDCMISensors() *cobra.Command {
 			{
 				sdrs, err := client.GetDCMISensors(ctx, EntityID_DCMI_Baseboard)
 				if err != nil {
-					CheckErr(fmt.Errorf("GetDCMISensors for entityID (%#02x) failed, err: %s", EntityID_DCMI_Inlet, err))
+					CheckErr(fmt.Errorf("GetDCMISensors for entityID (%#02x) failed, err: %w", EntityID_DCMI_Inlet, err))
 				}
 				fmt.Printf("Baseboard: %d temperature sensors found\n", len(sdrs))
 				if len(sdrs) > 0 {
@@ -432,12 +432,12 @@ func newCmdDCMIThermalPolicyGet() *cobra.Command {
 
 			entityID, err := parseStringToInt64(args[0])
 			if err != nil {
-				CheckErr(fmt.Errorf("parse entityID (%s) failed, err: %s", args[0], err))
+				CheckErr(fmt.Errorf("parse entityID (%s) failed, err: %w", args[0], err))
 			}
 
 			entityInstance, err := parseStringToInt64(args[1])
 			if err != nil {
-				CheckErr(fmt.Errorf("parse entityInstance (%s) failed, err: %s", args[1], err))
+				CheckErr(fmt.Errorf("parse entityInstance (%s) failed, err: %w", args[1], err))
 			}
 
 			ctx := context.Background()
@@ -480,12 +480,12 @@ thermalpolicy instance parameters:
 
 			entityID, err := parseStringToInt64(args[0])
 			if err != nil {
-				CheckErr(fmt.Errorf("parse entityID (%s) failed, err: %s", args[0], err))
+				CheckErr(fmt.Errorf("parse entityID (%s) failed, err: %w", args[0], err))
 			}
 
 			entityInstance, err := parseStringToInt64(args[1])
 			if err != nil {
-				CheckErr(fmt.Errorf("parse entityInstance (%s) failed, err: %s", args[1], err))
+				CheckErr(fmt.Errorf("parse entityInstance (%s) failed, err: %w", args[1], err))
 			}
 
 			var powerOff bool
@@ -512,11 +512,11 @@ thermalpolicy instance parameters:
 
 			temperatureLimit, err := parseStringToInt64(args[5])
 			if err != nil {
-				CheckErr(fmt.Errorf("parse temperatureLimit (%s) failed, err: %s", args[5], err))
+				CheckErr(fmt.Errorf("parse temperatureLimit (%s) failed, err: %w", args[5], err))
 			}
 			exceptionTime, err := parseStringToInt64(args[6])
 			if err != nil {
-				CheckErr(fmt.Errorf("parse exceptionTime (%s) failed, err: %s", args[6], err))
+				CheckErr(fmt.Errorf("parse exceptionTime (%s) failed, err: %w", args[6], err))
 			}
 
 			req := &ipmi.SetDCMIThermalLimitRequest{
@@ -553,7 +553,7 @@ func NewCmdDCMIGetTempReading() *cobra.Command {
 
 			readings, err := client.GetDCMITemperatureReadingsForEntities(ctx, EntityID_DCMI_Inlet, EntityID_DCMI_CPU, EntityID_DCMI_Baseboard)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetDCMISensors for entityID (%#02x) failed, err: %s", EntityID_DCMI_Inlet, err))
+				CheckErr(fmt.Errorf("GetDCMISensors for entityID (%#02x) failed, err: %w", EntityID_DCMI_Inlet, err))
 			}
 
 			fmt.Printf("Got: %d temperature readings found\n", len(readings))

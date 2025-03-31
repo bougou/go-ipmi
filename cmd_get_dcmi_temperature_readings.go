@@ -108,7 +108,7 @@ func (c *Client) GetDCMITemperatureReadingsForEntities(ctx context.Context, enti
 
 		response, err := c.GetDCMITemperatureReadings(ctx, request)
 		if err != nil {
-			return nil, fmt.Errorf("GetDCMITemperatureReadings failed for entityID (%#02x), err: %s", entityID, err)
+			return nil, fmt.Errorf("GetDCMITemperatureReadings failed for entityID (%#02x), err: %w", entityID, err)
 		}
 
 		out = append(out, response.TemperatureReadings...)

@@ -104,7 +104,7 @@ func (c *Client) GetDCMISensors(ctx context.Context, entityIDs ...EntityID) ([]*
 		for _, recordID := range response.SDRRecordID {
 			sdr, err := c.GetSDREnhanced(ctx, recordID)
 			if err != nil {
-				return nil, fmt.Errorf("GetSDRDetail failed for recordID (%#02x), err: %s", recordID, err)
+				return nil, fmt.Errorf("GetSDRDetail failed for recordID (%#02x), err: %w", recordID, err)
 			}
 			out = append(out, sdr)
 		}

@@ -117,14 +117,14 @@ func (c *Client) ListUser(ctx context.Context, channelNumber uint8) ([]*User, er
 	for {
 		res, err := c.GetUserAccess(ctx, channelNumber, userID)
 		if err != nil {
-			return nil, fmt.Errorf("get user for userID %d failed, err: %s", userID, err)
+			return nil, fmt.Errorf("get user for userID %d failed, err: %w", userID, err)
 		}
 
 		res2, err := c.GetUsername(ctx, userID)
 		if err != nil {
 			respErr, ok := err.(*ResponseError)
 			if !ok || uint8(respErr.CompletionCode()) != 0xcc {
-				return nil, fmt.Errorf("get user name for userID %d failed, err: %s", userID, err)
+				return nil, fmt.Errorf("get user name for userID %d failed, err: %w", userID, err)
 			}
 			// Completion Code is 0xcc, means this UserID is not set.
 			username = ""
