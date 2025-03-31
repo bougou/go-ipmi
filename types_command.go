@@ -11,7 +11,6 @@ type Request interface {
 	// Pack encodes the object to data bytes
 	Pack() []byte
 	// Command return the IPMI command info (NetFn/Cmd).
-	// All IPMI specification specified commands are already predefined in this file.
 	Command() Command
 }
 
@@ -68,8 +67,8 @@ var (
 	CommandGetConfigurableCommandSubfunctions = Command{ID: 0x0d, NetFn: NetFnAppRequest, Name: "Get Configurable Command Sub-functions"} // 0Eh - 0Fh reserved
 	CommandSetCommandEnables                  = Command{ID: 0x60, NetFn: NetFnAppRequest, Name: "Set Command Enables"}
 	CommandGetCommandEnables                  = Command{ID: 0x61, NetFn: NetFnAppRequest, Name: "Get Command Enables"}
-	CommandSetCommandSubfunctionsEnables      = Command{ID: 0x62, NetFn: NetFnAppRequest, Name: "Set Command Sub-function Enables"}
-	CommandGetCommandSubfunctionsEnables      = Command{ID: 0x63, NetFn: NetFnAppRequest, Name: "Get Command Sub-function Enables"}
+	CommandSetCommandSubfunctionEnables       = Command{ID: 0x62, NetFn: NetFnAppRequest, Name: "Set Command Sub-function Enables"}
+	CommandGetCommandSubfunctionEnables       = Command{ID: 0x63, NetFn: NetFnAppRequest, Name: "Get Command Sub-function Enables"}
 	CommandGetOEMNetFnIanaSupport             = Command{ID: 0x64, NetFn: NetFnAppRequest, Name: "Get OEM NetFn IANA Support"}
 
 	// BMC Watchdog Timer Commands
@@ -116,8 +115,8 @@ var (
 	CommandGetChannelOEMPayloadInfo       = Command{ID: 0x50, NetFn: NetFnAppRequest, Name: "Get Channel OEM Payload Info"} // 51 unassigned
 	CommandMasterWriteRead                = Command{ID: 0x52, NetFn: NetFnAppRequest, Name: "Master Write-Read"}            // 53 unassigned
 	CommandGetChannelCipherSuites         = Command{ID: 0x54, NetFn: NetFnAppRequest, Name: "Get Channel Cipher Suites"}
-	CommandSuspendOrResumeEncryption      = Command{ID: 0x55, NetFn: NetFnAppRequest, Name: "Suspend/Resume Payload Encryption"}
-	CommandSetChannelCipherSuites         = Command{ID: 0x56, NetFn: NetFnAppRequest, Name: "Set Channel Security Keys"}
+	CommandSuspendResumePayloadEncryption = Command{ID: 0x55, NetFn: NetFnAppRequest, Name: "Suspend/Resume Payload Encryption"}
+	CommandSetChannelSecurityKeys         = Command{ID: 0x56, NetFn: NetFnAppRequest, Name: "Set Channel Security Keys"}
 	CommandGetSystemInterfaceCapabilities = Command{ID: 0x57, NetFn: NetFnAppRequest, Name: "Get System Interface Capabilities"}
 
 	// Chassis Device Commands
