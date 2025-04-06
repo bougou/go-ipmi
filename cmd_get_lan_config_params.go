@@ -319,18 +319,20 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 		return err
 	}
 
-	alertDestinationsCount := uint8(0)
-	if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfigParams.AlertDestinationsCount); err != nil {
-		if canIgnore(err) != nil {
-			return err
-		}
-	} else {
-		if lanConfigParams.AlertDestinationsCount != nil {
-			alertDestinationsCount = lanConfigParams.AlertDestinationsCount.Count
-		}
+	if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfigParams.AlertDestinationsCount); canIgnore(err) != nil {
+		return err
 	}
 
 	if lanConfigParams.AlertDestinationTypes != nil {
+		param := lanConfigParams.AlertDestinationsCount
+		if param == nil {
+			param = &LanConfigParam_AlertDestinationsCount{}
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
+				return err
+			}
+		}
+		alertDestinationsCount := param.Count
+
 		if len(lanConfigParams.AlertDestinationTypes) == 0 && alertDestinationsCount > 0 {
 			count := alertDestinationsCount + 1
 			lanConfigParams.AlertDestinationTypes = make([]*LanConfigParam_AlertDestinationType, count)
@@ -342,13 +344,22 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 		}
 
 		for _, alertDestinationType := range lanConfigParams.AlertDestinationTypes {
-			if err := c.GetLanConfigParamFor(ctx, channelNumber, alertDestinationType); err != nil {
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, alertDestinationType); canIgnore(err) != nil {
 				return err
 			}
 		}
 	}
 
 	if lanConfigParams.AlertDestinationAddresses != nil {
+		param := lanConfigParams.AlertDestinationsCount
+		if param == nil {
+			param = &LanConfigParam_AlertDestinationsCount{}
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
+				return err
+			}
+		}
+		alertDestinationsCount := param.Count
+
 		if len(lanConfigParams.AlertDestinationAddresses) == 0 && alertDestinationsCount > 0 {
 			count := alertDestinationsCount + 1
 			lanConfigParams.AlertDestinationAddresses = make([]*LanConfigParam_AlertDestinationAddress, count)
@@ -360,7 +371,7 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 		}
 
 		for _, alertDestinationAddress := range lanConfigParams.AlertDestinationAddresses {
-			if err := c.GetLanConfigParamFor(ctx, channelNumber, alertDestinationAddress); err != nil {
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, alertDestinationAddress); canIgnore(err) != nil {
 				return err
 			}
 		}
@@ -387,6 +398,15 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	}
 
 	if lanConfigParams.AlertDestinationVLANs != nil {
+		param := lanConfigParams.AlertDestinationsCount
+		if param == nil {
+			param = &LanConfigParam_AlertDestinationsCount{}
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
+				return err
+			}
+		}
+		alertDestinationsCount := param.Count
+
 		if len(lanConfigParams.AlertDestinationVLANs) == 0 && alertDestinationsCount > 0 {
 			count := alertDestinationsCount + 1
 
@@ -399,7 +419,7 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 		}
 
 		for _, alertDestinationVLAN := range lanConfigParams.AlertDestinationVLANs {
-			if err := c.GetLanConfigParamFor(ctx, channelNumber, alertDestinationVLAN); err != nil {
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, alertDestinationVLAN); canIgnore(err) != nil {
 				return err
 			}
 		}
@@ -429,20 +449,20 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 		return err
 	}
 
-	var ipv6StaticAddressMax uint8
-	var ipv6DynamicAddressMax uint8
-	if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfigParams.IPv6Status); err != nil {
-		if canIgnore(err) != nil {
-			return err
-		}
-	} else {
-		if lanConfigParams.IPv6Status != nil {
-			ipv6StaticAddressMax = lanConfigParams.IPv6Status.StaticAddressMax
-			ipv6DynamicAddressMax = lanConfigParams.IPv6Status.DynamicAddressMax
-		}
+	if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfigParams.IPv6Status); canIgnore(err) != nil {
+		return err
 	}
 
 	if lanConfigParams.IPv6StaticAddresses != nil {
+		param := lanConfigParams.IPv6Status
+		if param == nil {
+			param = &LanConfigParam_IPv6Status{}
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
+				return err
+			}
+		}
+		ipv6StaticAddressMax := param.StaticAddressMax
+
 		if len(lanConfigParams.IPv6StaticAddresses) == 0 && ipv6StaticAddressMax > 0 {
 			count := ipv6StaticAddressMax
 			lanConfigParams.IPv6StaticAddresses = make([]*LanConfigParam_IPv6StaticAddress, count)
@@ -454,24 +474,26 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 		}
 
 		for _, ipv6StaticAddress := range lanConfigParams.IPv6StaticAddresses {
-			if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6StaticAddress); err != nil {
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6StaticAddress); canIgnore(err) != nil {
 				return err
 			}
 		}
 	}
 
-	var ipv6DHCPv6StaticDUIDCount uint8
-	if lanConfigParams.IPv6DHCPv6StaticDUIDCount != nil {
-		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfigParams.IPv6DHCPv6StaticDUIDCount); err != nil {
-			if canIgnore(err) != nil {
-				return err
-			}
-		} else {
-			ipv6DHCPv6StaticDUIDCount = lanConfigParams.IPv6DHCPv6StaticDUIDCount.Max
-		}
+	if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfigParams.IPv6DHCPv6StaticDUIDCount); canIgnore(err) != nil {
+		return err
 	}
 
 	if lanConfigParams.IPv6DHCPv6StaticDUIDs != nil {
+		ipv6Status := lanConfigParams.IPv6DHCPv6StaticDUIDCount
+		if ipv6Status == nil {
+			ipv6Status = &LanConfigParam_IPv6DHCPv6StaticDUIDCount{}
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6Status); canIgnore(err) != nil {
+				return err
+			}
+		}
+		ipv6DHCPv6StaticDUIDCount := ipv6Status.Max
+
 		if len(lanConfigParams.IPv6DHCPv6StaticDUIDs) == 0 && ipv6DHCPv6StaticDUIDCount > 0 {
 			count := ipv6DHCPv6StaticDUIDCount
 			lanConfigParams.IPv6DHCPv6StaticDUIDs = make([]*LanConfigParam_IPv6DHCPv6StaticDUID, count)
@@ -483,13 +505,22 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 		}
 
 		for _, ipv6DHCPv6StaticDUID := range lanConfigParams.IPv6DHCPv6StaticDUIDs {
-			if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6DHCPv6StaticDUID); err != nil {
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6DHCPv6StaticDUID); canIgnore(err) != nil {
 				return err
 			}
 		}
 	}
 
 	if lanConfigParams.IPv6DynamicAddresses != nil {
+		ipv6Status := lanConfigParams.IPv6Status
+		if ipv6Status == nil {
+			ipv6Status = &LanConfigParam_IPv6Status{}
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6Status); canIgnore(err) != nil {
+				return err
+			}
+		}
+		ipv6DynamicAddressMax := ipv6Status.DynamicAddressMax
+
 		if len(lanConfigParams.IPv6DynamicAddresses) == 0 && ipv6DynamicAddressMax > 0 {
 			count := ipv6DynamicAddressMax
 			lanConfigParams.IPv6DynamicAddresses = make([]*LanConfigParam_IPv6DynamicAddress, count)
@@ -501,26 +532,26 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 		}
 
 		for _, ipv6DynamicAddress := range lanConfigParams.IPv6DynamicAddresses {
-			if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6DynamicAddress); err != nil {
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6DynamicAddress); canIgnore(err) != nil {
 				return err
 			}
 		}
 	}
 
-	var ipv6DHCPv6DynamicDUIDCount uint8
-	if lanConfigParams.IPv6DHCPv6DynamicDUIDCount != nil {
-		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfigParams.IPv6DHCPv6DynamicDUIDCount); err != nil {
-			if canIgnore(err) != nil {
-				return err
-			}
-		} else {
-			if lanConfigParams.IPv6DHCPv6DynamicDUIDCount != nil {
-				ipv6DHCPv6DynamicDUIDCount = lanConfigParams.IPv6DHCPv6DynamicDUIDCount.Max
-			}
-		}
+	if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfigParams.IPv6DHCPv6DynamicDUIDCount); canIgnore(err) != nil {
+		return err
 	}
 
 	if lanConfigParams.IPv6DHCPv6DynamicDUIDs != nil {
+		param := lanConfigParams.IPv6DHCPv6DynamicDUIDCount
+		if param == nil {
+			param = &LanConfigParam_IPv6DHCPv6DynamicDUIDCount{}
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
+				return err
+			}
+		}
+		ipv6DHCPv6DynamicDUIDCount := param.Max
+
 		if len(lanConfigParams.IPv6DHCPv6DynamicDUIDs) == 0 && ipv6DHCPv6DynamicDUIDCount > 0 {
 			// Todo
 
@@ -602,20 +633,20 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 		return err
 	}
 
-	var ipv6DynamicRouterInfoCount uint8
-	if lanConfigParams.IPv6DynamicRouterInfoSets != nil {
-		if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfigParams.IPv6DynamicRouterInfoSets); err != nil {
-			if canIgnore(err) != nil {
-				return err
-			}
-		} else {
-			if lanConfigParams.IPv6DynamicRouterInfoSets != nil {
-				ipv6DynamicRouterInfoCount = lanConfigParams.IPv6DynamicRouterInfoSets.Count
-			}
-		}
+	if err := c.GetLanConfigParamFor(ctx, channelNumber, lanConfigParams.IPv6DynamicRouterInfoSets); canIgnore(err) != nil {
+		return err
 	}
 
 	if lanConfigParams.IPv6DynamicRouterInfoIP != nil {
+		param := lanConfigParams.IPv6DynamicRouterInfoSets
+		if param == nil {
+			param = &LanConfigParam_IPv6DynamicRouterInfoSets{}
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
+				return err
+			}
+		}
+		ipv6DynamicRouterInfoCount := param.Count
+
 		if len(lanConfigParams.IPv6DynamicRouterInfoIP) == 0 && ipv6DynamicRouterInfoCount > 0 {
 			count := ipv6DynamicRouterInfoCount
 			lanConfigParams.IPv6DynamicRouterInfoIP = make([]*LanConfigParam_IPv6DynamicRouterInfoIP, count)
@@ -634,6 +665,15 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	}
 
 	if lanConfigParams.IPv6DynamicRouterInfoMAC != nil {
+		param := lanConfigParams.IPv6DynamicRouterInfoSets
+		if param == nil {
+			param = &LanConfigParam_IPv6DynamicRouterInfoSets{}
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
+				return err
+			}
+		}
+		ipv6DynamicRouterInfoCount := param.Count
+
 		if len(lanConfigParams.IPv6DynamicRouterInfoMAC) == 0 && ipv6DynamicRouterInfoCount > 0 {
 			count := ipv6DynamicRouterInfoCount
 			lanConfigParams.IPv6DynamicRouterInfoMAC = make([]*LanConfigParam_IPv6DynamicRouterInfoMAC, count)
@@ -652,6 +692,15 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	}
 
 	if lanConfigParams.IPv6DynamicRouterInfoPrefixLength != nil {
+		param := lanConfigParams.IPv6DynamicRouterInfoSets
+		if param == nil {
+			param = &LanConfigParam_IPv6DynamicRouterInfoSets{}
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
+				return err
+			}
+		}
+		ipv6DynamicRouterInfoCount := param.Count
+
 		if len(lanConfigParams.IPv6DynamicRouterInfoPrefixLength) == 0 && ipv6DynamicRouterInfoCount > 0 {
 			count := ipv6DynamicRouterInfoCount
 			lanConfigParams.IPv6DynamicRouterInfoPrefixLength = make([]*LanConfigParam_IPv6DynamicRouterInfoPrefixLength, count)
@@ -670,6 +719,15 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	}
 
 	if lanConfigParams.IPv6DynamicRouterInfoPrefixValue != nil {
+		param := lanConfigParams.IPv6DynamicRouterInfoSets
+		if param == nil {
+			param = &LanConfigParam_IPv6DynamicRouterInfoSets{}
+			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
+				return err
+			}
+		}
+		ipv6DynamicRouterInfoCount := param.Count
+
 		if len(lanConfigParams.IPv6DynamicRouterInfoPrefixValue) == 0 && ipv6DynamicRouterInfoCount > 0 {
 			count := ipv6DynamicRouterInfoCount
 			lanConfigParams.IPv6DynamicRouterInfoPrefixValue = make([]*LanConfigParam_IPv6DynamicRouterInfoPrefixValue, count)

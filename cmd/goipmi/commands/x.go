@@ -274,9 +274,14 @@ func NewCmdXGetLanConfigParamsFor() *cobra.Command {
 			ctx := context.Background()
 
 			lanConfigParams := ipmi.LanConfigParams{
-				IP:               &ipmi.LanConfigParam_IP{},
-				SubnetMask:       &ipmi.LanConfigParam_SubnetMask{},
-				DefaultGatewayIP: &ipmi.LanConfigParam_DefaultGatewayIP{},
+				IP:                        &ipmi.LanConfigParam_IP{},
+				SubnetMask:                &ipmi.LanConfigParam_SubnetMask{},
+				DefaultGatewayIP:          &ipmi.LanConfigParam_DefaultGatewayIP{},
+				IPv6StaticAddresses:       make([]*ipmi.LanConfigParam_IPv6StaticAddress, 0),
+				IPv6DynamicAddresses:      make([]*ipmi.LanConfigParam_IPv6DynamicAddress, 0),
+				IPv6DHCPv6StaticDUIDs:     make([]*ipmi.LanConfigParam_IPv6DHCPv6StaticDUID, 0),
+				AlertDestinationAddresses: make([]*ipmi.LanConfigParam_AlertDestinationAddress, 0),
+				IPv6DynamicRouterInfoMAC:  make([]*ipmi.LanConfigParam_IPv6DynamicRouterInfoMAC, 0),
 			}
 
 			if err := client.GetLanConfigParamsFor(ctx, channelNumber, &lanConfigParams); err != nil {
