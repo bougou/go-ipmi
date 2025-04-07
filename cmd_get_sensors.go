@@ -36,6 +36,11 @@ func SensorFilterOptionIsSensorType(sensorTypes ...SensorType) func(sensor *Sens
 // passed all filter options, that means the filter options are logically ANDed.
 //
 // If you want the filter options are logically ORed, use `GetSensorsAny`
+//
+// Example:
+//
+//	// get all sensors with fan type
+//	sensors, err := client.GetSensors(ctx, ipmi.SensorFilterOptionIsSensorType(ipmi.SensorTypeFan))
 func (c *Client) GetSensors(ctx context.Context, filterOptions ...SensorFilterOption) ([]*Sensor, error) {
 	var out = make([]*Sensor, 0)
 

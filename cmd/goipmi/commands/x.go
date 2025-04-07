@@ -31,6 +31,7 @@ func NewCmdX() *cobra.Command {
 	}
 	cmd.AddCommand(NewCmdXGetSDRs())
 	cmd.AddCommand(NewCmdXGetSensors())
+	cmd.AddCommand(NewCmdXGetSensorsFilterFans())
 	cmd.AddCommand(NewCmdXGetDeviceSDRs())
 	cmd.AddCommand(NewCmdXGetPayloadActivationStatus())
 	cmd.AddCommand(NewCmdXGetDeviceGUID())
@@ -134,6 +135,24 @@ func NewCmdXGetSensors() *cobra.Command {
 	cmd.PersistentFlags().BoolVarP(&show, "show", "s", false, "show table of result")
 	cmd.PersistentFlags().BoolVarP(&loop, "loop", "l", false, "loop")
 
+	return cmd
+}
+
+func NewCmdXGetSensorsFilterFans() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "get-sensors-filter-fans",
+		Short: "get-sensors-filter-fans",
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
+			res, err := client.GetSensors(ctx, ipmi.SensorFilterOptionIsSensorType(ipmi.SensorTypeFan))
+			if err != nil {
+				fmt.Printf("GetSensors failed, err: %s", err)
+				return
+			}
+			fmt.Printf("GetSensors succeeded, %d records\n", len(res))
+			fmt.Println(ipmi.FormatSensors(true, res...))
+		},
+	}
 	return cmd
 }
 
