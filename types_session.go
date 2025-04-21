@@ -564,7 +564,7 @@ func (c *Client) encryptPayload(rawPayload []byte, iv []byte) ([]byte, error) {
 		out = append(out, confidentialityHeader...)
 
 		input := append(c.session.v20.k2, iv...)
-		keyRC := md5.New().Sum(input)
+		keyRC := md5.Sum(input)
 
 		var cipherKey []byte
 		switch c.session.v20.cryptAlg {
@@ -620,7 +620,7 @@ func (c *Client) decryptPayload(data []byte) ([]byte, error) {
 
 		iv := c.session.v20.rc4DecryptIV[:]
 		input := append(c.session.v20.k2, iv...)
-		keyRC := md5.New().Sum(input)
+		keyRC := md5.Sum(input)
 		var cipherKey []byte
 		switch c.session.v20.cryptAlg {
 		case CryptAlg_xRC4_40:
