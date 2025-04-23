@@ -209,7 +209,7 @@ func (p *SystemInfoParam_SetInProgress) Format() string {
 
 type SystemInfoParam_SystemFirmwareVersion struct {
 	SetSelector uint8
-	BlockData   [16]byte
+	BlockData   []byte
 }
 
 func (p *SystemInfoParam_SystemFirmwareVersion) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
@@ -228,7 +228,11 @@ func (p *SystemInfoParam_SystemFirmwareVersion) Unpack(data []byte) error {
 		return ErrUnpackedDataTooShortWith(len(data), 1+len(p.BlockData))
 	}
 	p.SetSelector = data[0]
-	copy(p.BlockData[:], data[1:])
+
+	if len(data) > 1 {
+		p.BlockData = make([]byte, len(data)-1)
+		copy(p.BlockData[:], data[1:])
+	}
 	return nil
 }
 
@@ -241,7 +245,7 @@ func (p *SystemInfoParam_SystemFirmwareVersion) Format() string {
 
 type SystemInfoParam_SystemName struct {
 	SetSelector uint8
-	BlockData   [16]byte
+	BlockData   []byte
 }
 
 func (p *SystemInfoParam_SystemName) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
@@ -260,7 +264,11 @@ func (p *SystemInfoParam_SystemName) Unpack(data []byte) error {
 		return ErrUnpackedDataTooShortWith(len(data), 1+len(p.BlockData))
 	}
 	p.SetSelector = data[0]
-	copy(p.BlockData[:], data[1:])
+
+	if len(data) > 1 {
+		p.BlockData = make([]byte, len(data)-1)
+		copy(p.BlockData[:], data[1:])
+	}
 	return nil
 }
 
@@ -273,7 +281,7 @@ func (p *SystemInfoParam_SystemName) Format() string {
 
 type SystemInfoParam_PrimaryOSName struct {
 	SetSelector uint8
-	BlockData   [16]byte
+	BlockData   []byte
 }
 
 func (p *SystemInfoParam_PrimaryOSName) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
@@ -292,7 +300,10 @@ func (p *SystemInfoParam_PrimaryOSName) Unpack(data []byte) error {
 		return ErrUnpackedDataTooShortWith(len(data), 1+len(p.BlockData))
 	}
 	p.SetSelector = data[0]
-	copy(p.BlockData[:], data[1:])
+	if len(data) > 1 {
+		p.BlockData = make([]byte, len(data)-1)
+		copy(p.BlockData[:], data[1:])
+	}
 	return nil
 }
 
@@ -305,7 +316,7 @@ func (p *SystemInfoParam_PrimaryOSName) Format() string {
 
 type SystemInfoParam_OSName struct {
 	SetSelector uint8
-	BlockData   [16]byte
+	BlockData   []byte
 }
 
 func (p *SystemInfoParam_OSName) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
@@ -324,7 +335,11 @@ func (p *SystemInfoParam_OSName) Unpack(data []byte) error {
 		return ErrUnpackedDataTooShortWith(len(data), 1+len(p.BlockData))
 	}
 	p.SetSelector = data[0]
-	copy(p.BlockData[:], data[1:])
+
+	if len(data) > 1 {
+		p.BlockData = make([]byte, len(data)-1)
+		copy(p.BlockData[:], data[1:])
+	}
 	return nil
 }
 
@@ -337,7 +352,7 @@ func (p *SystemInfoParam_OSName) Format() string {
 
 type SystemInfoParam_OSVersion struct {
 	SetSelector uint8
-	BlockData   [16]byte
+	BlockData   []byte
 }
 
 func (p *SystemInfoParam_OSVersion) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
@@ -356,7 +371,10 @@ func (p *SystemInfoParam_OSVersion) Unpack(data []byte) error {
 		return ErrUnpackedDataTooShortWith(len(data), 1+len(p.BlockData))
 	}
 	p.SetSelector = data[0]
-	copy(p.BlockData[:], data[1:])
+	if len(data) > 1 {
+		p.BlockData = make([]byte, len(data)-1)
+		copy(p.BlockData[:], data[1:])
+	}
 	return nil
 }
 
@@ -369,7 +387,7 @@ func (p *SystemInfoParam_OSVersion) Format() string {
 
 type SystemInfoParam_BMCURL struct {
 	SetSelector uint8
-	BlockData   [16]byte
+	BlockData   []byte
 }
 
 func (p *SystemInfoParam_BMCURL) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
@@ -388,7 +406,10 @@ func (p *SystemInfoParam_BMCURL) Unpack(data []byte) error {
 		return ErrUnpackedDataTooShortWith(len(data), 1+len(p.BlockData))
 	}
 	p.SetSelector = data[0]
-	copy(p.BlockData[:], data[1:])
+	if len(data) > 1 {
+		p.BlockData = make([]byte, len(data)-1)
+		copy(p.BlockData[:], data[1:])
+	}
 	return nil
 }
 
@@ -401,7 +422,7 @@ func (p *SystemInfoParam_BMCURL) Format() string {
 
 type SystemInfoParam_ManagementURL struct {
 	SetSelector uint8
-	BlockData   [16]byte
+	BlockData   []byte
 }
 
 func (p *SystemInfoParam_ManagementURL) SystemInfoParameter() (paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) {
@@ -420,7 +441,10 @@ func (p *SystemInfoParam_ManagementURL) Unpack(data []byte) error {
 		return ErrUnpackedDataTooShortWith(len(data), 1+len(p.BlockData))
 	}
 	p.SetSelector = data[0]
-	copy(p.BlockData[:], data[1:])
+	if len(data) > 1 {
+		p.BlockData = make([]byte, len(data)-1)
+		copy(p.BlockData[:], data[1:])
+	}
 	return nil
 }
 

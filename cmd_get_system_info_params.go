@@ -134,10 +134,15 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *SystemInfoP
 			}
 			if err := c.GetSystemInfoParamFor(ctx, p); canIgnore(err) != nil {
 				return err
-			} else {
-				stringLength := uint8(p.BlockData[1])
-				setsCount = stringLength/16 + 1
 			}
+			if len(p.BlockData) < 2 {
+				// For the first block of string data (set selector = 0),
+				// the first two bytes indicate the encoding of the string and its overall length as follows.
+				// So, if the length is less than 2, it means there is no string data.
+				return nil
+			}
+			stringLength := uint8(p.BlockData[1])
+			setsCount = stringLength/16 + 1
 
 			params.SystemFirmwareVersions = make([]*SystemInfoParam_SystemFirmwareVersion, setsCount)
 			for i := uint8(0); i < setsCount; i++ {
@@ -164,10 +169,12 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *SystemInfoP
 			}
 			if err := c.GetSystemInfoParamFor(ctx, p); canIgnore(err) != nil {
 				return err
-			} else {
-				stringLength := uint8(p.BlockData[1])
-				setsCount = stringLength/16 + 1
 			}
+			if len(p.BlockData) < 2 {
+				return nil
+			}
+			stringLength := uint8(p.BlockData[1])
+			setsCount = stringLength/16 + 1
 
 			params.SystemNames = make([]*SystemInfoParam_SystemName, setsCount)
 			for i := uint8(0); i < setsCount; i++ {
@@ -194,10 +201,12 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *SystemInfoP
 			}
 			if err := c.GetSystemInfoParamFor(ctx, p); canIgnore(err) != nil {
 				return err
-			} else {
-				stringLength := uint8(p.BlockData[1])
-				setsCount = stringLength/16 + 1
 			}
+			if len(p.BlockData) < 2 {
+				return nil
+			}
+			stringLength := uint8(p.BlockData[1])
+			setsCount = stringLength/16 + 1
 
 			params.PrimaryOSNames = make([]*SystemInfoParam_PrimaryOSName, setsCount)
 			for i := uint8(0); i < setsCount; i++ {
@@ -224,10 +233,12 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *SystemInfoP
 			}
 			if err := c.GetSystemInfoParamFor(ctx, p); canIgnore(err) != nil {
 				return err
-			} else {
-				stringLength := uint8(p.BlockData[1])
-				setsCount = stringLength/16 + 1
 			}
+			if len(p.BlockData) < 2 {
+				return nil
+			}
+			stringLength := uint8(p.BlockData[1])
+			setsCount = stringLength/16 + 1
 
 			params.OSNames = make([]*SystemInfoParam_OSName, setsCount)
 			for i := uint8(0); i < setsCount; i++ {
@@ -254,10 +265,12 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *SystemInfoP
 			}
 			if err := c.GetSystemInfoParamFor(ctx, p); canIgnore(err) != nil {
 				return err
-			} else {
-				stringLength := uint8(p.BlockData[1])
-				setsCount = stringLength/16 + 1
 			}
+			if len(p.BlockData) < 2 {
+				return nil
+			}
+			stringLength := uint8(p.BlockData[1])
+			setsCount = stringLength/16 + 1
 
 			params.OSVersions = make([]*SystemInfoParam_OSVersion, setsCount)
 			for i := uint8(0); i < setsCount; i++ {
@@ -283,8 +296,9 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *SystemInfoP
 			if err := c.GetSystemInfoParamFor(ctx, p); canIgnore(err) != nil {
 				return err
 			}
-
-			//stringDataType := uint8(p.BlockData[0])
+			if len(p.BlockData) < 2 {
+				return nil
+			}
 			stringLength := uint8(p.BlockData[1]) // string length 1-based
 			setsCount := stringLength/16 + 1
 
@@ -312,8 +326,9 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *SystemInfoP
 			if err := c.GetSystemInfoParamFor(ctx, p); canIgnore(err) != nil {
 				return err
 			}
-
-			//stringDataType := uint8(p.BlockData[0])
+			if len(p.BlockData) < 2 {
+				return nil
+			}
 			stringLength := uint8(p.BlockData[1]) // string length 1-based
 			setsCount := stringLength/16 + 1
 
