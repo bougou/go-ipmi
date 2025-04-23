@@ -285,10 +285,11 @@ func (full *SDRFull) SensorThreshold(thresholdType SensorThresholdType) SensorTh
 func (full *SDRFull) String() string {
 	// For pure SDR record, there's no reading for a sensor, unless you use
 	// GetSensorReading command to fetch it.
-	return fmt.Sprintf(`Sensor ID              : %s (%#02x)
-Generator             : %#02x
+	return fmt.Sprintf(`
+Sensor ID             : %s (%#02x)
+Generator ID          : %#04x (%s)
 Entity ID             : %d.%d (%s)
-Sensor Type (%s)      : %s (%#02x)
+Sensor Type           : %s (%#02x) (%s)
 Sensor Reading        : %.4f (+/- %d) %s
 Sensor Status         : %s
 Sensor Initialization :
@@ -328,9 +329,9 @@ SensorDirection       : %d
 LinearizationFunc     : %s
 Reading Factors       : %s`,
 		string(full.IDStringBytes), full.SensorNumber,
-		full.GeneratorID,
+		uint16(full.GeneratorID), full.GeneratorID.String(),
 		uint8(full.SensorEntityID), uint8(full.SensorEntityInstance), full.SensorEntityID.String(),
-		full.SensorEventReadingType.SensorClass(), full.SensorType.String(), uint8(full.SensorType),
+		full.SensorType.String(), uint8(full.SensorType), full.SensorEventReadingType.SensorClass(),
 		full.SensorValue, full.ReadingFactors.Tolerance, full.SensorUnit,
 		full.SensorStatus,
 		full.SensorInitialization.Settable,

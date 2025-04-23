@@ -874,6 +874,8 @@ func ConvertSensorTolerance(raw uint8, analogDataFormat SensorAnalogUnitFormat, 
 
 // Sensor holds all attribute of a sensor.
 type Sensor struct {
+	GeneratorID GeneratorID
+
 	Number uint8
 	Name   string
 
@@ -889,8 +891,9 @@ type Sensor struct {
 	EntityID       EntityID
 	EntityInstance EntityInstance
 
-	scanningDisabled bool // update by GetSensorReading
-	readingAvailable bool // update by GetSensorReading
+	notPresent       bool // update by GetSensorReading (CompletionCodeRequestedDataNotPresent)
+	scanningDisabled bool // update by GetSensorReadingResponse
+	readingAvailable bool // update by GetSensorReadingResponse
 
 	// Raw reading value before conversion
 	Raw uint8
@@ -944,12 +947,20 @@ type Sensor struct {
 func (s *Sensor) String() string {
 	sensorReadingRawStr := fmt.Sprintf("%d", s.Raw)
 	sensorReadingValueStr := fmt.Sprintf("%.3f %s", s.Value, s.SensorUnit)
-	if s.scanningDisabled {
-		sensorReadingRawStr = "Unable to read sensor: Device Not Present"
-		sensorReadingValueStr = "Unable to read sensor: Device Not Present"
+
+	if s.notPresent {
+		sensorReadingRawStr = "No Reading (Not Present)"
+		sensorReadingValueStr = "No Reading (Not Present)"
 	}
 
-	return fmt.Sprintf("Sensor ID              : %s (%#02x)\n", s.Name, s.Number) +
+	if s.scanningDisabled {
+		sensorReadingRawStr = "No Reading (Scanning Disabled)"
+		sensorReadingValueStr = "No Reading (Scanning Disabled)"
+	}
+
+	return "" +
+		fmt.Sprintf("Sensor ID             : %s (%#02x)\n", s.Name, s.Number) +
+		fmt.Sprintf(" Generator ID         : %#04x, %s\n", uint16(s.GeneratorID), s.GeneratorID.String()) +
 		fmt.Sprintf(" Entity ID            : %d.%d (%s)\n", uint8(s.EntityID), uint8(s.EntityInstance), s.EntityID) +
 		fmt.Sprintf(" Sensor Type          : %s (%#02x) (%s)\n", s.SensorType.String(), uint8(s.SensorType), string(s.EventReadingType.SensorClass())) +
 		fmt.Sprintf(" Sensor Number        : %#02x\n", s.Number) +
@@ -1144,6 +1155,10 @@ func (sensor *Sensor) SensorThreshold(thresholdType SensorThresholdType) SensorT
 	}
 }
 func (sensor *Sensor) Status() string {
+	if sensor.notPresent {
+		return "N/A"
+	}
+
 	if sensor.scanningDisabled {
 		return "N/A"
 	}
@@ -1159,7 +1174,12 @@ func (sensor *Sensor) Status() string {
 	return fmt.Sprintf("0x%02x%02x", sensor.Discrete.optionalData1, sensor.Discrete.optionalData2)
 }
 
+// HumanStr returns the human-readable string of the sensor.
 func (sensor *Sensor) HumanStr() string {
+	if sensor.notPresent {
+		return "N/A"
+	}
+
 	if sensor.scanningDisabled {
 		return "N/A"
 	}
@@ -1175,7 +1195,13 @@ func (sensor *Sensor) HumanStr() string {
 	return strings.Join(sensor.DiscreteActiveEventsString(), ", ")
 }
 
+// ReadingStr returns the reading value of the sensor.
+// The reading value is converted and aligned with the sensor unit, but the unit is not included in the string.
 func (sensor *Sensor) ReadingStr() string {
+	if sensor.notPresent {
+		return "N/A"
+	}
+
 	if sensor.scanningDisabled {
 		return "N/A"
 	}

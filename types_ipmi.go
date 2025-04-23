@@ -169,6 +169,24 @@ func (c *Client) BuildIPMIRequest(ctx context.Context, reqCmd Request) (*IPMIReq
 		CommandData: reqCmd.Pack(),
 	}
 
+	commandContext := GetCommandContext(ctx)
+	if commandContext != nil {
+		c.Debug("Got CommandContext:", commandContext)
+
+		if commandContext.responderAddr != nil {
+			ipmiReq.ResponderAddr = *commandContext.responderAddr
+		}
+		if commandContext.responderLUN != nil {
+			ipmiReq.ResponderLUN = *commandContext.responderLUN
+		}
+		if commandContext.requesterAddr != nil {
+			ipmiReq.RequesterAddr = *commandContext.requesterAddr
+		}
+		if commandContext.requesterLUN != nil {
+			ipmiReq.RequesterLUN = *commandContext.requesterLUN
+		}
+	}
+
 	c.session.ipmiSeq += 1
 	if c.session.ipmiSeq > IPMIRequesterSequenceMax {
 		c.session.ipmiSeq = 1

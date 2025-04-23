@@ -156,6 +156,7 @@ func (c *Client) sdrToSensor(ctx context.Context, sdr *SDR) (*Sensor, error) {
 
 	switch sdr.RecordHeader.RecordType {
 	case SDRRecordTypeFullSensor:
+		sensor.GeneratorID = sdr.Full.GeneratorID
 		sensor.Number = uint8(sdr.Full.SensorNumber)
 		sensor.Name = strings.TrimSpace(string(sdr.Full.IDStringBytes))
 		sensor.SensorUnit = sdr.Full.SensorUnit
@@ -170,6 +171,7 @@ func (c *Client) sdrToSensor(ctx context.Context, sdr *SDR) (*Sensor, error) {
 		sensor.Threshold.ReadingFactors = sdr.Full.ReadingFactors
 
 	case SDRRecordTypeCompactSensor:
+		sensor.GeneratorID = sdr.Compact.GeneratorID
 		sensor.Number = uint8(sdr.Compact.SensorNumber)
 		sensor.Name = strings.TrimSpace(string(sdr.Compact.IDStringBytes))
 		sensor.SensorUnit = sdr.Compact.SensorUnit
@@ -184,11 +186,23 @@ func (c *Client) sdrToSensor(ctx context.Context, sdr *SDR) (*Sensor, error) {
 		return nil, fmt.Errorf("only support Full or Compact SDR record type, input is %s", sdr.RecordHeader.RecordType)
 	}
 
-	c.Debug("Sensor:", sensor)
-	c.Debug("Get Sensor", fmt.Sprintf("Sensor Name: %s, Sensor Number: %#02x\n", sensor.Name, sensor.Number))
+	sensorOwner := uint8(sensor.GeneratorID.OwnerID())
+	sensorLUN := uint8(sensor.GeneratorID.LUN())
+	commandContext := &CommandContext{
+		responderAddr: &sensorOwner,
+		responderLUN:  &sensorLUN,
+	}
+	ctx = WithCommandContext(ctx, commandContext)
+	c.Debug("Set CommandContext:", commandContext)
 
 	if err := c.fillSensorReading(ctx, sensor); err != nil {
 		return nil, fmt.Errorf("fillSensorReading failed, err: %w", err)
+	}
+
+	// notPresent is filled/set by fillSensorReading
+	if sensor.notPresent {
+		c.Debug(fmt.Sprintf(":( Sensor [%s](%#02x) not present\n", sensor.Name, sensor.Number), "")
+		return sensor, nil
 	}
 
 	// scanningDisabled is filled/set by fillSensorReading
@@ -212,8 +226,17 @@ func (c *Client) sdrToSensor(ctx context.Context, sdr *SDR) (*Sensor, error) {
 }
 
 func (c *Client) fillSensorReading(ctx context.Context, sensor *Sensor) error {
+	c.Debug("try to fill sensor reading for sensor", sensor.Number)
 
 	readingRes, err := c.GetSensorReading(ctx, sensor.Number)
+	c.Debug("GetSensorReading response", readingRes.Format())
+
+	if isErrOfCompletionCodes(err, uint8(CompletionCodeRequestedDataNotPresent)) {
+		c.Debugf("GetSensorReading for sensor %#02x failed, err: %s", sensor.Number, err)
+		sensor.notPresent = true
+		return nil
+	}
+
 	if _canIgnoreSensorErr(err) != nil {
 		return fmt.Errorf("GetSensorReading for sensor %#02x failed, err: %w", sensor.Number, err)
 	}

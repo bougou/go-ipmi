@@ -140,6 +140,22 @@ func (c *Client) openSendRequest(ctx context.Context, request Request) ([]byte, 
 	addr := &open.IPMI_SYSTEM_INTERFACE_ADDR{
 		AddrType: open.IPMI_SYSTEM_INTERFACE_ADDR_TYPE,
 		Channel:  open.IPMI_BMC_CHANNEL,
+		LUN:      0,
+	}
+
+	commandContext := GetCommandContext(ctx)
+	if commandContext != nil {
+		c.Debug("Got CommandContext:", commandContext)
+
+		if commandContext.responderAddr != nil {
+		}
+		if commandContext.responderLUN != nil {
+			addr.LUN = *commandContext.responderLUN
+		}
+		if commandContext.requesterAddr != nil {
+		}
+		if commandContext.requesterLUN != nil {
+		}
 	}
 
 	req := &open.IPMI_REQ{

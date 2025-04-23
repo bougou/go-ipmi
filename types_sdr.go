@@ -82,8 +82,9 @@ type SDR struct {
 
 func (sdr *SDR) String() string {
 
-	recordStr := fmt.Sprintf(`RecordID:              : %#02x
-RecordType:            : %s
+	recordStr := fmt.Sprintf(`
+Record ID:             : %#02x
+Record Type:           : %s
 SDR Version:           : %#02x
 Record Length:         : %d
 `,
@@ -363,7 +364,7 @@ func FormatSDRs(records []*SDR) string {
 		table.Append([]string{
 			fmt.Sprintf("%#02x", recordID),
 			fmt.Sprintf("%s (%#02x)", recordType.String(), uint8(recordType)),
-			fmt.Sprintf("%#04x", generatorID),
+			fmt.Sprintf("%#04x", uint16(generatorID)),
 			fmt.Sprintf("%#02x", sdr.SensorNumber()),
 			sdr.SensorName(),
 			canonicalEntityString(entityID, entityInstance),

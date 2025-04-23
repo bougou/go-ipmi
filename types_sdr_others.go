@@ -56,13 +56,13 @@ type SDREventOnly struct {
 
 func (eventOnly *SDREventOnly) String() string {
 	return fmt.Sprintf(`Sensor ID              : %s (%#02x)
-	Generator             : %d
+	Generator ID          : %#04x (%s)
 	Entity ID             : %d.%d (%s)
-	Sensor Type (%s) : %s (%#02x)`,
+	Sensor Type           : %s (%#02x) (%s)`,
 		string(eventOnly.IDStringBytes), eventOnly.SensorNumber,
-		eventOnly.GeneratorID,
+		uint16(eventOnly.GeneratorID), eventOnly.GeneratorID.String(),
 		uint8(eventOnly.SensorEntityID), uint8(eventOnly.SensorEntityInstance), eventOnly.SensorEntityID.String(),
-		eventOnly.SensorEventReadingType.SensorClass(), eventOnly.SensorType.String(), uint8(eventOnly.SensorType),
+		eventOnly.SensorType.String(), uint8(eventOnly.SensorType), eventOnly.SensorEventReadingType.SensorClass(),
 	)
 }
 

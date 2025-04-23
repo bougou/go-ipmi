@@ -83,10 +83,11 @@ type SDRCompact struct {
 
 func (compact *SDRCompact) String() string {
 
-	return fmt.Sprintf(`Sensor ID              : %s (%#02x)
-Generator             : %d
+	return fmt.Sprintf(`
+Sensor ID             : %s (%#02x)
+Generator ID          : %#04x (%s)
 Entity ID             : %d.%d (%s)
-Sensor Type (%s) : %s (%#02x)
+Sensor Type           : %s (%#02x) (%s)
 Sensor Reading        : %.3f %s
 Sensor Status         : %s
 Sensor Initialization :
@@ -112,9 +113,9 @@ Mask                  :
 Positive Hysteresis   : %#02x
 Negative Hysteresis   : %#02x`,
 		string(compact.IDStringBytes), compact.SensorNumber,
-		compact.GeneratorID,
+		uint16(compact.GeneratorID), compact.GeneratorID.String(),
 		uint8(compact.SensorEntityID), uint8(compact.SensorEntityInstance), compact.SensorEntityID.String(),
-		compact.SensorEventReadingType.SensorClass(), compact.SensorType.String(), uint8(compact.SensorType),
+		compact.SensorType.String(), uint8(compact.SensorType), compact.SensorEventReadingType.SensorClass(),
 		compact.SensorValue, compact.SensorUnit,
 		compact.SensorStatus,
 		compact.SensorInitialization.Settable,

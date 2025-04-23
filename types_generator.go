@@ -1,5 +1,7 @@
 package ipmi
 
+import "fmt"
+
 // 5.4 Sensor Owner Identification
 // the "owner" of the sensor.
 // The combination of Sensor Owner ID and Sensor Number uniquely identify a sensor in the system.
@@ -53,17 +55,19 @@ func (i SoftwareID) Type() SoftwareType {
 }
 
 // GeneratorID is 2 bytes.
-// the LSB means: Slave Address (for IPMB) or Software ID (for system software);
-// the MSB means: Channel Number / LUN (for IPMB) or always 0 (for system software)
+// the LSB represents: Slave Address (for IPMB) or Software ID (for system software);
+// the MSB represents: Channel Number / LUN (for IPMB) or always 0 (for system software)
 //
 // In some scenario, the GeneratorID is used as 1 byte, because
 // for IPMB, the Slave Address and LUN info are carried in IPMI Request/Response Messages;
 // and for system software, the MSB is always 0, so only LSB is need.
+//
 // 32.1 SEL Event Records
 //
 //	Byte 1
 //	[7:1] - 7-bit Slave Address, or 7-bit system software ID
 //	[0] 0b = IPMB Slave Address, 1b = system software ID
+//
 //	Byte 2
 //	[7:4] - Channel number. Channel that event message was received over. 0h if the
 //	event message was received via the system interface, primary IPMB, or
@@ -82,12 +86,32 @@ const (
 
 	// With Microsoft Windows Server* 2003 R2 and later versions, an Intelligent Platform Management Interface (IPMI) driver was added.
 	// This added the capability of logging some operating system events to the SEL.
-
 	GeneratorMicrosoftOS GeneratorID = 0x0041
 
 	// The **Open IPMI driver** supports the ability to put semi-custom and custom events in the system event log if a panic occurs.
 	GeneratorLinuxKernelPanic GeneratorID = 0x0021
 )
+
+func (g GeneratorID) String() string {
+	return fmt.Sprintf("Owner: %#02x, Channel: %#02x, LUN: %#02x", g.OwnerID(), g.ChannelNumber(), g.LUN())
+}
+
+func (g GeneratorID) OwnerID() uint8 {
+	return uint8(g & 0xff)
+}
+
+// OwnerIsSystemSoftware returns true if the owner is a system software, false means the owner is a IPMB slave address
+func (g GeneratorID) OwnerIsSystemSoftware() bool {
+	return g.OwnerID()&0x01 == 0x01
+}
+
+func (g GeneratorID) ChannelNumber() uint8 {
+	return (uint8(g>>8) & 0xf0) >> 4
+}
+
+func (g GeneratorID) LUN() uint8 {
+	return uint8(g>>8) & 0x03
+}
 
 // see: Intel System Event Log (SEL) Troubleshooting Guide Rev 3.4 September 2019 section 3.1
 type SensorNumber uint8

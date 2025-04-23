@@ -677,22 +677,29 @@ func formatTable(headers []string, rows [][]string) string {
 // If so, the `canIgnore` function returns nil, otherwise it returns the original err.
 func buildCanIgnoreFn(codes ...uint8) func(err error) error {
 	return func(err error) error {
-		if err == nil {
+		if isErrOfCompletionCodes(err, codes...) {
 			return nil
 		}
-
-		var respErr *ResponseError
-		if errors.As(err, &respErr) {
-			cc := respErr.CompletionCode()
-			for _, code := range codes {
-				if uint8(cc) == code {
-					return nil
-				}
-			}
-		}
-
 		return err
 	}
+}
+
+func isErrOfCompletionCodes(err error, codes ...uint8) bool {
+	if err == nil {
+		return false
+	}
+
+	var respErr *ResponseError
+	if errors.As(err, &respErr) {
+		cc := respErr.CompletionCode()
+		for _, code := range codes {
+			if uint8(cc) == code {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // Generic function to convert a slice of any type to a slice of interface{}

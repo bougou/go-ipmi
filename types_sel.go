@@ -273,7 +273,7 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 				sel.RecordType.String(),
 				fmt.Sprintf("%#02x", s.EvMRev),
 				fmt.Sprintf("%v", s.Timestamp),
-				fmt.Sprintf("%#04x", s.GeneratorID),
+				fmt.Sprintf("%#04x", uint16(s.GeneratorID)),
 				fmt.Sprintf("%#02x", s.SensorNumber),
 				fmt.Sprintf("%#02x", uint8(s.SensorType)),
 				s.SensorType.String(),
@@ -289,7 +289,7 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 				var sensorName string
 				sdr, ok := sdrMap[s.GeneratorID][s.SensorNumber]
 				if !ok {
-					sensorName = fmt.Sprintf("N/A %#04x, %#02x", s.GeneratorID, s.SensorNumber)
+					sensorName = fmt.Sprintf("N/A %#04x, %#02x", uint16(s.GeneratorID), s.SensorNumber)
 				} else {
 					sensorName = sdr.SensorName()
 				}
