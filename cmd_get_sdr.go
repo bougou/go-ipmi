@@ -62,8 +62,8 @@ func (c *Client) GetSDR(ctx context.Context, recordID uint16) (response *GetSDRR
 
 	// try read partial data if err (ResponseError and CompletionCode) indicate
 	// reading full data (0xff) exceeds the maximum transfer length for the interface
-	if resErr, ok := err.(*ResponseError); ok {
-		if resErr.CompletionCode() == CompletionCodeCannotReturnRequestedDataBytes {
+	if respErr, ok := isResponseError(err); ok {
+		if respErr.CompletionCode() == CompletionCodeCannotReturnRequestedDataBytes {
 			return c.getSDR(ctx, recordID)
 		}
 	}

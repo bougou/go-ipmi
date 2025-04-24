@@ -122,12 +122,14 @@ func (c *Client) ListUser(ctx context.Context, channelNumber uint8) ([]*User, er
 
 		res2, err := c.GetUsername(ctx, userID)
 		if err != nil {
-			respErr, ok := err.(*ResponseError)
-			if !ok || uint8(respErr.CompletionCode()) != 0xcc {
+			if respErr, ok := isResponseError(err); ok {
+				if respErr.CompletionCode() == CompletionCodeRequestDataFieldInvalid {
+					// Completion Code is 0xcc, means this UserID is not set.
+					username = ""
+				}
+			} else {
 				return nil, fmt.Errorf("get user name for userID %d failed, err: %w", userID, err)
 			}
-			// Completion Code is 0xcc, means this UserID is not set.
-			username = ""
 		} else {
 			username = res2.Username
 		}

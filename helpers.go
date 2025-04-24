@@ -5,7 +5,6 @@ import (
 	"encoding/base32"
 	"encoding/base64"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -689,8 +688,7 @@ func isErrOfCompletionCodes(err error, codes ...uint8) bool {
 		return false
 	}
 
-	var respErr *ResponseError
-	if errors.As(err, &respErr) {
+	if respErr, ok := isResponseError(err); ok {
 		cc := respErr.CompletionCode()
 		for _, code := range codes {
 			if uint8(cc) == code {

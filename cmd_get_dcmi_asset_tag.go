@@ -84,8 +84,8 @@ func (c *Client) GetDCMIAssetTagFull(ctx context.Context) (assetTagRaw []byte, t
 	for {
 		resp, err := c.GetDCMIAssetTag(ctx, offset)
 		if err != nil {
-			if err, ok := err.(*ResponseError); ok {
-				cc := uint8(err.CompletionCode())
+			if respErr, ok := isResponseError(err); ok {
+				cc := uint8(respErr.CompletionCode())
 				switch cc {
 				// align the completion code with the FRU Type Length Byte Format
 				case 0x80:
@@ -97,8 +97,10 @@ func (c *Client) GetDCMIAssetTagFull(ctx context.Context) (assetTagRaw []byte, t
 				case 0x83:
 					typeCode = 0x11
 				default:
-					return nil, 0, fmt.Errorf("GetDCMIAssetTag failed, err: %w", err)
+					return nil, 0, fmt.Errorf("GetDCMIAssetTag failed, err: %w", respErr)
 				}
+			} else {
+				return nil, 0, fmt.Errorf("GetDCMIAssetTag failed, err: %w", err)
 			}
 		}
 

@@ -39,8 +39,8 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 
 	fruAreaInfoRes, err := c.GetFRUInventoryAreaInfo(ctx, deviceID)
 	if err != nil {
-		if resErr, ok := err.(*ResponseError); ok {
-			if resErr.CompletionCode() == CompletionCodeRequestedDataNotPresent {
+		if respErr, ok := isResponseError(err); ok {
+			if respErr.CompletionCode() == CompletionCodeRequestedDataNotPresent {
 				fru.deviceNotPresent = true
 				fru.deviceNotPresentReason = "InventoryRecordNotExist"
 				return fru, nil
@@ -57,8 +57,8 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 	// retrieve the FRU header, just fetch FRUCommonHeaderSize bytes to construct a FRU Header
 	readFRURes, err := c.ReadFRUData(ctx, deviceID, 0, FRUCommonHeaderSize)
 	if err != nil {
-		if resErr, ok := err.(*ResponseError); ok {
-			switch resErr.CompletionCode() {
+		if respErr, ok := isResponseError(err); ok {
+			switch respErr.CompletionCode() {
 			case CompletionCodeRequestedDataNotPresent:
 				fru.deviceNotPresent = true
 				fru.deviceNotPresentReason = "DataNotPresent"

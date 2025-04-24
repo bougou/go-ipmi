@@ -112,18 +112,15 @@ func (c *Client) tryReadFRUData(ctx context.Context, deviceID uint8, readOffset 
 			return res, nil
 		}
 
-		resErr, ok := err.(*ResponseError)
-		if !ok {
-			return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
+		if respErr, ok := isResponseError(err); ok {
+			cc := respErr.CompletionCode()
+			if readFRUDataLength2Big(cc) {
+				readCount -= 1
+				continue
+			}
 		}
 
-		cc := resErr.CompletionCode()
-		if readFRUDataLength2Big(cc) {
-			readCount -= 1
-			continue
-		} else {
-			return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
-		}
+		return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
 	}
 }
 

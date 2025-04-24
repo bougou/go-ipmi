@@ -71,8 +71,8 @@ func (c *Client) GetDeviceSDR(ctx context.Context, recordID uint16) (response *G
 	response = &GetDeviceSDRResponse{}
 	err = c.Exchange(ctx, request, response)
 
-	if resErr, ok := err.(*ResponseError); ok {
-		if resErr.CompletionCode() == CompletionCodeCannotReturnRequestedDataBytes {
+	if respErr, ok := isResponseError(err); ok {
+		if respErr.CompletionCode() == CompletionCodeCannotReturnRequestedDataBytes {
 			return c.getDeviceSDR(ctx, recordID)
 		}
 	}

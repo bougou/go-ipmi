@@ -1,5 +1,10 @@
 package ipmi
 
+import (
+	"errors"
+	"fmt"
+)
+
 // Command is the field in an IPMI message
 type Command struct {
 	ID    uint8
@@ -38,11 +43,22 @@ type ResponseError struct {
 
 // Error implements the error interface
 func (e *ResponseError) Error() string {
-	return e.description
+	return fmt.Sprintf("cc: %#02x, description: %s", e.completionCode, e.description)
 }
 
 func (e *ResponseError) CompletionCode() CompletionCode {
 	return e.completionCode
+}
+
+func isResponseError(err error) (respErr *ResponseError, ok bool) {
+	if err == nil {
+		return nil, false
+	}
+
+	if errors.As(err, &respErr) {
+		return respErr, true
+	}
+	return nil, false
 }
 
 // Appendix G - Command Assignments
