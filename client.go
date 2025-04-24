@@ -292,17 +292,17 @@ type CommandContext struct {
 	requesterLUN  *uint8
 }
 
-type CommandContextKeyType string
+type commandContextKeyType string
 
-const CommandContextKey CommandContextKeyType = "CommandContext"
+const commandContextKey commandContextKeyType = "CommandContext"
 
 func WithCommandContext(ctx context.Context, commandContext *CommandContext) context.Context {
-	return context.WithValue(ctx, CommandContextKey, commandContext)
+	return context.WithValue(ctx, commandContextKey, commandContext)
 }
 
 func GetCommandContext(ctx context.Context) *CommandContext {
-	if ctx.Value(CommandContextKey) == nil {
+	if ctx.Value(commandContextKey) == nil {
 		return nil
 	}
-	return ctx.Value(CommandContextKey).(*CommandContext)
+	return ctx.Value(commandContextKey).(*CommandContext)
 }
