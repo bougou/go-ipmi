@@ -28,19 +28,22 @@ func SensorFilterOptionIsSensorType(sensorTypes ...SensorType) func(sensor *Sens
 	}
 }
 
-// GetSensors returns all sensors with their current readings and status.
+// GetSensors retrieves all sensors with their current readings and status.
 //
-// If there's no filter options, it returns all sensors.
+// Filter behavior:
+//   - If no filter options are provided, returns all sensors
+//   - If filter options are provided, returns only sensors that pass ALL filters (logical AND)
+//   - For logical OR filtering, use GetSensorsAny instead
 //
-// If there exists filter options, it returns the sensors those
-// passed all filter options, that means the filter options are logically ANDed.
+// Example usage:
 //
-// If you want the filter options are logically ORed, use `GetSensorsAny`
-//
-// Example:
-//
-//	// get all sensors with fan type
+//	// Get all fan sensors
 //	sensors, err := client.GetSensors(ctx, ipmi.SensorFilterOptionIsSensorType(ipmi.SensorTypeFan))
+//
+//	// Get all temperature sensors with valid readings
+//	sensors, err := client.GetSensors(ctx,
+//	    ipmi.SensorFilterOptionIsSensorType(ipmi.SensorTypeTemperature),
+//	    ipmi.SensorFilterOptionIsReadingValid)
 func (c *Client) GetSensors(ctx context.Context, filterOptions ...SensorFilterOption) ([]*Sensor, error) {
 	var out = make([]*Sensor, 0)
 
@@ -71,14 +74,19 @@ func (c *Client) GetSensors(ctx context.Context, filterOptions ...SensorFilterOp
 	return out, nil
 }
 
-// GetSensorsAny returns all sensors with their current readings and status.
+// GetSensorsAny retrieves all sensors with their current readings and status.
 //
-// If there's no filter options, it returns all sensors.
+// Filter behavior:
+//   - If no filter options are provided, returns all sensors
+//   - If filter options are provided, returns sensors that pass ANY of the filters (logical OR)
+//   - For logical AND filtering, use GetSensors instead
 //
-// If there exists filter options, it only returns the sensors those
-// passed any one filter option, that means the filter options are logically ORed.
+// Example usage:
 //
-// If you want the filter options are logically ANDed, use `GetSensors`.
+//	// Get sensors that are either temperature or voltage sensors
+//	sensors, err := client.GetSensorsAny(ctx,
+//	    ipmi.SensorFilterOptionIsSensorType(ipmi.SensorTypeTemperature),
+//	    ipmi.SensorFilterOptionIsSensorType(ipmi.SensorTypeVoltage))
 func (c *Client) GetSensorsAny(ctx context.Context, filterOptions ...SensorFilterOption) ([]*Sensor, error) {
 	var out = make([]*Sensor, 0)
 
@@ -139,11 +147,21 @@ func (c *Client) GetSensorByName(ctx context.Context, sensorName string) (*Senso
 	return sensor, nil
 }
 
-// sdrToSensor convert SDR record to Sensor struct.
+// sdrToSensor converts a Sensor Data Record (SDR) to a Sensor struct.
 //
-// Only Full and Compact SDR records are meaningful here. Pass SDRs with other record types will return error.
+// Requirements:
+//   - Only Full and Compact SDR records are supported
+//   - Returns error for other record types
 //
-// This function will fetch other sensor-related values which are not stored in SDR by other IPMI commands.
+// This function performs additional IPMI commands to fetch sensor-related values
+// that are not stored in the SDR record, including:
+//   - Current sensor readings
+//   - Threshold values
+//   - Event status
+//   - Hysteresis values
+//
+// The function handles both Full and Compact SDR record types, populating
+// the appropriate fields based on the record type.
 func (c *Client) sdrToSensor(ctx context.Context, sdr *SDR) (*Sensor, error) {
 	if sdr == nil {
 		return nil, fmt.Errorf("nil sdr parameter")
