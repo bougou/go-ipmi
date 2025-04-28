@@ -279,30 +279,3 @@ func (c *Client) lock() {
 func (c *Client) unlock() {
 	c.l.Unlock()
 }
-
-// CommandContext represents the specific context used for Exchange of the specific request.
-//
-// Some sensor-related commands (e.g. GetSensorReading) need to use the responder and requester addresses and LUNs which are specific to the sensor.
-//
-// This context is used to store the responder and requester addresses and LUNs for such commands.
-type CommandContext struct {
-	responderAddr *uint8
-	responderLUN  *uint8
-	requesterAddr *uint8
-	requesterLUN  *uint8
-}
-
-type commandContextKeyType string
-
-const commandContextKey commandContextKeyType = "CommandContext"
-
-func WithCommandContext(ctx context.Context, commandContext *CommandContext) context.Context {
-	return context.WithValue(ctx, commandContextKey, commandContext)
-}
-
-func GetCommandContext(ctx context.Context) *CommandContext {
-	if ctx.Value(commandContextKey) == nil {
-		return nil
-	}
-	return ctx.Value(commandContextKey).(*CommandContext)
-}

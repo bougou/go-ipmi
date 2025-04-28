@@ -206,10 +206,11 @@ func (c *Client) sdrToSensor(ctx context.Context, sdr *SDR) (*Sensor, error) {
 
 	sensorOwner := uint8(sensor.GeneratorID.OwnerID())
 	sensorLUN := uint8(sensor.GeneratorID.LUN())
-	commandContext := &CommandContext{
-		responderAddr: &sensorOwner,
-		responderLUN:  &sensorLUN,
-	}
+	commandContext := &CommandContext{}
+	commandContext.
+		WithResponderAddr(sensorOwner).
+		WithResponderLUN(sensorLUN)
+
 	ctx = WithCommandContext(ctx, commandContext)
 	c.Debug("Set CommandContext:", commandContext)
 
