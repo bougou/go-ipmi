@@ -47,13 +47,11 @@ func (res *GetLanConfigParamResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetLanConfigParamResponse) Format() string {
-	out := `
-Parameter Revision    : %d
-Param Data            : %v
-Length of Config Data : %d
-`
 
-	return fmt.Sprintf(out, res.ParamRevision, res.ParamData, len(res.ParamData))
+	return "" +
+		fmt.Sprintf("Parameter Revision    : %d\n", res.ParamRevision) +
+		fmt.Sprintf("Param Data            : %v\n", res.ParamData) +
+		fmt.Sprintf("Length of Config Data : %d\n", len(res.ParamData))
 }
 
 func (c *Client) GetLanConfigParam(ctx context.Context, channelNumber uint8, paramSelector LanConfigParamSelector, setSelector uint8, blockSelector uint8) (response *GetLanConfigParamResponse, err error) {

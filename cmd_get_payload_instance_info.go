@@ -50,13 +50,10 @@ func (res *GetPayloadInstanceInfoResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetPayloadInstanceInfoResponse) Format() string {
-	return fmt.Sprintf(`
-    Session ID      : %d
-    Payload Type    : %s (%d)
-    SOL Port Number : %d
-`, res.SessionID,
-		res.PayloadType.String(), res.PayloadType,
-		uint8(res.PortNumber))
+	return "" +
+		fmt.Sprintf("Session ID      : %d\n", res.SessionID) +
+		fmt.Sprintf("Payload Type    : %s (%d)\n", res.PayloadType.String(), uint8(res.PayloadType)) +
+		fmt.Sprintf("SOL Port Number : %d\n", uint8(res.PortNumber))
 }
 
 func (c *Client) GetPayloadInstanceInfo(ctx context.Context, payloadType PayloadType, payloadInstance uint8) (response *GetPayloadInstanceInfoResponse, err error) {

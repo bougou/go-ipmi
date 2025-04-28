@@ -54,9 +54,8 @@ func (r *ArmPEFPostponeTimerResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *ArmPEFPostponeTimerResponse) Format() string {
-	return fmt.Sprintf(`Present timer countdown value                  : %d (%#02x)`,
-		res.PresentValue, res.PresentValue,
-	)
+	return "" +
+		fmt.Sprintf("Present timer countdown value : %d (%#02x)\n", res.PresentValue, res.PresentValue)
 }
 
 func (c *Client) ArmPEFPostponeTimer(ctx context.Context, timeout uint8) (response *ArmPEFPostponeTimerResponse, err error) {

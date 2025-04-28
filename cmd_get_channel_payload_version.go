@@ -43,13 +43,9 @@ func (res *GetChannelPayloadVersionResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetChannelPayloadVersionResponse) Format() string {
-	return fmt.Sprintf(`
-		Major Version: %d
-		Minor Version: %d
-	`,
-		res.MajorVersion,
-		res.MinorVersion,
-	)
+	return "" +
+		fmt.Sprintf("Major Version: %d\n", res.MajorVersion) +
+		fmt.Sprintf("Minor Version: %d\n", res.MinorVersion)
 }
 
 func (c *Client) GetChannelPayloadVersion(ctx context.Context, channelNumber uint8, payloadType PayloadType) (response *GetChannelPayloadVersionResponse, err error) {

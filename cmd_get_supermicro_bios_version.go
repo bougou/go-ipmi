@@ -32,9 +32,8 @@ func (res *CommandGetSupermicroBiosVersionResponse) CompletionCodes() map[uint8]
 }
 
 func (res *CommandGetSupermicroBiosVersionResponse) Format() string {
-	return fmt.Sprintf(`bios.version = %s`,
-		res.Version,
-	)
+	return "" +
+		fmt.Sprintf("bios.version = %s\n", res.Version)
 }
 
 func (c *Client) GetSupermicroBiosVersion(ctx context.Context) (response *CommandGetSupermicroBiosVersionResponse, err error) {

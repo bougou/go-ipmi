@@ -1,11 +1,8 @@
 package ipmi
 
 import (
-	"bytes"
 	"fmt"
 	"time"
-
-	"github.com/olekukonko/tablewriter"
 )
 
 // 32. SEL Record Formats
@@ -233,10 +230,48 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 		elistMode = true
 	}
 
-	var buf = new(bytes.Buffer)
-	table := tablewriter.NewWriter(buf)
-	table.SetAutoWrapText(false)
-	table.SetAlignment(tablewriter.ALIGN_RIGHT)
+	rows := make([]map[string]string, 0)
+
+	for _, sel := range records {
+		recordTypeRange := sel.RecordType.Range()
+
+		switch recordTypeRange {
+		case SELRecordTypeRangeStandard:
+			s := sel.Standard
+
+			row := map[string]string{
+				"ID":               fmt.Sprintf("%#04x", sel.RecordID),
+				"RecordType":       sel.RecordType.String(),
+				"EvmRev":           fmt.Sprintf("%#02x", s.EvMRev),
+				"Timestamp":        fmt.Sprintf("%v", s.Timestamp),
+				"GID":              fmt.Sprintf("%#04x", uint16(s.GeneratorID)),
+				"SensorNumber":     fmt.Sprintf("%#02x", s.SensorNumber),
+				"SensorTypeCode":   fmt.Sprintf("%#02x", uint8(s.SensorType)),
+				"SensorType":       s.SensorType.String(),
+				"EventReadingType": fmt.Sprintf("%#02x (%s)", uint8(s.EventReadingType), s.EventReadingType.String()),
+				"EventDescription": s.EventString(),
+				"EventDirection":   s.EventDir.String(),
+				"EventSeverity":    string(s.EventSeverity()),
+				"EventData":        s.EventData.String(),
+			}
+
+			if elistMode {
+				var sensorName string
+				sdr, ok := sdrMap[s.GeneratorID][s.SensorNumber]
+				if !ok {
+					sensorName = fmt.Sprintf("N/A %#04x, %#02x", uint16(s.GeneratorID), s.SensorNumber)
+				} else {
+					sensorName = sdr.SensorName()
+				}
+				row["SensorName"] = sensorName
+			}
+
+			rows = append(rows, row)
+
+		case SELRecordTypeRangeTimestampedOEM:
+		case SELRecordTypeRangeNonTimestampedOEM:
+		}
+	}
 
 	headers := []string{
 		"ID",
@@ -248,9 +283,8 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 		"SensorTypeCode",
 		"SensorType",
 		"EventReadingType",
-		"EventReadingType",
 		"EventDescription",
-		"EventDir",
+		"EventDirection",
 		"EventSeverity",
 		"EventData",
 	}
@@ -258,52 +292,5 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 		headers = append(headers, "SensorName")
 	}
 
-	table.SetHeader(headers)
-	table.SetFooter(headers)
-
-	for _, sel := range records {
-		recordTypeRange := sel.RecordType.Range()
-
-		switch recordTypeRange {
-		case SELRecordTypeRangeStandard:
-			s := sel.Standard
-
-			rowContent := []string{
-				fmt.Sprintf("%#04x", sel.RecordID),
-				sel.RecordType.String(),
-				fmt.Sprintf("%#02x", s.EvMRev),
-				fmt.Sprintf("%v", s.Timestamp),
-				fmt.Sprintf("%#04x", uint16(s.GeneratorID)),
-				fmt.Sprintf("%#02x", s.SensorNumber),
-				fmt.Sprintf("%#02x", uint8(s.SensorType)),
-				s.SensorType.String(),
-				fmt.Sprintf("%#02x", uint8(s.EventReadingType)),
-				s.EventReadingType.String(),
-				s.EventString(),
-				s.EventDir.String(),
-				string(s.EventSeverity()),
-				s.EventData.String(),
-			}
-
-			if elistMode {
-				var sensorName string
-				sdr, ok := sdrMap[s.GeneratorID][s.SensorNumber]
-				if !ok {
-					sensorName = fmt.Sprintf("N/A %#04x, %#02x", uint16(s.GeneratorID), s.SensorNumber)
-				} else {
-					sensorName = sdr.SensorName()
-				}
-				rowContent = append(rowContent, sensorName)
-			}
-
-			table.Append(rowContent)
-
-		case SELRecordTypeRangeTimestampedOEM:
-		case SELRecordTypeRangeNonTimestampedOEM:
-		}
-	}
-
-	table.Render()
-
-	return buf.String()
+	return formatTable(headers, rows)
 }

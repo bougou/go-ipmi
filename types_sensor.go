@@ -1,12 +1,9 @@
 package ipmi
 
 import (
-	"bytes"
 	"fmt"
 	"math"
 	"strings"
-
-	"github.com/olekukonko/tablewriter"
 )
 
 // 42.1
@@ -973,11 +970,43 @@ func (s *Sensor) String() string {
 
 // FormatSensors return a string of table printed for sensors
 func FormatSensors(extended bool, sensors ...*Sensor) string {
+	rows := make([]map[string]string, len(sensors))
 
-	var buf = new(bytes.Buffer)
-	table := tablewriter.NewWriter(buf)
-	table.SetAutoWrapText(false)
-	table.SetAlignment(tablewriter.ALIGN_RIGHT)
+	for i, sensor := range sensors {
+		discreteEvents := ""
+		if sensor.IsThreshold() {
+			discreteEvents = "N/A"
+		} else {
+			discreteEvents = fmt.Sprintf("%v", sensor.DiscreteActiveEvents())
+		}
+
+		row := map[string]string{
+			"SDRType":          sensor.SDRRecordType.String(),
+			"SensorNumber":     fmt.Sprintf("%#02x", sensor.Number),
+			"SensorName":       sensor.Name,
+			"SensorType":       fmt.Sprintf("%s (%#02x)", sensor.SensorType.String(), uint8(sensor.SensorType)),
+			"Reading":          sensor.ReadingStr(),
+			"Unit":             sensor.SensorUnit.String(),
+			"Status":           sensor.Status(),
+			"LNR":              sensor.ThresholdStr(SensorThresholdType_LNR),
+			"LCR":              sensor.ThresholdStr(SensorThresholdType_LCR),
+			"LNC":              sensor.ThresholdStr(SensorThresholdType_LNC),
+			"UNC":              sensor.ThresholdStr(SensorThresholdType_UNC),
+			"UCR":              sensor.ThresholdStr(SensorThresholdType_UCR),
+			"UNR":              sensor.ThresholdStr(SensorThresholdType_UNR),
+			"EntityID":         fmt.Sprintf("%s (%#02x)", sensor.EntityID, uint8(sensor.EntityID)),
+			"EventReadingType": fmt.Sprintf("%s (%#02x)", sensor.EventReadingType.String(), uint8(sensor.EventReadingType)),
+			"AnalogDataFormat": sensor.SensorUnit.AnalogDataFormat.String(),
+			"ReadV":            fmt.Sprintf("%v", sensor.IsReadingValid()),
+			"ScanD":            fmt.Sprintf("%v", sensor.scanningDisabled),
+			"ReadU":            fmt.Sprintf("%v", !sensor.readingAvailable),
+			"HasAR":            fmt.Sprintf("%v", sensor.HasAnalogReading),
+			"DiscreteEvents":   discreteEvents,
+			"HumanStr":         sensor.HumanStr(),
+		}
+
+		rows[i] = row
+	}
 
 	headers := []string{
 		"SDRType",
@@ -1009,53 +1038,7 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 		}...)
 	}
 
-	table.SetHeader(headers)
-	table.SetFooter(headers)
-
-	for _, sensor := range sensors {
-		rowContent := []string{
-			sensor.SDRRecordType.String(),
-			fmt.Sprintf("%#02x", sensor.Number),
-			sensor.Name,
-			fmt.Sprintf("%s (%#02x)", sensor.SensorType.String(), uint8(sensor.SensorType)),
-			sensor.ReadingStr(),
-			sensor.SensorUnit.String(),
-			sensor.Status(),
-			sensor.ThresholdStr(SensorThresholdType_LNR),
-			sensor.ThresholdStr(SensorThresholdType_LCR),
-			sensor.ThresholdStr(SensorThresholdType_LNC),
-			sensor.ThresholdStr(SensorThresholdType_UNC),
-			sensor.ThresholdStr(SensorThresholdType_UCR),
-			sensor.ThresholdStr(SensorThresholdType_UNR),
-		}
-
-		if extended {
-			rowContent = append(rowContent, []string{
-				fmt.Sprintf("%s (%#02x)", sensor.EntityID, uint8(sensor.EntityID)),
-				fmt.Sprintf("%s (%#02x)", sensor.EventReadingType.String(), uint8(sensor.EventReadingType)),
-				sensor.SensorUnit.AnalogDataFormat.String(),
-				fmt.Sprintf("%v", sensor.IsReadingValid()),
-				fmt.Sprintf("%v", sensor.scanningDisabled),
-				fmt.Sprintf("%v", !sensor.readingAvailable),
-				fmt.Sprintf("%v", sensor.HasAnalogReading),
-			}...)
-
-			if sensor.IsThreshold() {
-				rowContent = append(rowContent, "N/A")
-
-			} else {
-				rowContent = append(rowContent, fmt.Sprintf("%v", sensor.DiscreteActiveEvents()))
-			}
-			rowContent = append(rowContent, sensor.HumanStr())
-
-		}
-
-		table.Append(rowContent)
-	}
-
-	table.Render()
-
-	return buf.String()
+	return formatTable(headers, rows)
 }
 
 // IsThreshold returns whether the sensor is threshold sensor class or not.
@@ -1277,6 +1260,10 @@ func (sensor *Sensor) DiscreteActiveEvents() []uint8 {
 }
 
 func (sensor *Sensor) DiscreteActiveEventsString() []string {
+	if sensor.IsThreshold() {
+		return []string{"N/A"}
+	}
+
 	result := make([]string, 0)
 
 	for _, eventOffset := range sensor.DiscreteActiveEvents() {

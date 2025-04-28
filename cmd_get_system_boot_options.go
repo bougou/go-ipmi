@@ -88,16 +88,11 @@ func (res *GetSystemBootOptionsParamResponse) Format() string {
 		}
 	}
 
-	return fmt.Sprintf(`Boot parameter version: %d
-Boot parameter %d is %s
-Boot parameter data: %02x
-  %s : %s`,
-		res.ParameterVersion,
-		res.ParamSelector, formatBool(res.ParameterInValid, "invalid/locked", "valid/unlocked"),
-		res.ParamData,
-		res.ParamSelector.String(),
-		paramDataFormatted,
-	)
+	return "" +
+		fmt.Sprintf("Boot parameter version : %d\n", res.ParameterVersion) +
+		fmt.Sprintf("Boot parameter %d is %s\n", res.ParamSelector, formatBool(res.ParameterInValid, "invalid/locked", "valid/unlocked")) +
+		fmt.Sprintf("Boot parameter data : %02x\n", res.ParamData) +
+		fmt.Sprintf("%s : %s\n", res.ParamSelector.String(), paramDataFormatted)
 }
 
 func (c *Client) GetSystemBootOptionsParam(ctx context.Context, paramSelector BootOptionParamSelector, setSelector uint8, blockSelector uint8) (response *GetSystemBootOptionsParamResponse, err error) {

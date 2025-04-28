@@ -85,29 +85,18 @@ func (res *GetSDRRepoInfoResponse) Format() string {
 		}
 	}
 
-	return fmt.Sprintf(`SDR Version                         : %#02x
-Record Count                        : %d
-Free Space                          : %d bytes
-Most recent Addition                : %s
-Most recent Erase                   : %s
-SDR overflow                        : %v
-SDR Repository Update Support       : %s
-Delete SDR supported                : %v
-Partial Add SDR supported           : %v
-Reserve SDR repository supported    : %v
-SDR Repository Alloc info supported : %v`,
-		res.SDRVersion,
-		res.RecordCount,
-		res.FreeSpaceBytes,
-		res.MostRecentAdditionTime.Format(timeFormat),
-		res.MostRecentEraseTime.Format(timeFormat),
-		res.SDROperationSupport.Overflow,
-		s,
-		res.SDROperationSupport.SupportDeleteSDR,
-		res.SDROperationSupport.SupportPartialAddSDR,
-		res.SDROperationSupport.SupportReserveSDRRepo,
-		res.SDROperationSupport.SupportGetSDRRepoAllocInfo,
-	)
+	return "" +
+		fmt.Sprintf("SDR Version                         : %#02x\n", res.SDRVersion) +
+		fmt.Sprintf("Record Count                        : %d\n", res.RecordCount) +
+		fmt.Sprintf("Free Space                          : %d bytes\n", res.FreeSpaceBytes) +
+		fmt.Sprintf("Most recent Addition                : %s\n", res.MostRecentAdditionTime.Format(timeFormat)) +
+		fmt.Sprintf("Most recent Erase                   : %s\n", res.MostRecentEraseTime.Format(timeFormat)) +
+		fmt.Sprintf("SDR overflow                        : %v\n", res.SDROperationSupport.Overflow) +
+		fmt.Sprintf("SDR Repository Update Support       : %s\n", s) +
+		fmt.Sprintf("Delete SDR supported                : %v\n", res.SDROperationSupport.SupportDeleteSDR) +
+		fmt.Sprintf("Partial Add SDR supported           : %v\n", res.SDROperationSupport.SupportPartialAddSDR) +
+		fmt.Sprintf("Reserve SDR repository supported    : %v\n", res.SDROperationSupport.SupportReserveSDRRepo) +
+		fmt.Sprintf("SDR Repository Alloc info supported : %v\n", res.SDROperationSupport.SupportGetSDRRepoAllocInfo)
 }
 
 func (res *GetSDRRepoInfoResponse) CompletionCodes() map[uint8]string {

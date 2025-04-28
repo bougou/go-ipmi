@@ -63,19 +63,12 @@ func (res *GetChannelOEMPayloadInfoResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetChannelOEMPayloadInfoResponse) Format() string {
-	return fmt.Sprintf(`
-		Payload Type   : %s (%d)
-		OEM IANA       : %d
-		OEM Payload ID : %d
-		Major Version  : %d
-		Minor Version  : %d
-	`,
-		res.PayloadType.String(), res.PayloadType,
-		res.OEMIANA,
-		res.OEMPayloadID,
-		res.MajorVersion,
-		res.MinorVersion,
-	)
+	return "" +
+		fmt.Sprintf("Payload Type   : %s (%d)\n", res.PayloadType.String(), res.PayloadType) +
+		fmt.Sprintf("OEM IANA       : %d\n", res.OEMIANA) +
+		fmt.Sprintf("OEM Payload ID : %d\n", res.OEMPayloadID) +
+		fmt.Sprintf("Major Version  : %d\n", res.MajorVersion) +
+		fmt.Sprintf("Minor Version  : %d\n", res.MinorVersion)
 }
 
 func (c *Client) GetChannelOEMPayloadInfo(ctx context.Context, request *GetChannelOEMPayloadInfoRequest) (response *GetChannelOEMPayloadInfoResponse, err error) {

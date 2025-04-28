@@ -81,13 +81,14 @@ func (res *GetDCMIPowerReadingResponse) Unpack(msg []byte) error {
 
 func (res *GetDCMIPowerReadingResponse) Format() string {
 	ts := time.Unix(int64(res.Timestamp), 0)
-	return "Instantaneous power reading:                 " + fmt.Sprintf("%5d", res.CurrentPower) + " Watts\n" +
-		"Minimum during sampling period:              " + fmt.Sprintf("%5d", res.MinimumPower) + " Watts\n" +
-		"Maximum during sampling period:              " + fmt.Sprintf("%5d", res.MaximumPower) + " Watts\n" +
-		"Average power reading over sample period:    " + fmt.Sprintf("%5d", res.CurrentPower) + " Watts\n" +
-		"IPMI timestamp:                           " + ts.Format("01/02/06 15:04:05 UTC") + "\n" +
-		"Sampling period:                          " + fmt.Sprintf("%08d", res.ReportingPeriod/1000) + " Seconds\n" +
-		"Power reading state is:                   " + formatBool(res.PowerMeasurementActive, "activated", "deactivated")
+	return "" +
+		fmt.Sprintf("Instantaneous power reading              : %5d Watts\n", res.CurrentPower) +
+		fmt.Sprintf("Minimum during sampling period           : %5d Watts\n", res.MinimumPower) +
+		fmt.Sprintf("Maximum during sampling period           : %5d Watts\n", res.MaximumPower) +
+		fmt.Sprintf("Average power reading over sample period : %5d Watts\n", res.AveragePower) +
+		fmt.Sprintf("IPMI timestamp                           : %s\n", ts.Format("01/02/06 15:04:05 UTC")) +
+		fmt.Sprintf("Sampling period                          : %d Seconds\n", res.ReportingPeriod/1000) +
+		fmt.Sprintf("Power reading state is                   : %s\n", formatBool(res.PowerMeasurementActive, "activated", "deactivated"))
 }
 
 // GetDCMIPowerReading sends a DCMI "Get Power Reading" command.

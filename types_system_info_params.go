@@ -137,15 +137,12 @@ func (systemInfoParams *SystemInfoParams) Format() string {
 			}
 		}
 		s, stringDataRaw, stringDataType, stringDataLength := getSystemInfoStringMeta(params)
-		out += fmt.Sprintf(`
-        String Data Type   : %d
-        String Data Length : %d
-        String Data Raw    : %v
-        String Data        : %s
-`, stringDataType, stringDataLength, stringDataRaw, s,
-		)
 
-		return out
+		return "" +
+			fmt.Sprintf("String Data Type   : %d\n", stringDataType) +
+			fmt.Sprintf("String Data Length : %d\n", stringDataLength) +
+			fmt.Sprintf("String Data Raw    : %v\n", stringDataRaw) +
+			fmt.Sprintf("String Data        : %s\n", s)
 	}
 
 	out := ""
@@ -162,25 +159,15 @@ func (systemInfoParams *SystemInfoParams) Format() string {
 }
 
 func (systemInfo *SystemInfo) Format() string {
-	return fmt.Sprintf(`
-Set In Progress         : %s
-System Firmware Version : %s
-System Name             : %s
-Primary OS Name         : %s
-OS Name                 : %s
-OS Version              : %s
-BVM URL                 : %s
-Management URL          : %s
-`,
-		systemInfo.SetInProgress,
-		systemInfo.SystemFirmwareVersion,
-		systemInfo.SystemName,
-		systemInfo.PrimaryOSName,
-		systemInfo.OSName,
-		systemInfo.OSVersion,
-		systemInfo.BMCURL,
-		systemInfo.ManagementURL,
-	)
+	return "" +
+		fmt.Sprintf("Set In Progress         : %s\n", systemInfo.SetInProgress) +
+		fmt.Sprintf("System Firmware Version : %s\n", systemInfo.SystemFirmwareVersion) +
+		fmt.Sprintf("System Name             : %s\n", systemInfo.SystemName) +
+		fmt.Sprintf("Primary OS Name         : %s\n", systemInfo.PrimaryOSName) +
+		fmt.Sprintf("OS Name                 : %s\n", systemInfo.OSName) +
+		fmt.Sprintf("OS Version              : %s\n", systemInfo.OSVersion) +
+		fmt.Sprintf("BMC URL                 : %s\n", systemInfo.BMCURL) +
+		fmt.Sprintf("Management URL          : %s\n", systemInfo.ManagementURL)
 }
 
 type SystemInfoParam_SetInProgress struct {
@@ -237,10 +224,9 @@ func (p *SystemInfoParam_SystemFirmwareVersion) Unpack(data []byte) error {
 }
 
 func (p *SystemInfoParam_SystemFirmwareVersion) Format() string {
-	return fmt.Sprintf(`
-        Set Selector : %d
-        Block Data   : %02x
-`, p.SetSelector, p.BlockData)
+	return "" +
+		fmt.Sprintf("Set Selector : %d\n", p.SetSelector) +
+		fmt.Sprintf("Block Data   : %02x\n", p.BlockData)
 }
 
 type SystemInfoParam_SystemName struct {
@@ -273,10 +259,9 @@ func (p *SystemInfoParam_SystemName) Unpack(data []byte) error {
 }
 
 func (p *SystemInfoParam_SystemName) Format() string {
-	return fmt.Sprintf(`
-        Set Selector : %d
-        Block Data   : %02x
-`, p.SetSelector, p.BlockData)
+	return "" +
+		fmt.Sprintf("Set Selector : %d\n", p.SetSelector) +
+		fmt.Sprintf("Block Data   : %02x\n", p.BlockData)
 }
 
 type SystemInfoParam_PrimaryOSName struct {
@@ -308,10 +293,9 @@ func (p *SystemInfoParam_PrimaryOSName) Unpack(data []byte) error {
 }
 
 func (p *SystemInfoParam_PrimaryOSName) Format() string {
-	return fmt.Sprintf(`
-        Set Selector : %d
-        Block Data   : %02x
-`, p.SetSelector, p.BlockData)
+	return "" +
+		fmt.Sprintf("Set Selector : %d\n", p.SetSelector) +
+		fmt.Sprintf("Block Data   : %02x\n", p.BlockData)
 }
 
 type SystemInfoParam_OSName struct {
@@ -344,10 +328,9 @@ func (p *SystemInfoParam_OSName) Unpack(data []byte) error {
 }
 
 func (p *SystemInfoParam_OSName) Format() string {
-	return fmt.Sprintf(`
-        Set Selector : %d
-        Block Data   : %02x
-`, p.SetSelector, p.BlockData)
+	return "" +
+		fmt.Sprintf("Set Selector : %d\n", p.SetSelector) +
+		fmt.Sprintf("Block Data   : %02x\n", p.BlockData)
 }
 
 type SystemInfoParam_OSVersion struct {
@@ -379,10 +362,9 @@ func (p *SystemInfoParam_OSVersion) Unpack(data []byte) error {
 }
 
 func (p *SystemInfoParam_OSVersion) Format() string {
-	return fmt.Sprintf(`
-        Set Selector : %d
-        Block Data   : %02x
-`, p.SetSelector, p.BlockData)
+	return "" +
+		fmt.Sprintf("Set Selector : %d\n", p.SetSelector) +
+		fmt.Sprintf("Block Data   : %02x\n", p.BlockData)
 }
 
 type SystemInfoParam_BMCURL struct {
@@ -414,10 +396,9 @@ func (p *SystemInfoParam_BMCURL) Unpack(data []byte) error {
 }
 
 func (p *SystemInfoParam_BMCURL) Format() string {
-	return fmt.Sprintf(`
-        Set Selector : %d
-        Block Data   : %02x
-`, p.SetSelector, p.BlockData)
+	return "" +
+		fmt.Sprintf("Set Selector : %d\n", p.SetSelector) +
+		fmt.Sprintf("Block Data   : %02x\n", p.BlockData)
 }
 
 type SystemInfoParam_ManagementURL struct {
@@ -449,8 +430,7 @@ func (p *SystemInfoParam_ManagementURL) Unpack(data []byte) error {
 }
 
 func (p *SystemInfoParam_ManagementURL) Format() string {
-	return fmt.Sprintf(`
-        Set Selector : %d
-        Block Data   : %02x
-`, p.SetSelector, p.BlockData)
+	return "" +
+		fmt.Sprintf("Set Selector : %d\n", p.SetSelector) +
+		fmt.Sprintf("Block Data   : %02x\n", p.BlockData)
 }

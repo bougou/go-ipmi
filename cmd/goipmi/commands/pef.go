@@ -163,6 +163,7 @@ func NewCmdPEFInfo() *cobra.Command {
 				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 					CheckErr(err)
 				}
+				fmt.Println("PEF Config Param of SystemGUID")
 				fmt.Println(param.Format())
 
 				if !param.UseGUID {
@@ -170,6 +171,7 @@ func NewCmdPEFInfo() *cobra.Command {
 					if err != nil {
 						CheckErr(err)
 					}
+					fmt.Println("Get System GUID")
 					fmt.Println(ipmi.FormatGUIDDetails(res.GUID))
 				}
 			}
@@ -226,62 +228,62 @@ func NewCmdPEFPolicyList() *cobra.Command {
 				numberOfAlertPolicies = param.Value
 			}
 
-			{
+			rows := make([]map[string]string, numberOfAlertPolicies)
 
-				headers := []string{
-					"Entry",
-					"PolicyNumber",
-					"PolicyState",
-					"PolicyAction",
-					"Channel",
-					"ChannelMedium",
-					"Destination",
-					"IsEventSpecific",
-					"AlertStringKey",
+			for i := uint8(0); i < numberOfAlertPolicies; i++ {
+				entry := i + 1
+
+				param := &ipmi.PEFConfigParam_AlertPolicy{
+					SetSelector: entry,
 				}
-				rows := make([][]string, numberOfAlertPolicies)
-				for i := uint8(0); i < numberOfAlertPolicies; i++ {
-					entry := i + 1
+				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
+					CheckErr(fmt.Errorf("get alert policy number (%d) failed, err: %w", entry, err))
+				}
+				alertPolicy := param.Policy
 
-					param := &ipmi.PEFConfigParam_AlertPolicy{
-						SetSelector: entry,
-					}
-					if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
-						CheckErr(fmt.Errorf("get alert policy number (%d) failed, err: %w", entry, err))
-					}
-					alertPolicy := param.Policy
-
-					channelNumber := param.Policy.ChannelNumber
-					resp, err := client.GetChannelInfo(ctx, channelNumber)
-					if err != nil {
-						CheckErr(fmt.Errorf("get channel info (%d) failed, err: %w", channelNumber, err))
-					}
-
-					// Todo Get Lan Config Param
-					// if resp.ChannelMedium == ipmi.ChannelMediumLAN {
-					// Number of Destinations : 0x11 (17)
-					// Destination Type : 0x12 (18)
-					// Community String : 0x10 (16)
-					// Destination Address: 0x13 (19)
-					// }
-
-					row := []string{
-						strconv.Itoa(int(entry)),
-						fmt.Sprintf("%d", alertPolicy.PolicyNumber),
-						fmt.Sprintf("%v", alertPolicy.PolicyState),
-						alertPolicy.PolicyAction.ShortString(),
-						fmt.Sprintf("%d", alertPolicy.ChannelNumber),
-						resp.ChannelMedium.String(),
-						fmt.Sprintf("%d", alertPolicy.Destination),
-						fmt.Sprintf("%v", alertPolicy.IsEventSpecific),
-						fmt.Sprintf("%d", alertPolicy.AlertStringKey),
-					}
-
-					rows[i] = row
+				channelNumber := param.Policy.ChannelNumber
+				resp, err := client.GetChannelInfo(ctx, channelNumber)
+				if err != nil {
+					CheckErr(fmt.Errorf("get channel info (%d) failed, err: %w", channelNumber, err))
 				}
 
-				fmt.Println(formatTable(headers, rows))
+				// Todo Get Lan Config Param
+				// if resp.ChannelMedium == ipmi.ChannelMediumLAN {
+				// Number of Destinations : 0x11 (17)
+				// Destination Type : 0x12 (18)
+				// Community String : 0x10 (16)
+				// Destination Address: 0x13 (19)
+				// }
+
+				row := map[string]string{
+					"Entry":           strconv.Itoa(int(entry)),
+					"PolicyNumber":    fmt.Sprintf("%d", alertPolicy.PolicyNumber),
+					"PolicyState":     fmt.Sprintf("%v", alertPolicy.PolicyState),
+					"PolicyAction":    alertPolicy.PolicyAction.ShortString(),
+					"Channel":         fmt.Sprintf("%d", alertPolicy.ChannelNumber),
+					"ChannelMedium":   resp.ChannelMedium.String(),
+					"Destination":     fmt.Sprintf("%d", alertPolicy.Destination),
+					"IsEventSpecific": fmt.Sprintf("%v", alertPolicy.IsEventSpecific),
+					"AlertStringKey":  fmt.Sprintf("%d", alertPolicy.AlertStringKey),
+				}
+
+				rows[i] = row
 			}
+
+			headers := []string{
+				"Entry",
+				"PolicyNumber",
+				"PolicyState",
+				"PolicyAction",
+				"Channel",
+				"ChannelMedium",
+				"Destination",
+				"IsEventSpecific",
+				"AlertStringKey",
+			}
+
+			fmt.Println(formatTable(headers, rows))
+
 		},
 	}
 	return cmd

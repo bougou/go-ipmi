@@ -57,16 +57,12 @@ func (res *GetDCMIThermalLimitResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetDCMIThermalLimitResponse) Format() string {
-	return fmt.Sprintf(`
-    Exception Actions, taken if the Temperature Limit exceeded:
-        Hard Power Off system and log event:  %s
-        Log event to SEL only:                %s
-    Temperature Limit                         %d degrees
-    Exception Time                            %d seconds`,
-		formatBool(res.ExceptionAction_PowerOffAndLogSEL, "active", "inactive"),
-		formatBool(res.ExceptionAction_LogSELOnly, "active", "inactive"),
-		res.TemperatureLimit,
-		res.ExceptionTimeSec)
+	return "" +
+		"Exception Actions, taken if the Temperature Limit exceeded:\n" +
+		fmt.Sprintf("    Hard Power Off system and log event : %s\n", formatBool(res.ExceptionAction_PowerOffAndLogSEL, "active", "inactive")) +
+		fmt.Sprintf("    Log event to SEL only               : %s\n", formatBool(res.ExceptionAction_LogSELOnly, "active", "inactive")) +
+		fmt.Sprintf("    Temperature Limit                   : %d degrees\n", res.TemperatureLimit) +
+		fmt.Sprintf("    Exception Time                      : %d seconds\n", res.ExceptionTimeSec)
 }
 
 func (c *Client) GetDCMIThermalLimit(ctx context.Context, entityID EntityID, entityInstance EntityInstance) (response *GetDCMIThermalLimitResponse, err error) {

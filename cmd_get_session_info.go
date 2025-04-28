@@ -123,28 +123,17 @@ func (res *GetSessionInfoResponse) Format() string {
 		sessionType = "IPMIv2/RMCP+"
 	}
 
-	return fmt.Sprintf(`session handle                : %d
-slot count                    : %d
-active sessions               : %d
-user id                       : %d
-privilege level               : %s
-session type                  : %s
-channel number                : %#02x
-console ip                    : %s
-console mac                   : %s
-console port                  : %d
-	`,
-		res.SessionHandle,
-		res.PossibleActiveSessions,
-		res.CurrentActiveSessions,
-		res.UserID,
-		res.OperatingPrivilegeLevel,
-		sessionType,
-		res.ChannelNumber,
-		res.RemoteConsoleIPAddr,
-		res.RemoteConsoleMacAddr,
-		res.RemoteConsolePort,
-	)
+	return "" +
+		fmt.Sprintf("session handle   : %d\n", res.SessionHandle) +
+		fmt.Sprintf("slot count       : %d\n", res.PossibleActiveSessions) +
+		fmt.Sprintf("active sessions  : %d\n", res.CurrentActiveSessions) +
+		fmt.Sprintf("user id          : %d\n", res.UserID) +
+		fmt.Sprintf("privilege level  : %s\n", res.OperatingPrivilegeLevel) +
+		fmt.Sprintf("session type     : %s\n", sessionType) +
+		fmt.Sprintf("channel number   : %#02x\n", res.ChannelNumber) +
+		fmt.Sprintf("console ip       : %s\n", res.RemoteConsoleIPAddr) +
+		fmt.Sprintf("console mac      : %s\n", res.RemoteConsoleMacAddr) +
+		fmt.Sprintf("console port     : %d\n", res.RemoteConsolePort)
 }
 
 func (c *Client) GetSessionInfo(ctx context.Context, request *GetSessionInfoRequest) (response *GetSessionInfoResponse, err error) {

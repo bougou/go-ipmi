@@ -42,17 +42,12 @@ func (res *GetSELAllocInfoResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetSELAllocInfoResponse) Format() string {
-	return fmt.Sprintf(`# of Alloc Units             : %d
-Alloc Unit Size              : %d
-# Free Units                 : %d
-Largest Free Blk             : %d
-Max Record Size              : %d`,
-		res.PossibleAllocUnits,
-		res.AllocUnitsSize,
-		res.FreeAllocUnits,
-		res.LargestFreeBlock,
-		res.MaximumRecordSize,
-	)
+	return "" +
+		fmt.Sprintf("# of Alloc Units : %d\n", res.PossibleAllocUnits) +
+		fmt.Sprintf("Alloc Unit Size  : %d\n", res.AllocUnitsSize) +
+		fmt.Sprintf("# Free Units     : %d\n", res.FreeAllocUnits) +
+		fmt.Sprintf("Largest Free Blk : %d\n", res.LargestFreeBlock) +
+		fmt.Sprintf("Max Record Size  : %d\n", res.MaximumRecordSize)
 }
 
 func (c *Client) GetSELAllocInfo(ctx context.Context) (response *GetSELAllocInfoResponse, err error) {

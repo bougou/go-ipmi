@@ -76,43 +76,25 @@ func (res *GetPayloadActivationStatusResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetPayloadActivationStatusResponse) Format() string {
-	return fmt.Sprintf(`  Payload Type      : %s (%d)
-  Instance Capacity : %d
-  Instance 01       : %s
-  Instance 02       : %s
-  Instance 03       : %s
-  Instance 04       : %s
-  Instance 05       : %s
-  Instance 06       : %s
-  Instance 07       : %s
-  Instance 08       : %s
-  Instance 09       : %s
-  Instance 10       : %s
-  Instance 11       : %s
-  Instance 12       : %s
-  Instance 13       : %s
-  Instance 14       : %s
-  Instance 15       : %s
-  Instance 16       : %s`,
-		res.PayloadType.String(), res.PayloadType,
-		res.InstanceCapacity,
-		formatBool(res.Instance01Activated, "activated", "deactivated"),
-		formatBool(res.Instance02Activated, "activated", "deactivated"),
-		formatBool(res.Instance03Activated, "activated", "deactivated"),
-		formatBool(res.Instance04Activated, "activated", "deactivated"),
-		formatBool(res.Instance05Activated, "activated", "deactivated"),
-		formatBool(res.Instance06Activated, "activated", "deactivated"),
-		formatBool(res.Instance07Activated, "activated", "deactivated"),
-		formatBool(res.Instance08Activated, "activated", "deactivated"),
-		formatBool(res.Instance09Activated, "activated", "deactivated"),
-		formatBool(res.Instance10Activated, "activated", "deactivated"),
-		formatBool(res.Instance11Activated, "activated", "deactivated"),
-		formatBool(res.Instance12Activated, "activated", "deactivated"),
-		formatBool(res.Instance13Activated, "activated", "deactivated"),
-		formatBool(res.Instance14Activated, "activated", "deactivated"),
-		formatBool(res.Instance15Activated, "activated", "deactivated"),
-		formatBool(res.Instance16Activated, "activated", "deactivated"),
-	)
+	return "" +
+		fmt.Sprintf("Payload Type      : %s (%d)\n", res.PayloadType.String(), uint8(res.PayloadType)) +
+		fmt.Sprintf("Instance Capacity : %d\n", res.InstanceCapacity) +
+		fmt.Sprintf("Instance 01       : %s\n", formatBool(res.Instance01Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 02       : %s\n", formatBool(res.Instance02Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 03       : %s\n", formatBool(res.Instance03Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 04       : %s\n", formatBool(res.Instance04Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 05       : %s\n", formatBool(res.Instance05Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 06       : %s\n", formatBool(res.Instance06Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 07       : %s\n", formatBool(res.Instance07Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 08       : %s\n", formatBool(res.Instance08Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 09       : %s\n", formatBool(res.Instance09Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 10       : %s\n", formatBool(res.Instance10Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 11       : %s\n", formatBool(res.Instance11Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 12       : %s\n", formatBool(res.Instance12Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 13       : %s\n", formatBool(res.Instance13Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 14       : %s\n", formatBool(res.Instance14Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 15       : %s\n", formatBool(res.Instance15Activated, "activated", "deactivated")) +
+		fmt.Sprintf("Instance 16       : %s\n", formatBool(res.Instance16Activated, "activated", "deactivated"))
 }
 
 func (c *Client) GetPayloadActivationStatus(ctx context.Context, payloadType PayloadType) (response *GetPayloadActivationStatusResponse, err error) {

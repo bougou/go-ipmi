@@ -83,60 +83,35 @@ type SDRCompact struct {
 
 func (compact *SDRCompact) String() string {
 
-	return fmt.Sprintf(`
-Sensor ID             : %s (%#02x)
-Generator ID          : %#04x (%s)
-Entity ID             : %d.%d (%s)
-Sensor Type           : %s (%#02x) (%s)
-Sensor Reading        : %.3f %s
-Sensor Status         : %s
-Sensor Initialization :
-  Settable            : %v
-  Scanning            : %v
-  Events              : %v
-  Hysteresis          : %v
-  Sensor Type         : %v
-  Default State:
-    Event Generation  : %s
-    Scanning          : %s
-Sensor Capabilities   :
-  Auto Re-arm         : %s
-  Hysteresis Support  : %s
-  Threshold Access    : %s
-  Ev Message Control  : %s
-Mask                  :
-  Readable Thresholds : %s
-  Settable Thresholds : %s
-  Threshold Read Mask : %s
-  Assertions Enabled  : %s
-  Deassertions Enabled: %s
-Positive Hysteresis   : %#02x
-Negative Hysteresis   : %#02x`,
-		string(compact.IDStringBytes), compact.SensorNumber,
-		uint16(compact.GeneratorID), compact.GeneratorID.String(),
-		uint8(compact.SensorEntityID), uint8(compact.SensorEntityInstance), compact.SensorEntityID.String(),
-		compact.SensorType.String(), uint8(compact.SensorType), compact.SensorEventReadingType.SensorClass(),
-		compact.SensorValue, compact.SensorUnit,
-		compact.SensorStatus,
-		compact.SensorInitialization.Settable,
-		compact.SensorInitialization.InitScanning,
-		compact.SensorInitialization.InitEvents,
-		compact.SensorInitialization.InitHysteresis,
-		compact.SensorInitialization.InitSensorType,
-		formatBool(compact.SensorInitialization.EventGenerationEnabled, "enabled", "disabled"),
-		formatBool(compact.SensorInitialization.SensorScanningEnabled, "enabled", "disabled"),
-		formatBool(compact.SensorCapabilities.AutoRearm, "yes(auto)", "no(manual)"),
-		compact.SensorCapabilities.HysteresisAccess.String(),
-		compact.SensorCapabilities.ThresholdAccess,
-		compact.SensorCapabilities.EventMessageControl,
-		strings.Join(compact.Mask.ReadableThresholds().Strings(), " "),
-		strings.Join(compact.Mask.SettableThresholds().Strings(), " "),
-		strings.Join(compact.Mask.StatusReturnedThresholds().Strings(), " "),
-		strings.Join(compact.Mask.SupportedThresholdEvents().FilterAssert().Strings(), " "),
-		strings.Join(compact.Mask.SupportedThresholdEvents().FilterDeassert().Strings(), " "),
-		compact.PositiveHysteresisRaw,
-		compact.NegativeHysteresisRaw,
-	)
+	return "" +
+		fmt.Sprintf("Sensor ID              : %s (%#02x)\n", compact.IDStringBytes, compact.SensorNumber) +
+		fmt.Sprintf("Generator ID           : %#04x (%s)\n", uint16(compact.GeneratorID), compact.GeneratorID.String()) +
+		fmt.Sprintf("Entity ID              : %d.%d (%s)\n", uint8(compact.SensorEntityID), uint8(compact.SensorEntityInstance), compact.SensorEntityID.String()) +
+		fmt.Sprintf("Sensor Type            : %s (%#02x) (%s)\n", compact.SensorType.String(), uint8(compact.SensorType), compact.SensorEventReadingType.SensorClass()) +
+		fmt.Sprintf("Sensor Reading         : %.3f %s\n", compact.SensorValue, compact.SensorUnit) +
+		fmt.Sprintf("Sensor Status          : %s\n", compact.SensorStatus) +
+		fmt.Sprintf("Sensor Initialization  :%s", "\n") +
+		fmt.Sprintf("  Settable             : %v\n", compact.SensorInitialization.Settable) +
+		fmt.Sprintf("  Scanning             : %v\n", compact.SensorInitialization.InitScanning) +
+		fmt.Sprintf("  Events               : %v\n", compact.SensorInitialization.InitEvents) +
+		fmt.Sprintf("  Hysteresis           : %v\n", compact.SensorInitialization.InitHysteresis) +
+		fmt.Sprintf("  Sensor Type          : %v\n", compact.SensorInitialization.InitSensorType) +
+		fmt.Sprintf("Default State          :%s", "\n") +
+		fmt.Sprintf("    Event Generation   : %s\n", formatBool(compact.SensorInitialization.EventGenerationEnabled, "enabled", "disabled")) +
+		fmt.Sprintf("    Scanning           : %s\n", formatBool(compact.SensorInitialization.SensorScanningEnabled, "enabled", "disabled")) +
+		fmt.Sprintf("Sensor Capabilities    :%s", "\n") +
+		fmt.Sprintf("  Auto Re-arm          : %s\n", formatBool(compact.SensorCapabilities.AutoRearm, "yes(auto)", "no(manual)")) +
+		fmt.Sprintf("  Hysteresis Support   : %s\n", compact.SensorCapabilities.HysteresisAccess.String()) +
+		fmt.Sprintf("  Threshold Access     : %s\n", compact.SensorCapabilities.ThresholdAccess) +
+		fmt.Sprintf("  Ev Message Control   : %s\n", compact.SensorCapabilities.EventMessageControl) +
+		fmt.Sprintf("Mask                   :%s", "\n") +
+		fmt.Sprintf("  Readable Thresholds  : %s\n", strings.Join(compact.Mask.ReadableThresholds().Strings(), " ")) +
+		fmt.Sprintf("  Settable Thresholds  : %s\n", strings.Join(compact.Mask.SettableThresholds().Strings(), " ")) +
+		fmt.Sprintf("  Threshold Read Mask  : %s\n", strings.Join(compact.Mask.StatusReturnedThresholds().Strings(), " ")) +
+		fmt.Sprintf("  Assertions Enabled   : %s\n", strings.Join(compact.Mask.SupportedThresholdEvents().FilterAssert().Strings(), " ")) +
+		fmt.Sprintf("  Deassertions Enabled : %s\n", strings.Join(compact.Mask.SupportedThresholdEvents().FilterDeassert().Strings(), " ")) +
+		fmt.Sprintf("Positive Hysteresis    : %#02x\n", compact.PositiveHysteresisRaw) +
+		fmt.Sprintf("Negative Hysteresis    : %#02x\n", compact.NegativeHysteresisRaw)
 
 	//  Assertions Enabled    : Critical Interrupt
 	//                          [PCI PERR]

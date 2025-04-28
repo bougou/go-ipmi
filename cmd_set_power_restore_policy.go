@@ -42,14 +42,10 @@ func (res *SetPowerRestorePolicyResponse) Unpack(msg []byte) error {
 }
 
 func (res *SetPowerRestorePolicyResponse) Format() string {
-	return fmt.Sprintf(`Policy always-off : %s"
-Policy always-on  : %s
-Policy previous   :"%s`,
-		formatBool(res.SupportPolicyAlwaysOff, "supported", "unsupported"),
-		formatBool(res.SupportPolicyAlwaysOff, "supported", "unsupported"),
-		formatBool(res.SupportPolicyAlwaysOff, "supported", "unsupported"),
-	)
-
+	return "" +
+		fmt.Sprintf("Policy always-off : %s\n", formatBool(res.SupportPolicyAlwaysOff, "supported", "unsupported")) +
+		fmt.Sprintf("Policy always-on  : %s\n", formatBool(res.SupportPolicyAlwaysOn, "supported", "unsupported")) +
+		fmt.Sprintf("Policy previous   : %s\n", formatBool(res.SupportPolicyPrevious, "supported", "unsupported"))
 }
 
 func (c *Client) SetPowerRestorePolicy(ctx context.Context, policy PowerRestorePolicy) (response *SetPowerRestorePolicyResponse, err error) {

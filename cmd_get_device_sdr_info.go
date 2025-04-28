@@ -77,21 +77,13 @@ func (r *GetDeviceSDRInfoResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetDeviceSDRInfoResponse) Format() string {
-	return fmt.Sprintf(`
-Count              : %d (%s)
-Dynamic Population : %v
-LUN 0 has sensors  : %v
-LUN 1 has sensors  : %v
-LUN 2 has sensors  : %v
-LUN 3 has sensors  : %v
-	`,
-		res.Count, formatBool(res.getSDRCount, "SDRs", "Sensors"),
-		res.DynamicSensorPopulation,
-		res.LUN0HasSensors,
-		res.LUN1HasSensors,
-		res.LUN2HasSensors,
-		res.LUN3HasSensors,
-	)
+	return "" +
+		fmt.Sprintf("Count              : %d (%s)\n", res.Count, formatBool(res.getSDRCount, "SDRs", "Sensors")) +
+		fmt.Sprintf("Dynamic Population : %v\n", res.DynamicSensorPopulation) +
+		fmt.Sprintf("LUN 0 has sensors  : %v\n", res.LUN0HasSensors) +
+		fmt.Sprintf("LUN 1 has sensors  : %v\n", res.LUN1HasSensors) +
+		fmt.Sprintf("LUN 2 has sensors  : %v\n", res.LUN2HasSensors) +
+		fmt.Sprintf("LUN 3 has sensors  : %v\n", res.LUN3HasSensors)
 }
 
 // This command returns general information about the collection of sensors in a Dynamic Sensor Device.

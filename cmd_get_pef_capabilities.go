@@ -60,25 +60,16 @@ func (r *GetPEFCapabilitiesResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetPEFCapabilitiesResponse) Format() string {
-	return fmt.Sprintf(`PEF Version                  : %#2x
-Event Filter Table Entries   : %d
-Support OEM Event Filtering  : %s
-Support Diagnostic Interrupt : %s
-Support OEM Action           : %s
-Support Power Cycle          : %s
-Support Reset                : %s
-Support Power Down           : %s
-Support Alert                : %s`,
-		res.PEFVersion,
-		res.EventFilterTableEntries,
-		formatBool(res.SupportOEMEventFilter, "supported", "not-supported"),
-		formatBool(res.SupportDiagnosticInterrupt, "supported", "not-supported"),
-		formatBool(res.SupportOEMAction, "supported", "not-supported"),
-		formatBool(res.SupportPowerCycle, "supported", "not-supported"),
-		formatBool(res.SupportReset, "supported", "not-supported"),
-		formatBool(res.SupportPowerDown, "supported", "not-supported"),
-		formatBool(res.SupportAlert, "supported", "not-supported"),
-	)
+	return "" +
+		fmt.Sprintf("PEF Version                  : %#2x\n", res.PEFVersion) +
+		fmt.Sprintf("Event Filter Table Entries   : %d\n", res.EventFilterTableEntries) +
+		fmt.Sprintf("Support OEM Event Filtering  : %s\n", formatBool(res.SupportOEMEventFilter, "supported", "not-supported")) +
+		fmt.Sprintf("Support Diagnostic Interrupt : %s\n", formatBool(res.SupportDiagnosticInterrupt, "supported", "not-supported")) +
+		fmt.Sprintf("Support OEM Action           : %s\n", formatBool(res.SupportOEMAction, "supported", "not-supported")) +
+		fmt.Sprintf("Support Power Cycle          : %s\n", formatBool(res.SupportPowerCycle, "supported", "not-supported")) +
+		fmt.Sprintf("Support Reset                : %s\n", formatBool(res.SupportReset, "supported", "not-supported")) +
+		fmt.Sprintf("Support Power Down           : %s\n", formatBool(res.SupportPowerDown, "supported", "not-supported")) +
+		fmt.Sprintf("Support Alert                : %s\n", formatBool(res.SupportAlert, "supported", "not-supported"))
 }
 
 func (c *Client) GetPEFCapabilities(ctx context.Context) (response *GetPEFCapabilitiesResponse, err error) {

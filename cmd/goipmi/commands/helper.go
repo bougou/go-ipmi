@@ -59,7 +59,9 @@ func fatal(msg string, code int) {
 	os.Exit(code)
 }
 
-func formatTable(headers []string, rows [][]string) string {
+// formatTable formats a table from a slice of rows.
+// The row is represented as a map, the keys of the map are the headers of the table.
+func formatTable(headers []string, rows []map[string]string) string {
 	var buf = new(bytes.Buffer)
 	table := tablewriter.NewWriter(buf)
 	table.SetAutoWrapText(false)
@@ -67,7 +69,11 @@ func formatTable(headers []string, rows [][]string) string {
 	table.SetHeader(headers)
 	table.SetFooter(headers)
 
-	for _, row := range rows {
+	row := make([]string, len(headers))
+	for _, _row := range rows {
+		for i, header := range headers {
+			row[i] = _row[header]
+		}
 		table.Append(row)
 	}
 

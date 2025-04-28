@@ -285,88 +285,49 @@ func (full *SDRFull) SensorThreshold(thresholdType SensorThresholdType) SensorTh
 func (full *SDRFull) String() string {
 	// For pure SDR record, there's no reading for a sensor, unless you use
 	// GetSensorReading command to fetch it.
-	return fmt.Sprintf(`
-Sensor ID             : %s (%#02x)
-Generator ID          : %#04x (%s)
-Entity ID             : %d.%d (%s)
-Sensor Type           : %s (%#02x) (%s)
-Sensor Reading        : %.4f (+/- %d) %s
-Sensor Status         : %s
-Sensor Initialization :
-  Settable            : %v
-  Scanning            : %v
-  Events              : %v
-  Hysteresis          : %v
-  Sensor Type         : %v
-  Default State:
-    Event Generation  : %s
-    Scanning          : %s
-Sensor Capabilities   :
-  Auto Re-arm         : %s
-  Hysteresis Support  : %s
-  Threshold Access    : %s
-  Ev Message Control  : %s
-Mask                  :
-  Readable Thresholds : %s
-  Settable Thresholds : %s
-  Threshold Read Mask : %s
-  Assertions Enabled  : %s
-  Deassertions Enabled: %s
-Nominal Reading       : %s
-Normal Minimum        : %s
-Normal Maximum        : %s
-Lower Non-Recoverable : %s
-Lower Critical        : %s
-Lower Non-Critical    : %s
-Upper Non-Critical    : %s
-Upper Critical        : %s
-Upper Non-Recoverable : %s
-Positive Hysteresis   : %s
-Negative Hysteresis   : %s
-Minimum sensor range  : %s
-Maximum sensor range  : %s
-SensorDirection       : %d
-LinearizationFunc     : %s
-Reading Factors       : %s`,
-		string(full.IDStringBytes), full.SensorNumber,
-		uint16(full.GeneratorID), full.GeneratorID.String(),
-		uint8(full.SensorEntityID), uint8(full.SensorEntityInstance), full.SensorEntityID.String(),
-		full.SensorType.String(), uint8(full.SensorType), full.SensorEventReadingType.SensorClass(),
-		full.SensorValue, full.ReadingFactors.Tolerance, full.SensorUnit,
-		full.SensorStatus,
-		full.SensorInitialization.Settable,
-		full.SensorInitialization.InitScanning,
-		full.SensorInitialization.InitEvents,
-		full.SensorInitialization.InitHysteresis,
-		full.SensorInitialization.InitSensorType,
-		formatBool(full.SensorInitialization.EventGenerationEnabled, "enabled", "disabled"),
-		formatBool(full.SensorInitialization.SensorScanningEnabled, "enabled", "disabled"),
-		formatBool(full.SensorCapabilities.AutoRearm, "yes(auto)", "no(manual)"),
-		full.SensorCapabilities.HysteresisAccess.String(),
-		full.SensorCapabilities.ThresholdAccess,
-		full.SensorCapabilities.EventMessageControl,
-		strings.Join(full.Mask.ReadableThresholds().Strings(), " "),
-		strings.Join(full.Mask.SettableThresholds().Strings(), " "),
-		strings.Join(full.Mask.StatusReturnedThresholds().Strings(), " "),
-		strings.Join(full.Mask.SupportedThresholdEvents().FilterAssert().Strings(), " "),
-		strings.Join(full.Mask.SupportedThresholdEvents().FilterDeassert().Strings(), " "),
-		full.ReadingStr(full.NominalReadingRaw, full.NominalReadingSpecified),
-		full.ReadingStr(full.NormalMinRaw, full.NormalMinSpecified),
-		full.ReadingStr(full.NormalMaxRaw, full.NormalMaxSpecified),
-		full.ThresholdValueStr(SensorThresholdType_LNR),
-		full.ThresholdValueStr(SensorThresholdType_LCR),
-		full.ThresholdValueStr(SensorThresholdType_LNC),
-		full.ThresholdValueStr(SensorThresholdType_UNC),
-		full.ThresholdValueStr(SensorThresholdType_UCR),
-		full.ThresholdValueStr(SensorThresholdType_UNR),
-		full.HysteresisStr(full.PositiveHysteresisRaw),
-		full.HysteresisStr(full.NegativeHysteresisRaw),
-		full.ReadingMinStr(),
-		full.ReadingMaxStr(),
-		full.SensorDirection,
-		full.LinearizationFunc,
-		full.ReadingFactors,
-	)
+	return "" +
+		fmt.Sprintf("Sensor ID              : %s (%#02x)\n", full.IDStringBytes, full.SensorNumber) +
+		fmt.Sprintf("Generator ID           : %#04x (%s)\n", uint16(full.GeneratorID), full.GeneratorID.String()) +
+		fmt.Sprintf("Entity ID              : %d.%d (%s)\n", uint8(full.SensorEntityID), uint8(full.SensorEntityInstance), full.SensorEntityID.String()) +
+		fmt.Sprintf("Sensor Type            : %s (%#02x) (%s)\n", full.SensorType.String(), uint8(full.SensorType), full.SensorEventReadingType.SensorClass()) +
+		fmt.Sprintf("Sensor Reading         : %.4f (+/- %d) %s\n", full.SensorValue, full.ReadingFactors.Tolerance, full.SensorUnit) +
+		fmt.Sprintf("Sensor Status          : %s\n", full.SensorStatus) +
+		fmt.Sprintf("Sensor Initialization  :%s", "\n") +
+		fmt.Sprintf("  Settable             : %v\n", full.SensorInitialization.Settable) +
+		fmt.Sprintf("  Scanning             : %v\n", full.SensorInitialization.InitScanning) +
+		fmt.Sprintf("  Events               : %v\n", full.SensorInitialization.InitEvents) +
+		fmt.Sprintf("  Hysteresis           : %v\n", full.SensorInitialization.InitHysteresis) +
+		fmt.Sprintf("  Sensor Type          : %v\n", full.SensorInitialization.InitSensorType) +
+		fmt.Sprintf("Default State          :%s", "\n") +
+		fmt.Sprintf("  Event Generation     : %s\n", formatBool(full.SensorInitialization.EventGenerationEnabled, "enabled", "disabled")) +
+		fmt.Sprintf("  Scanning             : %s\n", formatBool(full.SensorInitialization.SensorScanningEnabled, "enabled", "disabled")) +
+		fmt.Sprintf("Sensor Capabilities    :%s", "\n") +
+		fmt.Sprintf("  Auto Re-arm          : %s\n", formatBool(full.SensorCapabilities.AutoRearm, "yes(auto)", "no(manual)")) +
+		fmt.Sprintf("  Hysteresis Support   : %s\n", full.SensorCapabilities.HysteresisAccess.String()) +
+		fmt.Sprintf("  Threshold Access     : %s\n", full.SensorCapabilities.ThresholdAccess) +
+		fmt.Sprintf("  Ev Message Control   : %s\n", full.SensorCapabilities.EventMessageControl) +
+		fmt.Sprintf("Mask                   :%s", "\n") +
+		fmt.Sprintf("  Readable Thresholds  : %s\n", strings.Join(full.Mask.ReadableThresholds().Strings(), " ")) +
+		fmt.Sprintf("  Settable Thresholds  : %s\n", strings.Join(full.Mask.SettableThresholds().Strings(), " ")) +
+		fmt.Sprintf("  Threshold Read Mask  : %s\n", strings.Join(full.Mask.StatusReturnedThresholds().Strings(), " ")) +
+		fmt.Sprintf("  Assertions Enabled   : %s\n", strings.Join(full.Mask.SupportedThresholdEvents().FilterAssert().Strings(), " ")) +
+		fmt.Sprintf("  Deassertions Enabled : %s\n", strings.Join(full.Mask.SupportedThresholdEvents().FilterDeassert().Strings(), " ")) +
+		fmt.Sprintf("Nominal Reading        : %s\n", full.ReadingStr(full.NominalReadingRaw, full.NominalReadingSpecified)) +
+		fmt.Sprintf("Normal Minimum         : %s\n", full.ReadingStr(full.NormalMinRaw, full.NormalMinSpecified)) +
+		fmt.Sprintf("Normal Maximum         : %s\n", full.ReadingStr(full.NormalMaxRaw, full.NormalMaxSpecified)) +
+		fmt.Sprintf("Lower Non-Recoverable  : %s\n", full.ThresholdValueStr(SensorThresholdType_LNR)) +
+		fmt.Sprintf("Lower Critical         : %s\n", full.ThresholdValueStr(SensorThresholdType_LCR)) +
+		fmt.Sprintf("Lower Non-Critical     : %s\n", full.ThresholdValueStr(SensorThresholdType_LNC)) +
+		fmt.Sprintf("Upper Non-Critical     : %s\n", full.ThresholdValueStr(SensorThresholdType_UNC)) +
+		fmt.Sprintf("Upper Critical         : %s\n", full.ThresholdValueStr(SensorThresholdType_UCR)) +
+		fmt.Sprintf("Upper Non-Recoverable  : %s\n", full.ThresholdValueStr(SensorThresholdType_UNR)) +
+		fmt.Sprintf("Positive Hysteresis    : %s\n", full.HysteresisStr(full.PositiveHysteresisRaw)) +
+		fmt.Sprintf("Negative Hysteresis    : %s\n", full.HysteresisStr(full.NegativeHysteresisRaw)) +
+		fmt.Sprintf("Minimum sensor range   : %s\n", full.ReadingMinStr()) +
+		fmt.Sprintf("Maximum sensor range   : %s\n", full.ReadingMaxStr()) +
+		fmt.Sprintf("SensorDirection        : %d\n", full.SensorDirection) +
+		fmt.Sprintf("LinearizationFunc      : %s\n", full.LinearizationFunc) +
+		fmt.Sprintf("Reading Factors        : %s\n", full.ReadingFactors)
 }
 
 func parseSDRFullSensor(data []byte, sdr *SDR) error {

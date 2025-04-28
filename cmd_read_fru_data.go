@@ -46,11 +46,9 @@ func (r *ReadFRUDataResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *ReadFRUDataResponse) Format() string {
-	return fmt.Sprintf(`Count returned : %d
-Data           : %02x`,
-		res.CountReturned,
-		res.Data,
-	)
+	return "" +
+		fmt.Sprintf("Count returned : %d\n", res.CountReturned) +
+		fmt.Sprintf("Data           : %02x\n", res.Data)
 }
 
 // The command returns the specified data from the FRU Inventory Info area.

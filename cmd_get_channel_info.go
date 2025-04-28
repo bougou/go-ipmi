@@ -91,19 +91,13 @@ func (res *GetChannelInfoResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetChannelInfoResponse) Format() string {
-	return fmt.Sprintf(`Channel %#02x info:
-  Channel Medium Type   : %s
-  Channel Protocol Type : %s
-  Session Support       : %d
-  Active Session Count  : %d
-  Protocol Vendor ID    : %d`,
-		res.ActualChannelNumber,
-		res.ChannelMedium,
-		res.ChannelProtocol,
-		res.SessionSupport,
-		res.ActiveSessionCount,
-		res.VendorID,
-	)
+	return "" +
+		fmt.Sprintf("Channel %#02x info      :\n", res.ActualChannelNumber) +
+		fmt.Sprintf("  Channel Medium Type   : %s\n", res.ChannelMedium) +
+		fmt.Sprintf("  Channel Protocol Type : %s\n", res.ChannelProtocol) +
+		fmt.Sprintf("  Session Support       : %d\n", res.SessionSupport) +
+		fmt.Sprintf("  Active Session Count  : %d\n", res.ActiveSessionCount) +
+		fmt.Sprintf("  Protocol Vendor ID    : %d\n", res.VendorID)
 }
 
 func (c *Client) GetChannelInfo(ctx context.Context, channelNumber uint8) (response *GetChannelInfoResponse, err error) {

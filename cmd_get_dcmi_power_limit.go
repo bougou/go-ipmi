@@ -53,10 +53,11 @@ func (res *GetDCMIPowerLimitResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetDCMIPowerLimitResponse) Format() string {
-	return "Power limit exception action : " + res.ExceptionAction.String() + "\n" +
-		"Power limit requested        : " + fmt.Sprintf("%d", res.PowerLimitRequested) + " Watts\n" +
-		"Correction Time Limit        : " + fmt.Sprintf("%d", res.CorrectionTimeLimitMilliSec) + " Milliseconds\n" +
-		"Statistics Sampling period   : " + fmt.Sprintf("%d", res.StatisticsSamplingPeriodSec) + " Seconds\n"
+	return "" +
+		fmt.Sprintf("Power limit exception action : %s\n", res.ExceptionAction.String()) +
+		fmt.Sprintf("Power limit requested        : %d Watts\n", res.PowerLimitRequested) +
+		fmt.Sprintf("Correction Time Limit        : %d Milliseconds\n", res.CorrectionTimeLimitMilliSec) +
+		fmt.Sprintf("Statistics Sampling period   : %d Seconds\n", res.StatisticsSamplingPeriodSec)
 
 }
 

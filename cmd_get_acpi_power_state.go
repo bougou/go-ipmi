@@ -40,11 +40,9 @@ func (res *GetACPIPowerStateResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetACPIPowerStateResponse) Format() string {
-	return fmt.Sprintf(`ACPI System Power State: %s
-ACPI Device Power State: %s`,
-		res.SystemPowerState,
-		res.DevicePowerState,
-	)
+	return "" +
+		fmt.Sprintf("ACPI System Power State: %s\n", res.SystemPowerState) +
+		fmt.Sprintf("ACPI Device Power State: %s\n", res.DevicePowerState)
 }
 
 // This command is provided to allow system software to tell a controller the present ACPI power state of the system.

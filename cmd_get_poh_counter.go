@@ -48,13 +48,10 @@ func (res *GetPOHCounterResponse) Format() string {
 	minutes := totalMinutes - days*1440
 	hours := minutes / 60
 
-	return fmt.Sprintf(`POH Counter       : %d days, %d hours
-Minutes per count : %d
-Counter reading   : %d`,
-		days, hours,
-		res.MinutesPerCount,
-		res.CounterReading,
-	)
+	return "" +
+		fmt.Sprintf("POH Counter       : %d days, %d hours\n", days, hours) +
+		fmt.Sprintf("Minutes per count : %d\n", res.MinutesPerCount) +
+		fmt.Sprintf("Counter reading   : %d\n", res.CounterReading)
 }
 
 // This command returns the present reading of the POH (Power-On Hours) counter, plus the number of counts per hour.

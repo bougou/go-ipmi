@@ -204,11 +204,10 @@ func (p *SOLConfigParam_SOLAuthentication) Pack() []byte {
 }
 
 func (p *SOLConfigParam_SOLAuthentication) Format() string {
-	return fmt.Sprintf(`
-        Force Encryption     : %v
-        Force Authentication : %v
-        Privilege Level      : %#02x
-`, p.ForceEncryption, p.ForceAuthentication, p.PrivilegeLevel)
+	return "" +
+		fmt.Sprintf("Force Encryption     : %v\n", p.ForceEncryption) +
+		fmt.Sprintf("Force Authentication : %v\n", p.ForceAuthentication) +
+		fmt.Sprintf("Privilege Level      : %#02x\n", p.PrivilegeLevel)
 }
 
 type SOLConfigParam_Character struct {
@@ -235,10 +234,9 @@ func (p *SOLConfigParam_Character) Pack() []byte {
 }
 
 func (p *SOLConfigParam_Character) Format() string {
-	return fmt.Sprintf(`
-        Accumulate Interval (ms) : %d
-        Send Threshold           : %d
-`, p.AccumulateInterval5Millis*5, p.SendThreshold)
+	return "" +
+		fmt.Sprintf("Accumulate Interval (ms) : %d\n", p.AccumulateInterval5Millis*5) +
+		fmt.Sprintf("Send Threshold           : %d\n", p.SendThreshold)
 }
 
 type SOLConfigParam_SOLRetry struct {
@@ -273,10 +271,9 @@ func (p *SOLConfigParam_SOLRetry) Pack() []byte {
 }
 
 func (p *SOLConfigParam_SOLRetry) Format() string {
-	return fmt.Sprintf(`
-        Retry Count         : %d
-        Retry Interval (ms) : %d
-`, p.RetryCount, p.RetryInterval10Millis*10)
+	return "" +
+		fmt.Sprintf("Retry Count         : %d\n", p.RetryCount) +
+		fmt.Sprintf("Retry Interval (ms) : %d\n", p.RetryInterval10Millis*10)
 }
 
 type SOLConfigParam_NonVolatileBitRate struct {

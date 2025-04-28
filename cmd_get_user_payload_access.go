@@ -61,27 +61,16 @@ func (res *GetUserPayloadAccessResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetUserPayloadAccessResponse) Format() string {
-	return fmt.Sprintf(`
-    PayloadTypeSOL   : %v
-		PayloadTypeOEM0 : %v
-		PayloadTypeOEM1 : %v
-		PayloadTypeOEM2 : %v
-		PayloadTypeOEM3 : %v
-		PayloadTypeOEM4 : %v
-		PayloadTypeOEM5 : %v
-		PayloadTypeOEM6 : %v
-		PayloadTypeOEM7 : %v
-	`,
-		formatBool(res.PayloadTypeSOL, "enabled", "disabled"),
-		formatBool(res.PayloadTypeOEM0, "enabled", "disabled"),
-		formatBool(res.PayloadTypeOEM1, "enabled", "disabled"),
-		formatBool(res.PayloadTypeOEM2, "enabled", "disabled"),
-		formatBool(res.PayloadTypeOEM3, "enabled", "disabled"),
-		formatBool(res.PayloadTypeOEM4, "enabled", "disabled"),
-		formatBool(res.PayloadTypeOEM5, "enabled", "disabled"),
-		formatBool(res.PayloadTypeOEM6, "enabled", "disabled"),
-		formatBool(res.PayloadTypeOEM7, "enabled", "disabled"),
-	)
+	return "" +
+		fmt.Sprintf("PayloadTypeSOL  : %v\n", formatBool(res.PayloadTypeSOL, "enabled", "disabled")) +
+		fmt.Sprintf("PayloadTypeOEM0 : %v\n", formatBool(res.PayloadTypeOEM0, "enabled", "disabled")) +
+		fmt.Sprintf("PayloadTypeOEM1 : %v\n", formatBool(res.PayloadTypeOEM1, "enabled", "disabled")) +
+		fmt.Sprintf("PayloadTypeOEM2 : %v\n", formatBool(res.PayloadTypeOEM2, "enabled", "disabled")) +
+		fmt.Sprintf("PayloadTypeOEM3 : %v\n", formatBool(res.PayloadTypeOEM3, "enabled", "disabled")) +
+		fmt.Sprintf("PayloadTypeOEM4 : %v\n", formatBool(res.PayloadTypeOEM4, "enabled", "disabled")) +
+		fmt.Sprintf("PayloadTypeOEM5 : %v\n", formatBool(res.PayloadTypeOEM5, "enabled", "disabled")) +
+		fmt.Sprintf("PayloadTypeOEM6 : %v\n", formatBool(res.PayloadTypeOEM6, "enabled", "disabled")) +
+		fmt.Sprintf("PayloadTypeOEM7 : %v\n", formatBool(res.PayloadTypeOEM7, "enabled", "disabled"))
 }
 
 func (c *Client) GetUserPayloadAccess(ctx context.Context, channelNumber uint8, userID uint8) (response *GetUserPayloadAccessResponse, err error) {

@@ -39,10 +39,8 @@ func (r *GetFRUInventoryAreaInfoResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetFRUInventoryAreaInfoResponse) Format() string {
-	return fmt.Sprintf(`fru.size = %d bytes (accessed by %s)`,
-		res.AreaSizeBytes,
-		formatBool(res.DeviceAccessedByWords, "words", "bytes"),
-	)
+	return "" +
+		fmt.Sprintf("FRU size = %d bytes (accessed by %s)\n", res.AreaSizeBytes, formatBool(res.DeviceAccessedByWords, "words", "bytes"))
 }
 
 // This command returns overall the size of the FRU Inventory Area in this device, in bytes.

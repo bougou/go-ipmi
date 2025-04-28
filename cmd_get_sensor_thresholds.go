@@ -65,19 +65,13 @@ func (r *GetSensorThresholdsResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetSensorThresholdsResponse) Format() string {
-	return fmt.Sprintf(`UNR Readable : %v%s
-UCR Readable : %v%s
-UNC Readable : %v%s
-LNR Readable : %v%s
-LCR Readable : %v%s
-LNC Readable : %v%s`,
-		res.UNR_Readable, formatBool(res.UNR_Readable, fmt.Sprintf(", raw: %#02x", res.UNR_Raw), ""),
-		res.UCR_Readable, formatBool(res.UCR_Readable, fmt.Sprintf(", raw: %#02x", res.UCR_Raw), ""),
-		res.UNC_Readable, formatBool(res.UNC_Readable, fmt.Sprintf(", raw: %#02x", res.UNC_Raw), ""),
-		res.LNR_Readable, formatBool(res.LNR_Readable, fmt.Sprintf(", raw: %#02x", res.LNR_Raw), ""),
-		res.LCR_Readable, formatBool(res.LCR_Readable, fmt.Sprintf(", raw: %#02x", res.LCR_Raw), ""),
-		res.LNC_Readable, formatBool(res.LNC_Readable, fmt.Sprintf(", raw: %#02x", res.LNC_Raw), ""),
-	)
+	return "" +
+		fmt.Sprintf("UNR Readable : %v%s\n", res.UNR_Readable, formatBool(res.UNR_Readable, fmt.Sprintf(", raw: %#02x", res.UNR_Raw), "")) +
+		fmt.Sprintf("UCR Readable : %v%s\n", res.UCR_Readable, formatBool(res.UCR_Readable, fmt.Sprintf(", raw: %#02x", res.UCR_Raw), "")) +
+		fmt.Sprintf("UNC Readable : %v%s\n", res.UNC_Readable, formatBool(res.UNC_Readable, fmt.Sprintf(", raw: %#02x", res.UNC_Raw), "")) +
+		fmt.Sprintf("LNR Readable : %v%s\n", res.LNR_Readable, formatBool(res.LNR_Readable, fmt.Sprintf(", raw: %#02x", res.LNR_Raw), "")) +
+		fmt.Sprintf("LCR Readable : %v%s\n", res.LCR_Readable, formatBool(res.LCR_Readable, fmt.Sprintf(", raw: %#02x", res.LCR_Raw), "")) +
+		fmt.Sprintf("LNC Readable : %v%s\n", res.LNC_Readable, formatBool(res.LNC_Readable, fmt.Sprintf(", raw: %#02x", res.LNC_Raw), ""))
 }
 
 // This command retrieves the threshold for the given sensor.

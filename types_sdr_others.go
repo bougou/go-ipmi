@@ -55,15 +55,15 @@ type SDREventOnly struct {
 }
 
 func (eventOnly *SDREventOnly) String() string {
-	return fmt.Sprintf(`Sensor ID              : %s (%#02x)
-	Generator ID          : %#04x (%s)
-	Entity ID             : %d.%d (%s)
-	Sensor Type           : %s (%#02x) (%s)`,
-		string(eventOnly.IDStringBytes), eventOnly.SensorNumber,
-		uint16(eventOnly.GeneratorID), eventOnly.GeneratorID.String(),
-		uint8(eventOnly.SensorEntityID), uint8(eventOnly.SensorEntityInstance), eventOnly.SensorEntityID.String(),
-		eventOnly.SensorType.String(), uint8(eventOnly.SensorType), eventOnly.SensorEventReadingType.SensorClass(),
-	)
+	return "" +
+		fmt.Sprintf("    Sensor ID              : %s (%#02x)\n",
+			string(eventOnly.IDStringBytes), eventOnly.SensorNumber) +
+		fmt.Sprintf("    Generator ID          : %#04x (%s)\n",
+			uint16(eventOnly.GeneratorID), eventOnly.GeneratorID.String()) +
+		fmt.Sprintf("    Entity ID             : %d.%d (%s)\n",
+			uint8(eventOnly.SensorEntityID), uint8(eventOnly.SensorEntityInstance), eventOnly.SensorEntityID.String()) +
+		fmt.Sprintf("    Sensor Type           : %s (%#02x) (%s)\n",
+			eventOnly.SensorType.String(), uint8(eventOnly.SensorType), eventOnly.SensorEventReadingType.SensorClass())
 }
 
 func parseSDREventOnly(data []byte, sdr *SDR) error {

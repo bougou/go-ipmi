@@ -47,7 +47,7 @@ func (r *WriteFRUDataResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *WriteFRUDataResponse) Format() string {
-	return fmt.Sprintf(`Count written : %d`, res.CountWritten)
+	return fmt.Sprintf("Count written : %d", res.CountWritten)
 }
 
 // The command writes the specified byte or word to the FRU Inventory Info area. This is a low level direct interface to a non-volatile storage area. This means that the interface does not interpret or check any semantics or formatting for the data being written.

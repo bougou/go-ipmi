@@ -132,21 +132,13 @@ func (r *GetSensorReadingResponse) ThresholdStatus() SensorThresholdStatus {
 }
 
 func (res *GetSensorReadingResponse) Format() string {
-	return fmt.Sprintf(`
-Sensor Reading         : %d
-Event Message Disabled : %v
-Scanning Disabled      : %v
-Reading Unavailable    : %v
-Threshold Status       : %s
-Discrete Events        : %v
-`,
-		res.Reading,
-		res.EventMessagesDisabled,
-		res.SensorScanningDisabled,
-		res.ReadingUnavailable,
-		res.ThresholdStatus(),
-		res.ActiveStates.TrueEvents(),
-	)
+	return "" +
+		fmt.Sprintf("Sensor Reading         : %d\n", res.Reading) +
+		fmt.Sprintf("Event Message Disabled : %v\n", res.EventMessagesDisabled) +
+		fmt.Sprintf("Scanning Disabled      : %v\n", res.SensorScanningDisabled) +
+		fmt.Sprintf("Reading Unavailable    : %v\n", res.ReadingUnavailable) +
+		fmt.Sprintf("Threshold Status       : %s\n", res.ThresholdStatus()) +
+		fmt.Sprintf("Discrete Events        : %v\n", res.ActiveStates.TrueEvents())
 }
 
 func (c *Client) GetSensorReading(ctx context.Context, sensorNumber uint8) (response *GetSensorReadingResponse, err error) {

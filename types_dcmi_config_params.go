@@ -124,7 +124,7 @@ func (param *DCMIConfigParam_ActivateDHCP) Unpack(paramData []byte) error {
 }
 
 func (param *DCMIConfigParam_ActivateDHCP) Format() string {
-	return fmt.Sprintf(`%v`, param.Activate)
+	return fmt.Sprintf("%v", param.Activate)
 }
 
 type DCMIConfigParam_DiscoveryConfiguration struct {
@@ -166,15 +166,10 @@ func (param *DCMIConfigParam_DiscoveryConfiguration) Unpack(paramData []byte) er
 }
 
 func (param *DCMIConfigParam_DiscoveryConfiguration) Format() string {
-	return fmt.Sprintf(`
-        Random Backoff Enabled          : %v
-        Include DHCPOption60AndOption43 : %v (Vendor class identifier using DCMI IANA, plus Vendor class-specific Information)
-        Include DHCPOption12            : %v (Management Controller ID String)
-`,
-		param.RandomBackoffEnabled,
-		formatBool(param.IncludeDHCPOption60And43, "enabled", "disabled"),
-		formatBool(param.IncludeDHCPOption12, "enabled", "disabled"),
-	)
+	return "\n" +
+		fmt.Sprintf("        Random Backoff Enabled          : %v\n", param.RandomBackoffEnabled) +
+		fmt.Sprintf("        Include DHCPOption60AndOption43 : %v (Vendor class identifier using DCMI IANA, plus Vendor class-specific Information)\n", formatBool(param.IncludeDHCPOption60And43, "enabled", "disabled")) +
+		fmt.Sprintf("        Include DHCPOption12            : %v (Management Controller ID String)\n", formatBool(param.IncludeDHCPOption12, "enabled", "disabled"))
 }
 
 type DCMIConfigParam_DHCPTiming1 struct {
@@ -207,11 +202,8 @@ func (param *DCMIConfigParam_DHCPTiming1) Unpack(paramData []byte) error {
 }
 
 func (param *DCMIConfigParam_DHCPTiming1) Format() string {
-	return fmt.Sprintf(`
-        Initial timeout interval : %d seconds
-`,
-		param.InitialTimeoutIntervalSec,
-	)
+	return "\n" +
+		fmt.Sprintf("        Initial timeout interval : %d seconds\n", param.InitialTimeoutIntervalSec)
 }
 
 type DCMIConfigParam_DHCPTiming2 struct {
@@ -242,10 +234,8 @@ func (param *DCMIConfigParam_DHCPTiming2) Unpack(paramData []byte) error {
 }
 
 func (param *DCMIConfigParam_DHCPTiming2) Format() string {
-	return fmt.Sprintf(`
-        Server contact timeout interval: %d seconds
-`,
-		param.ServerContactTimeoutIntervalSec)
+	return "" +
+		fmt.Sprintf("        Server contact timeout interval: %d seconds\n", param.ServerContactTimeoutIntervalSec)
 }
 
 type DCMIConfigParam_DHCPTiming3 struct {
@@ -275,9 +265,6 @@ func (param *DCMIConfigParam_DHCPTiming3) Unpack(paramData []byte) error {
 }
 
 func (param *DCMIConfigParam_DHCPTiming3) Format() string {
-	return fmt.Sprintf(`
-        Server contact retry interval: %d seconds
-`,
-		param.ServerContactRetryIntervalSec,
-	)
+	return "\n" +
+		fmt.Sprintf("        Server contact retry interval: %d seconds\n", param.ServerContactRetryIntervalSec)
 }

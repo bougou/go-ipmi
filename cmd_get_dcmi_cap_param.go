@@ -76,16 +76,11 @@ func (res *GetDCMICapParamResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetDCMICapParamResponse) Format() string {
-	return fmt.Sprintf(`
-  Major version  : %d
-  Minor version  : %d
-  Param revision : %d
-	Param data     : %v`,
-		res.MajorVersion,
-		res.MinorVersion,
-		res.ParamRevision,
-		res.ParamData,
-	)
+	return "" +
+		fmt.Sprintf("Major version  : %d\n", res.MajorVersion) +
+		fmt.Sprintf("Minor version  : %d\n", res.MinorVersion) +
+		fmt.Sprintf("Param revision : %d\n", res.ParamRevision) +
+		fmt.Sprintf("Param data     : %v\n", res.ParamData)
 }
 
 func (c *Client) GetDCMICapParam(ctx context.Context, paramSelector DCMICapParamSelector) (response *GetDCMICapParamResponse, err error) {

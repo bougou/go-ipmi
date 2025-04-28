@@ -40,11 +40,9 @@ func (r *GetSensorHysteresisResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetSensorHysteresisResponse) Format() string {
-	return fmt.Sprintf(`Positive Hysteresis : %d
-Negative Hysteresis : %d`,
-		res.PositiveRaw,
-		res.NegativeRaw,
-	)
+	return "" +
+		fmt.Sprintf("Positive Hysteresis : %d\n", res.PositiveRaw) +
+		fmt.Sprintf("Negative Hysteresis : %d\n", res.NegativeRaw)
 }
 
 // This command retrieves the present hysteresis values for the specified sensor.

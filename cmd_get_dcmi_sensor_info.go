@@ -66,15 +66,10 @@ func (res *GetDCMISensorInfoResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetDCMISensorInfoResponse) Format() string {
-	return fmt.Sprintf(`
-Total entity instances: %d
-Number of records: %d
-SDR Record ID: %v
-`,
-		res.TotalEntityInstances,
-		res.RecordsCount,
-		res.SDRRecordID,
-	)
+	return "" +
+		fmt.Sprintf("Total entity instances : %d\n", res.TotalEntityInstances) +
+		fmt.Sprintf("Number of records      : %d\n", res.RecordsCount) +
+		fmt.Sprintf("SDR Record ID          : %v\n", res.SDRRecordID)
 }
 
 // GetDCMISensorInfo sends a DCMI "Get Power Reading" command.

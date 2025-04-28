@@ -112,23 +112,15 @@ func (*OpenSessionResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *OpenSessionResponse) Format() string {
-	return fmt.Sprintf(`  Message tag                        : %#02x
-  RMCP+ status                       : %#02x %s
-  Maximum privilege level            : %#02x %s
-  Console Session ID                 : %#0x
-  BMC Session ID                     : %#0x
-  Negotiated authentication algorithm : %#02x %s
-  Negotiated integrity algorithm     : %#02x %s
-  Negotiated encryption algorithm    : %#02x %s`,
-		res.MessageTag,
-		res.RmcpStatusCode, RmcpStatusCode(res.RmcpStatusCode),
-		res.MaximumPrivilegeLevel, PrivilegeLevel(res.MaximumPrivilegeLevel),
-		res.RemoteConsoleSessionID,
-		res.ManagedSystemSessionID,
-		res.AuthAlg, AuthAlg(res.AuthAlg),
-		res.IntegrityAlg, IntegrityAlg(res.IntegrityAlg),
-		res.CryptAlg, CryptAlg(res.CryptAlg),
-	)
+	return "" +
+		fmt.Sprintf("  Message tag                         : %#02x\n", res.MessageTag) +
+		fmt.Sprintf("  RMCP+ status                        : %#02x %s\n", res.RmcpStatusCode, RmcpStatusCode(res.RmcpStatusCode)) +
+		fmt.Sprintf("  Maximum privilege level             : %#02x %s\n", res.MaximumPrivilegeLevel, PrivilegeLevel(res.MaximumPrivilegeLevel)) +
+		fmt.Sprintf("  Console Session ID                  : %#0x\n", res.RemoteConsoleSessionID) +
+		fmt.Sprintf("  BMC Session ID                      : %#0x\n", res.ManagedSystemSessionID) +
+		fmt.Sprintf("  Negotiated authentication algorithm : %#02x %s\n", res.AuthAlg, AuthAlg(res.AuthAlg)) +
+		fmt.Sprintf("  Negotiated integrity algorithm      : %#02x %s\n", res.IntegrityAlg, IntegrityAlg(res.IntegrityAlg)) +
+		fmt.Sprintf("  Negotiated encryption algorithm     : %#02x %s\n", res.CryptAlg, CryptAlg(res.CryptAlg))
 }
 
 func (c *Client) OpenSession(ctx context.Context) (response *OpenSessionResponse, err error) {

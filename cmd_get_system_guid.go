@@ -39,20 +39,19 @@ func (*GetSystemGUIDResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetSystemGUIDResponse) Format() string {
-	out := ""
 	guidMode := GUIDModeSMBIOS
 	u, err := ParseGUID(res.GUID[:], guidMode)
 	if err != nil {
 		return fmt.Sprintf("<invalid UUID bytes> (%s)", err)
 	}
-
-	out += fmt.Sprintf("System GUID       : %s\n", u.String())
-	out += fmt.Sprintf("UUID Encoding     : %s\n", guidMode)
-	out += fmt.Sprintf("UUID Version      : %s\n", UUIDVersionString(u))
 	sec, nsec := u.Time().UnixTime()
-	out += fmt.Sprintf("Timestamp         : %s\n", time.Unix(sec, nsec).Format(timeFormat))
-	out += fmt.Sprintf("Timestamp(Legacy) : %s\n", IPMILegacyGUIDTime(u).Format(timeFormat))
-	return out
+
+	return "" +
+		fmt.Sprintf("System GUID       : %s\n", u.String()) +
+		fmt.Sprintf("UUID Encoding     : %s\n", guidMode) +
+		fmt.Sprintf("UUID Version      : %s\n", UUIDVersionString(u)) +
+		fmt.Sprintf("Timestamp         : %s\n", time.Unix(sec, nsec).Format(timeFormat)) +
+		fmt.Sprintf("Timestamp(Legacy) : %s\n", IPMILegacyGUIDTime(u).Format(timeFormat))
 }
 
 func (c *Client) GetSystemGUID(ctx context.Context) (response *GetSystemGUIDResponse, err error) {

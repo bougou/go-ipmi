@@ -1,11 +1,8 @@
 package ipmi
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-
-	"github.com/olekukonko/tablewriter"
 )
 
 // 22.27 Get User Access Command
@@ -88,15 +85,10 @@ func (res *GetUserAccessResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetUserAccessResponse) Format() string {
-
-	return fmt.Sprintf(`Maximum IDs         : %d
-	Enabled User Count  : %d
-	Fixed Name Count    : %d
-	`,
-		res.MaxUsersIDCount,
-		res.EnabledUserIDsCount,
-		res.FixedNameUseIDsCount,
-	)
+	return "" +
+		fmt.Sprintf("Maximum IDs        : %d\n", res.MaxUsersIDCount) +
+		fmt.Sprintf("Enabled User Count : %d\n", res.EnabledUserIDsCount) +
+		fmt.Sprintf("Fixed Name Count   : %d\n", res.FixedNameUseIDsCount)
 }
 
 func (c *Client) GetUserAccess(ctx context.Context, channelNumber uint8, userID uint8) (response *GetUserAccessResponse, err error) {
@@ -163,10 +155,18 @@ type User struct {
 }
 
 func FormatUsers(users []*User) string {
-	var buf = new(bytes.Buffer)
-	table := tablewriter.NewWriter(buf)
-	table.SetAutoWrapText(false)
-	table.SetAlignment(tablewriter.ALIGN_RIGHT)
+	rows := make([]map[string]string, len(users))
+
+	for i, user := range users {
+		rows[i] = map[string]string{
+			"ID":                 fmt.Sprintf("%d", user.ID),
+			"Name":               user.Name,
+			"Callin":             fmt.Sprintf("%v", user.Callin),
+			"Link Auth":          fmt.Sprintf("%v", user.LinkAuthEnabled),
+			"IPMI Msg":           fmt.Sprintf("%v", user.IPMIMessagingEnabled),
+			"Channel Priv Limit": user.MaxPrivLevel.String(),
+		}
+	}
 
 	headers := []string{
 		"ID",
@@ -176,21 +176,6 @@ func FormatUsers(users []*User) string {
 		"IPMI Msg",
 		"Channel Priv Limit",
 	}
-	table.SetHeader(headers)
-	table.SetFooter(headers)
 
-	for _, user := range users {
-		table.Append([]string{
-			fmt.Sprintf("%d", user.ID),
-			user.Name,
-			fmt.Sprintf("%v", user.Callin),
-			fmt.Sprintf("%v", user.LinkAuthEnabled),
-			fmt.Sprintf("%v", user.IPMIMessagingEnabled),
-			user.MaxPrivLevel.String(),
-		})
-	}
-
-	table.Render()
-
-	return buf.String()
+	return formatTable(headers, rows)
 }

@@ -59,17 +59,12 @@ func (res *GetChannelAccessResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetChannelAccessResponse) Format() string {
-	return fmt.Sprintf(`    Alerting            : %s
-    Per-message Auth    : %s
-    User Level Auth     : %s
-    Access Mode         : %s
-    Max Privilege Level : %s`,
-		formatBool(res.PEFAlertingDisabled, "disabled", "enabled"),
-		formatBool(res.PerMsgAuthDisabled, "disabled", "enabled"),
-		formatBool(res.UserLevelAuthDisabled, "disabled", "enabled"),
-		res.AccessMode,
-		res.MaxPrivilegeLevel.String(),
-	)
+	return "" +
+		fmt.Sprintf("    Alerting            : %s\n", formatBool(res.PEFAlertingDisabled, "disabled", "enabled")) +
+		fmt.Sprintf("    Per-message Auth    : %s\n", formatBool(res.PerMsgAuthDisabled, "disabled", "enabled")) +
+		fmt.Sprintf("    User Level Auth     : %s\n", formatBool(res.UserLevelAuthDisabled, "disabled", "enabled")) +
+		fmt.Sprintf("    Access Mode         : %s\n", res.AccessMode) +
+		fmt.Sprintf("    Max Privilege Level : %s\n", res.MaxPrivilegeLevel.String())
 }
 
 func (c *Client) GetChannelAccess(ctx context.Context, channelNumber uint8, accessOption ChannelAccessOption) (response *GetChannelAccessResponse, err error) {

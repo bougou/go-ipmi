@@ -412,7 +412,7 @@ func (param *LanConfigParam_AuthTypeSupport) Format() string {
 		s = "None"
 	}
 
-	return fmt.Sprintf(`%s, (OEM: %v, Password: %v, MD5: %v, MD2: %v, Non: %v)`,
+	return fmt.Sprintf("%s, (OEM: %v, Password: %v, MD5: %v, MD2: %v, Non: %v)",
 		s, param.OEM, param.Password, param.MD5, param.MD2, param.None)
 }
 
@@ -1421,17 +1421,11 @@ func (param *LanConfigParam_BadPasswordThreshold) Unpack(data []byte) error {
 }
 
 func (param *LanConfigParam_BadPasswordThreshold) Format() string {
-	return fmt.Sprintf(`
-        Threshold                    : %d
-        Generate Session Audit Event : %v
-        Attempt Count Reset Interval : %d
-        User Lockout Interval        : %d
-`,
-		param.Threshold,
-		param.GenerateSessionAuditEvent,
-		param.AttemptCountResetIntervalSec,
-		param.UserLockoutIntervalSec,
-	)
+	return "\n" +
+		fmt.Sprintf("        Threshold                    : %d\n", param.Threshold) +
+		fmt.Sprintf("        Generate Session Audit Event : %v\n", param.GenerateSessionAuditEvent) +
+		fmt.Sprintf("        Attempt Count Reset Interval : %d\n", param.AttemptCountResetIntervalSec) +
+		fmt.Sprintf("        User Lockout Interval        : %d\n", param.UserLockoutIntervalSec)
 }
 
 type LanConfigParam_IPv6Support struct {

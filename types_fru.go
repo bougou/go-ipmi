@@ -190,19 +190,13 @@ func (s *FRUCommonHeader) Valid() bool {
 }
 
 func (s *FRUCommonHeader) String() string {
-	return fmt.Sprintf(`Version            : %#02x
-Offset Internal    : %#02x
-Offset Chassis     : %#02x
-Offset Board       : %#02x
-Offset Product     : %#02x
-Offset MultiRecord : %#02x`,
-		s.FormatVersion,
-		s.InternalOffset8B*8,
-		s.ChassisOffset8B*8,
-		s.BoardOffset8B*8,
-		s.ProductOffset8B*8,
-		s.MultiRecordsOffset8B*8,
-	)
+	return "\n" +
+		fmt.Sprintf("    Version            : %#02x\n", s.FormatVersion) +
+		fmt.Sprintf("    Offset Internal    : %#02x\n", s.InternalOffset8B*8) +
+		fmt.Sprintf("    Offset Chassis     : %#02x\n", s.ChassisOffset8B*8) +
+		fmt.Sprintf("    Offset Board       : %#02x\n", s.BoardOffset8B*8) +
+		fmt.Sprintf("    Offset Product     : %#02x\n", s.ProductOffset8B*8) +
+		fmt.Sprintf("    Offset MultiRecord : %#02x\n", s.MultiRecordsOffset8B*8)
 }
 
 // FRUInternalUseArea provides private, implementation-specific information storage

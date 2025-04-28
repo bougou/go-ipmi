@@ -106,13 +106,9 @@ func (res *SetChannelSecurityKeysResponse) Unpack(msg []byte) error {
 }
 
 func (res *SetChannelSecurityKeysResponse) Format() string {
-	return fmt.Sprintf(`
-		Lock Status : %s (%d)
-		Key Value  : %v
-`,
-		res.LockStatus.String(), res.LockStatus,
-		res.KeyValue,
-	)
+	return "" +
+		fmt.Sprintf("Lock Status : %s (%d)\n", res.LockStatus.String(), uint8(res.LockStatus)) +
+		fmt.Sprintf("Key Value   : %v\n", res.KeyValue)
 }
 
 func (c *Client) SetChannelSecurityKeys(ctx context.Context, request *SetChannelSecurityKeysRequest) (response *SetChannelSecurityKeysResponse, err error) {

@@ -69,21 +69,14 @@ func (r *GetSensorReadingFactorsResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetSensorReadingFactorsResponse) Format() string {
-	return fmt.Sprintf(`M: %d
-B: %d
-B_Exp (K1): %d
-R_Exp (K2): %d
-Tolerance: %d
-Accuracy: %d
-AccuracyExp: %d`,
-		res.M,
-		res.B,
-		res.B_Exp,
-		res.R_Exp,
-		res.Tolerance,
-		res.Accuracy,
-		res.Accuracy_Exp,
-	)
+	return "" +
+		fmt.Sprintf("M           : %d\n", res.M) +
+		fmt.Sprintf("B           : %d\n", res.B) +
+		fmt.Sprintf("B_Exp (K1)  : %d\n", res.B_Exp) +
+		fmt.Sprintf("R_Exp (K2)  : %d\n", res.R_Exp) +
+		fmt.Sprintf("Tolerance   : %d\n", res.Tolerance) +
+		fmt.Sprintf("Accuracy    : %d\n", res.Accuracy) +
+		fmt.Sprintf("AccuracyExp : %d\n", res.Accuracy_Exp)
 }
 
 // This command returns the Sensor Reading Factors fields for the specified reading value on the specified sensor.

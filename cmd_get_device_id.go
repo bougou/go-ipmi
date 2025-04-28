@@ -184,33 +184,19 @@ func (res *GetDeviceIDResponse) Format() string {
 		auxFirmwareInfo = append(auxFirmwareInfo, fmt.Sprintf("    %#02x", v))
 	}
 
-	return fmt.Sprintf(`Device ID                 : %d
-Device Revision           : %d
-Firmware Revision         : %d.%d
-IPMI Version              : %d.%d
-Manufacturer ID           : %d (%#02x)
-Manufacturer Name         : %s
-Product ID                : %d (%#04x)
-Product Name              : %#02x
-Device Available          : %s
-Provides Device SDRs      : %s
-Additional Device Support :
-%s
-Aux Firmware Rev Info     :
-%s`,
-		res.DeviceID,
-		res.DeviceRevision,
-		res.MajorFirmwareRevision, res.MinorFirmwareRevision,
-		res.MajorIPMIVersion, res.MinorIPMIVersion,
-		res.ManufacturerID, res.ManufacturerID,
-		OEM(res.ManufacturerID),
-		res.ProductID, res.ProductID,
-		res.ProductID,
-		formatBool(res.DeviceAvailable, "yes", "no"),
-		formatBool(res.ProvideDeviceSDRs, "yes", "no"),
-		strings.Join(deviceSupport, "    \n"),
-		strings.Join(auxFirmwareInfo, "    \n"),
-	)
+	return "" +
+		fmt.Sprintf("Device ID                 : %d\n", res.DeviceID) +
+		fmt.Sprintf("Device Revision           : %d\n", res.DeviceRevision) +
+		fmt.Sprintf("Firmware Revision         : %d.%d\n", res.MajorFirmwareRevision, res.MinorFirmwareRevision) +
+		fmt.Sprintf("IPMI Version              : %d.%d\n", res.MajorIPMIVersion, res.MinorIPMIVersion) +
+		fmt.Sprintf("Manufacturer ID           : %d (%#02x)\n", res.ManufacturerID, res.ManufacturerID) +
+		fmt.Sprintf("Manufacturer Name         : %s\n", OEM(res.ManufacturerID)) +
+		fmt.Sprintf("Product ID                : %d (%#04x)\n", res.ProductID, res.ProductID) +
+		fmt.Sprintf("Product Name              : %#04x\n", res.ProductID) +
+		fmt.Sprintf("Device Available          : %s\n", formatBool(res.DeviceAvailable, "yes", "no")) +
+		fmt.Sprintf("Provides Device SDRs      : %s\n", formatBool(res.ProvideDeviceSDRs, "yes", "no")) +
+		fmt.Sprintf("Additional Device Support :\n%s\n", strings.Join(deviceSupport, "    \n")) +
+		fmt.Sprintf("Aux Firmware Rev Info     :\n%s\n", strings.Join(auxFirmwareInfo, "    \n"))
 }
 
 func (c *Client) GetDeviceID(ctx context.Context) (response *GetDeviceIDResponse, err error) {

@@ -152,25 +152,26 @@ func (res *GetChassisStatusResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetChassisStatusResponse) Format() string {
-	return "System Power         : " + formatBool(res.PowerIsOn, "on", "off") + "\n" +
-		"Power Overload       : " + fmt.Sprintf("%v", res.PowerOverload) + "\n" +
-		"Power Interlock      : " + formatBool(res.InterLock, "active", "inactive") + "\n" +
-		"Main Power Fault     : " + fmt.Sprintf("%v", res.PowerFault) + "\n" +
-		"Power Control Fault  : " + fmt.Sprintf("%v", res.PowerControlFault) + "\n" +
-		"Power Restore Policy : " + res.PowerRestorePolicy.String() + "\n" +
-		"Last Power Event     : " + formatBool(res.ChassisIntrusionActive, "active", "inactive") + "\n" +
-		"Chassis Intrusion    : " + formatBool(res.ChassisIntrusionActive, "active", "inactive") + "\n" +
-		"Front-Panel Lockout  : " + formatBool(res.FrontPanelLockoutActive, "active", "inactive") + "\n" +
-		"Drive Fault          : " + fmt.Sprintf("%v", res.DriveFault) + "\n" +
-		"Cooling/Fan Fault    : " + fmt.Sprintf("%v", res.CollingFanFault) + "\n" +
-		"Sleep Button Disable : " + formatBool(res.SleepButtonDisableAllowed, "allowed", "disallowed") + "\n" +
-		"Diag Button Disable  : " + formatBool(res.DiagnosticButtonDisableAllowed, "allowed", "disallowed") + "\n" +
-		"Reset Button Disable : " + formatBool(res.ResetButtonDisableAllowed, "allowed", "disallowed") + "\n" +
-		"Power Button Disable : " + formatBool(res.PoweroffButtonDisableAllowed, "allowed", "disallowed") + "\n" +
-		"Sleep Button Disabled: " + fmt.Sprintf("%v", res.SleepButtonDisabled) + "\n" +
-		"Diag Button Disabled : " + fmt.Sprintf("%v", res.DiagnosticButtonDisabled) + "\n" +
-		"Reset Button Disabled: " + fmt.Sprintf("%v", res.ResetButtonDisabled) + "\n" +
-		"Power Button Disabled: " + fmt.Sprintf("%v", res.PoweroffButtonDisabled)
+	return "" +
+		fmt.Sprintf("System Power         : %s\n", formatBool(res.PowerIsOn, "on", "off")) +
+		fmt.Sprintf("Power Overload       : %v\n", res.PowerOverload) +
+		fmt.Sprintf("Power Interlock      : %s\n", formatBool(res.InterLock, "active", "inactive")) +
+		fmt.Sprintf("Main Power Fault     : %v\n", res.PowerFault) +
+		fmt.Sprintf("Power Control Fault  : %v\n", res.PowerControlFault) +
+		fmt.Sprintf("Power Restore Policy : %s\n", res.PowerRestorePolicy.String()) +
+		fmt.Sprintf("Last Power Event     : %s\n", formatBool(res.ChassisIntrusionActive, "active", "inactive")) +
+		fmt.Sprintf("Chassis Intrusion    : %s\n", formatBool(res.ChassisIntrusionActive, "active", "inactive")) +
+		fmt.Sprintf("Front-Panel Lockout  : %s\n", formatBool(res.FrontPanelLockoutActive, "active", "inactive")) +
+		fmt.Sprintf("Drive Fault          : %v\n", res.DriveFault) +
+		fmt.Sprintf("Cooling/Fan Fault    : %v\n", res.CollingFanFault) +
+		fmt.Sprintf("Sleep Button Disable : %s\n", formatBool(res.SleepButtonDisableAllowed, "allowed", "disallowed")) +
+		fmt.Sprintf("Diag Button Disable  : %s\n", formatBool(res.DiagnosticButtonDisableAllowed, "allowed", "disallowed")) +
+		fmt.Sprintf("Reset Button Disable : %s\n", formatBool(res.ResetButtonDisableAllowed, "allowed", "disallowed")) +
+		fmt.Sprintf("Power Button Disable : %s\n", formatBool(res.PoweroffButtonDisableAllowed, "allowed", "disallowed")) +
+		fmt.Sprintf("Sleep Button Disabled: %v\n", res.SleepButtonDisabled) +
+		fmt.Sprintf("Diag Button Disabled : %v\n", res.DiagnosticButtonDisabled) +
+		fmt.Sprintf("Reset Button Disabled: %v\n", res.ResetButtonDisabled) +
+		fmt.Sprintf("Power Button Disabled: %v\n", res.PoweroffButtonDisabled)
 }
 
 func (c *Client) GetChassisStatus(ctx context.Context) (response *GetChassisStatusResponse, err error) {

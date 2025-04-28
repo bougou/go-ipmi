@@ -1,11 +1,8 @@
 package ipmi
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-
-	"github.com/olekukonko/tablewriter"
 )
 
 const SDRRecordHeaderSize int = 5
@@ -82,17 +79,11 @@ type SDR struct {
 
 func (sdr *SDR) String() string {
 
-	recordStr := fmt.Sprintf(`
-Record ID:             : %#02x
-Record Type:           : %s
-SDR Version:           : %#02x
-Record Length:         : %d
-`,
-		sdr.RecordHeader.RecordID,
-		sdr.RecordHeader.RecordType,
-		sdr.RecordHeader.SDRVersion,
-		sdr.RecordHeader.RecordLength,
-	)
+	recordStr := "" +
+		fmt.Sprintf("Record ID:             : %#02x\n", sdr.RecordHeader.RecordID) +
+		fmt.Sprintf("Record Type:           : %s\n", sdr.RecordHeader.RecordType) +
+		fmt.Sprintf("SDR Version:           : %#02x\n", sdr.RecordHeader.SDRVersion) +
+		fmt.Sprintf("Record Length:         : %d\n", sdr.RecordHeader.RecordLength)
 
 	recordType := sdr.RecordHeader.RecordType
 	switch recordType {
@@ -236,10 +227,43 @@ func ParseSDR(data []byte, nextRecordID uint16) (*SDR, error) {
 
 // Format SDRs of FRU record type
 func FormatSDRs_FRU(records []*SDR) string {
-	var buf = new(bytes.Buffer)
-	table := tablewriter.NewWriter(buf)
-	table.SetAutoWrapText(false)
-	table.SetAlignment(tablewriter.ALIGN_RIGHT)
+	rows := make([]map[string]string, 0)
+
+	for _, sdr := range records {
+		if sdr == nil || sdr.RecordHeader == nil {
+			continue
+		}
+
+		recordID := sdr.RecordHeader.RecordID
+		recordType := sdr.RecordHeader.RecordType
+
+		switch recordType {
+		case SDRRecordTypeFRUDeviceLocator:
+			sdrFRU := sdr.FRUDeviceLocator
+
+			row := map[string]string{
+				"RecordID":          fmt.Sprintf("%#02x", recordID),
+				"RecordType":        fmt.Sprintf("%s (%#02x)", recordType.String(), uint8(recordType)),
+				"DeviceAccessAddr":  fmt.Sprintf("%#02x", sdrFRU.DeviceAccessAddress),
+				"FRUDeviceID":       fmt.Sprintf("%#02x", sdrFRU.FRUDeviceID_SlaveAddress),
+				"IsLogicFRU":        fmt.Sprintf("%v", sdrFRU.IsLogicalFRUDevice),
+				"AccessLUN":         fmt.Sprintf("%#02x", sdrFRU.AccessLUN),
+				"PrivateBusID":      fmt.Sprintf("%#02x", sdrFRU.PrivateBusID),
+				"ChannelNumber":     fmt.Sprintf("%#02x", sdrFRU.ChannelNumber),
+				"DeviceType":        fmt.Sprintf("%s (%#02x)", sdrFRU.DeviceType.String(), uint8(sdrFRU.DeviceType)),
+				"Modifier":          fmt.Sprintf("%#02x", sdrFRU.DeviceTypeModifier),
+				"FRUEntityID":       fmt.Sprintf("%#02x", sdrFRU.FRUEntityID),
+				"FRUEntityInstance": fmt.Sprintf("%#02x", sdrFRU.FRUEntityInstance),
+				"TypeLength":        sdrFRU.DeviceIDTypeLength.String(),
+				"DeviceName":        string(sdrFRU.DeviceIDBytes),
+			}
+
+			rows = append(rows, row)
+
+		default:
+		}
+
+	}
 
 	headers := []string{
 		"RecordID",
@@ -257,68 +281,13 @@ func FormatSDRs_FRU(records []*SDR) string {
 		"TypeLength",
 		"DeviceName",
 	}
-	table.SetHeader(headers)
-	table.SetFooter(headers)
 
-	for _, sdr := range records {
-		if sdr == nil || sdr.RecordHeader == nil {
-			continue
-		}
-
-		recordID := sdr.RecordHeader.RecordID
-		recordType := sdr.RecordHeader.RecordType
-
-		switch recordType {
-		case SDRRecordTypeFRUDeviceLocator:
-			sdrFRU := sdr.FRUDeviceLocator
-			table.Append([]string{
-				fmt.Sprintf("%#02x", recordID),
-				fmt.Sprintf("%s (%#02x)", recordType.String(), uint8(recordType)),
-				fmt.Sprintf("%#02x", sdrFRU.DeviceAccessAddress),
-				fmt.Sprintf("%#02x", sdrFRU.FRUDeviceID_SlaveAddress),
-				fmt.Sprintf("%v", sdrFRU.IsLogicalFRUDevice),
-				fmt.Sprintf("%#02x", sdrFRU.AccessLUN),
-				fmt.Sprintf("%#02x", sdrFRU.PrivateBusID),
-				fmt.Sprintf("%#02x", sdrFRU.ChannelNumber),
-				fmt.Sprintf("%s (%#02x)", sdrFRU.DeviceType.String(), uint8(sdrFRU.DeviceType)),
-				fmt.Sprintf("%#02x", sdrFRU.DeviceTypeModifier),
-				fmt.Sprintf("%#02x", sdrFRU.FRUEntityID),
-				fmt.Sprintf("%#02x", sdrFRU.FRUEntityInstance),
-				sdrFRU.DeviceIDTypeLength.String(),
-				string(sdrFRU.DeviceIDBytes),
-			})
-		default:
-		}
-
-	}
-
-	table.Render()
-	return buf.String()
-
+	return formatTable(headers, rows)
 }
 
 // FormatSDRs returns a table formatted string for print.
 func FormatSDRs(records []*SDR) string {
-	var buf = new(bytes.Buffer)
-	table := tablewriter.NewWriter(buf)
-	table.SetAutoWrapText(false)
-	table.SetAlignment(tablewriter.ALIGN_RIGHT)
-
-	headers := []string{
-		"RecordID",
-		"RecordType",
-		"GeneratorID",
-		"SensorNumber",
-		"SensorName",
-		"Entity",
-		"SensorType",
-		"EventReadingType",
-		"SensorValue",
-		"SensorUnit",
-		"SensorStatus",
-	}
-	table.SetHeader(headers)
-	table.SetFooter(headers)
+	rows := make([]map[string]string, 0)
 
 	for _, sdr := range records {
 		if sdr == nil || sdr.RecordHeader == nil {
@@ -361,23 +330,38 @@ func FormatSDRs(records []*SDR) string {
 		default:
 		}
 
-		table.Append([]string{
-			fmt.Sprintf("%#02x", recordID),
-			fmt.Sprintf("%s (%#02x)", recordType.String(), uint8(recordType)),
-			fmt.Sprintf("%#04x", uint16(generatorID)),
-			fmt.Sprintf("%#02x", sdr.SensorNumber()),
-			sdr.SensorName(),
-			canonicalEntityString(entityID, entityInstance),
-			sensorType.String(),
-			eventReadingType.String(),
-			fmt.Sprintf("%#.2f", sensorValue),
-			sensorUnit.String(),
-			sensorStatus,
-		})
+		row := map[string]string{
+			"RecordID":         fmt.Sprintf("%#02x", recordID),
+			"RecordType":       fmt.Sprintf("%s (%#02x)", recordType.String(), uint8(recordType)),
+			"GeneratorID":      fmt.Sprintf("%#04x", uint16(generatorID)),
+			"SensorNumber":     fmt.Sprintf("%#02x", sdr.SensorNumber()),
+			"SensorName":       sdr.SensorName(),
+			"Entity":           canonicalEntityString(entityID, entityInstance),
+			"SensorType":       sensorType.String(),
+			"EventReadingType": eventReadingType.String(),
+			"SensorValue":      fmt.Sprintf("%#.2f", sensorValue),
+			"SensorUnit":       sensorUnit.String(),
+			"SensorStatus":     sensorStatus,
+		}
+
+		rows = append(rows, row)
 	}
 
-	table.Render()
-	return buf.String()
+	headers := []string{
+		"RecordID",
+		"RecordType",
+		"GeneratorID",
+		"SensorNumber",
+		"SensorName",
+		"Entity",
+		"SensorType",
+		"EventReadingType",
+		"SensorValue",
+		"SensorUnit",
+		"SensorStatus",
+	}
+
+	return formatTable(headers, rows)
 }
 
 // Mask_Threshold holds masks for a specific threshold type.

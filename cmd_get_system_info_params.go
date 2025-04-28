@@ -58,10 +58,9 @@ func (res *GetSystemInfoParamResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetSystemInfoParamResponse) Format() string {
-	return fmt.Sprintf(`
-        Param Revision: %d
-        Param Data: %v
-`, res.ParamRevision, res.ParamData)
+	return "" +
+		fmt.Sprintf("Param Revision : %d\n", res.ParamRevision) +
+		fmt.Sprintf("Param Data     : %v\n", res.ParamData)
 }
 
 func (c *Client) GetSystemInfoParam(ctx context.Context, paramSelector SystemInfoParamSelector, setSelector uint8, blockSelector uint8) (response *GetSystemInfoParamResponse, err error) {

@@ -79,30 +79,19 @@ func (res *GetSELInfoResponse) Format() string {
 	totalBytes := usedBytes + int(res.FreeBytes)
 	var usedPct float64 = 100 * float64(usedBytes) / float64(totalBytes)
 
-	return fmt.Sprintf(`SEL Information
-Version                      : %s (v1.5, v2 compliant)
-Entries                      : %d
-Free Space                   : %d bytes
-Percent Used                 : %.2f%%
-Last Add Time                : %s
-Last Del Time                : %s
-Overflow                     : %v
-Delete SEL supported:        : %v
-Partial Add SEL supported:   : %v
-Reserve SEL supported        : %v
-Get SEL Alloc Info supported : %v`,
-		version,
-		res.Entries,
-		res.FreeBytes,
-		usedPct,
-		res.RecentAdditionTime,
-		res.RecentEraseTime,
-		res.OperationSupport.Overflow,
-		res.OperationSupport.DeleteSEL,
-		res.OperationSupport.PartialAddSEL,
-		res.OperationSupport.ReserveSEL,
-		res.OperationSupport.GetSELAllocInfo,
-	)
+	return "" +
+		"SEL Information\n" +
+		fmt.Sprintf("Version                      : %s (v1.5, v2 compliant)\n", version) +
+		fmt.Sprintf("Entries                      : %d\n", res.Entries) +
+		fmt.Sprintf("Free Space                   : %d bytes\n", res.FreeBytes) +
+		fmt.Sprintf("Percent Used                 : %.2f%%\n", usedPct) +
+		fmt.Sprintf("Last Add Time                : %s\n", res.RecentAdditionTime.Format(timeFormat)) +
+		fmt.Sprintf("Last Del Time                : %s\n", res.RecentEraseTime.Format(timeFormat)) +
+		fmt.Sprintf("Overflow                     : %v\n", res.OperationSupport.Overflow) +
+		fmt.Sprintf("Delete SEL supported:        : %v\n", res.OperationSupport.DeleteSEL) +
+		fmt.Sprintf("Partial Add SEL supported:   : %v\n", res.OperationSupport.PartialAddSEL) +
+		fmt.Sprintf("Reserve SEL supported        : %v\n", res.OperationSupport.ReserveSEL) +
+		fmt.Sprintf("Get SEL Alloc Info supported : %v\n", res.OperationSupport.GetSELAllocInfo)
 }
 
 func (c *Client) GetSELInfo(ctx context.Context) (response *GetSELInfoResponse, err error) {

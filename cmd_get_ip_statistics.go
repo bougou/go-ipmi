@@ -64,25 +64,16 @@ func (res *GetIPStatisticsResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetIPStatisticsResponse) Format() string {
-	return fmt.Sprintf(`IP Rx Packet              : %d
-IP Rx Header Errors       : %d
-IP Rx Address Errors      : %d
-IP Rx Fragmented          : %d
-IP Tx Packet              : %d
-UDP Rx Packet             : %d
-RMCP Rx Valid             : %d
-UDP Proxy Packet Received : %d
-UDP Proxy Packet Dropped  : %d`,
-		res.IPPacketsReceived,
-		res.IPHeaderErrorsReceived,
-		res.IPAddressErrorsReceived,
-		res.IPPacketsFragmentedReceived,
-		res.IPPacketsTransmitted,
-		res.UDPPacketsReceived,
-		res.RMCPPacketsValidReceived,
-		res.UDPProxyPacketsReceived,
-		res.UDPProxyPacketsDropped,
-	)
+	return "" +
+		fmt.Sprintf("IP Rx Packet              : %d\n", res.IPPacketsReceived) +
+		fmt.Sprintf("IP Rx Header Errors       : %d\n", res.IPHeaderErrorsReceived) +
+		fmt.Sprintf("IP Rx Address Errors      : %d\n", res.IPAddressErrorsReceived) +
+		fmt.Sprintf("IP Rx Fragmented          : %d\n", res.IPPacketsFragmentedReceived) +
+		fmt.Sprintf("IP Tx Packet              : %d\n", res.IPPacketsTransmitted) +
+		fmt.Sprintf("UDP Rx Packet             : %d\n", res.UDPPacketsReceived) +
+		fmt.Sprintf("RMCP Rx Valid             : %d\n", res.RMCPPacketsValidReceived) +
+		fmt.Sprintf("UDP Proxy Packet Received : %d\n", res.UDPProxyPacketsReceived) +
+		fmt.Sprintf("UDP Proxy Packet Dropped  : %d\n", res.UDPProxyPacketsDropped)
 }
 
 func (c *Client) GetIPStatistics(ctx context.Context, channelNumber uint8, clearAllStatistics bool) (response *GetIPStatisticsResponse, err error) {

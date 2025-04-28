@@ -57,21 +57,14 @@ func (res *GetWatchdogTimerResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetWatchdogTimerResponse) Format() string {
-	return fmt.Sprintf(`Watchdog Timer Use:     %s (%#02x)
-Watchdog Timer Is:      %s
-Watchdog Timer Actions: %s (%#02x)
-Pre-timeout interval:   %d seconds
-Timer Expiration Flags: %#02x
-Initial Countdown:      %d sec
-Present Countdown:      %d sec`,
-		res.TimerUse, uint8(res.TimerUse),
-		formatBool(res.TimerIsStarted, "Started", "Stopped"),
-		res.TimeoutAction, uint8(res.TimeoutAction),
-		res.PreTimeoutIntervalSec,
-		res.ExpirationFlags,
-		res.InitialCountdown,
-		res.PresentCountdown,
-	)
+	return "" +
+		fmt.Sprintf("Watchdog Timer Use     : %s (%#02x)\n", res.TimerUse, uint8(res.TimerUse)) +
+		fmt.Sprintf("Watchdog Timer Is      : %s\n", formatBool(res.TimerIsStarted, "Started", "Stopped")) +
+		fmt.Sprintf("Watchdog Timer Actions : %s (%#02x)\n", res.TimeoutAction, uint8(res.TimeoutAction)) +
+		fmt.Sprintf("Pre-timeout interval   : %d seconds\n", res.PreTimeoutIntervalSec) +
+		fmt.Sprintf("Timer Expiration Flags : %#02x\n", res.ExpirationFlags) +
+		fmt.Sprintf("Initial Countdown      : %d sec\n", res.InitialCountdown) +
+		fmt.Sprintf("Present Countdown      : %d sec\n", res.PresentCountdown)
 }
 
 func (c *Client) GetWatchdogTimer(ctx context.Context) (response *GetWatchdogTimerResponse, err error) {

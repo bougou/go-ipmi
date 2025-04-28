@@ -247,19 +247,19 @@ func (p *BootOptionParam_BMCBootFlagValidBitClear) Format() string {
 	s := "\n"
 
 	if p.DontClearOnResetPEFOrPowerCyclePEF {
-		s += "   - Don't clear valid bit on reset/power cycle cause by PEF\n"
+		s += "    - Don't clear valid bit on reset/power cycle cause by PEF\n"
 	}
 	if p.DontClearOnCommandReceivedTimeout {
-		s += "   - Don't automatically clear boot flag valid bit on timeout\n"
+		s += "    - Don't automatically clear boot flag valid bit on timeout\n"
 	}
 	if p.DontClearOnWatchdogTimeout {
-		s += "   - Don't clear valid bit on reset/power cycle cause by watchdog\n"
+		s += "    - Don't clear valid bit on reset/power cycle cause by watchdog\n"
 	}
 	if p.DontClearOnResetPushButtonOrSoftReset {
-		s += "   - Don't clear valid bit on push button reset // soft reset\n"
+		s += "    - Don't clear valid bit on push button reset // soft reset\n"
 	}
 	if p.DontClearOnPowerUpPushButtonOrWakeEvent {
-		s += "   - Don't clear valid bit on power up via power push button or wake event\n"
+		s += "    - Don't clear valid bit on power up via power push button or wake event\n"
 	}
 
 	// When any flag was set, then at least one of the above condition will be true, thus 's' would not be empty.
@@ -325,19 +325,19 @@ func (p *BootOptionParam_BootInfoAcknowledge) Format() string {
 	s := "\n"
 
 	if p.ByOEM {
-		s += "   - OEM has handled boot info\n"
+		s += "    - OEM has handled boot info\n"
 	}
 	if p.BySMS {
-		s += "   - SMS has handled boot info\n"
+		s += "    - SMS has handled boot info\n"
 	}
 	if p.ByOSServicePartition {
-		s += "   - OS // service partition has handled boot info\n"
+		s += "    - OS // service partition has handled boot info\n"
 	}
 	if p.ByOSLoader {
-		s += "   - OS Loader has handled boot info\n"
+		s += "    - OS Loader has handled boot info\n"
 	}
 	if p.ByBIOSPOST {
-		s += "   - BIOS/POST has handled boot info\n"
+		s += "    - BIOS/POST has handled boot info\n"
 	}
 
 	if s == "\n" {
@@ -671,10 +671,10 @@ func (p *BootOptionParam_BootInitiatorInfo) BootOptionParameter() (paramSelector
 }
 
 func (p *BootOptionParam_BootInitiatorInfo) Format() string {
-	return fmt.Sprintf(`
-    Channel Number : %d
-    Session Id     : %d
-    Timestamp      : %s`, p.ChannelNumber, p.SessionID, p.BootInfoTimestamp)
+	return "\n" +
+		fmt.Sprintf("    Channel Number : %d\n", p.ChannelNumber) +
+		fmt.Sprintf("    Session Id     : %d\n", p.SessionID) +
+		fmt.Sprintf("    Timestamp      : %s\n", p.BootInfoTimestamp)
 }
 
 func (p *BootOptionParam_BootInitiatorInfo) Pack() []byte {
@@ -710,10 +710,9 @@ func (p *BootOptionParam_BootInitiatorMailbox) BootOptionParameter() (paramSelec
 }
 
 func (p *BootOptionParam_BootInitiatorMailbox) Format() string {
-	return fmt.Sprintf(`
-    Selector   : %d
-    Block Data : %02x
-`, p.SetSelector, p.BlockData)
+	return "" +
+		fmt.Sprintf("Selector   : %d\n", p.SetSelector) +
+		fmt.Sprintf("Block Data : %02x\n", p.BlockData)
 }
 
 func (p *BootOptionParam_BootInitiatorMailbox) Pack() []byte {

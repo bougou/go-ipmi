@@ -48,7 +48,7 @@ func (res *CommandRawResponse) Format() string {
 	// join the hex strings with commas
 	hexString := strings.Join(hexStrings, ", ")
 
-	return fmt.Sprintf(`raw.Response = %s`, hexString)
+	return fmt.Sprintf("raw.Response = %s", hexString)
 }
 
 func (c *Client) RawCommand(ctx context.Context, netFn NetFn, cmd uint8, data []byte, name string) (response *CommandRawResponse, err error) {

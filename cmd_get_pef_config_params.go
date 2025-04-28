@@ -70,12 +70,9 @@ func (r *GetPEFConfigParamResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetPEFConfigParamResponse) Format() string {
-	return fmt.Sprintf(`
-Parameter Revision           : %#02x (%d)
-Configuration Parameter Data : %# 02x`,
-		res.ParamRevision, res.ParamRevision,
-		res.ParamData,
-	)
+	return "" +
+		fmt.Sprintf("Parameter Revision           : %#02x (%d)\n", res.ParamRevision, res.ParamRevision) +
+		fmt.Sprintf("Configuration Parameter Data : %# 02x\n", res.ParamData)
 }
 
 func (c *Client) GetPEFConfigParam(ctx context.Context, getRevisionOnly bool, paramSelector PEFConfigParamSelector, setSelector uint8, blockSelector uint8) (response *GetPEFConfigParamResponse, err error) {

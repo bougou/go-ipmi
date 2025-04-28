@@ -1,11 +1,8 @@
 package ipmi
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-
-	"github.com/olekukonko/tablewriter"
 )
 
 // [DCMI specification v1.5]: 6.7.3 Get Temperature Readings Command
@@ -79,12 +76,10 @@ func (res *GetDCMITemperatureReadingsResponse) Unpack(msg []byte) error {
 }
 
 func (res *GetDCMITemperatureReadingsResponse) Format() string {
-	return fmt.Sprintf(`Total entity instances: %d
-Number of temperature readings: %d
-Temperature Readings: %v`,
-		res.TotalEntityInstances,
-		res.TemperatureReadingsCount,
-		res.TemperatureReadings)
+	return "" +
+		fmt.Sprintf("Total entity instances         : %d\n", res.TotalEntityInstances) +
+		fmt.Sprintf("Number of temperature readings : %d\n", res.TemperatureReadingsCount) +
+		fmt.Sprintf("Temperature Readings           : %v\n", res.TemperatureReadings)
 }
 
 func (c *Client) GetDCMITemperatureReadings(ctx context.Context, request *GetDCMITemperatureReadingsRequest) (response *GetDCMITemperatureReadingsResponse, err error) {
@@ -118,10 +113,15 @@ func (c *Client) GetDCMITemperatureReadingsForEntities(ctx context.Context, enti
 }
 
 func FormatDCMITemperatureReadings(readings []DCMITemperatureReading) string {
-	var buf = new(bytes.Buffer)
-	table := tablewriter.NewWriter(buf)
-	table.SetAutoWrapText(false)
-	table.SetAlignment(tablewriter.ALIGN_RIGHT)
+	rows := make([]map[string]string, len(readings))
+
+	for i, reading := range readings {
+		rows[i] = map[string]string{
+			"Entity ID":       fmt.Sprintf("%s(%#02x)", reading.EntityID.String(), uint8(reading.EntityID)),
+			"Entity Instance": fmt.Sprintf("%d", reading.EntityInstance),
+			"Temp. Readings":  fmt.Sprintf("%+d C", reading.TemperatureReading),
+		}
+	}
 
 	headers := []string{
 		"Entity ID",
@@ -129,20 +129,5 @@ func FormatDCMITemperatureReadings(readings []DCMITemperatureReading) string {
 		"Temp. Readings",
 	}
 
-	table.SetHeader(headers)
-	table.SetFooter(headers)
-
-	for _, reading := range readings {
-		rowContent := []string{
-			fmt.Sprintf("%s(%#02x)", reading.EntityID.String(), uint8(reading.EntityID)),
-			fmt.Sprintf("%d", reading.EntityInstance),
-			fmt.Sprintf("%+d C", reading.TemperatureReading),
-		}
-
-		table.Append(rowContent)
-	}
-
-	table.Render()
-
-	return buf.String()
+	return formatTable(headers, rows)
 }

@@ -128,16 +128,11 @@ func (res *GetSensorEventEnableResponse) Format() string {
 		deassertedStr = append(deassertedStr, v.String())
 	}
 
-	return fmt.Sprintf(`Event Messages Disabled   : %v
-Sensor Scanning Disabled  : %v
-Enabled Assert Event      : %s
-Enabled Deassert Event    : %s`,
-
-		res.EventMessagesDisabled,
-		res.SensorScanningDisabled,
-		strings.Join(assertedStr, "\n  - "),
-		strings.Join(deassertedStr, "\n - "),
-	)
+	return "" +
+		fmt.Sprintf("Event Messages Disabled   : %v\n", res.EventMessagesDisabled) +
+		fmt.Sprintf("Sensor Scanning Disabled  : %v\n", res.SensorScanningDisabled) +
+		fmt.Sprintf("Enabled Assert Event      : %s\n", strings.Join(assertedStr, "\n - ")) +
+		fmt.Sprintf("Enabled Deassert Event    : %s\n", strings.Join(deassertedStr, "\n - "))
 }
 
 func (c *Client) GetSensorEventEnable(ctx context.Context, sensorNumber uint8) (response *GetSensorEventEnableResponse, err error) {

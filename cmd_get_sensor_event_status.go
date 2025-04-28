@@ -131,18 +131,12 @@ func (res *GetSensorEventStatusResponse) Format() string {
 		deassertedStr = append(deassertedStr, v.String())
 	}
 
-	return fmt.Sprintf(`Event Messages Disabled   : %v
-Sensor Scanning Disabled  : %v
-Reading State Unavailable : %v
-Occurred Assert Event     : %s
-Occurred Deassert Event  : %s`,
-
-		res.EventMessagesDisabled,
-		res.SensorScanningDisabled,
-		res.ReadingUnavailable,
-		strings.Join(assertedStr, "\n  -"),
-		strings.Join(deassertedStr, "\n --"),
-	)
+	return "" +
+		fmt.Sprintf("Event Messages Disabled   : %v\n", res.EventMessagesDisabled) +
+		fmt.Sprintf("Sensor Scanning Disabled  : %v\n", res.SensorScanningDisabled) +
+		fmt.Sprintf("Reading State Unavailable : %v\n", res.ReadingUnavailable) +
+		fmt.Sprintf("Occurred Assert Event     : %s\n", strings.Join(assertedStr, "\n - ")) +
+		fmt.Sprintf("Occurred Deassert Event   : %s\n", strings.Join(deassertedStr, "\n -"))
 }
 
 func (c *Client) GetSensorEventStatus(ctx context.Context, sensorNumber uint8) (response *GetSensorEventStatusResponse, err error) {

@@ -46,17 +46,11 @@ func (r *GetLastProcessedEventIdResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetLastProcessedEventIdResponse) Format() string {
-	return fmt.Sprintf(`
-Last SEL addition        : %s
-Last SEL record ID       : %#04x (%d)
-Last S/W processed ID    : %#04x (%d)
-Last BMC processed ID    : %#04x (%d)
-`,
-		res.MostRecentAdditionTime.String(),
-		res.LastRecordID, res.LastRecordID,
-		res.LastSoftwareProcessedEventRecordID, res.LastSoftwareProcessedEventRecordID,
-		res.LastBMCProcessedEventRecordID, res.LastBMCProcessedEventRecordID,
-	)
+	return "" +
+		fmt.Sprintf("Last SEL addition     : %s\n", res.MostRecentAdditionTime.String()) +
+		fmt.Sprintf("Last SEL record ID    : %#04x (%d)\n", res.LastRecordID, res.LastRecordID) +
+		fmt.Sprintf("Last S/W processed ID : %#04x (%d)\n", res.LastSoftwareProcessedEventRecordID, res.LastSoftwareProcessedEventRecordID) +
+		fmt.Sprintf("Last BMC processed ID : %#04x (%d)\n", res.LastBMCProcessedEventRecordID, res.LastBMCProcessedEventRecordID)
 }
 
 func (c *Client) GetLastProcessedEventId(ctx context.Context) (response *GetLastProcessedEventIdResponse, err error) {

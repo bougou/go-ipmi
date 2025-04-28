@@ -274,17 +274,11 @@ func (param *PEFConfigParam_Control) Pack() []byte {
 }
 
 func (param *PEFConfigParam_Control) Format() string {
-	return fmt.Sprintf(`
-    PEF startup delay   : %s
-    Alert startup delay : %s
-    PEF event messages  : %s
-    PEF                 : %s
-`,
-		formatBool(param.EnablePEFAlertStartupDelay, "enabled", "disabled"),
-		formatBool(param.EnablePEFStartupDelay, "enabled", "disabled"),
-		formatBool(param.EnableEventMessage, "enabled", "disabled"),
-		formatBool(param.EnablePEF, "enabled", "disabled"),
-	)
+	return "" +
+		fmt.Sprintf("PEF startup delay   : %s\n", formatBool(param.EnablePEFAlertStartupDelay, "enabled", "disabled")) +
+		fmt.Sprintf("Alert startup delay : %s\n", formatBool(param.EnablePEFStartupDelay, "enabled", "disabled")) +
+		fmt.Sprintf("PEF event messages  : %s\n", formatBool(param.EnableEventMessage, "enabled", "disabled")) +
+		fmt.Sprintf("PEF                 : %s\n", formatBool(param.EnablePEF, "enabled", "disabled"))
 }
 
 type PEFConfigParam_ActionGlobalControl struct {
@@ -329,21 +323,13 @@ func (param *PEFConfigParam_ActionGlobalControl) Pack() []byte {
 }
 
 func (param *PEFConfigParam_ActionGlobalControl) Format() string {
-	return fmt.Sprintf(`
-    Diagnostic-interrupt : %s
-    OEM-defined          : %s
-    Power-cycle          : %s
-    Reset                : %s
-    Power-off            : %s
-    Alert                : %s
-`,
-		formatBool(param.DiagnosticInterruptEnabled, "active", "inactive"),
-		formatBool(param.OEMActionEnabled, "active", "inactive"),
-		formatBool(param.PowerCycleActionEnabled, "active", "inactive"),
-		formatBool(param.ResetActionEnabled, "active", "inactive"),
-		formatBool(param.PowerDownActionEnabled, "active", "inactive"),
-		formatBool(param.AlertActionEnabled, "active", "inactive"),
-	)
+	return "" +
+		fmt.Sprintf("Diagnostic-interrupt : %s\n", formatBool(param.DiagnosticInterruptEnabled, "active", "inactive")) +
+		fmt.Sprintf("OEM-defined          : %s\n", formatBool(param.OEMActionEnabled, "active", "inactive")) +
+		fmt.Sprintf("Power-cycle          : %s\n", formatBool(param.PowerCycleActionEnabled, "active", "inactive")) +
+		fmt.Sprintf("Reset                : %s\n", formatBool(param.ResetActionEnabled, "active", "inactive")) +
+		fmt.Sprintf("Power-off            : %s\n", formatBool(param.PowerDownActionEnabled, "active", "inactive")) +
+		fmt.Sprintf("Alert                : %s\n", formatBool(param.AlertActionEnabled, "active", "inactive"))
 }
 
 type PEFConfigParam_StartupDelay struct {
@@ -369,7 +355,7 @@ func (param *PEFConfigParam_StartupDelay) Pack() []byte {
 }
 
 func (param *PEFConfigParam_StartupDelay) Format() string {
-	return fmt.Sprintf("%v", param.DelaySec)
+	return fmt.Sprintf("Startup Delay: %v", param.DelaySec)
 }
 
 type PEFConfigParam_AlertStartupDelay struct {
@@ -395,7 +381,7 @@ func (param *PEFConfigParam_AlertStartupDelay) Pack() []byte {
 }
 
 func (param *PEFConfigParam_AlertStartupDelay) Format() string {
-	return fmt.Sprintf("%v", param.DelaySec)
+	return fmt.Sprintf("Alert Startup Delay: %v", param.DelaySec)
 }
 
 // Number of event filters supported. 1-based.
@@ -464,11 +450,9 @@ func (param *PEFConfigParam_EventFilter) Pack() []byte {
 }
 
 func (param *PEFConfigParam_EventFilter) Format() string {
-	return fmt.Sprintf(`
-    Event Filter Number:   %d
-    Event Filter:
-%v
-`, param.SetSelector, param.Filter.Format())
+	return "" +
+		fmt.Sprintf("Event Filter Number : %d\n", param.SetSelector) +
+		fmt.Sprintf("Event Filter        : %v\n", param.Filter.Format())
 }
 
 // This parameter provides an aliased access to the first byte of the event filter data.
@@ -525,7 +509,7 @@ func (param *PEFConfigParam_EventFilterData1) Pack() []byte {
 }
 
 func (param *PEFConfigParam_EventFilterData1) Format() string {
-	return fmt.Sprintf(`FilterNumber: %d, FilterEnabled: %v, FilterType: %v`, param.SetSelector, param.FilterEnabled, param.FilterType)
+	return fmt.Sprintf("FilterNumber: %d, FilterEnabled: %v, FilterType: %v", param.SetSelector, param.FilterEnabled, param.FilterType)
 }
 
 // Number of alert policy entries supported. 1-based.
@@ -554,7 +538,7 @@ func (param *PEFConfigParam_AlertPoliciesCount) Pack() []byte {
 }
 
 func (param *PEFConfigParam_AlertPoliciesCount) Format() string {
-	return fmt.Sprintf("%d", param.Value)
+	return fmt.Sprintf("Alert Policies Count: %d", param.Value)
 }
 
 type PEFConfigParam_AlertPolicy struct {
@@ -598,9 +582,8 @@ func (param *PEFConfigParam_AlertPolicy) Pack() []byte {
 }
 
 func (param *PEFConfigParam_AlertPolicy) Format() string {
-	return fmt.Sprintf(`
-    Entry Number %d : %v
-`, param.SetSelector, param.Policy.Format())
+	return "" +
+		fmt.Sprintf("Entry Number %d : %v\n", param.SetSelector, param.Policy.Format())
 }
 
 type PEFConfigParam_SystemGUID struct {
@@ -646,10 +629,9 @@ func (param *PEFConfigParam_SystemGUID) Format() string {
 		guidStr = guid.String()
 	}
 
-	return fmt.Sprintf(`
-    UseGUID : %v
-    GUID    : %s
-`, param.UseGUID, guidStr)
+	return "" +
+		fmt.Sprintf("UseGUID : %v\n", param.UseGUID) +
+		fmt.Sprintf("GUID    : %s\n", guidStr)
 }
 
 // Number of alert strings supported in addition to Alert String 0. 1-based.
@@ -678,7 +660,7 @@ func (param *PEFConfigParam_AlertStringsCount) Pack() []byte {
 }
 
 func (param *PEFConfigParam_AlertStringsCount) Format() string {
-	return fmt.Sprintf("%d", param.Value)
+	return fmt.Sprintf("Alert Strings Count: %d", param.Value)
 }
 
 // Sets the keys used to look up Alert String data in PEF.
@@ -719,7 +701,7 @@ func (param *PEFConfigParam_AlertStringKey) Pack() []byte {
 }
 
 func (param *PEFConfigParam_AlertStringKey) Format() string {
-	return fmt.Sprintf(`Set Selector: %d, Event Filter Number: %d, Alert String Set: %d`,
+	return fmt.Sprintf("Set Selector: %d, Event Filter Number: %d, Alert String Set: %d",
 		param.SetSelector, param.FilterNumber, param.AlertStringSet)
 }
 
@@ -763,7 +745,7 @@ func (param *PEFConfigParam_AlertString) Pack() []byte {
 }
 
 func (param *PEFConfigParam_AlertString) Format() string {
-	return fmt.Sprintf(`AlertStringSelector: %d, BlockSelector: %d, StringData: %s`, param.SetSelector, param.BlockSelector, string(param.StringData))
+	return fmt.Sprintf("AlertStringSelector: %d, BlockSelector: %d, StringData: %s", param.SetSelector, param.BlockSelector, string(param.StringData))
 }
 
 // READ ONLY
@@ -790,7 +772,7 @@ func (param *PEFConfigParam_GroupControlsCount) Pack() []byte {
 }
 
 func (param *PEFConfigParam_GroupControlsCount) Format() string {
-	return fmt.Sprintf("%d", param.Value)
+	return fmt.Sprintf("Group Controls Count: %d", param.Value)
 }
 
 type PEFConfigParam_GroupControl struct {
@@ -902,42 +884,23 @@ func (param *PEFConfigParam_GroupControl) Pack() []byte {
 }
 
 func (param *PEFConfigParam_GroupControl) Format() string {
-	return fmt.Sprintf(`
-    EntrySelector:          %d
-    ForceControlOperation:  %v
-    DelayedControl:         %v
-    ChannelNumber:          %d
-    GroupID0:               %d
-    MemberID0:              %d
-    DisableMemberID0Check:  %v
-    GroupID1:               %d
-    MemberID1:              %d
-    DisableMemberID1Check:  %v
-    GroupID2:               %d
-    MemberID2:              %d
-    DisableMemberID2Check:  %v
-    GroupID3:               %d
-    MemberID3:              %d
-    DisableMemberID3Check:  %v
-    RetryCount:             %d
-    Operation:              %d
-`,
-		param.SetSelector,
-		param.ForceControlOperation,
-		param.DelayedControl,
-		param.ChannelNumber,
-		param.GroupID0,
-		param.MemberID0,
-		param.DisableMemberID0Check,
-		param.GroupID1,
-		param.MemberID1,
-		param.DisableMemberID1Check,
-		param.GroupID2,
-		param.MemberID2,
-		param.DisableMemberID2Check,
-		param.GroupID3,
-		param.MemberID3,
-		param.DisableMemberID3Check,
-		param.RetryCount,
-		param.Operation)
+	return "" +
+		fmt.Sprintf("EntrySelector         : %d\n", param.SetSelector) +
+		fmt.Sprintf("ForceControlOperation : %v\n", formatBool(param.ForceControlOperation, "active", "inactive")) +
+		fmt.Sprintf("DelayedControl        : %v\n", formatBool(param.DelayedControl, "active", "inactive")) +
+		fmt.Sprintf("ChannelNumber         : %d\n", param.ChannelNumber) +
+		fmt.Sprintf("GroupID0              : %d\n", param.GroupID0) +
+		fmt.Sprintf("MemberID0             : %d\n", param.MemberID0) +
+		fmt.Sprintf("DisableMemberID0Check : %v\n", formatBool(param.DisableMemberID0Check, "active", "inactive")) +
+		fmt.Sprintf("GroupID1              : %d\n", param.GroupID1) +
+		fmt.Sprintf("MemberID1             : %d\n", param.MemberID1) +
+		fmt.Sprintf("DisableMemberID1Check : %v\n", formatBool(param.DisableMemberID1Check, "active", "inactive")) +
+		fmt.Sprintf("GroupID2              : %d\n", param.GroupID2) +
+		fmt.Sprintf("MemberID2             : %d\n", param.MemberID2) +
+		fmt.Sprintf("DisableMemberID2Check : %v\n", formatBool(param.DisableMemberID2Check, "active", "inactive")) +
+		fmt.Sprintf("GroupID3              : %d\n", param.GroupID3) +
+		fmt.Sprintf("MemberID3             : %d\n", param.MemberID3) +
+		fmt.Sprintf("DisableMemberID3Check : %v\n", formatBool(param.DisableMemberID3Check, "active", "inactive")) +
+		fmt.Sprintf("RetryCount            : %d\n", param.RetryCount) +
+		fmt.Sprintf("Operation             : %d\n", param.Operation)
 }

@@ -1,12 +1,9 @@
 package ipmi
 
 import (
-	"bytes"
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/olekukonko/tablewriter"
 )
 
 // 17.7 Event Filter Table
@@ -203,113 +200,85 @@ func (entry *PEFEventFilter) Pack() []byte {
 }
 
 func (entry *PEFEventFilter) Format() string {
-	return fmt.Sprintf(`
-		FilterType: %v
-		FilterState: %v
-		ActionGroupControlOperation: %v
-		ActionDiagnosticInterrupt: %v
-		ActionOEM: %v
-		ActionPowerCycle: %v
-		ActionReset: %v
-		ActionPowerOff: %v
-		ActionAlert: %v
-		GroupControlSelector: %v
-		AlertPolicyNumber: %v
-		EventSeverity: %v
-		GeneratorID: %v
-		SensorType: %v
-		SensorNumber: %v
-		EventReadingType: %v
-		EventData1EventOffsetMask: %v
-		EventData1ANDMask: %v
-		EventData1Compare1: %v
-		EventData1Compare2: %v
-		EventData2ANDMask: %v
-		EventData2Compare1: %v
-		EventData2Compare2: %v
-		EventData3ANDMask: %v
-		EventData3Compare1: %v
-		EventData3Compare2: %v
-`,
-		PEFEventFilterType(entry.FilterType),
-		entry.FilterState,
-		entry.ActionGroupControlOperation,
-		entry.ActionDiagnosticInterrupt,
-		entry.ActionOEM,
-		entry.ActionPowerCycle,
-		entry.ActionReset,
-		entry.ActionPowerOff,
-		entry.ActionAlert,
-		entry.GroupControlSelector,
-		entry.AlertPolicyNumber,
-		PEFEventSeverity(entry.EventSeverity),
-		GeneratorID(entry.GeneratorID),
-		SensorType(entry.SensorType),
-		SensorNumber(entry.SensorNumber),
-		EventReadingType(entry.EventReadingType),
-		entry.EventData1EventOffsetMask,
-		entry.EventData1ANDMask,
-		entry.EventData1Compare1,
-		entry.EventData1Compare2,
-		entry.EventData2ANDMask,
-		entry.EventData2Compare1,
-		entry.EventData2Compare2,
-		entry.EventData3ANDMask,
-		entry.EventData3Compare1,
-		entry.EventData3Compare2)
+	return "" +
+		fmt.Sprintf("FilterType                  : %v\n", entry.FilterType) +
+		fmt.Sprintf("FilterState                 : %v\n", formatBool(entry.FilterState, "enabled", "disabled")) +
+		fmt.Sprintf("ActionGroupControlOperation : %v\n", formatBool(entry.ActionGroupControlOperation, "enabled", "disabled")) +
+		fmt.Sprintf("ActionDiagnosticInterrupt   : %v\n", formatBool(entry.ActionDiagnosticInterrupt, "enabled", "disabled")) +
+		fmt.Sprintf("ActionOEM                   : %v\n", formatBool(entry.ActionOEM, "enabled", "disabled")) +
+		fmt.Sprintf("ActionPowerCycle            : %v\n", formatBool(entry.ActionPowerCycle, "enabled", "disabled")) +
+		fmt.Sprintf("ActionReset                 : %v\n", formatBool(entry.ActionReset, "enabled", "disabled")) +
+		fmt.Sprintf("ActionPowerOff              : %v\n", formatBool(entry.ActionPowerOff, "enabled", "disabled")) +
+		fmt.Sprintf("ActionAlert                 : %v\n", formatBool(entry.ActionAlert, "enabled", "disabled")) +
+		fmt.Sprintf("GroupControlSelector        : %v\n", entry.GroupControlSelector) +
+		fmt.Sprintf("AlertPolicyNumber           : %v\n", entry.AlertPolicyNumber) +
+		fmt.Sprintf("EventSeverity               : %v\n", entry.EventSeverity) +
+		fmt.Sprintf("GeneratorID                 : %v\n", entry.GeneratorID) +
+		fmt.Sprintf("SensorType                  : %v\n", entry.SensorType) +
+		fmt.Sprintf("SensorNumber                : %v\n", entry.SensorNumber) +
+		fmt.Sprintf("EventReadingType            : %v\n", entry.EventReadingType) +
+		fmt.Sprintf("EventData1EventOffsetMask   : %v\n", entry.EventData1EventOffsetMask) +
+		fmt.Sprintf("EventData1ANDMask           : %v\n", entry.EventData1ANDMask) +
+		fmt.Sprintf("EventData1Compare1          : %v\n", entry.EventData1Compare1) +
+		fmt.Sprintf("EventData1Compare2          : %v\n", entry.EventData1Compare2) +
+		fmt.Sprintf("EventData2ANDMask           : %v\n", entry.EventData2ANDMask) +
+		fmt.Sprintf("EventData2Compare1          : %v\n", entry.EventData2Compare1) +
+		fmt.Sprintf("EventData2Compare2          : %v\n", entry.EventData2Compare2) +
+		fmt.Sprintf("EventData3ANDMask           : %v\n", entry.EventData3ANDMask) +
+		fmt.Sprintf("EventData3Compare1          : %v\n", entry.EventData3Compare1) +
+		fmt.Sprintf("EventData3Compare2          : %v\n", entry.EventData3Compare2)
 }
 
 func FormatEventFilters(eventFilters []*PEFEventFilter) string {
-	var buf = new(bytes.Buffer)
+	rows := make([]map[string]string, len(eventFilters))
 
-	table := tablewriter.NewWriter(buf)
-	var headers []string
-
-	// the first faked item was used to make sure headers are always generated
-	for i, f := range append([]*PEFEventFilter{{}}, eventFilters...) {
-		content := [][2]string{
-			{"Filter State", formatBool(f.FilterState, "enabled", "disabled")},
-			{"Filter Type", f.FilterType.String()},
-			{"Actions", strings.Join(f.enabledActions(), ",")},
-			{"Group Control Selector", fmt.Sprintf("%v", f.GroupControlSelector)},
-			{"Alert Policy Number", fmt.Sprintf("%v", f.AlertPolicyNumber)},
-			{"Event Severity", fmt.Sprintf("%v", f.EventSeverity)},
-			{"Generator ID", fmt.Sprintf("%v", f.GeneratorID)},
-			{"Sensor Type", fmt.Sprintf("%v", f.SensorType)},
-			{"Sensor Number", fmt.Sprintf("%#02x", f.SensorNumber)},
-			{"Event Reading Type", fmt.Sprintf("%v", f.EventReadingType)},
-			{"ED1 Event Offset Mask", fmt.Sprintf("%v", f.EventData1EventOffsetMask)},
-			// {"ED1 AND Mask", fmt.Sprintf("%v", f.EventData1ANDMask)},
-			// {"ED1 Compare 1", fmt.Sprintf("%v", f.EventData1Compare1)},
-			// {"ED1 Compare 2", fmt.Sprintf("%v", f.EventData1Compare2)},
-			// {"ED2 AND Mask", fmt.Sprintf("%v", f.EventData2ANDMask)},
-			// {"ED2 Compare 1", fmt.Sprintf("%v", f.EventData2Compare1)},
-			// {"ED2 Compare 2", fmt.Sprintf("%v", f.EventData2Compare2)},
-			// {"ED3 AND Mask", fmt.Sprintf("%v", f.EventData3ANDMask)},
-			// {"ED3 Compare 1", fmt.Sprintf("%v", f.EventData3Compare1)},
-			// {"ED3 Compare 2", fmt.Sprintf("%v", f.EventData3Compare2)},
-		}
-
-		if i == 0 {
-			headers = make([]string, len(content))
-			for j, c := range content {
-				headers[j] = c[0]
-			}
-		} else {
-			row := make([]string, len(content))
-			for j, c := range content {
-				row[j] = c[1]
-			}
-			table.Append(row)
+	for i, f := range eventFilters {
+		rows[i] = map[string]string{
+			"Filter State":           formatBool(f.FilterState, "enabled", "disabled"),
+			"Filter Type":            f.FilterType.String(),
+			"Actions":                strings.Join(f.enabledActions(), ","),
+			"Group Control Selector": fmt.Sprintf("%v", f.GroupControlSelector),
+			"Alert Policy Number":    fmt.Sprintf("%v", f.AlertPolicyNumber),
+			"Event Severity":         fmt.Sprintf("%v", f.EventSeverity),
+			"Generator ID":           fmt.Sprintf("%v", f.GeneratorID),
+			"Sensor Type":            fmt.Sprintf("%v", f.SensorType),
+			"Sensor Number":          fmt.Sprintf("%#02x", f.SensorNumber),
+			"Event Reading Type":     fmt.Sprintf("%v", f.EventReadingType),
+			"ED1 Event Offset Mask":  fmt.Sprintf("%v", f.EventData1EventOffsetMask),
+			// "ED1 AND Mask": fmt.Sprintf("%v", f.EventData1ANDMask),
+			// "ED1 Compare 1": fmt.Sprintf("%v", f.EventData1Compare1),
+			// "ED1 Compare 2": fmt.Sprintf("%v", f.EventData1Compare2),
+			// "ED2 AND Mask": fmt.Sprintf("%v", f.EventData2ANDMask),
+			// "ED2 Compare 1": fmt.Sprintf("%v", f.EventData2Compare1),
+			// "ED2 Compare 2": fmt.Sprintf("%v", f.EventData2Compare2),
+			// "ED3 AND Mask": fmt.Sprintf("%v", f.EventData3ANDMask),
+			// "ED3 Compare 1": fmt.Sprintf("%v", f.EventData3Compare1),
+			// "ED3 Compare 2": fmt.Sprintf("%v", f.EventData3Compare2),
 		}
 	}
 
-	table.SetHeader(headers)
-	table.SetFooter(headers)
-	table.SetAutoWrapText(false)
-	table.SetAlignment(tablewriter.ALIGN_RIGHT)
-	table.Render()
-	return buf.String()
+	headers := []string{
+		"Filter State",
+		"Filter Type",
+		"Actions",
+		"Group Control Selector",
+		"Alert Policy Number",
+		"Event Severity",
+		"Generator ID",
+		"Sensor Type",
+		"Sensor Number",
+		"Event Reading Type",
+		"ED1 Event Offset Mask",
+		// "ED1 AND Mask",
+		// "ED1 Compare 1",
+		// "ED1 Compare 2",
+		// "ED2 AND Mask",
+		// "ED2 Compare 1",
+		// "ED2 Compare 2",
+		// "ED3 AND Mask",
+	}
+
+	return formatTable(headers, rows)
 }
 
 // PEFEventFilterType:
@@ -439,24 +408,32 @@ func (entry *PEFAlertPolicy) Unpack(data []byte) error {
 }
 
 func (entry *PEFAlertPolicy) Format() string {
-	return fmt.Sprintf(`
-	PolicyNumber    : %d
-	PolicyState     : %v
-	PolicyAction    : %v
-	Channel         : %d
-	Destination     : %d
-	IsEventSpecific : %v
-	AlertStringKey  : %d`,
-		entry.PolicyNumber,
-		entry.PolicyState,
-		entry.PolicyAction,
-		entry.ChannelNumber,
-		entry.Destination,
-		entry.IsEventSpecific,
-		entry.AlertStringKey)
+	return "" +
+		fmt.Sprintf("PolicyNumber    : %d\n", entry.PolicyNumber) +
+		fmt.Sprintf("PolicyState     : %v\n", entry.PolicyState) +
+		fmt.Sprintf("PolicyAction    : %v\n", entry.PolicyAction) +
+		fmt.Sprintf("Channel         : %d\n", entry.ChannelNumber) +
+		fmt.Sprintf("Destination     : %d\n", entry.Destination) +
+		fmt.Sprintf("IsEventSpecific : %v\n", entry.IsEventSpecific) +
+		fmt.Sprintf("AlertStringKey  : %d\n", entry.AlertStringKey)
 }
 
 func FormatPEFAlertPolicyTable(alertPolicies []*PEFAlertPolicy) string {
+
+	rows := make([]map[string]string, len(alertPolicies))
+	for i, alertPolicy := range alertPolicies {
+		rows[i] = map[string]string{
+			"Entry":           strconv.Itoa(i + 1),
+			"PolicyNumber":    fmt.Sprintf("%d", alertPolicy.PolicyNumber),
+			"PolicyState":     fmt.Sprintf("%v", alertPolicy.PolicyState),
+			"PolicyAction":    alertPolicy.PolicyAction.ShortString(),
+			"Channel":         fmt.Sprintf("%d", alertPolicy.ChannelNumber),
+			"Destination":     fmt.Sprintf("%d", alertPolicy.Destination),
+			"IsEventSpecific": fmt.Sprintf("%v", alertPolicy.IsEventSpecific),
+			"AlertStringKey":  fmt.Sprintf("%d", alertPolicy.AlertStringKey),
+		}
+	}
+
 	headers := []string{
 		"Entry",
 		"PolicyNumber",
@@ -466,20 +443,6 @@ func FormatPEFAlertPolicyTable(alertPolicies []*PEFAlertPolicy) string {
 		"Destination",
 		"IsEventSpecific",
 		"AlertStringKey",
-	}
-
-	rows := make([][]string, len(alertPolicies))
-	for i, alertPolicy := range alertPolicies {
-		rows[i] = []string{
-			strconv.Itoa(i + 1),
-			fmt.Sprintf("%d", alertPolicy.PolicyNumber),
-			fmt.Sprintf("%v", alertPolicy.PolicyState),
-			alertPolicy.PolicyAction.ShortString(),
-			fmt.Sprintf("%d", alertPolicy.ChannelNumber),
-			fmt.Sprintf("%d", alertPolicy.Destination),
-			fmt.Sprintf("%v", alertPolicy.IsEventSpecific),
-			fmt.Sprintf("%d", alertPolicy.AlertStringKey),
-		}
 	}
 
 	return formatTable(headers, rows)

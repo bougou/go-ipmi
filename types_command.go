@@ -43,7 +43,7 @@ type ResponseError struct {
 
 // Error implements the error interface
 func (e *ResponseError) Error() string {
-	return fmt.Sprintf("cc: %#02x, description: %s", e.completionCode, e.description)
+	return fmt.Sprintf("cc: %#02x, description: %s", uint8(e.completionCode), e.description)
 }
 
 func (e *ResponseError) CompletionCode() CompletionCode {
