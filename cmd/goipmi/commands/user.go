@@ -47,9 +47,9 @@ func NewCmdUserList() *cobra.Command {
 			}
 
 			ctx := context.Background()
-			users, err := client.ListUser(ctx, channelNumber)
+			users, err := client.GetUsers(ctx, channelNumber)
 			if err != nil {
-				CheckErr(fmt.Errorf("ListUser failed, err: %w", err))
+				CheckErr(fmt.Errorf("GetUsers failed, err: %w", err))
 			}
 
 			fmt.Println(ipmi.FormatUsers(users))

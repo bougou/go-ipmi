@@ -101,7 +101,7 @@ func (c *Client) GetUserAccess(ctx context.Context, channelNumber uint8, userID 
 	return
 }
 
-func (c *Client) ListUser(ctx context.Context, channelNumber uint8) ([]*User, error) {
+func (c *Client) GetUsers(ctx context.Context, channelNumber uint8) ([]*User, error) {
 	var users = make([]*User, 0)
 
 	var userID uint8 = 1
