@@ -38,7 +38,7 @@ func NewCmdUserList() *cobra.Command {
 				channelNumber = ipmi.ChannelNumberSelf
 			}
 
-			if len(args) > 1 {
+			if len(args) >= 1 {
 				id, err := parseStringToInt64(args[0])
 				if err != nil {
 					CheckErr(fmt.Errorf("invalid channel number passed, err: %w", err))
@@ -68,7 +68,7 @@ func NewCmdUserSummary() *cobra.Command {
 				channelNumber = ipmi.ChannelNumberSelf
 			}
 
-			if len(args) > 1 {
+			if len(args) >= 1 {
 				id, err := parseStringToInt64(args[0])
 				if err != nil {
 					CheckErr(fmt.Errorf("invalid channel number passed, err: %w", err))

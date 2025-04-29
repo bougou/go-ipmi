@@ -30,8 +30,9 @@ func main() {
 	// You can optionally enable debug mode
 	// client.WithDebug(true)
 
-	// You can set the interface type. Valid options are: open/lan/lanplus/tool (default: open)
+	// You can set the interface to "lan" or "lanplus" for remote client.
 	// client.WithInterface(ipmi.InterfaceLanplus)
+	// client.WithInterface(ipmi.InterfaceLan)
 
 	// !!! Note !!!
 	// From v0.6.0, all IPMI command methods of the Client require a context as the first argument.

@@ -109,7 +109,7 @@ func (c *Client) ListUser(ctx context.Context, channelNumber uint8) ([]*User, er
 	for {
 		res, err := c.GetUserAccess(ctx, channelNumber, userID)
 		if err != nil {
-			return nil, fmt.Errorf("get user for userID %d failed, err: %w", userID, err)
+			return nil, fmt.Errorf("GetUserAccess for userID %d failed, err: %w", userID, err)
 		}
 
 		res2, err := c.GetUsername(ctx, userID)
@@ -120,7 +120,7 @@ func (c *Client) ListUser(ctx context.Context, channelNumber uint8) ([]*User, er
 					username = ""
 				}
 			} else {
-				return nil, fmt.Errorf("get user name for userID %d failed, err: %w", userID, err)
+				return nil, fmt.Errorf("GetUsername for userID %d failed, err: %w", userID, err)
 			}
 		} else {
 			username = res2.Username

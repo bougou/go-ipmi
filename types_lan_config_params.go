@@ -1423,6 +1423,7 @@ func (param *LanConfigParam_BadPasswordThreshold) Unpack(data []byte) error {
 func (param *LanConfigParam_BadPasswordThreshold) Format() string {
 	return "\n" +
 		fmt.Sprintf("        Threshold                    : %d\n", param.Threshold) +
+		// fmt.Sprintf("        Invalid password disable     : %v\n", param.GenerateSessionAuditEvent) +
 		fmt.Sprintf("        Generate Session Audit Event : %v\n", param.GenerateSessionAuditEvent) +
 		fmt.Sprintf("        Attempt Count Reset Interval : %d\n", param.AttemptCountResetIntervalSec) +
 		fmt.Sprintf("        User Lockout Interval        : %d\n", param.UserLockoutIntervalSec)

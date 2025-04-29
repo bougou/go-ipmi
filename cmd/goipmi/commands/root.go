@@ -41,6 +41,7 @@ func initClient() error {
 			return fmt.Errorf("create open client failed, err: %w", err)
 		}
 		client = c
+		client.WithInterface(ipmi.InterfaceOpen)
 
 	case "lan", "lanplus":
 		c, err := ipmi.NewClient(host, port, username, password)
@@ -48,16 +49,24 @@ func initClient() error {
 			return fmt.Errorf("create lan or lanplus client failed, err: %w", err)
 		}
 		client = c
+		if intf == "lan" {
+			client.WithInterface(ipmi.InterfaceLan)
+		} else if intf == "lanplus" {
+			client.WithInterface(ipmi.InterfaceLanplus)
+		}
+
 	case "tool":
 		c, err := ipmi.NewToolClient(host)
 		if err != nil {
 			return fmt.Errorf("create client based on ipmitool (%s) failed, err: %w", host, err)
 		}
 		client = c
+		client.WithInterface(ipmi.InterfaceTool)
+	default:
+		return fmt.Errorf("unsupported interface")
 	}
 
 	client.WithDebug(debug)
-	client.WithInterface(ipmi.Interface(intf))
 
 	var privLevel ipmi.PrivilegeLevel = ipmi.PrivilegeLevelUnspecified
 	switch strings.ToUpper(privilegeLevel) {

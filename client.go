@@ -25,7 +25,7 @@ const (
 type Client struct {
 	Host      string
 	Port      int
-	Username  string // length must <= 16
+	Username  string
 	Password  string
 	Interface Interface
 
@@ -65,7 +65,7 @@ func NewOpenClient() (*Client, error) {
 	myAddr := BMC_SA
 
 	return &Client{
-		Interface:  "open",
+		Interface:  InterfaceOpen,
 		timeout:    time.Second * time.Duration(DefaultExchangeTimeoutSec),
 		bufferSize: DefaultBufferSize,
 
@@ -83,7 +83,7 @@ func NewToolClient(path string) (*Client, error) {
 
 	return &Client{
 		Host:      path,
-		Interface: "tool",
+		Interface: InterfaceTool,
 	}, nil
 }
 

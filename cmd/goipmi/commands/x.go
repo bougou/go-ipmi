@@ -45,6 +45,7 @@ func NewCmdX() *cobra.Command {
 	cmd.AddCommand(NewCmdXGetSystemInfoParams())
 	cmd.AddCommand(NewCmdXGetSystemInfoParamsFor())
 	cmd.AddCommand(NewCmdXGetSystemInfo())
+	cmd.AddCommand(NewCmdXSetUserAccess())
 
 	return cmd
 }
@@ -469,6 +470,35 @@ func NewCmdXGetSystemInfo() *cobra.Command {
 			}
 
 			fmt.Println(systemInfo.Format())
+		},
+	}
+
+	return cmd
+}
+
+func NewCmdXSetUserAccess() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "set-user-access",
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
+
+			req := &ipmi.SetUserAccessRequest{
+				EnableChanging:       true,
+				RestrictedToCallback: false,
+				EnableLinkAuth:       false,
+				EnableIPMIMessaging:  true,
+				ChannelNumber:        0x01,
+				UserID:               0x02,
+				MaxPrivLevel:         uint8(ipmi.PrivilegeLevelAdministrator),
+				SessionLimit:         0,
+			}
+			res, err := client.SetUserAccess(ctx, req)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			fmt.Println(res.Format())
 		},
 	}
 
