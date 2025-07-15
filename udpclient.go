@@ -111,6 +111,8 @@ func (c *UDPClient) Close() error {
 		return fmt.Errorf("close udp conn failed, err: %w", err)
 	}
 
+	c.lock.Lock()
+	defer c.lock.Unlock()
 	c.conn = nil
 	return nil
 }
@@ -125,7 +127,6 @@ func (c *UDPClient) Exchange(ctx context.Context, reader io.Reader) ([]byte, err
 	}
 
 	c.lock.Lock()
-	defer c.lock.Unlock()
 
 	recvBuffer := make([]byte, c.bufferSize)
 
@@ -133,6 +134,7 @@ func (c *UDPClient) Exchange(ctx context.Context, reader io.Reader) ([]byte, err
 	// recvChan stores the integer number which indicates how many bytes
 	recvChan := make(chan int, 1)
 	go func() {
+		defer c.lock.Unlock()
 		// It is possible that this action blocks, although this
 		// should only occur in very resource-intensive situations:
 		// - when you've filled up the socket buffer and the OS
