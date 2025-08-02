@@ -282,7 +282,7 @@ func FormatSDRs_FRU(records []*SDR) string {
 		"DeviceName",
 	}
 
-	return formatTable(headers, rows)
+	return RenderTable(headers, rows)
 }
 
 // FormatSDRs returns a table formatted string for print.
@@ -361,7 +361,7 @@ func FormatSDRs(records []*SDR) string {
 		"SensorStatus",
 	}
 
-	return formatTable(headers, rows)
+	return RenderTable(headers, rows)
 }
 
 // Mask_Threshold holds masks for a specific threshold type.

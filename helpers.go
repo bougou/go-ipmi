@@ -13,6 +13,8 @@ import (
 
 	"github.com/kr/pretty"
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/renderer"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 const timeFormat = time.RFC3339
@@ -655,18 +657,29 @@ func parseStringToInt64(s string) (int64, error) {
 	return strconv.ParseInt(s, 10, 64)
 }
 
-// formatTable formats a table from a slice of rows.
-// The row is represented as a map, the keys of the map are the headers of the table.
-func formatTable(headers []string, rows []map[string]string) string {
+// RenderTable formats a table from a slice of rows.
+// Each row is represented as a map, the keys of the map are the headers of the table.
+func RenderTable(headers []string, rows []map[string]string) string {
 	var buf = new(bytes.Buffer)
-	table := tablewriter.NewWriter(buf)
-	table.SetAutoWrapText(false)
-	table.SetAlignment(tablewriter.ALIGN_RIGHT)
-	table.SetHeader(headers)
-	table.SetFooter(headers)
 
-	row := make([]string, len(headers))
+	table := tablewriter.NewTable(buf)
+
+	table.Options(
+		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{Symbols: tw.NewSymbols(tw.StyleASCII)})),
+		tablewriter.WithRowAlignment(tw.AlignRight),
+		tablewriter.WithRowAutoWrap(0), // Disable auto wrap
+		tablewriter.WithFooterAlignmentConfig(tw.CellAlignment{
+			Global: tw.AlignCenter, // Center align footer like header
+		}),
+		tablewriter.WithFooterAutoFormat(tw.On),
+	)
+
+	table.Header(headers)
+	table.Footer(headers)
+
+	// Add rows
 	for _, _row := range rows {
+		row := make([]interface{}, len(headers))
 		for i, header := range headers {
 			row[i] = _row[header]
 		}

@@ -282,7 +282,7 @@ func NewCmdPEFPolicyList() *cobra.Command {
 				"AlertStringKey",
 			}
 
-			fmt.Println(formatTable(headers, rows))
+			fmt.Println(ipmi.RenderTable(headers, rows))
 
 		},
 	}

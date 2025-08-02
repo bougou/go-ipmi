@@ -1,12 +1,9 @@
 package commands
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"strings"
-
-	"github.com/olekukonko/tablewriter"
 )
 
 const (
@@ -57,26 +54,4 @@ func fatal(msg string, code int) {
 		fmt.Fprint(os.Stderr, msg)
 	}
 	os.Exit(code)
-}
-
-// formatTable formats a table from a slice of rows.
-// The row is represented as a map, the keys of the map are the headers of the table.
-func formatTable(headers []string, rows []map[string]string) string {
-	var buf = new(bytes.Buffer)
-	table := tablewriter.NewWriter(buf)
-	table.SetAutoWrapText(false)
-	table.SetAlignment(tablewriter.ALIGN_RIGHT)
-	table.SetHeader(headers)
-	table.SetFooter(headers)
-
-	row := make([]string, len(headers))
-	for _, _row := range rows {
-		for i, header := range headers {
-			row[i] = _row[header]
-		}
-		table.Append(row)
-	}
-
-	table.Render()
-	return buf.String()
 }

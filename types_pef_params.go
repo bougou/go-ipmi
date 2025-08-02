@@ -52,7 +52,7 @@ func (p PEFConfigParamSelector) String() string {
 		return s
 	}
 
-	return fmt.Sprintf("Unknown (%#02x)", p)
+	return fmt.Sprintf("Unknown (%#02x)", uint8(p))
 }
 
 type PEFConfigParameter interface {

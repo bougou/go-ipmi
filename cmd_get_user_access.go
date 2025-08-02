@@ -177,5 +177,5 @@ func FormatUsers(users []*User) string {
 		"Channel Priv Limit",
 	}
 
-	return formatTable(headers, rows)
+	return RenderTable(headers, rows)
 }

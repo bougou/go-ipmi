@@ -1038,7 +1038,7 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 		}...)
 	}
 
-	return formatTable(headers, rows)
+	return RenderTable(headers, rows)
 }
 
 // IsThreshold returns whether the sensor is threshold sensor class or not.

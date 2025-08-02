@@ -129,5 +129,5 @@ func FormatDCMITemperatureReadings(readings []DCMITemperatureReading) string {
 		"Temp. Readings",
 	}
 
-	return formatTable(headers, rows)
+	return RenderTable(headers, rows)
 }

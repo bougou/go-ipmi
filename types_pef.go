@@ -278,7 +278,7 @@ func FormatEventFilters(eventFilters []*PEFEventFilter) string {
 		// "ED3 AND Mask",
 	}
 
-	return formatTable(headers, rows)
+	return RenderTable(headers, rows)
 }
 
 // PEFEventFilterType:
@@ -304,7 +304,7 @@ func (filterType PEFEventFilterType) String() string {
 	if ok {
 		return s
 	}
-	return fmt.Sprintf("%#02x", filterType)
+	return fmt.Sprintf("%#02x", uint8(filterType))
 }
 
 type PEFEventSeverity uint8
@@ -445,7 +445,7 @@ func FormatPEFAlertPolicyTable(alertPolicies []*PEFAlertPolicy) string {
 		"AlertStringKey",
 	}
 
-	return formatTable(headers, rows)
+	return RenderTable(headers, rows)
 }
 
 type PEFAlertPolicyAction uint8

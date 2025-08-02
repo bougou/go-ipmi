@@ -292,5 +292,5 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 		headers = append(headers, "SensorName")
 	}
 
-	return formatTable(headers, rows)
+	return RenderTable(headers, rows)
 }
