@@ -88,8 +88,8 @@ func (res *GetSELInfoResponse) Format() string {
 		fmt.Sprintf("Last Add Time                : %s\n", res.RecentAdditionTime.Format(timeFormat)) +
 		fmt.Sprintf("Last Del Time                : %s\n", res.RecentEraseTime.Format(timeFormat)) +
 		fmt.Sprintf("Overflow                     : %v\n", res.OperationSupport.Overflow) +
-		fmt.Sprintf("Delete SEL supported:        : %v\n", res.OperationSupport.DeleteSEL) +
-		fmt.Sprintf("Partial Add SEL supported:   : %v\n", res.OperationSupport.PartialAddSEL) +
+		fmt.Sprintf("Delete SEL supported         : %v\n", res.OperationSupport.DeleteSEL) +
+		fmt.Sprintf("Partial Add SEL supported    : %v\n", res.OperationSupport.PartialAddSEL) +
 		fmt.Sprintf("Reserve SEL supported        : %v\n", res.OperationSupport.ReserveSEL) +
 		fmt.Sprintf("Get SEL Alloc Info supported : %v\n", res.OperationSupport.GetSELAllocInfo)
 }

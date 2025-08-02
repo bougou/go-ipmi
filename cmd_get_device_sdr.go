@@ -142,9 +142,6 @@ func (c *Client) getDeviceSDR(ctx context.Context, recordID uint16) (response *G
 }
 
 func (c *Client) GetDeviceSDRBySensorID(ctx context.Context, sensorNumber uint8) (*SDR, error) {
-	if SensorNumber(sensorNumber) == SensorNumberReserved {
-		return nil, fmt.Errorf("not valid sensorNumber, %#0x is reserved", sensorNumber)
-	}
 
 	var recordID uint16 = 0
 	for {

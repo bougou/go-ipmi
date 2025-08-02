@@ -56,7 +56,7 @@ type SDREventOnly struct {
 
 func (eventOnly *SDREventOnly) String() string {
 	return "" +
-		fmt.Sprintf("    Sensor ID              : %s (%#02x)\n",
+		fmt.Sprintf("    Sensor ID             : %s (%#02x)\n",
 			string(eventOnly.IDStringBytes), eventOnly.SensorNumber) +
 		fmt.Sprintf("    Generator ID          : %#04x (%s)\n",
 			uint16(eventOnly.GeneratorID), eventOnly.GeneratorID.String()) +

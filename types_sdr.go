@@ -112,6 +112,8 @@ func (sdr *SDR) String() string {
 	}
 }
 
+// Not all SDRs have a sensor number.
+// Only Full/Compact/EventOnly SDRs have a sensor number.
 func (sdr *SDR) SensorNumber() SensorNumber {
 	recordType := sdr.RecordHeader.RecordType
 	switch recordType {
@@ -122,6 +124,7 @@ func (sdr *SDR) SensorNumber() SensorNumber {
 	case SDRRecordTypeEventOnly:
 		return sdr.EventOnly.SensorNumber
 	}
+
 	return SensorNumberReserved
 }
 

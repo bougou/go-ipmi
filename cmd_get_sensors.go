@@ -124,6 +124,8 @@ func (c *Client) GetSensorByID(ctx context.Context, sensorNumber uint8) (*Sensor
 		return nil, fmt.Errorf("GetSDRBySensorID failed, err: %w", err)
 	}
 
+	c.Debug("SDR", sdr)
+
 	sensor, err := c.sdrToSensor(ctx, sdr)
 	if err != nil {
 		return nil, fmt.Errorf("GetSensorFromSDR failed, err: %w", err)
@@ -138,6 +140,8 @@ func (c *Client) GetSensorByName(ctx context.Context, sensorName string) (*Senso
 	if err != nil {
 		return nil, fmt.Errorf("GetSDRBySensorName failed, err: %w", err)
 	}
+
+	c.Debug("SDR", sdr)
 
 	sensor, err := c.sdrToSensor(ctx, sdr)
 	if err != nil {

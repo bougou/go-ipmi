@@ -150,10 +150,6 @@ func (c *Client) getSDR(ctx context.Context, recordID uint16) (response *GetSDRR
 }
 
 func (c *Client) GetSDRBySensorID(ctx context.Context, sensorNumber uint8) (*SDR, error) {
-	if SensorNumber(sensorNumber) == SensorNumberReserved {
-		return nil, fmt.Errorf("not valid sensorNumber, %#0x is reserved", sensorNumber)
-	}
-
 	var recordID uint16 = 0
 	for {
 		res, err := c.GetSDR(ctx, recordID)
@@ -164,7 +160,10 @@ func (c *Client) GetSDRBySensorID(ctx context.Context, sensorNumber uint8) (*SDR
 		if err != nil {
 			return nil, fmt.Errorf("ParseSDR failed, err: %w", err)
 		}
-		if uint8(sdr.SensorNumber()) != sensorNumber {
+
+		recordType := sdr.RecordHeader.RecordType
+		// Only Full/Compact/EventOnly SDRs have a sensor number.
+		if uint8(sdr.SensorNumber()) != sensorNumber || (recordType != SDRRecordTypeFullSensor && recordType != SDRRecordTypeCompactSensor && recordType != SDRRecordTypeEventOnly) {
 			recordID = sdr.NextRecordID
 			if recordID == 0xffff {
 				break
@@ -193,7 +192,9 @@ func (c *Client) GetSDRBySensorName(ctx context.Context, sensorName string) (*SD
 			return nil, fmt.Errorf("ParseSDR failed, err: %w", err)
 		}
 
-		if sdr.SensorName() != sensorName {
+		recordType := sdr.RecordHeader.RecordType
+		// Only Full/Compact/EventOnly SDRs have a sensor name.
+		if sdr.SensorName() != sensorName || (recordType != SDRRecordTypeFullSensor && recordType != SDRRecordTypeCompactSensor && recordType != SDRRecordTypeEventOnly) {
 			recordID = sdr.NextRecordID
 			if recordID == 0xffff {
 				break
