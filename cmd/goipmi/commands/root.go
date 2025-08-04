@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/bougou/go-ipmi"
 	"github.com/spf13/cobra"
@@ -22,6 +23,8 @@ var (
 
 	privilegeLevel string
 	showVersion    bool
+
+	timeout int
 
 	client *ipmi.Client
 )
@@ -49,11 +52,13 @@ func initClient() error {
 			return fmt.Errorf("create lan or lanplus client failed, err: %w", err)
 		}
 		client = c
-		if intf == "lan" {
+		switch intf {
+		case "lan":
 			client.WithInterface(ipmi.InterfaceLan)
-		} else if intf == "lanplus" {
+		case "lanplus":
 			client.WithInterface(ipmi.InterfaceLanplus)
 		}
+		client.WithTimeout(time.Duration(timeout) * time.Second)
 
 	case "tool":
 		c, err := ipmi.NewToolClient(host)
@@ -125,6 +130,7 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug")
 	rootCmd.PersistentFlags().BoolVarP(&showVersion, "version", "V", false, "version")
 	rootCmd.PersistentFlags().StringVarP(&privilegeLevel, "priv-level", "L", "ADMINISTRATOR", "Force session privilege level. Can be CALLBACK, USER, OPERATOR, ADMINISTRATOR.")
+	rootCmd.PersistentFlags().IntVarP(&timeout, "timeout", "t", 20, "timeout in seconds. 0 means no timeout.")
 
 	rootCmd.Flags().AddGoFlagSet(flag.CommandLine)
 

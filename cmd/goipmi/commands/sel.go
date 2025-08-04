@@ -44,7 +44,7 @@ func NewCmdSELInfo() *cobra.Command {
 
 			selAllocInfo, err := client.GetSELAllocInfo(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSELInfo failed, err: %w", err))
+				CheckErr(fmt.Errorf("GetSELAllocInfo failed, err: %w", err))
 			}
 			fmt.Println(selAllocInfo.Format())
 		},
@@ -90,7 +90,7 @@ func NewCmdSELList() *cobra.Command {
 			ctx := context.Background()
 			selEntries, err := client.GetSELEntries(ctx, 0)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSELInfo failed, err: %w", err))
+				CheckErr(fmt.Errorf("GetSELEntries failed, err: %w", err))
 			}
 
 			fmt.Println(ipmi.FormatSELs(selEntries, nil))
@@ -112,7 +112,7 @@ func NewCmdSELElist() *cobra.Command {
 
 			selEntries, err := client.GetSELEntries(ctx, 0)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSELInfo failed, err: %w", err))
+				CheckErr(fmt.Errorf("GetSELEntries failed, err: %w", err))
 			}
 
 			fmt.Println(ipmi.FormatSELs(selEntries, sdrsMap))

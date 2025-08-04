@@ -126,53 +126,90 @@ func (c *UDPClient) Exchange(ctx context.Context, reader io.Reader) ([]byte, err
 		return nil, fmt.Errorf("init udp connection failed, err: %w", err)
 	}
 
-	c.lock.Lock()
-
 	recvBuffer := make([]byte, c.bufferSize)
 
-	doneChan := make(chan error, 1)
-	// recvChan stores the integer number which indicates how many bytes
-	recvChan := make(chan int, 1)
+	// Use a single goroutine to handle the entire exchange operation
+	// This ensures proper context cancellation and resource cleanup
+	resultChan := make(chan struct {
+		data []byte
+		err  error
+	}, 1)
+
 	go func() {
+		c.lock.Lock()
 		defer c.lock.Unlock()
-		// It is possible that this action blocks, although this
-		// should only occur in very resource-intensive situations:
-		// - when you've filled up the socket buffer and the OS
-		//   can't dequeue the queue fast enough.
+
+		// Step 1: Check if context is already cancelled
+		select {
+		case <-ctx.Done():
+			resultChan <- struct {
+				data []byte
+				err  error
+			}{nil, fmt.Errorf("context cancelled before starting operations: %w", ctx.Err())}
+			return
+		default:
+		}
+
+		// Step 2: Send the request
 		_, err := io.Copy(c.conn, reader)
 		if err != nil {
-			doneChan <- fmt.Errorf("write to conn failed, err: %w", err)
+			resultChan <- struct {
+				data []byte
+				err  error
+			}{nil, fmt.Errorf("write to conn failed, err: %w", err)}
 			return
 		}
 
-		// Set a deadline for the Read operation so that we don't
-		// wait forever for a server that might not respond on
-		// a reasonable amount of time.
-		deadline := time.Now().Add(c.timeout)
-		err = c.conn.SetReadDeadline(deadline)
-		if err != nil {
-			doneChan <- fmt.Errorf("set conn read deadline failed, err: %w", err)
+		// Step 3: Check context after write
+		select {
+		case <-ctx.Done():
+			resultChan <- struct {
+				data []byte
+				err  error
+			}{nil, fmt.Errorf("context cancelled after write: %w", ctx.Err())}
 			return
+		default:
 		}
 
+		// Step 4: Set read deadline if timeout is configured
+		if c.timeout > 0 {
+			deadline := time.Now().Add(c.timeout)
+			err = c.conn.SetReadDeadline(deadline)
+			if err != nil {
+				resultChan <- struct {
+					data []byte
+					err  error
+				}{nil, fmt.Errorf("set conn read deadline failed with read timeout %v, err: %w", c.timeout, err)}
+				return
+			}
+		}
+
+		// Step 5: Read the response
 		nRead, err := c.conn.Read(recvBuffer)
 		if err != nil {
-			doneChan <- fmt.Errorf("read from conn failed, err: %w", err)
+			resultChan <- struct {
+				data []byte
+				err  error
+			}{nil, fmt.Errorf("read from conn failed with read timeout %v, err: %w", c.timeout, err)}
 			return
 		}
 
-		doneChan <- nil
-		recvChan <- nRead
+		// Step 6: Return the response data
+		resultChan <- struct {
+			data []byte
+			err  error
+		}{recvBuffer[:nRead], nil}
 	}()
 
+	// Wait for the result or context cancellation
 	select {
 	case <-ctx.Done():
-		return nil, fmt.Errorf("canceled from caller")
-	case err := <-doneChan:
-		if err != nil {
-			return nil, err
+		// Try to close the connection to unblock any ongoing operations
+		if c.conn != nil {
+			c.conn.Close()
 		}
-		recvCount := <-recvChan
-		return recvBuffer[:recvCount], nil
+		return nil, fmt.Errorf("canceled from caller: %w", ctx.Err())
+	case result := <-resultChan:
+		return result.data, result.err
 	}
 }
