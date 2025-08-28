@@ -1,4 +1,4 @@
-module github.com/bougou/go-ipmi
+module github.com/AndySpf/go-ipmi
 
 replace github.com/bougou/go-ipmi v0.0.0 => ./
 
