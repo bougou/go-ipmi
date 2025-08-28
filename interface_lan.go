@@ -54,6 +54,8 @@ type v20 struct {
 	// the cipher suite used during OpenSessionRequest
 	cipherSuiteID CipherSuiteID
 
+	customSuiteIDs []CipherSuiteID
+
 	// filled by RmcpOpenSessionRequest
 	requestedAuthAlg      AuthAlg
 	requestedIntegrityAlg IntegrityAlg
@@ -256,11 +258,15 @@ func (c *Client) Connect20(ctx context.Context) error {
 		return fmt.Errorf("cmd: Get Channel Authentication Capabilities failed, err: %w", err)
 	}
 
-	tryCiphers := c.findBestCipherSuites(ctx)
+	var tryCiphers []CipherSuiteID
 
-	if c.session.v20.cipherSuiteID != CipherSuiteIDReserved {
+	if len(c.session.v20.customSuiteIDs) > 0 {
+		tryCiphers = c.session.v20.customSuiteIDs
+	} else if c.session.v20.cipherSuiteID != CipherSuiteIDReserved {
 		// client explicitly specified a cipher suite to use
 		tryCiphers = []CipherSuiteID{c.session.v20.cipherSuiteID}
+	} else {
+		tryCiphers = c.findBestCipherSuites(ctx)
 	}
 
 	c.DebugfGreen("\n\ntry ciphers (%v)\n", tryCiphers)
