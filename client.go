@@ -179,12 +179,16 @@ func (c *Client) WithRetry(retryCount int, retryInterval time.Duration) *Client 
 	return c
 }
 
-// WithCipherSuiteID sets a custom cipher suite which is used during OpenSession command.
+// WithCipherSuiteID sets one or more custom cipher suite which is used during OpenSession command.
 // It is only valid for client with IPMI lanplus interface.
 // For the custom cipherSuiteID to take effect, you must call WithCipherSuiteID before calling Connect method.
-func (c *Client) WithCipherSuiteID(cipherSuiteID CipherSuiteID) *Client {
+func (c *Client) WithCipherSuiteID(cipherSuiteID ...CipherSuiteID) *Client {
 	if c.session != nil {
-		c.session.v20.cipherSuiteID = cipherSuiteID
+		if len(cipherSuiteID) > 1 {
+			c.session.v20.customSuiteIDs = cipherSuiteID
+		} else {
+			c.session.v20.cipherSuiteID = cipherSuiteID[0]
+		}
 	}
 	return c
 }
