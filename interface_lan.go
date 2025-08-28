@@ -259,7 +259,10 @@ func (c *Client) Connect20(ctx context.Context) error {
 	}
 
 	var tryCiphers []CipherSuiteID
-
+	
+	c.session.v20.customSuiteIDs = slices.DeleteFunc(c.session.v20.customSuiteIDs, func(id CipherSuiteID) bool {
+		return id == CipherSuiteIDReserved
+	})
 	if len(c.session.v20.customSuiteIDs) > 0 {
 		tryCiphers = c.session.v20.customSuiteIDs
 	} else if c.session.v20.cipherSuiteID != CipherSuiteIDReserved {
