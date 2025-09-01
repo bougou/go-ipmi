@@ -16,7 +16,6 @@ type SetUsernameRequest struct {
 }
 
 type SetUsernameResponse struct {
-	GUID [16]byte
 }
 
 func (req *SetUsernameRequest) Command() Command {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"slices"
 	"time"
 )
 
@@ -259,7 +260,7 @@ func (c *Client) Connect20(ctx context.Context) error {
 	}
 
 	var tryCiphers []CipherSuiteID
-	
+
 	c.session.v20.customSuiteIDs = slices.DeleteFunc(c.session.v20.customSuiteIDs, func(id CipherSuiteID) bool {
 		return id == CipherSuiteIDReserved
 	})

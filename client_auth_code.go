@@ -60,9 +60,9 @@ func (i *AuthCodeMultiSessionInput) AuthCode(authType AuthType) []byte {
 	// Unless otherwise specified, the integrity algorithm is applied to the packet data starting with the
 	// AuthType/Format field up to and including the field that immediately precedes the AuthCode field itself.
 	authCodeInputLength := len(password) +
-		4 + // session od uint32
+		4 + // session id (uint32)
 		len(ipmiData) +
-		4 + // session seq uint32
+		4 + // session seq (uint32)
 		len(password)
 
 	var input = make([]byte, authCodeInputLength)
