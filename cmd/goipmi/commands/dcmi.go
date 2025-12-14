@@ -190,13 +190,14 @@ set_limit <parameter> <value>
 
 			switch param {
 			case "action":
-				if value == "no_action" {
+				switch value {
+				case "no_action":
 					req.ExceptionAction = ipmi.DCMIExceptionAction_NoAction
-				} else if value == "sel_logging" {
+				case "sel_logging":
 					req.ExceptionAction = ipmi.DCMIExceptionAction_LogSEL
-				} else if value == "power_off" {
+				case "power_off":
 					req.ExceptionAction = ipmi.DCMIExceptionAction_PowerOffAndLogSEL
-				} else {
+				default:
 					CheckErr(fmt.Errorf("invalid value for parameter action: %s", value))
 				}
 

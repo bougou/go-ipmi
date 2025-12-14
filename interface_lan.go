@@ -149,43 +149,36 @@ func (c *Client) exchangeLAN(ctx context.Context, request Request, response Resp
 
 	var recv []byte
 	attempts := c.retryCount + 1 // initial try plus retries
-	c.Debugf("exchangeLAN timeout attempts: %d\n", attempts)
+	c.Debugf("exchange LAN (attempts: %d)\n", attempts)
 
-	attemptCount := 0
-	for attempt := 1; attempt <= attempts; attempt += 1 {
-		attemptCount = attempt
-		c.Debugf("Attempt %d/%d\n", attempt, attempts)
+	var lastErr error
+	for attempt := 1; attempt <= attempts; attempt++ {
+		c.Debugf("attempt %d/%d, ", attempt, attempts)
+
 		recv, err = c.udpClient.Exchange(ctx, bytes.NewReader(sent))
-		if err != nil {
-			var netErr *net.OpError
-			if errors.As(err, &netErr) {
-				c.Debugf("udp exchange error is net error, %s\n", err)
-
-				if netErr.Timeout() {
-					c.Debugf("udp exchange error is net timeout error: %v\n", err)
-
-					if attempt < attempts {
-						c.Debugf("Attempt %d/%d: timeout error: %v. Retrying...\n", attempt, attempts, err)
-						time.Sleep(c.retryInterval)
-						continue
-					}
-				}
-
-				c.Debugf("udp exchange error is net error but not timeout error, %s\n", err)
-				break
-			}
-
-			c.Debugf("udp exchange error is not net error, %s\n", err)
+		lastErr = err
+		if err == nil {
+			c.DebugfGreen("udp exchange success\n")
+			// Success, break out of retry loop
 			break
 		}
 
-		// no error
+		// Check if this is a timeout error that should be retried
+		var netErr *net.OpError
+		if errors.As(err, &netErr) && netErr.Timeout() {
+			c.DebugfRed("udp exchange failed, timeout error: %v\n", err)
+			continue
+		}
+
+		// Non-timeout error or final attempt, don't retry
+		c.DebugfRed("udp exchange failed, error: %s\n", err)
 		break
 	}
 
-	if err != nil {
-		return fmt.Errorf("client udp exchange msg failed, attempts %d times, err: %w", attemptCount, err)
+	if lastErr != nil {
+		return fmt.Errorf("client udp exchange msg failed after %d attempts, err: %w", attempts, lastErr)
 	}
+
 	c.DebugBytes("recv", recv, 16)
 
 	if err := c.ParseRmcpResponse(ctx, recv, response); err != nil {
@@ -194,7 +187,6 @@ func (c *Client) exchangeLAN(ctx context.Context, request Request, response Resp
 
 	c.Debug("<< Command Response", response)
 	return nil
-
 }
 
 // 13.14
@@ -383,7 +375,7 @@ func (c *Client) keepSessionAlive(ctx context.Context, intervalSec int) {
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
 
-	c.Debugf("keepSessionAlive started")
+	c.Debugf("keepSessionAlive started\n")
 	for {
 		select {
 		case <-ticker.C:
@@ -391,7 +383,7 @@ func (c *Client) keepSessionAlive(ctx context.Context, intervalSec int) {
 				c.DebugfRed("keepSessionAlive failed, GetCurrentSessionInfo failed, err: %w", err)
 			}
 		case <-c.closedCh:
-			c.Debugf("got close signal, keepSessionAlive stopped")
+			c.Debugf("got close signal, keepSessionAlive stopped\n")
 			return
 		}
 	}

@@ -12,6 +12,9 @@ import (
 	"golang.org/x/net/proxy"
 )
 
+var udpRecvBufferSize = 4096
+var udpReadTimeoutSeconds = 10
+
 // UDPClient exposes some common methods for communicating with UDP target addr.
 type UDPClient struct {
 	// Target Host
@@ -23,7 +26,8 @@ type UDPClient struct {
 	timeout    time.Duration
 	bufferSize int
 
-	conn net.Conn
+	conn   net.Conn
+	closed bool
 
 	// lock is used to protect udp Exchange method to prevent another
 	// send/receive operation from occurring while one is in progress.
@@ -32,14 +36,19 @@ type UDPClient struct {
 
 func NewUDPClient(host string, port int) *UDPClient {
 	udpClient := &UDPClient{
-		Host: host,
-		Port: port,
+		Host:       host,
+		Port:       port,
+		bufferSize: udpRecvBufferSize,
+		timeout:    time.Duration(udpReadTimeoutSeconds) * time.Second,
 	}
 	return udpClient
 }
 
 func (c *UDPClient) initConn() error {
-	if c.conn != nil {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	if c.conn != nil && !c.closed {
 		return nil
 	}
 
@@ -61,7 +70,6 @@ func (c *UDPClient) initConn() error {
 		return fmt.Errorf("udp dial failed, err: %w", err)
 	}
 	c.conn = conn
-
 	return nil
 }
 
@@ -103,6 +111,9 @@ func (c *UDPClient) LocalIPPort() (string, int) {
 }
 
 func (c *UDPClient) Close() error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
 	if c.conn == nil {
 		return nil
 	}
@@ -111,9 +122,8 @@ func (c *UDPClient) Close() error {
 		return fmt.Errorf("close udp conn failed, err: %w", err)
 	}
 
-	c.lock.Lock()
-	defer c.lock.Unlock()
 	c.conn = nil
+	c.closed = true
 	return nil
 }
 
@@ -126,53 +136,94 @@ func (c *UDPClient) Exchange(ctx context.Context, reader io.Reader) ([]byte, err
 		return nil, fmt.Errorf("init udp connection failed, err: %w", err)
 	}
 
-	c.lock.Lock()
-
 	recvBuffer := make([]byte, c.bufferSize)
 
-	doneChan := make(chan error, 1)
-	// recvChan stores the integer number which indicates how many bytes
-	recvChan := make(chan int, 1)
+	// Use a single goroutine to handle the entire exchange operation
+	// This ensures proper context cancellation and resource cleanup
+	resultChan := make(chan struct {
+		data []byte
+		err  error
+	}, 1)
+
 	go func() {
+		defer close(resultChan)
+
+		c.lock.Lock()
 		defer c.lock.Unlock()
-		// It is possible that this action blocks, although this
-		// should only occur in very resource-intensive situations:
-		// - when you've filled up the socket buffer and the OS
-		//   can't dequeue the queue fast enough.
+
+		// Step 1: Check if context is already cancelled
+		if ctx.Err() != nil {
+			return
+		}
+
+		// Step 2: Send the request
 		_, err := io.Copy(c.conn, reader)
 		if err != nil {
-			doneChan <- fmt.Errorf("write to conn failed, err: %w", err)
+			resultChan <- struct {
+				data []byte
+				err  error
+			}{nil, fmt.Errorf("write to conn failed, err: %w", err)}
 			return
 		}
 
-		// Set a deadline for the Read operation so that we don't
-		// wait forever for a server that might not respond on
-		// a reasonable amount of time.
+		// Step 3: Check context after write
+		if ctx.Err() != nil {
+			return
+		}
+
+		// Step 4: Set read deadline
+		// Use context deadline if available, otherwise use configured timeout
 		deadline := time.Now().Add(c.timeout)
+		if ctxDeadline, ok := ctx.Deadline(); ok {
+			// Use the earlier deadline between context and configured timeout
+			if ctxDeadline.Before(deadline) {
+				deadline = ctxDeadline
+			}
+		}
 		err = c.conn.SetReadDeadline(deadline)
 		if err != nil {
-			doneChan <- fmt.Errorf("set conn read deadline failed, err: %w", err)
+			resultChan <- struct {
+				data []byte
+				err  error
+			}{nil, fmt.Errorf("set conn read deadline failed, err: %w", err)}
 			return
 		}
 
+		// Step 5: Read the response
 		nRead, err := c.conn.Read(recvBuffer)
-		if err != nil {
-			doneChan <- fmt.Errorf("read from conn failed, err: %w", err)
+
+		// Step 6: Check context after read (in case context was cancelled during read)
+		if ctx.Err() != nil {
 			return
 		}
 
-		doneChan <- nil
-		recvChan <- nRead
+		if err != nil {
+			resultChan <- struct {
+				data []byte
+				err  error
+			}{nil, fmt.Errorf("read from conn failed, err: %w", err)}
+			return
+		}
+
+		// Step 7: Return the response data
+		resultChan <- struct {
+			data []byte
+			err  error
+		}{recvBuffer[:nRead], nil}
 	}()
 
+	// Wait for the result or context cancellation
 	select {
 	case <-ctx.Done():
-		return nil, fmt.Errorf("canceled from caller")
-	case err := <-doneChan:
-		if err != nil {
-			return nil, err
+		return nil, fmt.Errorf("canceled from caller: %w", ctx.Err())
+	case result, ok := <-resultChan:
+		if ok {
+			return result.data, result.err
 		}
-		recvCount := <-recvChan
-		return recvBuffer[:recvCount], nil
+
+		if ctx.Err() != nil {
+			return nil, fmt.Errorf("canceled from caller: %w", ctx.Err())
+		}
+		return nil, fmt.Errorf("result channel closed")
 	}
 }

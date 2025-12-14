@@ -17,9 +17,18 @@ const (
 	InterfaceOpen    Interface = "open"
 	InterfaceTool    Interface = "tool"
 
-	DefaultExchangeTimeoutSec   int = 20
 	DefaultKeepAliveIntervalSec int = 30
-	DefaultBufferSize           int = 1024
+	DefaultBufferSize           int = 4096
+
+	// https://github.com/ipmitool/ipmitool/blob/IPMITOOL_1_8_19/src/plugins/lanplus/lanplus.h#L68
+	// https://github.com/ipmitool/ipmitool/blob/IPMITOOL_1_8_19/src/plugins/lan/lan.c#L68
+	// https://github.com/ipmitool/ipmitool/blob/IPMITOOL_1_8_19/src/plugins/open/open.c#L87
+	DefaultLanTimeoutSec     int = 2
+	DefaultLanRetries        int = 4
+	DefaultLanplusTimeoutSec int = 1
+	DefaultLanplusRetries    int = 4
+	DefaultOpenTimeoutSec    int = 15
+	DefaultOpenRetries       int = 0
 )
 
 type Client struct {
@@ -51,8 +60,7 @@ type Client struct {
 	// retryCount specifies the number of additional attempts to make after an initial failure.
 	// For lan/lanplus interfaces, retries only occur when UDP exchanges timeout.
 	// A value of 0 means no retries (only one attempt), 1 means one retry (two attempts total), etc.
-	retryCount    int
-	retryInterval time.Duration
+	retryCount int
 
 	l sync.Mutex
 
@@ -66,8 +74,8 @@ func NewOpenClient() (*Client, error) {
 
 	return &Client{
 		Interface:  InterfaceOpen,
-		timeout:    time.Second * time.Duration(DefaultExchangeTimeoutSec),
 		bufferSize: DefaultBufferSize,
+		timeout:    time.Second * time.Duration(DefaultOpenTimeoutSec),
 
 		openipmi: &openipmi{
 			myAddr:     myAddr,
@@ -80,7 +88,6 @@ func NewOpenClient() (*Client, error) {
 // You should pass the file path of ipmitool binary or path of a wrapper script
 // that would be executed.
 func NewToolClient(path string) (*Client, error) {
-
 	return &Client{
 		Host:      path,
 		Interface: InterfaceTool,
@@ -99,12 +106,11 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 		Password:  pass,
 		Interface: InterfaceLanplus,
 
-		v20:        true,
-		timeout:    time.Second * time.Duration(DefaultExchangeTimeoutSec),
-		bufferSize: DefaultBufferSize,
+		v20: true,
 
-		retryCount:    0,
-		retryInterval: 0,
+		bufferSize: DefaultBufferSize,
+		timeout:    time.Second * time.Duration(DefaultLanplusTimeoutSec),
+		retryCount: DefaultLanplusRetries,
 
 		maxPrivilegeLevel: PrivilegeLevelUnspecified,
 
@@ -164,18 +170,16 @@ func (c *Client) WithTimeout(timeout time.Duration) *Client {
 	return c
 }
 
-func (c *Client) WithBufferSize(bufferSize int) *Client {
-	c.bufferSize = bufferSize
-
-	if c.udpClient != nil {
-		c.udpClient.bufferSize = bufferSize
-	}
+func (c *Client) WithRetry(retryCount int) *Client {
+	c.retryCount = retryCount
 	return c
 }
 
-func (c *Client) WithRetry(retryCount int, retryInterval time.Duration) *Client {
-	c.retryCount = retryCount
-	c.retryInterval = retryInterval
+func (c *Client) WithBufferSize(bufferSize int) *Client {
+	c.bufferSize = bufferSize
+	if c.udpClient != nil {
+		c.udpClient.bufferSize = bufferSize
+	}
 	return c
 }
 
