@@ -2,6 +2,7 @@ package ipmi
 
 import (
 	"fmt"
+	"iter"
 	"time"
 )
 
@@ -220,6 +221,68 @@ func parseSELOEMNonTimestamped(msg []byte, sel *SEL) error {
 	return nil
 }
 
+func selToRow(sel *SEL, options ...any) map[string]string {
+	var sdrMap SDRMapBySensorNumber
+
+loop:
+	for _, option := range options {
+		switch v := option.(type) {
+		case SDRMapBySensorNumber:
+			sdrMap = v
+			break loop
+		}
+	}
+
+	var row map[string]string
+
+	var elistMode bool // extend list
+	if sdrMap != nil {
+		elistMode = true
+	}
+
+	recordTypeRange := sel.RecordType.Range()
+
+	switch recordTypeRange {
+	case SELRecordTypeRangeStandard:
+		s := sel.Standard
+
+		row = map[string]string{
+			"ID":               fmt.Sprintf("%#04x", sel.RecordID),
+			"RecordType":       sel.RecordType.String(),
+			"EvmRev":           fmt.Sprintf("%#02x", s.EvMRev),
+			"Timestamp":        fmt.Sprintf("%v", s.Timestamp),
+			"GID":              fmt.Sprintf("%#04x", uint16(s.GeneratorID)),
+			"SensorNumber":     fmt.Sprintf("%#02x", s.SensorNumber),
+			"SensorTypeCode":   fmt.Sprintf("%#02x", uint8(s.SensorType)),
+			"SensorType":       s.SensorType.String(),
+			"EventReadingType": fmt.Sprintf("%#02x (%s)", uint8(s.EventReadingType), s.EventReadingType.String()),
+			"EventDescription": s.EventString(),
+			"EventDirection":   s.EventDir.String(),
+			"EventSeverity":    string(s.EventSeverity()),
+			"EventData":        s.EventData.String(),
+		}
+
+		if elistMode {
+			var sensorName string
+			sdr, ok := sdrMap[s.GeneratorID][s.SensorNumber]
+			if !ok {
+				sensorName = fmt.Sprintf("N/A %#04x, %#02x", uint16(s.GeneratorID), s.SensorNumber)
+			} else {
+				sensorName = sdr.SensorName()
+			}
+			row["SensorName"] = sensorName
+		}
+
+	case SELRecordTypeRangeTimestampedOEM:
+		// Todo
+	case SELRecordTypeRangeNonTimestampedOEM:
+		// Todo
+
+	}
+
+	return row
+}
+
 // FormatSELs print sel records in table format.
 // The second sdrMap is optional. If the sdrMap is not nil,
 // it will also print sensor number, entity id and instance, and asserted discrete states.
@@ -231,46 +294,9 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 	}
 
 	rows := make([]map[string]string, 0)
-
 	for _, sel := range records {
-		recordTypeRange := sel.RecordType.Range()
-
-		switch recordTypeRange {
-		case SELRecordTypeRangeStandard:
-			s := sel.Standard
-
-			row := map[string]string{
-				"ID":               fmt.Sprintf("%#04x", sel.RecordID),
-				"RecordType":       sel.RecordType.String(),
-				"EvmRev":           fmt.Sprintf("%#02x", s.EvMRev),
-				"Timestamp":        fmt.Sprintf("%v", s.Timestamp),
-				"GID":              fmt.Sprintf("%#04x", uint16(s.GeneratorID)),
-				"SensorNumber":     fmt.Sprintf("%#02x", s.SensorNumber),
-				"SensorTypeCode":   fmt.Sprintf("%#02x", uint8(s.SensorType)),
-				"SensorType":       s.SensorType.String(),
-				"EventReadingType": fmt.Sprintf("%#02x (%s)", uint8(s.EventReadingType), s.EventReadingType.String()),
-				"EventDescription": s.EventString(),
-				"EventDirection":   s.EventDir.String(),
-				"EventSeverity":    string(s.EventSeverity()),
-				"EventData":        s.EventData.String(),
-			}
-
-			if elistMode {
-				var sensorName string
-				sdr, ok := sdrMap[s.GeneratorID][s.SensorNumber]
-				if !ok {
-					sensorName = fmt.Sprintf("N/A %#04x, %#02x", uint16(s.GeneratorID), s.SensorNumber)
-				} else {
-					sensorName = sdr.SensorName()
-				}
-				row["SensorName"] = sensorName
-			}
-
-			rows = append(rows, row)
-
-		case SELRecordTypeRangeTimestampedOEM:
-		case SELRecordTypeRangeNonTimestampedOEM:
-		}
+		row := selToRow(sel, sdrMap)
+		rows = append(rows, row)
 	}
 
 	headers := []string{
@@ -293,4 +319,32 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 	}
 
 	return RenderTable(headers, rows)
+}
+
+func FormatSELsStream(seq iter.Seq[*Result[SEL]], sdrMap SDRMapBySensorNumber) error {
+	var elistMode bool // extend list
+	if sdrMap != nil {
+		elistMode = true
+	}
+
+	headers := []string{
+		"ID",
+		"RecordType",
+		"EvmRev",
+		"-------- Timestamp --------",
+		"GID",
+		"SensorNumber",
+		"SensorTypeCode",
+		"-- SensorType --",
+		"EventReadingType",
+		"--------------- EventDescription --------------",
+		"EventDirection",
+		"EventSeverity",
+		"EventData",
+	}
+	if elistMode {
+		headers = append(headers, "SensorName")
+	}
+
+	return formatStream(seq, headers, selToRow, sdrMap)
 }

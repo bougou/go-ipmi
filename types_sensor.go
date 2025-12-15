@@ -2,6 +2,7 @@ package ipmi
 
 import (
 	"fmt"
+	"iter"
 	"math"
 	"strings"
 )
@@ -183,12 +184,12 @@ const (
 	SensorUnitType_Nits               SensorUnitType = 10 // Nits, 尼特（光度单位）
 	SensorUnitType_Lumen              SensorUnitType = 11 // lumen, 流明（光通量单位）
 	SensorUnitType_Lux                SensorUnitType = 12 // lux, 勒克斯（照明单位）
-	SensorUnitType_Candela            SensorUnitType = 13 // Candela, 坎, 坎德拉（发光强度单位）
-	SensorUnitType_KPa                SensorUnitType = 14 // kPa kilopascal, 千帕, 千帕斯卡
+	SensorUnitType_Candela            SensorUnitType = 13 // Candela, 坎，坎德拉（发光强度单位）
+	SensorUnitType_KPa                SensorUnitType = 14 // kPa kilopascal, 千帕，千帕斯卡
 	SensorUnitType_PSI                SensorUnitType = 15 // PSI
 	SensorUnitType_Newton             SensorUnitType = 16 // Newton, 牛顿（力的单位）
-	SensorUnitType_CFM                SensorUnitType = 17 // CFM, 风量, cubic feet per minute (cu ft/min)
-	SensorUnitType_RPM                SensorUnitType = 18 // RPM, 每分钟转数, Revolutions per minute, is the number of turns in one minute
+	SensorUnitType_CFM                SensorUnitType = 17 // CFM, 风量，cubic feet per minute (cu ft/min)
+	SensorUnitType_RPM                SensorUnitType = 18 // RPM, 每分钟转数，Revolutions per minute, is the number of turns in one minute
 	SensorUnitType_Hz                 SensorUnitType = 19 // Hz, 赫兹
 	SensorUnitType_MicroSecond        SensorUnitType = 20 // microsecond, 微秒
 	SensorUnitType_MilliSecond        SensorUnitType = 21 // millisecond, 毫秒
@@ -198,7 +199,7 @@ const (
 	SensorUnitType_Day                SensorUnitType = 25 // day, 日
 	SensorUnitType_Week               SensorUnitType = 26 // week, 周
 	SensorUnitType_Mil                SensorUnitType = 27 // mil, 毫升；密耳（千分之一寸）
-	SensorUnitType_Inches             SensorUnitType = 28 // inches, 英寸（inch的复数）
+	SensorUnitType_Inches             SensorUnitType = 28 // inches, 英寸（inch 的复数）
 	SensorUnitType_Fleet              SensorUnitType = 29 // feet
 	SensorUnitType_CuIn               SensorUnitType = 30 // cu in, 立方英寸（cubic inch）
 	SensorUnitType_CuFleet            SensorUnitType = 31 // cu feet
@@ -208,15 +209,15 @@ const (
 	SensorUnitType_CuCM               SensorUnitType = 35 // cu cm
 	SensorUnitType_Cum                SensorUnitType = 36 // cum
 	SensorUnitType_Liters             SensorUnitType = 37 // liters, 公升（容量单位）
-	SensorUnitType_FluidOunce         SensorUnitType = 38 // fluid ounce, 液盎司（液体容量单位, 等于 fluidounce）
-	SensorUnitType_Radians            SensorUnitType = 39 // radians, 弧度（radian的复数）
-	SensorUnitType_vSteradians        SensorUnitType = 40 // steradians, 球面度, 立体弧度（立体角国际单位制, 等于 sterad）
-	SensorUnitType_Revolutions        SensorUnitType = 41 // revolutions, 转数（revolution的复数形式）
-	SensorUnitType_Cycles             SensorUnitType = 42 // cycles, 周期, 圈
+	SensorUnitType_FluidOunce         SensorUnitType = 38 // fluid ounce, 液盎司（液体容量单位，等于 fluidounce）
+	SensorUnitType_Radians            SensorUnitType = 39 // radians, 弧度（radian 的复数）
+	SensorUnitType_vSteradians        SensorUnitType = 40 // steradians, 球面度，立体弧度（立体角国际单位制，等于 sterad）
+	SensorUnitType_Revolutions        SensorUnitType = 41 // revolutions, 转数（revolution 的复数形式）
+	SensorUnitType_Cycles             SensorUnitType = 42 // cycles, 周期，圈
 	SensorUnitType_Gravities          SensorUnitType = 43 // gravities, 重力
 	SensorUnitType_Ounce              SensorUnitType = 44 // ounce, 盎司
 	SensorUnitType_Pound              SensorUnitType = 45 // pound, 英镑
-	SensorUnitType_FootPound          SensorUnitType = 46 // ft-lb, 英尺-磅（foot pound）
+	SensorUnitType_FootPound          SensorUnitType = 46 // ft-lb, 英尺 - 磅（foot pound）
 	SensorUnitType_OzIn               SensorUnitType = 47 // oz-in, 扭力；盎司英寸
 	SensorUnitType_Gauss              SensorUnitType = 48 // gauss, 高斯（磁感应或磁场的单位）
 	SensorUnitType_Gilberts           SensorUnitType = 49 // gilberts, 吉伯（磁通量的单位）
@@ -224,17 +225,17 @@ const (
 	SensorUnitType_MilliHenry         SensorUnitType = 51 // millihenry, 毫亨（利）（电感单位）
 	SensorUnitType_Farad              SensorUnitType = 52 // farad, 法拉（电容单位）
 	SensorUnitType_MicroFarad         SensorUnitType = 53 // microfarad, 微法拉（电容量的实用单位）
-	SensorUnitType_Ohms               SensorUnitType = 54 // ohms, 欧姆（Ohm） ：电阻的量度单位, 欧姆值越大, 电阻越大
-	SensorUnitType_Siemens            SensorUnitType = 55 // siemens, 西门子, 电导单位
-	SensorUnitType_Mole               SensorUnitType = 56 // mole, 摩尔 [化学] 克分子（等于mole）
+	SensorUnitType_Ohms               SensorUnitType = 54 // ohms, 欧姆（Ohm） ：电阻的量度单位，欧姆值越大，电阻越大
+	SensorUnitType_Siemens            SensorUnitType = 55 // siemens, 西门子，电导单位
+	SensorUnitType_Mole               SensorUnitType = 56 // mole, 摩尔 [化学] 克分子（等于 mole）
 	SensorUnitType_Becquerel          SensorUnitType = 57 // becquerel, 贝可（放射性活度单位）
-	SensorUnitType_PPM                SensorUnitType = 58 // PPM (parts/million), 百万分率, 百万分之…（parts per million）
+	SensorUnitType_PPM                SensorUnitType = 58 // PPM (parts/million), 百万分率，百万分之…（parts per million）
 	SensorUnitType_Reserved           SensorUnitType = 59 // reserved
-	SensorUnitType_Decibels           SensorUnitType = 60 // Decibels, 分贝（声音强度单位, decibel的复数）
+	SensorUnitType_Decibels           SensorUnitType = 60 // Decibels, 分贝（声音强度单位，decibel 的复数）
 	SensorUnitType_DbA                SensorUnitType = 61 // DbA, dBA is often used to specify the loudness of the fan used to cool the microprocessor and associated components. Typical dBA ratings are in the neighborhood of 25 dBA, representing 25 A-weighted decibels above the threshold of hearing. This is approximately the loudness of a person whispering in a quiet room.
 	SensorUnitType_DbC                SensorUnitType = 62 // DbC
-	SensorUnitType_Gray               SensorUnitType = 63 // gray, 核吸收剂量(Gy)
-	SensorUnitType_Sievert            SensorUnitType = 64 // sievert, 希沃特（辐射效果单位, 简称希）
+	SensorUnitType_Gray               SensorUnitType = 63 // gray, 核吸收剂量 (Gy)
+	SensorUnitType_Sievert            SensorUnitType = 64 // sievert, 希沃特（辐射效果单位，简称希）
 	SensorUnitType_ColorTempDegK      SensorUnitType = 65 // color temp deg K, 色温
 	SensorUnitType_Bit                SensorUnitType = 66 // bit, 比特（二进位制信息单位）
 	SensorUnitType_Kilobit            SensorUnitType = 67 // kilobit, 千比特
@@ -249,20 +250,20 @@ const (
 	SensorUnitType_QWord              SensorUnitType = 76 // qword, 四字
 	SensorUnitType_Line               SensorUnitType = 77 // line (re. mem. line)
 	SensorUnitType_Hit                SensorUnitType = 78 // hit, 命中
-	SensorUnitType_Miss               SensorUnitType = 79 // miss, 未击中, 未命中
+	SensorUnitType_Miss               SensorUnitType = 79 // miss, 未击中，未命中
 	SensorUnitType_Retry              SensorUnitType = 80 // retry, 重试（次数）
 	SensorUnitType_Reset              SensorUnitType = 81 // reset, 重置（次数）
-	SensorUnitType_Overrun            SensorUnitType = 82 // overrun) / overflow 满载, 溢出（次数）
+	SensorUnitType_Overrun            SensorUnitType = 82 // overrun) / overflow 满载，溢出（次数）
 	SensorUnitType_Underrun           SensorUnitType = 83 // underrun 欠载
 	SensorUnitType_Collision          SensorUnitType = 84 // collision, 冲突
-	SensorUnitType_Packet             SensorUnitType = 85 // packets, 包, 数据包
+	SensorUnitType_Packet             SensorUnitType = 85 // packets, 包，数据包
 	SensorUnitType_Message            SensorUnitType = 86 // messages, 消息
 	SensorUnitType_Characters         SensorUnitType = 87 // characters, 字符
 	SensorUnitType_Error              SensorUnitType = 88 // error, 错误
 	SensorUnitType_CorrectableError   SensorUnitType = 89 // correctable error 可校正错误
 	SensorUnitType_UncorrectableError SensorUnitType = 90 // uncorrectable error 不可校正错误
-	SensorUnitType_FatalError         SensorUnitType = 91 // fatal error, 致命错误, 不可恢复的错误
-	SensorUnitType_Grams              SensorUnitType = 92 // grams, 克（gram的复数形式）
+	SensorUnitType_FatalError         SensorUnitType = 91 // fatal error, 致命错误，不可恢复的错误
+	SensorUnitType_Grams              SensorUnitType = 92 // grams, 克（gram 的复数形式）
 )
 
 func (u SensorUnitType) String() string {
@@ -968,44 +969,49 @@ func (s *Sensor) String() string {
 		fmt.Sprintf(" Sensor Human String  : %s\n", s.HumanStr())
 }
 
+func sensorToRow(sensor *Sensor, options ...any) map[string]string {
+	discreteEvents := ""
+	if sensor.IsThreshold() {
+		discreteEvents = "N/A"
+	} else {
+		discreteEvents = fmt.Sprintf("%v", sensor.DiscreteActiveEvents())
+	}
+
+	return map[string]string{
+		"SDRType":          sensor.SDRRecordType.String(),
+		"SensorNumber":     fmt.Sprintf("%#02x", sensor.Number),
+		"SensorName":       sensor.Name,
+		"SensorType":       fmt.Sprintf("%s (%#02x)", sensor.SensorType.String(), uint8(sensor.SensorType)),
+		"Reading":          sensor.ReadingStr(),
+		"Unit":             sensor.SensorUnit.String(),
+		"Status":           sensor.Status(),
+		"LNR":              sensor.ThresholdStr(SensorThresholdType_LNR),
+		"LCR":              sensor.ThresholdStr(SensorThresholdType_LCR),
+		"LNC":              sensor.ThresholdStr(SensorThresholdType_LNC),
+		"UNC":              sensor.ThresholdStr(SensorThresholdType_UNC),
+		"UCR":              sensor.ThresholdStr(SensorThresholdType_UCR),
+		"UNR":              sensor.ThresholdStr(SensorThresholdType_UNR),
+		"EntityID":         fmt.Sprintf("%s (%#02x)", sensor.EntityID, uint8(sensor.EntityID)),
+		"EventReadingType": fmt.Sprintf("%s (%#02x)", sensor.EventReadingType.String(), uint8(sensor.EventReadingType)),
+		"AnalogDataFormat": sensor.SensorUnit.AnalogDataFormat.String(),
+		"ReadV":            fmt.Sprintf("%v", sensor.IsReadingValid()),
+		"ScanD":            fmt.Sprintf("%v", sensor.scanningDisabled),
+		"ReadU":            fmt.Sprintf("%v", !sensor.readingAvailable),
+		"HasAR":            fmt.Sprintf("%v", sensor.HasAnalogReading),
+		"DiscreteEvents":   discreteEvents,
+		"HumanStr":         sensor.HumanStr(),
+	}
+}
+
 // FormatSensors return a string of table printed for sensors
 func FormatSensors(extended bool, sensors ...*Sensor) string {
 	rows := make([]map[string]string, len(sensors))
 
 	for i, sensor := range sensors {
-		discreteEvents := ""
-		if sensor.IsThreshold() {
-			discreteEvents = "N/A"
-		} else {
-			discreteEvents = fmt.Sprintf("%v", sensor.DiscreteActiveEvents())
+		if sensor != nil {
+			row := sensorToRow(sensor)
+			rows[i] = row
 		}
-
-		row := map[string]string{
-			"SDRType":          sensor.SDRRecordType.String(),
-			"SensorNumber":     fmt.Sprintf("%#02x", sensor.Number),
-			"SensorName":       sensor.Name,
-			"SensorType":       fmt.Sprintf("%s (%#02x)", sensor.SensorType.String(), uint8(sensor.SensorType)),
-			"Reading":          sensor.ReadingStr(),
-			"Unit":             sensor.SensorUnit.String(),
-			"Status":           sensor.Status(),
-			"LNR":              sensor.ThresholdStr(SensorThresholdType_LNR),
-			"LCR":              sensor.ThresholdStr(SensorThresholdType_LCR),
-			"LNC":              sensor.ThresholdStr(SensorThresholdType_LNC),
-			"UNC":              sensor.ThresholdStr(SensorThresholdType_UNC),
-			"UCR":              sensor.ThresholdStr(SensorThresholdType_UCR),
-			"UNR":              sensor.ThresholdStr(SensorThresholdType_UNR),
-			"EntityID":         fmt.Sprintf("%s (%#02x)", sensor.EntityID, uint8(sensor.EntityID)),
-			"EventReadingType": fmt.Sprintf("%s (%#02x)", sensor.EventReadingType.String(), uint8(sensor.EventReadingType)),
-			"AnalogDataFormat": sensor.SensorUnit.AnalogDataFormat.String(),
-			"ReadV":            fmt.Sprintf("%v", sensor.IsReadingValid()),
-			"ScanD":            fmt.Sprintf("%v", sensor.scanningDisabled),
-			"ReadU":            fmt.Sprintf("%v", !sensor.readingAvailable),
-			"HasAR":            fmt.Sprintf("%v", sensor.HasAnalogReading),
-			"DiscreteEvents":   discreteEvents,
-			"HumanStr":         sensor.HumanStr(),
-		}
-
-		rows[i] = row
 	}
 
 	headers := []string{
@@ -1039,6 +1045,38 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 	}
 
 	return RenderTable(headers, rows)
+}
+
+func FormatSensorsStream(extended bool, seq iter.Seq[*Result[Sensor]]) error {
+	// Add extra "-" prefix and suffix to certain column headers to widen them
+	// for better readability in stream table output. This ensures columns with
+	// longer content (e.g., SensorName, SensorType, threshold values) have
+	// adequate width for proper alignment.
+
+	headers := []string{
+		"SDRType",
+		"SensorNumber",
+		"--- SensorName ---",
+		"---- SensorType ----",
+		"Reading",
+		"Unit",
+		"Status",
+	}
+	if extended {
+		headers = append(headers, []string{
+			"--- EntityID ---",
+			"--- EventReadingType ---",
+			"AnalogDataFormat",
+			"ReadV",
+			"ScanD",
+			"ReadU",
+			"HasAR",
+			"DiscreteEvents",
+			"--------- HumanStr ---------",
+		}...)
+	}
+
+	return formatStream(seq, headers, sensorToRow)
 }
 
 // IsThreshold returns whether the sensor is threshold sensor class or not.

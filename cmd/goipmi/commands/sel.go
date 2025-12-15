@@ -25,8 +25,6 @@ func NewCmdSEL() *cobra.Command {
 	cmd.AddCommand(NewCmdSELInfo())
 	cmd.AddCommand(NewCmdSELGet())
 	cmd.AddCommand(NewCmdSELList())
-	cmd.AddCommand(NewCmdSELElist())
-
 	return cmd
 }
 
@@ -44,7 +42,7 @@ func NewCmdSELInfo() *cobra.Command {
 
 			selAllocInfo, err := client.GetSELAllocInfo(ctx)
 			if err != nil {
-				CheckErr(fmt.Errorf("GetSELInfo failed, err: %w", err))
+				CheckErr(fmt.Errorf("GetSELAllocInfo failed, err: %w", err))
 			}
 			fmt.Println(selAllocInfo.Format())
 		},
@@ -83,40 +81,41 @@ func NewCmdSELGet() *cobra.Command {
 }
 
 func NewCmdSELList() *cobra.Command {
+	var extended bool
+	var streamMode bool
+
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "list",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
-			selEntries, err := client.GetSELEntries(ctx, 0)
-			if err != nil {
-				CheckErr(fmt.Errorf("GetSELInfo failed, err: %w", err))
+
+			var sdrsMap ipmi.SDRMapBySensorNumber
+			var err error
+			if extended {
+				sdrsMap, err = client.GetSDRsMap(ctx)
+				if err != nil {
+					CheckErr(fmt.Errorf("GetSDRsMap failed, err: %w", err))
+				}
 			}
 
-			fmt.Println(ipmi.FormatSELs(selEntries, nil))
+			if streamMode {
+				selEntries := client.GetSELEntriesStream(ctx, 0)
+				if err := ipmi.FormatSELsStream(selEntries, sdrsMap); err != nil {
+					CheckErr(fmt.Errorf("FormatSELsStream failed, err: %w", err))
+				}
+			} else {
+				selEntries, err := client.GetSELEntries(ctx, 0)
+				if err != nil {
+					CheckErr(fmt.Errorf("GetSELEntries failed, err: %w", err))
+				}
+				fmt.Println(ipmi.FormatSELs(selEntries, sdrsMap))
+			}
 		},
 	}
-	return cmd
-}
 
-func NewCmdSELElist() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "elist",
-		Short: "elist",
-		Run: func(cmd *cobra.Command, args []string) {
-			ctx := context.Background()
-			sdrsMap, err := client.GetSDRsMap(ctx)
-			if err != nil {
-				CheckErr(fmt.Errorf("GetSDRsMap failed, err: %w", err))
-			}
+	cmd.Flags().BoolVarP(&extended, "extended", "e", false, "extended mode")
+	cmd.Flags().BoolVarP(&streamMode, "stream", "", false, "Enable stream mode output")
 
-			selEntries, err := client.GetSELEntries(ctx, 0)
-			if err != nil {
-				CheckErr(fmt.Errorf("GetSELInfo failed, err: %w", err))
-			}
-
-			fmt.Println(ipmi.FormatSELs(selEntries, sdrsMap))
-		},
-	}
 	return cmd
 }

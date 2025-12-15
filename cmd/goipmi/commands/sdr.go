@@ -166,19 +166,21 @@ Sensor Types:
 }
 
 func NewCmdSDRList() *cobra.Command {
+	var streamMode bool
+
 	usage := `sdr list <all|full|compact|event|mcloc|fru|generic>`
 	cmd := &cobra.Command{
-		Use:   "list",
+		Use:   "list [all|full|compact|event|mcloc|fru|generic]",
 		Short: "list",
 		Run: func(cmd *cobra.Command, args []string) {
 			recordTypes := []ipmi.SDRRecordType{}
+
+			isFRU := false
 
 			// default only get Full and Compact SDR
 			if len(args) == 0 {
 				recordTypes = append(recordTypes, ipmi.SDRRecordTypeFullSensor, ipmi.SDRRecordTypeCompactSensor)
 			}
-
-			ctx := context.Background()
 
 			if len(args) >= 1 {
 				switch args[0] {
@@ -194,14 +196,7 @@ func NewCmdSDRList() *cobra.Command {
 					recordTypes = append(recordTypes, ipmi.SDRRecordTypeManagementControllerDeviceLocator)
 				case "fru":
 					recordTypes = append(recordTypes, ipmi.SDRRecordTypeFRUDeviceLocator)
-					sdrs, err := client.GetSDRs(ctx, recordTypes...)
-					if err != nil {
-						CheckErr(fmt.Errorf("GetSDRs failed, err: %w", err))
-					}
-
-					fmt.Println(ipmi.FormatSDRs_FRU(sdrs))
-					return
-
+					isFRU = true
 				case "generic":
 					recordTypes = append(recordTypes, ipmi.SDRRecordTypeGenericLocator)
 				default:
@@ -210,14 +205,34 @@ func NewCmdSDRList() *cobra.Command {
 				}
 			}
 
-			sdrs, err := client.GetSDRs(ctx, recordTypes...)
-			if err != nil {
-				CheckErr(fmt.Errorf("GetSDRs failed, err: %w", err))
-			}
+			ctx := context.Background()
 
-			fmt.Println(ipmi.FormatSDRs(sdrs))
+			if streamMode {
+				sdrs := client.GetSDRsStream(ctx, recordTypes...)
+				if isFRU {
+					if err := ipmi.FormatSDRsStream_FRU(sdrs); err != nil {
+						CheckErr(fmt.Errorf("FormatSDRsStream_FRU failed, err: %w", err))
+					}
+				} else {
+					if err := ipmi.FormatSDRsStream(sdrs); err != nil {
+						CheckErr(fmt.Errorf("FormatSDRsStream failed, err: %w", err))
+					}
+				}
+			} else {
+				sdrs, err := client.GetSDRs(ctx, recordTypes...)
+				if err != nil {
+					CheckErr(fmt.Errorf("GetSDRs failed, err: %w", err))
+				}
+				if isFRU {
+					fmt.Println(ipmi.FormatSDRs_FRU(sdrs))
+				} else {
+					fmt.Println(ipmi.FormatSDRs(sdrs))
+				}
+			}
 		},
 	}
+
+	cmd.Flags().BoolVarP(&streamMode, "stream", "", false, "Enable stream mode output")
 
 	return cmd
 }

@@ -3,6 +3,7 @@ package ipmi
 import (
 	"context"
 	"fmt"
+	"iter"
 	"strings"
 )
 
@@ -115,6 +116,101 @@ func (c *Client) GetSensorsAny(ctx context.Context, filterOptions ...SensorFilte
 	}
 
 	return out, nil
+}
+
+// GetSensorsStream behaves like GetSensors, but returns an iterator of sensors instead of a slice.
+func (c *Client) GetSensorsStream(ctx context.Context, filterOptions ...SensorFilterOption) iter.Seq[*Result[Sensor]] {
+	return func(yield func(*Result[Sensor]) bool) {
+		sdrs := c.GetSDRsStream(ctx, SDRRecordTypeFullSensor, SDRRecordTypeCompactSensor)
+
+		for result := range sdrs {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				if result == nil {
+					continue
+				}
+
+				if result.Err != nil {
+					yield(&Result[Sensor]{Err: result.Err})
+					return
+				}
+
+				sdr := result.Ok
+				if sdr == nil {
+					continue
+				}
+
+				sensor, err := c.sdrToSensor(ctx, sdr)
+				if err != nil {
+					yield(&Result[Sensor]{Err: fmt.Errorf("sdrToSensor failed, err: %w", err)})
+					return
+				}
+
+				var choose bool = true
+				for _, filterOption := range filterOptions {
+					if !filterOption(sensor) {
+						choose = false
+						break
+					}
+				}
+
+				if choose {
+					if !yield(&Result[Sensor]{Ok: sensor}) {
+						return
+					}
+				}
+			}
+		}
+	}
+}
+
+// GetSensorsAnyStream behaves like GetSensorsAny, but returns an iterator of sensors instead of a slice.
+func (c *Client) GetSensorsAnyStream(ctx context.Context, filterOptions ...SensorFilterOption) iter.Seq[*Result[Sensor]] {
+	return func(yield func(*Result[Sensor]) bool) {
+		sdrs := c.GetSDRsStream(ctx, SDRRecordTypeFullSensor, SDRRecordTypeCompactSensor)
+		for result := range sdrs {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				if result == nil {
+					continue
+				}
+
+				if result.Err != nil {
+					yield(&Result[Sensor]{Err: result.Err})
+					return
+				}
+
+				sdr := result.Ok
+				if sdr == nil {
+					continue
+				}
+
+				sensor, err := c.sdrToSensor(ctx, sdr)
+				if err != nil {
+					yield(&Result[Sensor]{Err: fmt.Errorf("sdrToSensor failed, err: %w", err)})
+					return
+				}
+
+				var choose bool = false
+				for _, filterOption := range filterOptions {
+					if filterOption(sensor) {
+						choose = true
+						break
+					}
+				}
+
+				if choose {
+					if !yield(&Result[Sensor]{Ok: sensor}) {
+						return
+					}
+				}
+			}
+		}
+	}
 }
 
 // GetSensorByID returns the sensor with current reading and status by specified sensor number.

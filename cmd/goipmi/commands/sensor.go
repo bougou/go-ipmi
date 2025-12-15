@@ -51,6 +51,7 @@ func NewCmdSensorDeviceSDRInfo() *cobra.Command {
 }
 
 func NewCmdSensorList() *cobra.Command {
+	var streamMode bool
 	var extended bool
 	var filterThreshold bool
 	var filterReadingValid bool
@@ -70,18 +71,27 @@ func NewCmdSensorList() *cobra.Command {
 			}
 
 			ctx := context.Background()
-			sensors, err := client.GetSensors(ctx, filterOptions...)
-			if err != nil {
-				CheckErr(fmt.Errorf("GetSensors failed, err: %w", err))
+
+			if streamMode {
+				sensors := client.GetSensorsStream(ctx, filterOptions...)
+				if err := ipmi.FormatSensorsStream(extended, sensors); err != nil {
+					CheckErr(fmt.Errorf("FormatSensorsStream failed, err: %w", err))
+				}
+			} else {
+				sensors, err := client.GetSensors(ctx, filterOptions...)
+				if err != nil {
+					CheckErr(fmt.Errorf("GetSensors failed, err: %w", err))
+				}
+				fmt.Println(ipmi.FormatSensors(extended, sensors...))
 			}
 
-			fmt.Println(ipmi.FormatSensors(extended, sensors...))
 		},
 	}
 
 	cmd.PersistentFlags().BoolVarP(&extended, "extended", "", false, "extended print")
 	cmd.PersistentFlags().BoolVarP(&filterThreshold, "threshold", "", false, "filter threshold sensor class")
 	cmd.PersistentFlags().BoolVarP(&filterReadingValid, "valid", "", false, "filter sensor that has valid reading")
+	cmd.PersistentFlags().BoolVarP(&streamMode, "stream", "", false, "Enable stream mode output")
 
 	return cmd
 }

@@ -77,14 +77,13 @@ while others are not. For example, `ipmitool sdr list` involves a loop of `GetSD
 
 This library also implements some helper methods that are not IPMI commands defined
 in the IPMI specification, but are common utilities, like `GetSDRs` to get all SDRs.
-These methods are marked with an asterisk (*) after the method name in the following documentation.
+These methods are marked with an asterisk (\*) after the method name in the following documentation.
 
 The implementation logic of IPMI commands is largely consistent. See [Contributing](./CONTRIBUTING.md)
 
 > More commands are in development...
 
 ### IPM Device Global Commands
-
 
 | Method                             | Status             | corresponding ipmitool usage  |
 | ---------------------------------- | ------------------ | ----------------------------- |
@@ -130,12 +129,12 @@ The implementation logic of IPMI commands is largely consistent. See [Contributi
 | GetBTInterfaceCapabilities     | :white_check_mark: |                              |
 | GetSystemGUID                  | :white_check_mark: | mc guid                      |
 | SetSystemInfoParam             | :white_check_mark: |                              |
-| SetSystemInfoParamFor (*)      | :white_check_mark: |                              |
+| SetSystemInfoParamFor (\*)     | :white_check_mark: |                              |
 | GetSystemInfoParam             | :white_check_mark: |                              |
-| GetSystemInfoParamFor (*)      | :white_check_mark: |                              |
-| GetSystemInfoParams (*)        | :white_check_mark: |                              |
-| GetSystemInfoParamsFor (*)     | :white_check_mark: |                              |
-| GetSystemInfo (*)              | :white_check_mark: |                              |
+| GetSystemInfoParamFor (\*)     | :white_check_mark: |                              |
+| GetSystemInfoParams (\*)       | :white_check_mark: |                              |
+| GetSystemInfoParamsFor (\*)    | :white_check_mark: |                              |
+| GetSystemInfo (\*)             | :white_check_mark: |                              |
 | GetChannelAuthCapabilities     | :white_check_mark: |                              |
 | GetSessionChallenge            | :white_check_mark: |                              |
 | ActivateSession                | :white_check_mark: |                              |
@@ -148,13 +147,13 @@ The implementation logic of IPMI commands is largely consistent. See [Contributi
 | GetChannelInfo                 | :white_check_mark: | channel info                 |
 | SetUserAccess                  | :white_check_mark: |                              |
 | GetUserAccess                  | :white_check_mark: | user summary                 |
-| GetUsers (*)                   | :white_check_mark: | user list                    |
+| GetUsers (\*)                  | :white_check_mark: | user list                    |
 | SetUsername                    | :white_check_mark: | user set name                |
-| DisableUser (*)                | :white_check_mark: | user disable                 |
-| EnableUser (*)                 | :white_check_mark: | user enable                  |
+| DisableUser (\*)               | :white_check_mark: | user disable                 |
+| EnableUser (\*)                | :white_check_mark: | user enable                  |
 | GetUsername                    | :white_check_mark: |
 | SetUserPassword                | :white_check_mark: | user set password            |
-| TestUserPassword (*)           | :white_check_mark: | user test                    |
+| TestUserPassword (\*)          | :white_check_mark: | user test                    |
 | ActivatePayload                | :white_check_mark: |                              |
 | DeactivatePayload              | :white_check_mark: |                              |
 | GetPayloadActivationStatus     | :white_check_mark: |                              |
@@ -172,26 +171,26 @@ The implementation logic of IPMI commands is largely consistent. See [Contributi
 
 ### Chassis Device Commands
 
-| Method                            | Status             | corresponding ipmitool usage                      |
-| --------------------------------- | ------------------ | ------------------------------------------------- |
-| GetChassisCapabilities            | :white_check_mark: |                                                   |
-| GetChassisStatus                  | :white_check_mark: | chassis status, chassis power status              |
-| ChassisControl                    | :white_check_mark: | chassis power on/off/cycle/reset/diag/soft        |
-| ChassisReset                      | :white_check_mark: |                                                   |
-| ChassisIdentify                   | :white_check_mark: | chassis identify                                  |
-| SetChassisCapabilities            | :white_check_mark: |                                                   |
-| SetPowerRestorePolicy             | :white_check_mark: | chassis policy list/always-on/previous/always-off |
-| GetSystemRestartCause             | :white_check_mark: | chassis restart_cause                             |
-| SetBootParamBootFlags (*)         | :white_check_mark: | chassis bootdev                                   |
-| SetBootDevice (*)                 | :white_check_mark: | chassis bootdev                                   |
-| SetSystemBootOptionsParam         | :white_check_mark: | chassis bootparam set                             |
-| GetSystemBootOptionsParam         | :white_check_mark: | chassis bootparam get                             |
-| GetSystemBootOptionsParamFor (*)  | :white_check_mark: | chassis bootparam get                             |
-| GetSystemBootOptionsParams (*)    | :white_check_mark: | chassis bootparam get                             |
-| GetSystemBootOptionsParamsFor (*) | :white_check_mark: | chassis bootparam get                             |
-| SetFrontPanelEnables              | :white_check_mark: |                                                   |
-| SetPowerCycleInterval             | :white_check_mark: |                                                   |
-| GetPOHCounter                     | :white_check_mark: | chassis poh                                       |
+| Method                             | Status             | corresponding ipmitool usage                      |
+| ---------------------------------- | ------------------ | ------------------------------------------------- |
+| GetChassisCapabilities             | :white_check_mark: |                                                   |
+| GetChassisStatus                   | :white_check_mark: | chassis status, chassis power status              |
+| ChassisControl                     | :white_check_mark: | chassis power on/off/cycle/reset/diag/soft        |
+| ChassisReset                       | :white_check_mark: |                                                   |
+| ChassisIdentify                    | :white_check_mark: | chassis identify                                  |
+| SetChassisCapabilities             | :white_check_mark: |                                                   |
+| SetPowerRestorePolicy              | :white_check_mark: | chassis policy list/always-on/previous/always-off |
+| GetSystemRestartCause              | :white_check_mark: | chassis restart_cause                             |
+| SetBootParamBootFlags (\*)         | :white_check_mark: | chassis bootdev                                   |
+| SetBootDevice (\*)                 | :white_check_mark: | chassis bootdev                                   |
+| SetSystemBootOptionsParam          | :white_check_mark: | chassis bootparam set                             |
+| GetSystemBootOptionsParam          | :white_check_mark: | chassis bootparam get                             |
+| GetSystemBootOptionsParamFor (\*)  | :white_check_mark: | chassis bootparam get                             |
+| GetSystemBootOptionsParams (\*)    | :white_check_mark: | chassis bootparam get                             |
+| GetSystemBootOptionsParamsFor (\*) | :white_check_mark: | chassis bootparam get                             |
+| SetFrontPanelEnables               | :white_check_mark: |                                                   |
+| SetPowerCycleInterval              | :white_check_mark: |                                                   |
+| GetPOHCounter                      | :white_check_mark: | chassis poh                                       |
 
 ### Event Commands
 
@@ -203,19 +202,19 @@ The implementation logic of IPMI commands is largely consistent. See [Contributi
 
 ### PEF and Alerting Commands
 
-| Method                    | Status             | corresponding ipmitool usage |
-| ------------------------- | ------------------ | ---------------------------- |
-| GetPEFCapabilities        | :white_check_mark: | pef capabilities             |
-| ArmPEFPostponeTimer       | :white_check_mark: |                              |
-| SetPEFConfigParam         | :white_check_mark: |                              |
-| GetPEFConfigParam         | :white_check_mark: |                              |
-| GetPEFConfigParamFor (*)  | :white_check_mark: |                              |
-| GetPEFConfigParams (*)    | :white_check_mark: |                              |
-| GetPEFConfigParamsFor (*) | :white_check_mark: |                              |
-| SetLastProcessedEventId   | :white_check_mark: |                              |
-| GetLastProcessedEventId   | :white_check_mark: |                              |
-| AlertImmediate            | :white_check_mark: |                              |
-| PETAcknowledge            | :white_check_mark: |                              |
+| Method                     | Status             | corresponding ipmitool usage |
+| -------------------------- | ------------------ | ---------------------------- |
+| GetPEFCapabilities         | :white_check_mark: | pef capabilities             |
+| ArmPEFPostponeTimer        | :white_check_mark: |                              |
+| SetPEFConfigParam          | :white_check_mark: |                              |
+| GetPEFConfigParam          | :white_check_mark: |                              |
+| GetPEFConfigParamFor (\*)  | :white_check_mark: |                              |
+| GetPEFConfigParams (\*)    | :white_check_mark: |                              |
+| GetPEFConfigParamsFor (\*) | :white_check_mark: |                              |
+| SetLastProcessedEventId    | :white_check_mark: |                              |
+| GetLastProcessedEventId    | :white_check_mark: |                              |
+| AlertImmediate             | :white_check_mark: |                              |
+| PETAcknowledge             | :white_check_mark: |                              |
 
 ### Sensor Device Commands
 
@@ -237,9 +236,12 @@ The implementation logic of IPMI commands is largely consistent. See [Contributi
 | SetSensorType                  | :white_check_mark: |                              |
 | GetSensorType                  | :white_check_mark: |                              |
 | SetSensorReadingAndEventStatus | :white_check_mark: |                              |
-| GetSensors (*)                 | :white_check_mark: | sensor list, sdr type        |
-| GetSensorByID (*)              | :white_check_mark: |                              |
-| GetSensorByName (*)            | :white_check_mark: | sensor get                   |
+| GetSensors (\*)                | :white_check_mark: | sensor list                  |
+| GetSensorsAny (\*)             | :white_check_mark: | sensor list                  |
+| GetSensorsStream (\*)          | :white_check_mark: | sensor list                  |
+| GetSensorsAnyStream (\*)       | :white_check_mark: | sensor list                  |
+| GetSensorByID (\*)             | :white_check_mark: |                              |
+| GetSensorByName (\*)           | :white_check_mark: | sensor get                   |
 
 ### FRU Device Commands
 
@@ -248,30 +250,30 @@ The implementation logic of IPMI commands is largely consistent. See [Contributi
 | GetFRUInventoryAreaInfo | :white_check_mark: |                              |
 | ReadFRUData             | :white_check_mark: |                              |
 | WriteFRUData            | :white_check_mark: |                              |
-| GetFRU (*)              | :white_check_mark: | fru print                    |
-| GetFRUs (*)             | :white_check_mark: | fru print                    |
-
+| GetFRU (\*)             | :white_check_mark: | fru print                    |
+| GetFRUs (\*)            | :white_check_mark: | fru print                    |
 
 ### SDR Device Commands
 
-| Method                 | Status             | corresponding ipmitool usage |
-| ---------------------- | ------------------ | ---------------------------- |
-| GetSDRRepoInfo         | :white_check_mark: | sdr info                     |
-| GetSDRRepoAllocInfo    | :white_check_mark: | sdr info                     |
-| ReserveSDRRepo         |                    |                              |
-| GetSDR                 | :white_check_mark: |                              |
-| GetSDRs (*)            | :white_check_mark: |                              |
-| GetSDRBySensorID (*)   | :white_check_mark: |                              |
-| GetSDRBySensorName (*) | :white_check_mark: |                              |
-| AddSDR                 |                    |                              |
-| PartialAddSDR          |                    |                              |
-| DeleteSDR              |                    |                              |
-| ClearSDRRepo           |                    |                              |
-| GetSDRRepoTime         |                    |                              |
-| SetSDRRepoTime         |                    |                              |
-| EnterSDRRepoUpdateMode |                    |                              |
-| ExitSDRRepoUpdateMode  |                    |                              |
-| RunInitializationAgent |                    |                              |
+| Method                  | Status             | corresponding ipmitool usage |
+| ----------------------- | ------------------ | ---------------------------- |
+| GetSDRRepoInfo          | :white_check_mark: | sdr info                     |
+| GetSDRRepoAllocInfo     | :white_check_mark: | sdr info                     |
+| ReserveSDRRepo          |                    |                              |
+| GetSDR                  | :white_check_mark: |                              |
+| GetSDRs (\*)            | :white_check_mark: |                              |
+| GetSDRsStream (\*)      | :white_check_mark: |                              |
+| GetSDRBySensorID (\*)   | :white_check_mark: |                              |
+| GetSDRBySensorName (\*) | :white_check_mark: |                              |
+| AddSDR                  |                    |                              |
+| PartialAddSDR           |                    |                              |
+| DeleteSDR               |                    |                              |
+| ClearSDRRepo            |                    |                              |
+| GetSDRRepoTime          |                    |                              |
+| SetSDRRepoTime          |                    |                              |
+| EnterSDRRepoUpdateMode  |                    |                              |
+| ExitSDRRepoUpdateMode   |                    |                              |
+| RunInitializationAgent  |                    |                              |
 
 ### SEL Device Commands
 
@@ -281,6 +283,8 @@ The implementation logic of IPMI commands is largely consistent. See [Contributi
 | GetSELAllocInfo     | :white_check_mark: | sel info                     |
 | ReserveSEL          | :white_check_mark: |                              |
 | GetSELEntry         | :white_check_mark: |                              |
+| GetSELEntries       | :white_check_mark: | sel list                     |
+| GetSELEntriesStream | :white_check_mark: | sel list                     |
 | AddSELEntry         | :white_check_mark: |                              |
 | PartialAddSELEntry  |                    |                              |
 | DeleteSELEntry      | :white_check_mark: |                              |
@@ -294,42 +298,42 @@ The implementation logic of IPMI commands is largely consistent. See [Contributi
 
 ### LAN Device Commands
 
-| Method                    | Status             | corresponding ipmitool usage |
-| ------------------------- | ------------------ | ---------------------------- |
-| SetLanConfigParam         | :white_check_mark: | lan set                      |
-| SetLanConfigParamFor (*)  | :white_check_mark: | lan set                      |
-| GetLanConfigParam         | :white_check_mark: |                              |
-| GetLanConfigParamFor (*)  | :white_check_mark: | lan print                    |
-| GetLanConfigParams (*)    | :white_check_mark: | lan print                    |
-| GetLanConfigParamsFor (*) | :white_check_mark: | lan print                    |
-| GetLanConfig (*)          | :white_check_mark: | lan print                    |
-| SuspendARPs               | :white_check_mark: |                              |
-| GetIPStatistics           | :white_check_mark: |                              |
+| Method                     | Status             | corresponding ipmitool usage |
+| -------------------------- | ------------------ | ---------------------------- |
+| SetLanConfigParam          | :white_check_mark: | lan set                      |
+| SetLanConfigParamFor (\*)  | :white_check_mark: | lan set                      |
+| GetLanConfigParam          | :white_check_mark: |                              |
+| GetLanConfigParamFor (\*)  | :white_check_mark: | lan print                    |
+| GetLanConfigParams (\*)    | :white_check_mark: | lan print                    |
+| GetLanConfigParamsFor (\*) | :white_check_mark: | lan print                    |
+| GetLanConfig (\*)          | :white_check_mark: | lan print                    |
+| SuspendARPs                | :white_check_mark: |                              |
+| GetIPStatistics            | :white_check_mark: |                              |
 
 ### Serial/Modem Device Commands
 
-| Method                    | Status             | corresponding ipmitool usage |
-| ------------------------- | ------------------ | ---------------------------- |
-| SetSerialConfig           |                    |                              |
-| GetSerialConfig           |                    |                              |
-| SetSerialMux              |                    |                              |
-| GetTapResponseCodes       |                    |                              |
-| SetPPPTransmitData        |                    |                              |
-| GetPPPTransmitData        |                    |                              |
-| SendPPPPacket             |                    |                              |
-| GetPPPReceiveData         |                    |                              |
-| SerialConnectionActive    |                    |                              |
-| Callback                  |                    |                              |
-| SetUserCallbackOptions    |                    |                              |
-| GetUserCallbackOptions    |                    |                              |
-| SetSerialRoutingMux       |                    |                              |
-| SOLActivating             | :white_check_mark: |                              |
-| SetSOLConfigParam         | :white_check_mark: |                              |
-| SetSOLConfigParamFor (*)  | :white_check_mark: |                              |
-| GetSOLConfigParam         | :white_check_mark: |                              |
-| GetSOLConfigParamFor (*)  | :white_check_mark: |                              |
-| GetSOLConfigParams (*)    | :white_check_mark: | sol info                     |
-| GetSOLConfigParamsFor (*) | :white_check_mark: | sol info                     |
+| Method                     | Status             | corresponding ipmitool usage |
+| -------------------------- | ------------------ | ---------------------------- |
+| SetSerialConfig            |                    |                              |
+| GetSerialConfig            |                    |                              |
+| SetSerialMux               |                    |                              |
+| GetTapResponseCodes        |                    |                              |
+| SetPPPTransmitData         |                    |                              |
+| GetPPPTransmitData         |                    |                              |
+| SendPPPPacket              |                    |                              |
+| GetPPPReceiveData          |                    |                              |
+| SerialConnectionActive     |                    |                              |
+| Callback                   |                    |                              |
+| SetUserCallbackOptions     |                    |                              |
+| GetUserCallbackOptions     |                    |                              |
+| SetSerialRoutingMux        |                    |                              |
+| SOLActivating              | :white_check_mark: |                              |
+| SetSOLConfigParam          | :white_check_mark: |                              |
+| SetSOLConfigParamFor (\*)  | :white_check_mark: |                              |
+| GetSOLConfigParam          | :white_check_mark: |                              |
+| GetSOLConfigParamFor (\*)  | :white_check_mark: |                              |
+| GetSOLConfigParams (\*)    | :white_check_mark: | sol info                     |
+| GetSOLConfigParamsFor (\*) | :white_check_mark: | sol info                     |
 
 ### Command Forwarding Commands
 
@@ -385,7 +389,6 @@ The implementation logic of IPMI commands is largely consistent. See [Contributi
 | GetEventDestination    |        |                              |
 | GetEventReceptionState |        |                              |
 
-
 ### Other Bridge Commands
 
 | Method      | Status | corresponding ipmitool usage |
@@ -397,15 +400,15 @@ The implementation logic of IPMI commands is largely consistent. See [Contributi
 | Method                          | Status             | corresponding ipmitool usage |
 | ------------------------------- | ------------------ | ---------------------------- |
 | GetDCMICapParam                 | :white_check_mark: | dcmi discovery               |
-| GetDCMICapParamFor (*)          | :white_check_mark: | dcmi discovery               |
-| GetDCMICapParams (*)            | :white_check_mark: | dcmi discovery               |
-| GetDCMICapParamsFor (*)         | :white_check_mark: | dcmi discovery               |
+| GetDCMICapParamFor (\*)         | :white_check_mark: | dcmi discovery               |
+| GetDCMICapParams (\*)           | :white_check_mark: | dcmi discovery               |
+| GetDCMICapParamsFor (\*)        | :white_check_mark: | dcmi discovery               |
 | GetDCMIPowerReading             | :white_check_mark: | dcmi power reading           |
 | GetDCMIPowerLimit               | :white_check_mark: | dcmi power get_limit         |
 | SetDCMIPowerLimit               | :white_check_mark: | dcmi power set_limit         |
 | ActivateDCMIPowerLimit          | :white_check_mark: | dcmi activate/deactivate     |
 | GetDCMIAssetTag                 | :white_check_mark: | dcmi asset_tag               |
-| GetDCMIAssetTagFull (*)         | :white_check_mark: | dcmi asset_tag               |
+| GetDCMIAssetTagFull (\*)        | :white_check_mark: | dcmi asset_tag               |
 | GetDCMISensorInfo               | :white_check_mark: | dcmi sensors                 |
 | SetDCMIAssetTag                 | :white_check_mark: | dcmi set_asset_tag           |
 | GetDCMIMgmtControllerIdentifier | :white_check_mark: | dcmi get_mc_id_string        |
@@ -415,9 +418,9 @@ The implementation logic of IPMI commands is largely consistent. See [Contributi
 | GetDCMITemperatureReadings      | :white_check_mark: | dcmi get_temp_reading        |
 | SetDCMIConfigParam              | :white_check_mark: | dcmi set_conf_param          |
 | GetDCMIConfigParam              | :white_check_mark: | dcmi get_conf_param          |
-| GetDCMIConfigParamFor (*)       | :white_check_mark: | dcmi get_conf_param          |
-| GetDCMIConfigParams (*)         | :white_check_mark: | dcmi get_conf_param          |
-| GetDCMIConfigParamsFor (*)      | :white_check_mark: | dcmi get_conf_param          |
+| GetDCMIConfigParamFor (\*)      | :white_check_mark: | dcmi get_conf_param          |
+| GetDCMIConfigParams (\*)        | :white_check_mark: | dcmi get_conf_param          |
+| GetDCMIConfigParamsFor (\*)     | :white_check_mark: | dcmi get_conf_param          |
 
 ## Reference
 

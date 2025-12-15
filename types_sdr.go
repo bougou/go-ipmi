@@ -3,6 +3,7 @@ package ipmi
 import (
 	"context"
 	"fmt"
+	"iter"
 )
 
 const SDRRecordHeaderSize int = 5
@@ -228,44 +229,47 @@ func ParseSDR(data []byte, nextRecordID uint16) (*SDR, error) {
 	return sdr, nil
 }
 
+func sdrFRUToRow(sdr *SDR, options ...any) map[string]string {
+	row := map[string]string{}
+	if sdr == nil || sdr.RecordHeader == nil {
+		return row
+	}
+
+	recordID := sdr.RecordHeader.RecordID
+	recordType := sdr.RecordHeader.RecordType
+
+	switch recordType {
+	case SDRRecordTypeFRUDeviceLocator:
+		sdrFRU := sdr.FRUDeviceLocator
+
+		row = map[string]string{
+			"RecordID":          fmt.Sprintf("%#02x", recordID),
+			"RecordType":        fmt.Sprintf("%s (%#02x)", recordType.String(), uint8(recordType)),
+			"DeviceAccessAddr":  fmt.Sprintf("%#02x", sdrFRU.DeviceAccessAddress),
+			"FRUDeviceID":       fmt.Sprintf("%#02x", sdrFRU.FRUDeviceID_SlaveAddress),
+			"IsLogicFRU":        fmt.Sprintf("%v", sdrFRU.IsLogicalFRUDevice),
+			"AccessLUN":         fmt.Sprintf("%#02x", sdrFRU.AccessLUN),
+			"PrivateBusID":      fmt.Sprintf("%#02x", sdrFRU.PrivateBusID),
+			"ChannelNumber":     fmt.Sprintf("%#02x", sdrFRU.ChannelNumber),
+			"DeviceType":        fmt.Sprintf("%s (%#02x)", sdrFRU.DeviceType.String(), uint8(sdrFRU.DeviceType)),
+			"Modifier":          fmt.Sprintf("%#02x", sdrFRU.DeviceTypeModifier),
+			"FRUEntityID":       fmt.Sprintf("%#02x", sdrFRU.FRUEntityID),
+			"FRUEntityInstance": fmt.Sprintf("%#02x", sdrFRU.FRUEntityInstance),
+			"TypeLength":        sdrFRU.DeviceIDTypeLength.String(),
+			"DeviceName":        string(sdrFRU.DeviceIDBytes),
+		}
+	}
+
+	return row
+}
+
 // Format SDRs of FRU record type
 func FormatSDRs_FRU(records []*SDR) string {
 	rows := make([]map[string]string, 0)
 
 	for _, sdr := range records {
-		if sdr == nil || sdr.RecordHeader == nil {
-			continue
-		}
-
-		recordID := sdr.RecordHeader.RecordID
-		recordType := sdr.RecordHeader.RecordType
-
-		switch recordType {
-		case SDRRecordTypeFRUDeviceLocator:
-			sdrFRU := sdr.FRUDeviceLocator
-
-			row := map[string]string{
-				"RecordID":          fmt.Sprintf("%#02x", recordID),
-				"RecordType":        fmt.Sprintf("%s (%#02x)", recordType.String(), uint8(recordType)),
-				"DeviceAccessAddr":  fmt.Sprintf("%#02x", sdrFRU.DeviceAccessAddress),
-				"FRUDeviceID":       fmt.Sprintf("%#02x", sdrFRU.FRUDeviceID_SlaveAddress),
-				"IsLogicFRU":        fmt.Sprintf("%v", sdrFRU.IsLogicalFRUDevice),
-				"AccessLUN":         fmt.Sprintf("%#02x", sdrFRU.AccessLUN),
-				"PrivateBusID":      fmt.Sprintf("%#02x", sdrFRU.PrivateBusID),
-				"ChannelNumber":     fmt.Sprintf("%#02x", sdrFRU.ChannelNumber),
-				"DeviceType":        fmt.Sprintf("%s (%#02x)", sdrFRU.DeviceType.String(), uint8(sdrFRU.DeviceType)),
-				"Modifier":          fmt.Sprintf("%#02x", sdrFRU.DeviceTypeModifier),
-				"FRUEntityID":       fmt.Sprintf("%#02x", sdrFRU.FRUEntityID),
-				"FRUEntityInstance": fmt.Sprintf("%#02x", sdrFRU.FRUEntityInstance),
-				"TypeLength":        sdrFRU.DeviceIDTypeLength.String(),
-				"DeviceName":        string(sdrFRU.DeviceIDBytes),
-			}
-
-			rows = append(rows, row)
-
-		default:
-		}
-
+		row := sdrFRUToRow(sdr)
+		rows = append(rows, row)
 	}
 
 	headers := []string{
@@ -288,6 +292,81 @@ func FormatSDRs_FRU(records []*SDR) string {
 	return RenderTable(headers, rows)
 }
 
+func FormatSDRsStream_FRU(seq iter.Seq[*Result[SDR]]) error {
+	headers := []string{
+		"RecordID",
+		"---- RecordType ----",
+		"DeviceAccessAddr",
+		"FRUDeviceID",
+		"IsLogicFRU",
+		"AccessLUN",
+		"PrivateBusID",
+		"ChannelNumber",
+		"---- DeviceType ----",
+		"Modifier",
+		"FRUEntityID",
+		"FRUEntityInstance",
+		"---------------------- TypeLength ----------------------",
+		"DeviceName",
+	}
+
+	return formatStream(seq, headers, sdrFRUToRow)
+}
+
+func sdrToRow(sdr *SDR, options ...any) map[string]string {
+
+	recordID := sdr.RecordHeader.RecordID
+	recordType := sdr.RecordHeader.RecordType
+
+	var generatorID GeneratorID
+	var sensorUnit SensorUnit
+	var entityID EntityID
+	var entityInstance EntityInstance
+	var sensorType SensorType
+	var eventReadingType EventReadingType
+	var sensorValue float64
+	var sensorStatus string
+
+	switch recordType {
+	case SDRRecordTypeFullSensor:
+		generatorID = sdr.Full.GeneratorID
+		sensorUnit = sdr.Full.SensorUnit
+		entityID = sdr.Full.SensorEntityID
+		entityInstance = sdr.Full.SensorEntityInstance
+		sensorType = sdr.Full.SensorType
+		eventReadingType = sdr.Full.SensorEventReadingType
+		sensorValue = sdr.Full.SensorValue
+		sensorStatus = sdr.Full.SensorStatus
+
+	case SDRRecordTypeCompactSensor:
+		generatorID = sdr.Compact.GeneratorID
+		sensorUnit = sdr.Compact.SensorUnit
+		entityID = sdr.Compact.SensorEntityID
+		entityInstance = sdr.Compact.SensorEntityInstance
+		sensorType = sdr.Compact.SensorType
+		eventReadingType = sdr.Compact.SensorEventReadingType
+		sensorValue = sdr.Compact.SensorValue
+		sensorStatus = sdr.Compact.SensorStatus
+
+	default:
+	}
+
+	return map[string]string{
+		"RecordID":         fmt.Sprintf("%#02x", recordID),
+		"RecordType":       fmt.Sprintf("%s (%#02x)", recordType.String(), uint8(recordType)),
+		"GeneratorID":      fmt.Sprintf("%#04x", uint16(generatorID)),
+		"SensorNumber":     fmt.Sprintf("%#02x", sdr.SensorNumber()),
+		"SensorName":       sdr.SensorName(),
+		"Entity":           canonicalEntityString(entityID, entityInstance),
+		"SensorType":       sensorType.String(),
+		"EventReadingType": eventReadingType.String(),
+		"SensorValue":      fmt.Sprintf("%#.2f", sensorValue),
+		"SensorUnit":       sensorUnit.String(),
+		"SensorStatus":     sensorStatus,
+	}
+
+}
+
 // FormatSDRs returns a table formatted string for print.
 func FormatSDRs(records []*SDR) string {
 	rows := make([]map[string]string, 0)
@@ -297,56 +376,7 @@ func FormatSDRs(records []*SDR) string {
 			continue
 		}
 
-		recordID := sdr.RecordHeader.RecordID
-		recordType := sdr.RecordHeader.RecordType
-
-		var generatorID GeneratorID
-		var sensorUnit SensorUnit
-		var entityID EntityID
-		var entityInstance EntityInstance
-		var sensorType SensorType
-		var eventReadingType EventReadingType
-		var sensorValue float64
-		var sensorStatus string
-
-		switch recordType {
-		case SDRRecordTypeFullSensor:
-			generatorID = sdr.Full.GeneratorID
-			sensorUnit = sdr.Full.SensorUnit
-			entityID = sdr.Full.SensorEntityID
-			entityInstance = sdr.Full.SensorEntityInstance
-			sensorType = sdr.Full.SensorType
-			eventReadingType = sdr.Full.SensorEventReadingType
-			sensorValue = sdr.Full.SensorValue
-			sensorStatus = sdr.Full.SensorStatus
-
-		case SDRRecordTypeCompactSensor:
-			generatorID = sdr.Compact.GeneratorID
-			sensorUnit = sdr.Compact.SensorUnit
-			entityID = sdr.Compact.SensorEntityID
-			entityInstance = sdr.Compact.SensorEntityInstance
-			sensorType = sdr.Compact.SensorType
-			eventReadingType = sdr.Compact.SensorEventReadingType
-			sensorValue = sdr.Compact.SensorValue
-			sensorStatus = sdr.Compact.SensorStatus
-
-		default:
-		}
-
-		row := map[string]string{
-			"RecordID":         fmt.Sprintf("%#02x", recordID),
-			"RecordType":       fmt.Sprintf("%s (%#02x)", recordType.String(), uint8(recordType)),
-			"GeneratorID":      fmt.Sprintf("%#04x", uint16(generatorID)),
-			"SensorNumber":     fmt.Sprintf("%#02x", sdr.SensorNumber()),
-			"SensorName":       sdr.SensorName(),
-			"Entity":           canonicalEntityString(entityID, entityInstance),
-			"SensorType":       sensorType.String(),
-			"EventReadingType": eventReadingType.String(),
-			"SensorValue":      fmt.Sprintf("%#.2f", sensorValue),
-			"SensorUnit":       sensorUnit.String(),
-			"SensorStatus":     sensorStatus,
-		}
-
+		row := sdrToRow(sdr)
 		rows = append(rows, row)
 	}
 
@@ -365,6 +395,26 @@ func FormatSDRs(records []*SDR) string {
 	}
 
 	return RenderTable(headers, rows)
+}
+
+func FormatSDRsStream(seq iter.Seq[*Result[SDR]]) error {
+	fmt.Println("FormatSDRsStream2")
+
+	headers := []string{
+		"RecordID",
+		"-- RecordType --",
+		"GeneratorID",
+		"SensorNumber",
+		"-- SensorName --",
+		"-------- Entity --------",
+		"--- SensorType ---",
+		"EventReadingType",
+		"SensorValue",
+		"SensorUnit",
+		"SensorStatus",
+	}
+
+	return formatStream(seq, headers, sdrToRow)
 }
 
 // Mask_Threshold holds masks for a specific threshold type.

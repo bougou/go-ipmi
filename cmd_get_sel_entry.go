@@ -3,6 +3,7 @@ package ipmi
 import (
 	"context"
 	"fmt"
+	"iter"
 )
 
 // 31.5 Get SEL Entry Command
@@ -117,4 +118,44 @@ func (c *Client) GetSELEntries(ctx context.Context, startRecordID uint16) ([]*SE
 	}
 
 	return out, nil
+}
+
+func (c *Client) GetSELEntriesStream(ctx context.Context, startRecordID uint16) iter.Seq[*Result[SEL]] {
+	return func(yield func(*Result[SEL]) bool) {
+		var recordID uint16 = startRecordID
+
+	loop:
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				if _, err := c.GetSELInfo(ctx); err != nil {
+					yield(&Result[SEL]{Err: err})
+					return
+				}
+
+				selEntry, err := c.GetSELEntry(ctx, 0, recordID)
+				if err != nil {
+					yield(&Result[SEL]{Err: err})
+					return
+				}
+
+				sel, err := ParseSEL(selEntry.Data)
+				if err != nil {
+					yield(&Result[SEL]{Err: err})
+					return
+				}
+
+				if !yield(&Result[SEL]{Ok: sel}) {
+					return
+				}
+
+				recordID = selEntry.NextRecordID
+				if recordID == 0xffff {
+					break loop
+				}
+			}
+		}
+	}
 }

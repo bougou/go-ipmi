@@ -3,6 +3,7 @@ package ipmi
 import (
 	"context"
 	"fmt"
+	"iter"
 )
 
 // 33.12 Get SDR Command
@@ -223,6 +224,10 @@ func (c *Client) GetSDRs(ctx context.Context, recordTypes ...SDRRecordType) ([]*
 			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %w", recordID, err)
 		}
 
+		if sdr.RecordHeader == nil {
+			continue
+		}
+
 		if len(recordTypes) == 0 {
 			out = append(out, sdr)
 		} else {
@@ -241,6 +246,50 @@ func (c *Client) GetSDRs(ctx context.Context, recordTypes ...SDRRecordType) ([]*
 	}
 
 	return out, nil
+}
+
+func (c *Client) GetSDRsStream(ctx context.Context, recordTypes ...SDRRecordType) iter.Seq[*Result[SDR]] {
+	return func(yield func(*Result[SDR]) bool) {
+		var recordID uint16 = 0
+
+	loop:
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				sdr, err := c.GetSDREnhanced(ctx, recordID)
+				if err != nil {
+					yield(&Result[SDR]{Err: err})
+					return
+				}
+
+				if sdr.RecordHeader == nil {
+					continue loop
+				}
+
+				if len(recordTypes) == 0 {
+					if !yield(&Result[SDR]{Ok: sdr}) {
+						return
+					}
+				}
+
+				for _, v := range recordTypes {
+					if sdr.RecordHeader.RecordType == v {
+						if !yield(&Result[SDR]{Ok: sdr}) {
+							return
+						}
+						break
+					}
+				}
+
+				recordID = sdr.NextRecordID
+				if recordID == 0xffff {
+					break loop
+				}
+			}
+		}
+	}
 }
 
 // GetSDRsMap returns all Full/Compact SDRs grouped by GeneratorID and SensorNumber.

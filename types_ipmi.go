@@ -224,3 +224,8 @@ func StrCC(response Response, ccode uint8) string {
 	}
 	return "unknown completion code"
 }
+
+type Result[T any] struct {
+	Ok  *T
+	Err error
+}
