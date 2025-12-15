@@ -358,7 +358,7 @@ func (c *Client) GetSystemInfo(ctx context.Context) (*SystemInfo, error) {
 	return systemInfoParams.ToSystemInfo(), nil
 }
 
-func getSystemInfoStringMeta(params []interface{}) (s string, stringDataRaw []byte, stringDataType uint8, stringDataLength uint8) {
+func getSystemInfoStringMeta(params []any) (s string, stringDataRaw []byte, stringDataType uint8, stringDataLength uint8) {
 	if len(params) == 0 {
 		return
 	}

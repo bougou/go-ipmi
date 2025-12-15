@@ -125,7 +125,7 @@ func (systemInfoParams *SystemInfoParams) Format() string {
 		return fmt.Sprintf("[%02d] %-24s : %s", paramSelector, paramSelector.String(), content)
 	}
 
-	formatArray := func(params []interface{}) string {
+	formatArray := func(params []any) string {
 		if len(params) == 0 {
 			return ""
 		}

@@ -43,11 +43,11 @@ func debugBytes(header string, data []byte, width int) {
 }
 
 // debugf pretty print any object
-func debugf(format string, object ...interface{}) {
+func debugf(format string, object ...any) {
 	pretty.Printf(format, object...)
 }
 
-func debug(header string, object interface{}) {
+func debug(header string, object any) {
 	if header == "" {
 		pretty.Printf("%# v\n", object)
 	} else {
@@ -55,14 +55,14 @@ func debug(header string, object interface{}) {
 	}
 }
 
-func (c *Client) Debugf(format string, object ...interface{}) {
+func (c *Client) Debugf(format string, object ...any) {
 	if !c.debug {
 		return
 	}
 	debugf(format, object...)
 }
 
-func (c *Client) Debug(header string, object interface{}) {
+func (c *Client) Debug(header string, object any) {
 	if !c.debug {
 		return
 	}
@@ -77,7 +77,7 @@ func (c *Client) DebugBytes(header string, data []byte, width int) {
 	debugBytes(header, data, width)
 }
 
-func (c *Client) DebugfRed(format string, object ...interface{}) {
+func (c *Client) DebugfRed(format string, object ...any) {
 	if !c.debug {
 		return
 	}
@@ -85,7 +85,7 @@ func (c *Client) DebugfRed(format string, object ...interface{}) {
 	fmt.Printf(colorRed+format+"\033[0m", object...)
 }
 
-func (c *Client) DebugfGreen(format string, object ...interface{}) {
+func (c *Client) DebugfGreen(format string, object ...any) {
 	if !c.debug {
 		return
 	}
@@ -93,7 +93,7 @@ func (c *Client) DebugfGreen(format string, object ...interface{}) {
 	fmt.Printf(colorGreen+format+"\033[0m", object...)
 }
 
-func (c *Client) DebugfYellow(format string, object ...interface{}) {
+func (c *Client) DebugfYellow(format string, object ...any) {
 	if !c.debug {
 		return
 	}
@@ -679,7 +679,7 @@ func RenderTable(headers []string, rows []map[string]string) string {
 
 	// Add rows
 	for _, _row := range rows {
-		row := make([]interface{}, len(headers))
+		row := make([]any, len(headers))
 		for i, header := range headers {
 			row[i] = _row[header]
 		}
@@ -719,9 +719,9 @@ func isErrOfCompletionCodes(err error, codes ...uint8) bool {
 	return false
 }
 
-// Generic function to convert a slice of any type to a slice of interface{}
-func convertToInterfaceSlice[T any](input []T) []interface{} {
-	result := make([]interface{}, len(input))
+// Generic function to convert a slice of any type to a slice of any
+func convertToInterfaceSlice[T any](input []T) []any {
+	result := make([]any, len(input))
 	for i, v := range input {
 		result[i] = v
 	}

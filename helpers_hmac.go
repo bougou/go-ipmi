@@ -48,7 +48,7 @@ func generate_hmac(alg string, data []byte, key []byte) ([]byte, error) {
 	}
 }
 
-func generate_auth_hmac(authAlg interface{}, data []byte, key []byte) ([]byte, error) {
+func generate_auth_hmac(authAlg any, data []byte, key []byte) ([]byte, error) {
 	algorithm := ""
 	switch authAlg.(type) {
 	case AuthAlg:
