@@ -9,7 +9,10 @@ const (
 // 13.8 IPMI LAN Message Format
 type IPMIRequest struct {
 	// SlaveAddress or SoftwareID
-	// Responder's Slave Address. 1 byte. LS bit is 0 for Slave Addresses and 1 for Software IDs. Upper 7-bits hold Slave Address or Software ID, respectively. This byte is always 20h when the BMC is the responder.
+	// Responder's Slave Address. 1 byte.
+	// LS bit is 0 for Slave Addresses and 1 for Software IDs.
+	// Upper 7-bits hold Slave Address or Software ID, respectively.
+	// This byte is always 20h when the BMC is the responder.
 	ResponderAddr uint8 // SlaveAddress or SoftwareID
 
 	// The lower 2-bits of the netFn byte identify the logical unit number, which provides further sub-addressing within the target node.
@@ -20,7 +23,10 @@ type IPMIRequest struct {
 	Checksum1 uint8
 
 	// SlaveAddress or SoftwareID
-	// Requester's Address. 1 byte. LS bit is 0 for Slave Addresses and 1 for Software IDs. Upper 7-bits hold Slave Address or Software ID, respectively. This byte is always 20h when the BMC is the requester.
+	// Requester's Address. 1 byte.
+	// LS bit is 0 for Slave Addresses and 1 for Software IDs.
+	// Upper 7-bits hold Slave Address or Software ID, respectively.
+	// This byte is always 20h when the BMC is the requester.
 	RequesterAddr uint8 // rqSA
 
 	RequesterSequence uint8 // rqSeq, occupies the highest 6 bits, (so should left shit 2 bits)
@@ -37,7 +43,10 @@ type IPMIRequest struct {
 
 // IPMIResponse represent IPMI PayloadType msg response
 type IPMIResponse struct {
-	// Requester's Address. 1 byte. LS bit is 0 for Slave Addresses and 1 for Software IDs. Upper 7-bits hold Slave Address or Software ID, respectively. This byte is always 20h when the BMC is the requester.
+	// Requester's Address. 1 byte.
+	// LS bit is 0 for Slave Addresses and 1 for Software IDs.
+	// Upper 7-bits hold Slave Address or Software ID, respectively.
+	// This byte is always 20h when the BMC is the requester.
 	RequesterAddr uint8 // SlaveAddress or SoftwareID
 
 	// Network Function code
@@ -46,13 +55,20 @@ type IPMIResponse struct {
 	// Requester's LUN
 	RequestLUN uint8 // lower 2 bits
 
-	// 8-bit checksum algorithm: Initialize checksum to 0. For each byte, checksum = (checksum + byte) modulo 256. Then checksum = - checksum. When the checksum and the bytes are added together, modulo 256, the result should be 0.
+	// 8-bit checksum algorithm: Initialize checksum to 0.
+	// For each byte, checksum = (checksum + byte) modulo 256.
+	// Then checksum = - checksum.
+	// When the checksum and the bytes are added together, modulo 256, the result should be 0.
 	Checksum1 uint8
 
-	// Responder's Slave Address. 1 byte. LS bit is 0 for Slave Addresses and 1 for Software IDs. Upper 7-bits hold Slave Address or Software ID, respectively. This byte is always 20h when the BMC is the responder.
+	// Responder's Slave Address. 1 byte.
+	// LS bit is 0 for Slave Addresses and 1 for Software IDs.
+	// Upper 7-bits hold Slave Address or Software ID, respectively.
+	// This byte is always 20h when the BMC is the responder.
 	ResponderAddr uint8 // SlaveAddress or SoftwareID
 
-	// Sequence number. This field is used to verify that a response is for a particular instance of a request. Refer to [IPMB] for additional information on use and operation of the Seq field.
+	// Sequence number. This field is used to verify that a response is for a particular instance of a request.
+	// Refer to [IPMB] for additional information on use and operation of the Seq field.
 	RequesterSequence uint8 // higher 6 bits
 	ResponderLUN      uint8 // lower 2 bits
 
@@ -95,7 +111,11 @@ func (req *IPMIRequest) Pack() []byte {
 }
 
 func (req *IPMIRequest) ComputeChecksum() {
-	// 8-bit checksum algorithm: Initialize checksum to 0. For each byte, checksum = (checksum + byte) modulo 256. Then checksum = - checksum. When the checksum and the bytes are added together, modulo 256, the result should be 0.
+	// 8-bit checksum algorithm:
+	//  - Initialize checksum to 0.
+	//  - For each byte, checksum = (checksum + byte) modulo 256.
+	//  - Then checksum = - checksum.
+	//  - When the checksum and the bytes are added together, modulo 256, the result should be 0.
 	//
 	// the position end is not included
 	var checksumFn = func(msg []byte, start int, end int) uint8 {
