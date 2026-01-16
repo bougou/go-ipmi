@@ -102,18 +102,18 @@ type SDRFull struct {
 	// Only meaningful when NormalMinSpecified is true
 	NormalMinRaw uint8
 
-	// Given as a raw value. Must be converted to units-based value based using the
+	// Given as a raw value. Must be converted to units-based value based on using the
 	// y=Mx+B formula. Signed or unsigned per "signed" bit in sensor flags. Normally
 	// "FFh" for an 8-bit unsigned sensor, but can be a lesser value if the sensor has a
 	// restricted range. If max. reading cannot be pre-specified this value should be set
-	// to max value, based on data format, (e.g. FFh for an unsigned sensor, 7Fh for 2"s
+	// to max value, based on data format, (e.g. FFh for an unsigned sensor, 7Fh for 2's
 	// complement, etc.)
 	SensorMaxReadingRaw uint8
 
 	// Given as a raw value. Must be converted to units-based value using the "y=Mx+B"
 	// formula. Signed or unsigned per "signed" bit in sensor flags. If min. reading
 	// cannot be pre-specified this value should be set to min value, based on data
-	// format, (e.g. 00h for an unsigned sensor, 80h for 2"s complement, etc.)
+	// format, (e.g. 00h for an unsigned sensor, 80h for 2's complement, etc.)
 	SensorMinReadingRaw uint8
 
 	// Given as raw value.

@@ -1103,7 +1103,7 @@ func (sensor *Sensor) IsThresholdReadable(thresholdType SensorThresholdType) boo
 
 // ConvertReading converts raw discrete-sensor reading or raw threshold-sensor value to real value in the desired units for the sensor.
 //
-// This function can also be applied on raw threshold setting (UNR,UCR,NNC,LNC,LCR,LNR) values.
+// This function can also be applied on raw threshold setting (UNR,UCR,UNC,LNC,LCR,LNR) values.
 func (sensor *Sensor) ConvertReading(raw uint8) float64 {
 	if sensor.HasAnalogReading {
 		return ConvertReading(raw, sensor.SensorUnit.AnalogDataFormat, sensor.Threshold.ReadingFactors, sensor.Threshold.LinearizationFunc)

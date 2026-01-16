@@ -29,7 +29,7 @@ type IPMIRequest struct {
 	// This byte is always 20h when the BMC is the requester.
 	RequesterAddr uint8 // rqSA
 
-	RequesterSequence uint8 // rqSeq, occupies the highest 6 bits, (so should left shit 2 bits)
+	RequesterSequence uint8 // rqSeq, occupies the highest 6 bits, (so should left shift 2 bits)
 	RequesterLUN      uint8 // rqLUN, occupies the lowest 2 bits
 
 	Command uint8 // Command ID

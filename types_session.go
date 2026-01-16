@@ -43,7 +43,7 @@ const (
 // Get Channel Authentication Capabilities, Get Session Challenge, and Activate Session commands.
 // However, they are still required for all commands on a multi-session connection.
 type SessionHeader15 struct {
-	// For IPMI 1.5, it's value is 00h, 01h, 02h, 04h, 05h
+	// For IPMI 1.5, its value is 00h, 01h, 02h, 04h, 05h
 	AuthType AuthType
 
 	// For IPMI v2.0 RMCP+ there are separate sequence numbers tracked for authenticated and unauthenticated packets.
@@ -135,14 +135,14 @@ func (s *Session15) Unpack(msg []byte) error {
 
 // SessionHeader20 for IPMI 2.0
 type SessionHeader20 struct {
-	// For IPMI 2.0, it's value is always 06h
+	// For IPMI 2.0, its value is always 06h
 	AuthType AuthType
 
 	PayloadEncrypted     bool
 	PayloadAuthenticated bool
 	PayloadType          PayloadType
 
-	// The complete identification of an OEM Payload is given by the combination of a three-byte IANA ID for the OEM, a reserved byte, plus a twobyte OEM Payload ID that is assigned and defined by the given OEM
+	// The complete identification of an OEM Payload is given by the combination of a three-byte IANA ID for the OEM, a reserved byte, plus a two-byte OEM Payload ID that is assigned and defined by the given OEM
 	OEMIANA      uint32
 	OEMPayloadID uint16
 

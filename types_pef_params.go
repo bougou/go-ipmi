@@ -666,7 +666,7 @@ func (param *PEFConfigParam_AlertStringsCount) Format() string {
 // Sets the keys used to look up Alert String data in PEF.
 // This parameter does not need to be supported if Alerting is not supported.
 //
-// It's purpose is to get the AlertStringSelector from combination of the (Event) FilterNumber and AlertStringSet.
+// Its purpose is to get the AlertStringSelector from combination of the (Event) FilterNumber and AlertStringSet.
 type PEFConfigParam_AlertStringKey struct {
 	// Set Selector = Alert string selector.
 	//   - 0 = selects volatile string parameters
