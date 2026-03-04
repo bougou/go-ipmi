@@ -23,6 +23,7 @@ const (
 	OEM_DELL                         = 674
 	OEM_HUAWEI                       = 2011
 	OEM_LMC                          = 2168
+	OEM_ASUSTEK                      = 2623
 	OEM_RADISYS                      = 4337
 	OEM_BROADCOM                     = 4413
 	OEM_IBM_4769                     = 4769 /* 4769 for [IBM Corporation] */
@@ -72,6 +73,7 @@ func (oem OEM) String() string {
 		674:   "Dell",
 		2011:  "Huawei",
 		2168:  "LMC",
+		2623:  "ASUSTek",
 		4337:  "Radisys",
 		4413:  "Broadcom",
 		4769:  "IBM",
