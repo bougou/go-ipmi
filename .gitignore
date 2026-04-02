@@ -44,3 +44,4 @@ cmd/goipmi/goipmi
 
 # asdf
 .tool-versions
+goipmi

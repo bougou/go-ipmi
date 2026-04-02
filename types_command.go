@@ -67,6 +67,9 @@ var (
 	// a faked command for RAKP messages
 	CommandNone = Command{}
 
+	// SOL payload packets use RMCP+ PayloadType SOL, not IPMI message framing.
+	CommandSOLPayload = Command{Name: "SOL Payload"}
+
 	// IPM Device Global Commands
 	CommandGetDeviceID                        = Command{ID: 0x01, NetFn: NetFnAppRequest, Name: "Get Device ID"}
 	CommandColdReset                          = Command{ID: 0x02, NetFn: NetFnAppRequest, Name: "Cold Reset"}

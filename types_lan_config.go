@@ -16,9 +16,9 @@ const (
 
 func (p SetInProgressState) String() string {
 	m := map[SetInProgressState]string{
-		0x00: "set complete",
-		0x01: "set in progress",
-		0x02: "commit write",
+		0x00: "set-complete",
+		0x01: "set-in-progress",
+		0x02: "commit-write",
 		0x03: "reserved",
 	}
 	s, ok := m[p]

@@ -149,6 +149,11 @@ func (c *Client) ActivateSession(ctx context.Context) (response *ActivateSession
 	// Todo, validate the SessionID
 	c.session.v15.sessionID = response.SessionID
 
+	// Authentication type for the remainder of the session (response data[0]). When per-message
+	// authentication is disabled, BMCs typically return NONE here even though challenge/activate
+	// used MD5; subsequent RMCP session headers must match this (see ipmitool with Per-msg auth off).
+	c.session.authType = response.AuthType
+
 	// The remote console must increment the inbound session sequence number
 	// by one (1) for each subsequent message it sends to the BMC
 	c.session.v15.inSeq = response.InitialInboundSequenceNumber

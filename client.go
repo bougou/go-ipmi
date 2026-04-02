@@ -265,6 +265,12 @@ func (c *Client) Close(ctx context.Context) error {
 }
 
 func (c *Client) Exchange(ctx context.Context, request Request, response Response) error {
+	if c.Interface != InterfaceLanplus {
+		if _, ok := request.(*SOLPayloadRequest); ok {
+			return fmt.Errorf("SOL payload exchange requires lanplus interface")
+		}
+	}
+
 	switch c.Interface {
 	case "", InterfaceOpen:
 		return c.exchangeOpen(ctx, request, response)

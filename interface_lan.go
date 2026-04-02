@@ -108,6 +108,8 @@ func (c *Client) buildRawPayload(ctx context.Context, reqCmd Request) (PayloadTy
 		payloadType = PayloadTypeRAKPMessage1
 	} else if _, ok := reqCmd.(*RAKPMessage3); ok {
 		payloadType = PayloadTypeRAKPMessage3
+	} else if _, ok := reqCmd.(*SOLPayloadRequest); ok {
+		payloadType = PayloadTypeSOL
 	} else {
 		payloadType = PayloadTypeIPMI
 	}
@@ -120,6 +122,9 @@ func (c *Client) buildRawPayload(ctx context.Context, reqCmd Request) (PayloadTy
 		PayloadTypeRAKPMessage3:
 		// Session Setup Payload Types
 
+		rawPayload = reqCmd.Pack()
+
+	case PayloadTypeSOL:
 		rawPayload = reqCmd.Pack()
 
 	case PayloadTypeIPMI:
@@ -136,8 +141,43 @@ func (c *Client) buildRawPayload(ctx context.Context, reqCmd Request) (PayloadTy
 	return payloadType, rawPayload, nil
 }
 
+// isIPMIPayloadLANRequest reports whether buildRawPayload uses PayloadTypeIPMI for this request.
+// Session-setup and SOL payloads are excluded; those are not paired by IPMB rqSeq + command like
+// standard IPMI commands.
+func isIPMIPayloadLANRequest(req Request) bool {
+	switch req.(type) {
+	case *OpenSessionRequest, *RAKPMessage1, *RAKPMessage3, *SOLPayloadRequest, *RmcpPingRequest:
+		return false
+	default:
+		return true
+	}
+}
+
+// tryMatchIPMILANResponse returns true if recv is an RMCP+ (or v1.5) packet whose IPMI payload
+// matches the pending request identified by rqSeq and command.
+func (c *Client) tryMatchIPMILANResponse(recv []byte, wantSeq, wantCmd uint8) (bool, error) {
+	rmcp := &Rmcp{}
+	if err := rmcp.Unpack(recv); err != nil {
+		return false, nil
+	}
+	ipmiRes, err := c.parseIPMIResponseFromRmcp(rmcp)
+	if err != nil {
+		return false, nil
+	}
+	return ipmiRes.RequesterSequence == wantSeq && ipmiRes.Command == wantCmd, nil
+}
+
 func (c *Client) exchangeLAN(ctx context.Context, request Request, response Response) error {
 	c.Debug(">> Command Request", request)
+
+	var wantSeq, wantCmd uint8
+	applyIPMIMatch := isIPMIPayloadLANRequest(request)
+	if applyIPMIMatch {
+		c.lock()
+		wantSeq = c.session.ipmiSeq
+		wantCmd = request.Command().ID
+		c.unlock()
+	}
 
 	rmcp, err := c.BuildRmcpRequest(ctx, request)
 	if err != nil {
@@ -155,7 +195,14 @@ func (c *Client) exchangeLAN(ctx context.Context, request Request, response Resp
 	for attempt := 1; attempt <= attempts; attempt++ {
 		c.Debugf("attempt %d/%d, ", attempt, attempts)
 
-		recv, err = c.udpClient.Exchange(ctx, bytes.NewReader(sent))
+		if applyIPMIMatch {
+			matcher := func(p []byte) (bool, error) {
+				return c.tryMatchIPMILANResponse(p, wantSeq, wantCmd)
+			}
+			recv, err = c.udpClient.ExchangeUntilMatch(ctx, bytes.NewReader(sent), matcher)
+		} else {
+			recv, err = c.udpClient.Exchange(ctx, bytes.NewReader(sent))
+		}
 		lastErr = err
 		if err == nil {
 			c.DebugfGreen("udp exchange success\n")
@@ -163,7 +210,11 @@ func (c *Client) exchangeLAN(ctx context.Context, request Request, response Resp
 			break
 		}
 
-		// Check if this is a timeout error that should be retried
+		// Retry when no datagram matched the pending IPMI request (stray SOL/async) or on UDP read timeout.
+		if errors.Is(err, errNoDatagramMatched) {
+			c.DebugfRed("udp exchange: no matching IPMI response (want seq %#02x cmd %#02x), retry\n", wantSeq, wantCmd)
+			continue
+		}
 		var netErr *net.OpError
 		if errors.As(err, &netErr) && netErr.Timeout() {
 			c.DebugfRed("udp exchange failed, timeout error: %v\n", err)
@@ -176,7 +227,7 @@ func (c *Client) exchangeLAN(ctx context.Context, request Request, response Resp
 	}
 
 	if lastErr != nil {
-		return fmt.Errorf("client udp exchange msg failed after %d attempts, err: %w", attempts, lastErr)
+		return wrapExchangeLANError(attempts, applyIPMIMatch, wantSeq, wantCmd, lastErr)
 	}
 
 	c.DebugBytes("recv", recv, 16)
@@ -187,6 +238,35 @@ func (c *Client) exchangeLAN(ctx context.Context, request Request, response Resp
 
 	c.Debug("<< Command Response", response)
 	return nil
+}
+
+// wrapExchangeLANError maps the last UDP-layer error to a user-facing IPMI LAN message while
+// preserving the underlying error chain for errors.Is / errors.As.
+func wrapExchangeLANError(attempts int, applyIPMIMatch bool, wantSeq, wantCmd uint8, err error) error {
+	if err == nil {
+		return nil
+	}
+	var detail string
+	switch {
+	case errors.Is(err, context.Canceled):
+		detail = "operation canceled"
+	case errors.Is(err, context.DeadlineExceeded):
+		detail = "deadline exceeded while exchanging with BMC"
+	case errors.Is(err, errNoDatagramMatched):
+		if applyIPMIMatch {
+			detail = fmt.Sprintf("no matching IPMI response (expected rqSeq %#02x, command %#02x) before UDP read deadline", wantSeq, wantCmd)
+		} else {
+			detail = "no UDP datagram matched before read deadline"
+		}
+	default:
+		var netErr *net.OpError
+		if errors.As(err, &netErr) && netErr.Timeout() {
+			detail = "UDP read timed out waiting for BMC response"
+		} else {
+			detail = "UDP exchange error"
+		}
+	}
+	return fmt.Errorf("IPMI LAN: %s after %d attempt(s): %w", detail, attempts, err)
 }
 
 // 13.14

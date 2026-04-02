@@ -1,6 +1,8 @@
 package ipmi
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type SOLConfigParamSelector uint8
 
@@ -96,12 +98,14 @@ func (p *SOLConfigParams) Format() string {
 		if isNilSOLConfigParameter(param) {
 			return ""
 		}
-		paramSelector, _, _ := param.SOLConfigParameter()
 		content := param.Format()
+		if content == "" {
+			return ""
+		}
 		if content[len(content)-1] != '\n' {
 			content += "\n"
 		}
-		return fmt.Sprintf("[%2d] %-22s : %s", paramSelector, paramSelector.String(), content)
+		return content
 	}
 
 	out := ""
@@ -110,8 +114,8 @@ func (p *SOLConfigParams) Format() string {
 	out += format(p.SOLAuthentication)
 	out += format(p.Character)
 	out += format(p.SOLRetry)
-	out += format(p.NonVolatileBitRate)
 	out += format(p.VolatileBitRate)
+	out += format(p.NonVolatileBitRate)
 	out += format(p.PayloadChannel)
 	out += format(p.PayloadPort)
 
@@ -139,7 +143,7 @@ func (p *SOLConfigParam_SetInProgress) Pack() []byte {
 }
 
 func (p *SOLConfigParam_SetInProgress) Format() string {
-	return p.Value.String()
+	return fmt.Sprintf("Set in progress                 : %s", p.Value.String())
 }
 
 type SOLConfigParam_SOLEnable struct {
@@ -166,7 +170,7 @@ func (p *SOLConfigParam_SOLEnable) Pack() []byte {
 }
 
 func (p *SOLConfigParam_SOLEnable) Format() string {
-	return fmt.Sprintf("%v", p.EnableSOLPayload)
+	return fmt.Sprintf("Enabled                         : %v", p.EnableSOLPayload)
 }
 
 type SOLConfigParam_SOLAuthentication struct {
@@ -205,9 +209,9 @@ func (p *SOLConfigParam_SOLAuthentication) Pack() []byte {
 
 func (p *SOLConfigParam_SOLAuthentication) Format() string {
 	return "" +
-		fmt.Sprintf("Force Encryption     : %v\n", p.ForceEncryption) +
-		fmt.Sprintf("Force Authentication : %v\n", p.ForceAuthentication) +
-		fmt.Sprintf("Privilege Level      : %#02x\n", p.PrivilegeLevel)
+		fmt.Sprintf("Force Encryption                : %v\n", p.ForceEncryption) +
+		fmt.Sprintf("Force Authentication            : %v\n", p.ForceAuthentication) +
+		fmt.Sprintf("Privilege Level                 : %s", PrivilegeLevel(p.PrivilegeLevel).String())
 }
 
 type SOLConfigParam_Character struct {
@@ -235,8 +239,8 @@ func (p *SOLConfigParam_Character) Pack() []byte {
 
 func (p *SOLConfigParam_Character) Format() string {
 	return "" +
-		fmt.Sprintf("Accumulate Interval (ms) : %d\n", p.AccumulateInterval5Millis*5) +
-		fmt.Sprintf("Send Threshold           : %d\n", p.SendThreshold)
+		fmt.Sprintf("Character Accumulate Level (ms) : %d\n", p.AccumulateInterval5Millis*5) +
+		fmt.Sprintf("Character Send Threshold        : %d", p.SendThreshold)
 }
 
 type SOLConfigParam_SOLRetry struct {
@@ -272,8 +276,8 @@ func (p *SOLConfigParam_SOLRetry) Pack() []byte {
 
 func (p *SOLConfigParam_SOLRetry) Format() string {
 	return "" +
-		fmt.Sprintf("Retry Count         : %d\n", p.RetryCount) +
-		fmt.Sprintf("Retry Interval (ms) : %d\n", p.RetryInterval10Millis*10)
+		fmt.Sprintf("Retry Count                     : %d\n", p.RetryCount) +
+		fmt.Sprintf("Retry Interval (ms)             : %d", p.RetryInterval10Millis*10)
 }
 
 type SOLConfigParam_NonVolatileBitRate struct {
@@ -299,7 +303,7 @@ func (p *SOLConfigParam_NonVolatileBitRate) Pack() []byte {
 }
 
 func (p *SOLConfigParam_NonVolatileBitRate) Format() string {
-	return fmt.Sprintf("%.1f kbps (%d)", bitRateKBPS(p.BitRate), p.BitRate)
+	return fmt.Sprintf("Non-Volatile Bit Rate (kbps)    : %.1f", bitRateKBPS(p.BitRate))
 }
 
 func bitRateKBPS(bitRate uint8) float64 {
@@ -340,7 +344,7 @@ func (p *SOLConfigParam_VolatileBitRate) Pack() []byte {
 }
 
 func (p *SOLConfigParam_VolatileBitRate) Format() string {
-	return fmt.Sprintf("%.1f kbps (%d)", bitRateKBPS(p.BitRate), p.BitRate)
+	return fmt.Sprintf("Volatile Bit Rate (kbps)        : %.1f", bitRateKBPS(p.BitRate))
 }
 
 type SOLConfigParam_PayloadChannel struct {
@@ -366,7 +370,7 @@ func (p *SOLConfigParam_PayloadChannel) Pack() []byte {
 }
 
 func (p *SOLConfigParam_PayloadChannel) Format() string {
-	return fmt.Sprintf("%d", p.ChannelNumber)
+	return fmt.Sprintf("Payload Channel                 : %d (%#02x)", p.ChannelNumber, p.ChannelNumber)
 }
 
 type SOLConfigParam_PayloadPort struct {
@@ -394,5 +398,5 @@ func (p *SOLConfigParam_PayloadPort) Pack() []byte {
 }
 
 func (p *SOLConfigParam_PayloadPort) Format() string {
-	return fmt.Sprintf("%d", p.Port)
+	return fmt.Sprintf("Payload Port                    : %d", p.Port)
 }

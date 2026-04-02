@@ -354,30 +354,14 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response Res
 		return nil
 	}
 
-	if rmcp.Session15 != nil {
-		ipmiPayload := rmcp.Session15.Payload
+	var ipmiRes *IPMIResponse = nil
 
-		ipmiRes := IPMIResponse{}
-		if err := ipmiRes.Unpack(ipmiPayload); err != nil {
+	if rmcp.Session15 != nil {
+		_ipmiRes, err := c.parseIPMIResponseFromRmcp(rmcp)
+		if err != nil {
 			return fmt.Errorf("unpack ipmiRes failed, err: %w", err)
 		}
-		c.Debug("<<<< IPMI Response", ipmiRes)
-
-		ccode := ipmiRes.CompletionCode
-		if ccode != 0x00 {
-			return &ResponseError{
-				completionCode: CompletionCode(ccode),
-				description:    fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, StrCC(response, ccode)),
-			}
-		}
-
-		// now ccode is 0x00, we can continue to deserialize response
-		if err := response.Unpack(ipmiRes.Data); err != nil {
-			return &ResponseError{
-				completionCode: 0x00,
-				description:    fmt.Sprintf("unpack response failed, err: %s", err),
-			}
-		}
+		ipmiRes = _ipmiRes
 	}
 
 	if rmcp.Session20 != nil {
@@ -395,44 +379,94 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response Res
 			}
 			return nil
 
-		case PayloadTypeIPMI:
-			// Standard Payload Types
-			ipmiPayload := rmcp.Session20.SessionPayload
+		case PayloadTypeSOL:
+			payload := rmcp.Session20.SessionPayload
 			if sessionHdr.PayloadEncrypted {
-				c.DebugBytes("decrypting", ipmiPayload, 16)
-				d, err := c.decryptPayload(rmcp.Session20.SessionPayload)
+				c.DebugBytes("decrypting SOL payload", payload, 16)
+				d, err := c.decryptPayload(payload)
 				if err != nil {
-					return fmt.Errorf("decrypt session payload failed, err: %w", err)
+					return fmt.Errorf("decrypt SOL session payload failed, err: %w", err)
 				}
-				ipmiPayload = d
-				c.DebugBytes("decrypted", ipmiPayload, 16)
+				payload = d
+				c.DebugBytes("decrypted SOL payload", payload, 16)
 			}
+			if err := response.Unpack(payload); err != nil {
+				return fmt.Errorf("unpack SOL payload response failed, err: %w", err)
+			}
+			return nil
 
-			ipmiRes := IPMIResponse{}
-			if err := ipmiRes.Unpack(ipmiPayload); err != nil {
+		case PayloadTypeIPMI:
+			_ipmiRes, err := c.parseIPMIResponseFromRmcp(rmcp)
+			if err != nil {
 				return fmt.Errorf("unpack ipmiRes failed, err: %w", err)
 			}
-			c.Debug("<<<< IPMI Response", ipmiRes)
+			ipmiRes = _ipmiRes
+		}
+	}
 
-			ccode := ipmiRes.CompletionCode
-			if ccode != 0x00 {
-				return &ResponseError{
-					completionCode: CompletionCode(ccode),
-					description:    fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, StrCC(response, ccode)),
-				}
-			}
+	if ipmiRes == nil {
+		return fmt.Errorf("not an IPMI response")
+	}
 
-			// now ccode is 0x00, we can continue to deserialize response
-			if err := response.Unpack(ipmiRes.Data); err != nil {
-				return &ResponseError{
-					completionCode: 0x00,
-					description:    fmt.Sprintf("unpack response failed, err: %s", err),
-				}
-			}
+	c.Debug("<<<< IPMI Response", *ipmiRes)
+	ccode := ipmiRes.CompletionCode
+	if ccode != 0x00 {
+		return &ResponseError{
+			completionCode: CompletionCode(ccode),
+			description:    fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, StrCC(response, ccode)),
+		}
+	}
+
+	// now ccode is 0x00, we can continue to deserialize response
+	if err := response.Unpack(ipmiRes.Data); err != nil {
+		return &ResponseError{
+			completionCode: 0x00,
+			description:    fmt.Sprintf("unpack response failed, err: %s", err),
 		}
 	}
 
 	return nil
+}
+
+// parseIPMIResponseFromRmcp extracts and deserializes an IPMI payload response from rmcp.
+func (c *Client) parseIPMIResponseFromRmcp(rmcp *Rmcp) (ipmiRes *IPMIResponse, err error) {
+	if rmcp.ASF != nil {
+		return nil, fmt.Errorf("not an IPMI response (ASF)")
+	}
+
+	if rmcp.Session15 != nil {
+		ipmiRes := &IPMIResponse{}
+		if err := ipmiRes.Unpack(rmcp.Session15.Payload); err != nil {
+			return nil, fmt.Errorf("unpack ipmi(15) payload failed, err: %w", err)
+		}
+		return ipmiRes, nil
+	}
+
+	if rmcp.Session20 != nil {
+		sessionHdr := rmcp.Session20.SessionHeader20
+		if sessionHdr.PayloadType != PayloadTypeIPMI {
+			return nil, fmt.Errorf("not an IPMI response (%s)", sessionHdr.PayloadType)
+		}
+
+		ipmiPayload := rmcp.Session20.SessionPayload
+		if sessionHdr.PayloadEncrypted {
+			c.DebugBytes("decrypting", ipmiPayload, 16)
+			d, err := c.decryptPayload(rmcp.Session20.SessionPayload)
+			if err != nil {
+				return nil, fmt.Errorf("decrypt ipmi(20) session payload failed, err: %w", err)
+			}
+			ipmiPayload = d
+			c.DebugBytes("decrypted", ipmiPayload, 16)
+		}
+
+		ipmiRes := &IPMIResponse{}
+		if err := ipmiRes.Unpack(ipmiPayload); err != nil {
+			return nil, fmt.Errorf("unpack ipmi(20) payload failed, err: %w", err)
+		}
+		return ipmiRes, nil
+	}
+
+	return nil, fmt.Errorf("not an invalid Rmcp payload")
 }
 
 // 13.24 RMCP+ and RAKP Message Status Codes

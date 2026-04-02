@@ -595,6 +595,7 @@ func (c *Client) encryptPayload(rawPayload []byte, iv []byte) ([]byte, error) {
 // the input data is the encrypted session payload.
 // the output bytes is the decrypted IPMI Message bytes with padding removed.
 func (c *Client) decryptPayload(data []byte) ([]byte, error) {
+	c.Debugf("decrypting payload with encryption algorithm (%v)\n", c.session.v20.cryptAlg)
 	switch c.session.v20.cryptAlg {
 
 	case CryptAlg_None:

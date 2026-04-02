@@ -328,6 +328,7 @@ The implementation logic of IPMI commands is largely consistent. See [Contributi
 | GetUserCallbackOptions     |                    |                              |
 | SetSerialRoutingMux        |                    |                              |
 | SOLActivating              | :white_check_mark: |                              |
+| SOLActivate (\*)           | :white_check_mark: | sol activate                 |
 | SetSOLConfigParam          | :white_check_mark: |                              |
 | SetSOLConfigParamFor (\*)  | :white_check_mark: |                              |
 | GetSOLConfigParam          | :white_check_mark: |                              |
