@@ -732,6 +732,12 @@ func RenderTableStream(headers []string, rowSeq iter.Seq[map[string]string]) err
 
 }
 
+// itemToRowFn converts one typed item into a table row.
+//
+// `options` carries optional dependencies needed by concrete converters
+// (for example, an SDR map for SEL formatting). Callers and implementations
+// should agree on option types/order, and implementations should type-check
+// before use.
 type itemToRowFn[T any] func(item *T, options ...any) map[string]string
 
 func formatStream[T any](seq iter.Seq[*Result[T]], headers []string, itemToRowFn itemToRowFn[T], itemToRowFnOptions ...any) error {
