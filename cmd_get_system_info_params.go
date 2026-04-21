@@ -381,7 +381,20 @@ func getSystemInfoStringMeta(params []any) (s string, stringDataRaw []byte, stri
 		allBlockData = append(allBlockData, blockData[:]...)
 	}
 
-	stringDataRaw = allBlockData[2 : stringDataLength+2]
+	// Some BMCs (observed on HPE iLO5/iLO6) report a stringDataLength that
+	// exceeds what they actually deliver in the follow-up blocks, which
+	// would panic the slice on hosts with more than a handful of system
+	// info params. Cap the length to what we have so the caller gets a
+	// truncated string instead of a crash; the sensor collector can still
+	// surface a warning through its own error paths.
+	end := int(stringDataLength) + 2
+	if end > len(allBlockData) {
+		end = len(allBlockData)
+	}
+	if end < 2 {
+		return
+	}
+	stringDataRaw = allBlockData[2:end]
 
 	switch stringDataType {
 	// 0h = ASCII+Latin1
