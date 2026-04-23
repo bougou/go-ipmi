@@ -381,7 +381,19 @@ func getSystemInfoStringMeta(params []any) (s string, stringDataRaw []byte, stri
 		allBlockData = append(allBlockData, blockData[:]...)
 	}
 
-	stringDataRaw = allBlockData[2 : stringDataLength+2]
+	// BMCs (notably HPE iLO6 on DL380a Gen12) have been observed to
+	// report a stringDataLength that exceeds the number of bytes the
+	// BMC actually returned across all blocks. Clamp the upper bound
+	// to len(allBlockData) instead of panicking with
+	// "slice bounds out of range [:N] with capacity M".
+	if len(allBlockData) < 2 {
+		return
+	}
+	end := int(stringDataLength) + 2
+	if end > len(allBlockData) {
+		end = len(allBlockData)
+	}
+	stringDataRaw = allBlockData[2:end]
 
 	switch stringDataType {
 	// 0h = ASCII+Latin1
