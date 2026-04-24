@@ -221,6 +221,12 @@ func parseSELOEMNonTimestamped(msg []byte, sel *SEL) error {
 	return nil
 }
 
+// selToRow converts one SEL record into a row map used by table renderers.
+//
+// It implements `itemToRowFn[SEL]` and supports optional dependencies via
+// `options ...any`. Currently, it recognizes `SDRMapBySensorNumber` so
+// callers can enable extended list output (for example, `SensorName`).
+// Unrecognized options are ignored.
 func selToRow(sel *SEL, options ...any) map[string]string {
 	var sdrMap SDRMapBySensorNumber
 
