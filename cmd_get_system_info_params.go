@@ -381,18 +381,17 @@ func getSystemInfoStringMeta(params []any) (s string, stringDataRaw []byte, stri
 		allBlockData = append(allBlockData, blockData[:]...)
 	}
 
-	// Some BMCs (observed on HPE iLO5/iLO6) report a stringDataLength that
-	// exceeds what they actually deliver in the follow-up blocks, which
-	// would panic the slice on hosts with more than a handful of system
-	// info params. Cap the length to what we have so the caller gets a
-	// truncated string instead of a crash; the sensor collector can still
-	// surface a warning through its own error paths.
+	// BMCs (notably HPE iLO6 on DL380a Gen12) have been observed to
+	// report a stringDataLength that exceeds the number of bytes the
+	// BMC actually returned across all blocks. Clamp the upper bound
+	// to len(allBlockData) instead of panicking with
+	// "slice bounds out of range [:N] with capacity M".
+	if len(allBlockData) < 2 {
+		return
+	}
 	end := int(stringDataLength) + 2
 	if end > len(allBlockData) {
 		end = len(allBlockData)
-	}
-	if end < 2 {
-		return
 	}
 	stringDataRaw = allBlockData[2:end]
 
