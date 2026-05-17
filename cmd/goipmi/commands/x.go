@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bougou/go-ipmi"
+	ipmiclient "github.com/bougou/go-ipmi/pkg/client"
+	ipmiapp "github.com/bougou/go-ipmi/pkg/cmd/app"
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
 	"github.com/kr/pretty"
 	"github.com/spf13/cobra"
 )
@@ -145,7 +147,7 @@ func NewCmdXGetSensorsFilterFans() *cobra.Command {
 		Short: "get-sensors-filter-fans",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
-			res, err := client.GetSensors(ctx, ipmi.SensorFilterOptionIsSensorType(ipmi.SensorTypeFan))
+			res, err := client.GetSensors(ctx, ipmiclient.SensorFilterOptionIsSensorType(ipmi.SensorTypeFan))
 			if err != nil {
 				fmt.Printf("GetSensors failed, err: %s", err)
 				return
@@ -482,7 +484,7 @@ func NewCmdXSetUserAccess() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
 
-			req := &ipmi.SetUserAccessRequest{
+			req := &ipmiapp.SetUserAccessRequest{
 				EnableChanging:       true,
 				RestrictedToCallback: false,
 				EnableLinkAuth:       false,

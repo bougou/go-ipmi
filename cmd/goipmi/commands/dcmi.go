@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bougou/go-ipmi"
+	ipmidcmi "github.com/bougou/go-ipmi/pkg/cmd/dcmi"
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -174,7 +175,7 @@ set_limit <parameter> <value>
 			}
 
 			ctx := context.Background()
-			req := &ipmi.SetDCMIPowerLimitRequest{}
+			req := &ipmidcmi.SetDCMIPowerLimitRequest{}
 
 			{
 				resp, err := client.GetDCMIPowerLimit(ctx)
@@ -520,7 +521,7 @@ thermalpolicy instance parameters:
 				CheckErr(fmt.Errorf("parse exceptionTime (%s) failed, err: %w", args[6], err))
 			}
 
-			req := &ipmi.SetDCMIThermalLimitRequest{
+			req := &ipmidcmi.SetDCMIThermalLimitRequest{
 				EntityID:                          ipmi.EntityID(entityID),
 				EntityInstance:                    ipmi.EntityInstance(entityInstance),
 				ExceptionAction_PowerOffAndLogSEL: powerOff,
@@ -558,7 +559,7 @@ func NewCmdDCMIGetTempReading() *cobra.Command {
 			}
 
 			fmt.Printf("Got: %d temperature readings found\n", len(readings))
-			fmt.Println(ipmi.FormatDCMITemperatureReadings(readings))
+			fmt.Println(ipmidcmi.FormatDCMITemperatureReadings(readings))
 		},
 	}
 

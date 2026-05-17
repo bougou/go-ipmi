@@ -1,0 +1,73 @@
+package sensor
+
+import (
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
+)
+
+type AlertImmediateOperation uint8
+
+const (
+	AlertImmediateOperationInitiateAlert AlertImmediateOperation = 0b00
+	AlertImmediateOperationGetStatus     AlertImmediateOperation = 0b01
+	AlertImmediateOperationClearStatus   AlertImmediateOperation = 0b10
+	AlertImmediateOperationReserved      AlertImmediateOperation = 0b11
+)
+
+type AlertImmediateStatus uint8
+
+const (
+	AlertImmediateStatusNoStatus      AlertImmediateStatus = 0x00
+	AlertImmediateStatusNormalEnd     AlertImmediateStatus = 0x01
+	AlertImmediateStatusFailedRetry   AlertImmediateStatus = 0x02
+	AlertImmediateStatusFailedWaitACK AlertImmediateStatus = 0x03
+	AlertImmediateStatusInProgress    AlertImmediateStatus = 0xff
+)
+
+// 30.7 Alert Immediate Command
+type AlertImmediateRequest struct {
+	ChannelNumber uint8
+
+	DestinationSelector uint8
+	Operation           uint8
+
+	SendAlertString     bool
+	AlertStringSelector uint8
+
+	GeneratorID  uint8
+	EvMRev       uint8
+	SensorType   ipmi.SensorType
+	SensorNumber ipmi.SensorNumber
+
+	EventDir         ipmi.EventDir
+	EventReadingType ipmi.EventReadingType
+	EventData        ipmi.EventData
+}
+
+type AlertImmediateResponse struct {
+	AlertImmediateStatus uint8
+}
+
+func (req *AlertImmediateRequest) Pack() []byte {
+	out := make([]byte, 1)
+	return out
+}
+
+func (req *AlertImmediateRequest) Command() ipmi.Command {
+	return ipmi.CommandAlertImmediate
+}
+
+func (res *AlertImmediateResponse) CompletionCodes() map[uint8]string {
+	return map[uint8]string{
+		0x81: "Alert Immediate rejected due to alert already in progress",
+		0x82: "Alert Immediate rejected due to IPMI messaging session active on this channel",
+		0x83: "Platform Event Parameters (4:11) not supported",
+	}
+}
+
+func (res *AlertImmediateResponse) Unpack(msg []byte) error {
+	return nil
+}
+
+func (res *AlertImmediateResponse) Format() string {
+	return ""
+}

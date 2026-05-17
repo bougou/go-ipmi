@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bougou/go-ipmi"
+	ipmiapp "github.com/bougou/go-ipmi/pkg/cmd/app"
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -52,7 +53,7 @@ func NewCmdUserList() *cobra.Command {
 				CheckErr(fmt.Errorf("GetUsers failed, err: %w", err))
 			}
 
-			fmt.Println(ipmi.FormatUsers(users))
+			fmt.Println(ipmiapp.FormatUsers(users))
 		},
 	}
 	return cmd
