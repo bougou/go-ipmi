@@ -7,7 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bougou/go-ipmi"
+	ipmiclient "github.com/bougou/go-ipmi/pkg/client"
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +28,7 @@ var (
 	timeout int
 	retries int
 
-	client *ipmi.Client
+	client *ipmiclient.Client
 )
 
 func initClient() error {
@@ -52,29 +53,29 @@ func initClient() error {
 
 	switch intf {
 	case "", "open":
-		c, err := ipmi.NewOpenClient()
+		c, err := ipmiclient.NewOpenClient()
 		if err != nil {
 			return fmt.Errorf("create open client failed, err: %w", err)
 		}
 		client = c // assign to global variable
-		client.WithInterface(ipmi.InterfaceOpen)
+		client.WithInterface(ipmiclient.InterfaceOpen)
 
 	case "lan", "lanplus":
-		c, err := ipmi.NewClient(host, port, username, password)
+		c, err := ipmiclient.NewClient(host, port, username, password)
 		if err != nil {
 			return fmt.Errorf("create lan or lanplus client failed, err: %w", err)
 		}
 		client = c // assign to global variable
 		switch intf {
 		case "lan":
-			client.WithInterface(ipmi.InterfaceLan)
-			client.WithTimeout(time.Duration(ipmi.DefaultLanTimeoutSec) * time.Second)
-			client.WithRetry(ipmi.DefaultLanRetries)
+			client.WithInterface(ipmiclient.InterfaceLan)
+			client.WithTimeout(time.Duration(ipmiclient.DefaultLanTimeoutSec) * time.Second)
+			client.WithRetry(ipmiclient.DefaultLanRetries)
 
 		case "lanplus":
-			client.WithInterface(ipmi.InterfaceLanplus)
-			client.WithTimeout(time.Duration(ipmi.DefaultLanplusTimeoutSec) * time.Second)
-			client.WithRetry(ipmi.DefaultLanplusRetries)
+			client.WithInterface(ipmiclient.InterfaceLanplus)
+			client.WithTimeout(time.Duration(ipmiclient.DefaultLanplusTimeoutSec) * time.Second)
+			client.WithRetry(ipmiclient.DefaultLanplusRetries)
 		}
 
 		client.WithRetry(retries)
@@ -83,12 +84,12 @@ func initClient() error {
 		}
 
 	case "tool":
-		c, err := ipmi.NewToolClient(host)
+		c, err := ipmiclient.NewToolClient(host)
 		if err != nil {
 			return fmt.Errorf("create client based on ipmitool (%s) failed, err: %w", host, err)
 		}
 		client = c // assign to global variable
-		client.WithInterface(ipmi.InterfaceTool)
+		client.WithInterface(ipmiclient.InterfaceTool)
 
 	default:
 		return fmt.Errorf("unsupported interface")

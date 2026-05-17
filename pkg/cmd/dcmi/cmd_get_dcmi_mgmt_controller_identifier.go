@@ -1,0 +1,57 @@
+package dcmi
+
+import (
+	"fmt"
+
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
+)
+
+// [DCMI specification v1.5]: 6.4.6.1 Get Management Controller Identifier String Command
+type GetDCMIMgmtControllerIdentifierRequest struct {
+	Offset uint8
+}
+
+type GetDCMIMgmtControllerIdentifierResponse struct {
+	// ID String Length Count of non-null characters starting from offset 0 up to the first null.
+	// Note: The Maximum length of the Identifier String is specified as 64 bytes including the null character,
+	// therefore the range for this return is 0-63.
+	IDStrLength uint8
+
+	IDStr []byte
+}
+
+func (req *GetDCMIMgmtControllerIdentifierRequest) Pack() []byte {
+	// Number of bytes to read (16 bytes maximum)
+	// using the fixed (maximum) value is OK here.
+	var readBytes = uint8(0x10)
+	return []byte{ipmi.GroupExtensionDCMI, req.Offset, readBytes}
+}
+
+func (req *GetDCMIMgmtControllerIdentifierRequest) Command() ipmi.Command {
+	return ipmi.CommandGetDCMIMgmtControllerIdentifier
+}
+
+func (res *GetDCMIMgmtControllerIdentifierResponse) CompletionCodes() map[uint8]string {
+	return map[uint8]string{}
+}
+
+func (res *GetDCMIMgmtControllerIdentifierResponse) Unpack(msg []byte) error {
+	if len(msg) < 2 {
+		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+	}
+
+	if err := ipmi.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
+		return err
+	}
+
+	res.IDStrLength = msg[1]
+	res.IDStr, _, _ = ipmi.UnpackBytes(msg, 2, len(msg)-2)
+	return nil
+}
+
+func (res *GetDCMIMgmtControllerIdentifierResponse) Format() string {
+	return fmt.Sprintf("[%s] (returned length: %d,total length: %d)", string(res.IDStr), len(res.IDStr), res.IDStrLength)
+}
+
+// GetDCMIMgmtControllerIdentifier sends a DCMI "Get Asset Tag" command.
+// See [GetDCMIMgmtControllerIdentifierRequest] for details.
