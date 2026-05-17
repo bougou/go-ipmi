@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bougou/go-ipmi"
+	ipmiapp "github.com/bougou/go-ipmi/pkg/cmd/app"
 	"github.com/spf13/cobra"
 )
 
@@ -44,7 +44,7 @@ func NewCmdSessionInfo() *cobra.Command {
 
 			switch args[0] {
 			case "active":
-				request := &ipmi.GetSessionInfoRequest{
+				request := &ipmiapp.GetSessionInfoRequest{
 					SessionIndex: 0, // current active
 				}
 				res, err := client.GetSessionInfo(ctx, request)

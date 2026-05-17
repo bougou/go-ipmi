@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/bougou/go-ipmi"
+	ipmiclient "github.com/bougou/go-ipmi/pkg/client"
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -151,7 +152,7 @@ Sensor Types:
 					return
 				}
 
-				sensors, err := client.GetSensors(ctx, ipmi.SensorFilterOptionIsSensorType(sensorType))
+				sensors, err := client.GetSensors(ctx, ipmiclient.SensorFilterOptionIsSensorType(sensorType))
 				if err != nil {
 					fmt.Printf("failed to get (%s) sensors: %s", sensorType, err)
 					return

@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bougou/go-ipmi"
+	ipmiclient "github.com/bougou/go-ipmi/pkg/client"
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -60,14 +61,14 @@ func NewCmdSensorList() *cobra.Command {
 		Use:   "list",
 		Short: "list",
 		Run: func(cmd *cobra.Command, args []string) {
-			filterOptions := make([]ipmi.SensorFilterOption, 0)
+			filterOptions := make([]ipmiclient.SensorFilterOption, 0)
 
 			if filterThreshold {
-				filterOptions = append(filterOptions, ipmi.SensorFilterOptionIsThreshold)
+				filterOptions = append(filterOptions, ipmiclient.SensorFilterOptionIsThreshold)
 			}
 
 			if filterReadingValid {
-				filterOptions = append(filterOptions, ipmi.SensorFilterOptionIsReadingValid)
+				filterOptions = append(filterOptions, ipmiclient.SensorFilterOptionIsReadingValid)
 			}
 
 			ctx := context.Background()

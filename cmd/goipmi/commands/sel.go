@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bougou/go-ipmi"
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
