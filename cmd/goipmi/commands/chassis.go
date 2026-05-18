@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bougou/go-ipmi"
+	ipmichassis "github.com/bougou/go-ipmi/pkg/cmd/chassis"
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -106,20 +107,20 @@ func NewCmdChassisPolicy() *cobra.Command {
 			if len(args) >= 1 {
 				switch args[0] {
 				case "list":
-					fmt.Printf("Supported chassis power policy: %s\n", strings.Join(ipmi.SupportedPowerRestorePolicies, " "))
+					fmt.Printf("Supported chassis power policy: %s\n", strings.Join(ipmichassis.SupportedPowerRestorePolicies, " "))
 					return
 				case "always-on":
-					_, err := client.SetPowerRestorePolicy(ctx, ipmi.PowerRestorePolicyAlwaysOn)
+					_, err := client.SetPowerRestorePolicy(ctx, ipmichassis.PowerRestorePolicyAlwaysOn)
 					if err != nil {
 						CheckErr(fmt.Errorf("SetPowerRestorePolicy failed, err: %w", err))
 					}
 				case "previous":
-					_, err := client.SetPowerRestorePolicy(ctx, ipmi.PowerRestorePolicyPrevious)
+					_, err := client.SetPowerRestorePolicy(ctx, ipmichassis.PowerRestorePolicyPrevious)
 					if err != nil {
 						CheckErr(fmt.Errorf("SetPowerRestorePolicy failed, err: %w", err))
 					}
 				case "always-off":
-					_, err := client.SetPowerRestorePolicy(ctx, ipmi.PowerRestorePolicyAlwaysOff)
+					_, err := client.SetPowerRestorePolicy(ctx, ipmichassis.PowerRestorePolicyAlwaysOff)
 					if err != nil {
 						CheckErr(fmt.Errorf("SetPowerRestorePolicy failed, err: %w", err))
 					}
@@ -140,7 +141,7 @@ func NewCmdChassisPower() *cobra.Command {
 		Use:   "power",
 		Short: "power",
 		Run: func(cmd *cobra.Command, args []string) {
-			var c ipmi.ChassisControl
+			var c ipmichassis.ChassisControl
 			if len(args) == 0 {
 				fmt.Println(usage)
 				return
@@ -162,17 +163,17 @@ func NewCmdChassisPower() *cobra.Command {
 					fmt.Printf("Chassis Power is %s\n", powerStatus)
 					return
 				case "on":
-					c = ipmi.ChassisControlPowerUp
+					c = ipmichassis.ChassisControlPowerUp
 				case "off":
-					c = ipmi.ChassisControlPowerDown
+					c = ipmichassis.ChassisControlPowerDown
 				case "cycle":
-					c = ipmi.ChassisControlPowerCycle
+					c = ipmichassis.ChassisControlPowerCycle
 				case "reset":
-					c = ipmi.ChassisControlHardReset
+					c = ipmichassis.ChassisControlHardReset
 				case "diag":
-					c = ipmi.ChassisControlDiagnosticInterrupt
+					c = ipmichassis.ChassisControlDiagnosticInterrupt
 				case "soft":
-					c = ipmi.ChassisControlSoftShutdown
+					c = ipmichassis.ChassisControlSoftShutdown
 				default:
 					CheckErr(errors.New(usage))
 					return

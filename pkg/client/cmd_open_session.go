@@ -1,0 +1,253 @@
+package client
+
+import (
+	"context"
+	"fmt"
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
+)
+
+// 13.17 RMCP+ Open Session Request
+type OpenSessionRequest struct {
+	MessageTag                     uint8
+	RequestedMaximumPrivilegeLevel ipmi.PrivilegeLevel
+	RemoteConsoleSessionID         uint32
+	AuthenticationPayload
+	IntegrityPayload
+	ConfidentialityPayload
+}
+
+// 13.18 RMCP+ Open Session Response
+type OpenSessionResponse struct {
+	// The BMC returns the Message Tag value that was passed by the remote console in the Open Session Request message.
+	MessageTag uint8
+	// Identifies the status of the previous message.
+	// If the previous message generated an error, then only the Status Code, Reserved, and Remote Console Session ID fields are returned.
+	RmcpStatusCode         ipmi.RmcpStatusCode
+	MaximumPrivilegeLevel  uint8
+	RemoteConsoleSessionID uint32
+	ManagedSystemSessionID uint32
+	AuthenticationPayload
+	IntegrityPayload
+	ConfidentialityPayload
+}
+
+type AuthenticationPayload struct {
+	// 00h = authentication algorithm
+	PayloadType   uint8
+	PayloadLength uint8 // Payload Length in bytes (1-based). The total length in bytes of the payload including the header (= 08h for this specification).
+	AuthAlg       uint8
+}
+
+type IntegrityPayload struct {
+	// 01h = integrity algorithm
+	PayloadType   uint8
+	PayloadLength uint8
+	IntegrityAlg  uint8
+}
+
+type ConfidentialityPayload struct {
+	// 02h = confidentiality algorithm
+	PayloadType   uint8
+	PayloadLength uint8
+	CryptAlg      uint8
+}
+
+const (
+	RmcpOpenSessionRequestSize     int = 32
+	RmcpOpenSessionResponseSize    int = 36
+	RmcpOpenSessionResponseMinSize int = 8
+)
+
+func (req *OpenSessionRequest) Command() ipmi.Command {
+	return ipmi.CommandNone
+}
+
+func (req *OpenSessionRequest) Pack() []byte {
+	var out = make([]byte, RmcpOpenSessionRequestSize)
+	packUint8(req.MessageTag, out, 0)
+	packUint8(uint8(req.RequestedMaximumPrivilegeLevel), out, 1)
+	packUint16(0, out, 2) // 2 bytes reserved
+	packUint32L(req.RemoteConsoleSessionID, out, 4)
+	packBytes(req.AuthenticationPayload.Pack(), out, 8)
+	packBytes(req.IntegrityPayload.Pack(), out, 16)
+	packBytes(req.ConfidentialityPayload.Pack(), out, 24)
+	return out
+}
+
+func (res *OpenSessionResponse) Unpack(data []byte) error {
+	if len(data) < RmcpOpenSessionResponseMinSize {
+		return ipmi.ErrUnpackedDataTooShortWith(len(data), RmcpOpenSessionResponseMinSize)
+	}
+
+	res.MessageTag, _, _ = unpackUint8(data, 0)
+	b1, _, _ := unpackUint8(data, 1)
+	res.RmcpStatusCode = ipmi.RmcpStatusCode(b1)
+	res.MaximumPrivilegeLevel, _, _ = unpackUint8(data, 2)
+	// reserved
+	res.RemoteConsoleSessionID, _, _ = unpackUint32L(data, 4)
+
+	// If the previous message generated an error, then only the Status Code, Reserved, and Remote Console Session ID fields are returned.
+	// See Table 13-, RMCP+ and RAKP Message Status Codes.
+	// The session establishment in progress is discarded at the BMC, and the
+	// remote console will need to start over with a new Open Session Request message.
+	// (Since the BMC has not yet delivered a Managed System Session ID to the remote console,
+	// it shouldn't be carrying any state information from the prior Open Session Request,
+	// but if it has, that state should be discarded.)
+	if res.RmcpStatusCode != ipmi.RmcpStatusCodeNoErrors {
+		return nil
+	}
+
+	if len(data) < RmcpOpenSessionResponseSize {
+		return ipmi.ErrUnpackedDataTooShortWith(len(data), RmcpOpenSessionResponseSize)
+	}
+	res.ManagedSystemSessionID, _, _ = unpackUint32L(data, 8)
+	res.AuthenticationPayload.Unpack(data[12:20])
+	res.IntegrityPayload.Unpack(data[20:28])
+	res.ConfidentialityPayload.Unpack(data[28:36])
+	return nil
+}
+
+func (*OpenSessionResponse) CompletionCodes() map[uint8]string {
+	// no command-specific cc
+	return map[uint8]string{}
+}
+
+func (res *OpenSessionResponse) Format() string {
+	return "" +
+		fmt.Sprintf("  Message tag                         : %#02x\n", res.MessageTag) +
+		fmt.Sprintf("  RMCP+ status                        : %#02x %s\n", res.RmcpStatusCode, ipmi.RmcpStatusCode(res.RmcpStatusCode)) +
+		fmt.Sprintf("  Maximum privilege level             : %#02x %s\n", res.MaximumPrivilegeLevel, ipmi.PrivilegeLevel(res.MaximumPrivilegeLevel)) +
+		fmt.Sprintf("  Console Session ID                  : %#0x\n", res.RemoteConsoleSessionID) +
+		fmt.Sprintf("  BMC Session ID                      : %#0x\n", res.ManagedSystemSessionID) +
+		fmt.Sprintf("  Negotiated authentication algorithm : %#02x %s\n", res.AuthAlg, ipmi.AuthAlg(res.AuthAlg)) +
+		fmt.Sprintf("  Negotiated integrity algorithm      : %#02x %s\n", res.IntegrityAlg, ipmi.IntegrityAlg(res.IntegrityAlg)) +
+		fmt.Sprintf("  Negotiated encryption algorithm     : %#02x %s\n", res.CryptAlg, ipmi.CryptAlg(res.CryptAlg))
+}
+
+func (c *Client) OpenSession(ctx context.Context) (response *OpenSessionResponse, err error) {
+	cipherSuiteID := c.session.v20.cipherSuiteID
+
+	authAlg, integrityAlg, cryptAlg, err := ipmi.GetCipherSuiteAlgorithms(cipherSuiteID)
+	if err != nil {
+		return nil, fmt.Errorf("get cipher suite for id %v failed, err: %w", cipherSuiteID, err)
+	}
+	c.session.v20.requestedAuthAlg = authAlg
+	c.session.v20.requestedIntegrityAlg = integrityAlg
+	c.session.v20.requestedEncryptAlg = cryptAlg
+
+	// Choose our session ID for easy recognition in the packet dump
+	var remoteConsoleSessionID uint32 = 0xa0a1a2a3
+
+	request := &OpenSessionRequest{
+		MessageTag:                     0x00,
+		RequestedMaximumPrivilegeLevel: 0, // Request the highest level matching proposed algorithms
+		RemoteConsoleSessionID:         remoteConsoleSessionID,
+		AuthenticationPayload: AuthenticationPayload{
+			PayloadType:   0x00, // 0 means authentication algorithm
+			PayloadLength: 8,
+			AuthAlg:       uint8(c.session.v20.requestedAuthAlg),
+		},
+		IntegrityPayload: IntegrityPayload{
+			PayloadType:   0x01, // 1 means integrity algorithm
+			PayloadLength: 8,
+			IntegrityAlg:  uint8(c.session.v20.requestedIntegrityAlg),
+		},
+		ConfidentialityPayload: ConfidentialityPayload{
+			PayloadType:   0x02, // 2 means confidentiality algorithm
+			PayloadLength: 8,
+			CryptAlg:      uint8(c.session.v20.requestedEncryptAlg),
+		},
+	}
+
+	response = &OpenSessionResponse{}
+
+	c.session.v20.state = ipmi.SessionStateOpenSessionSent
+
+	err = c.Exchange(ctx, request, response)
+	if err != nil {
+		return nil, fmt.Errorf("client exchange failed, err: %w", err)
+	}
+
+	c.Debug("OPEN SESSION RESPONSE", response.Format())
+
+	if response.RmcpStatusCode != ipmi.RmcpStatusCodeNoErrors {
+		err = fmt.Errorf("rakp status code error: (%#02x) %s", uint8(response.RmcpStatusCode), response.RmcpStatusCode)
+		return
+	}
+
+	c.session.v20.state = ipmi.SessionStateOpenSessionReceived
+
+	c.session.v20.authAlg = ipmi.AuthAlg(response.AuthAlg)
+	c.session.v20.integrityAlg = ipmi.IntegrityAlg(response.IntegrityAlg)
+	c.session.v20.cryptAlg = ipmi.CryptAlg(response.CryptAlg)
+	c.session.v20.consoleSessionID = response.RemoteConsoleSessionID
+	c.session.v20.bmcSessionID = response.ManagedSystemSessionID
+
+	return
+}
+
+func (p *AuthenticationPayload) Pack() []byte {
+	out := make([]byte, 8)
+	packUint8(p.PayloadType, out, 0)
+	packUint16(0, out, 1) // 2 bytes reserved
+	packUint8(p.PayloadLength, out, 3)
+	packUint8(p.AuthAlg, out, 4)
+	packUint24(0, out, 5) // 3 bytes reserved
+	return out
+}
+
+func (p *AuthenticationPayload) Unpack(msg []byte) error {
+	if len(msg) < 8 {
+		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 8)
+	}
+	p.PayloadType, _, _ = unpackUint8(msg, 0)
+	// 2 bytes reserved
+	p.PayloadLength, _, _ = unpackUint8(msg, 3)
+	p.AuthAlg, _, _ = unpackUint8(msg, 4)
+	// 3 bytes reserved
+	return nil
+}
+
+func (p *IntegrityPayload) Pack() []byte {
+	out := make([]byte, 8)
+	packUint8(p.PayloadType, out, 0)
+	packUint16(0, out, 1) // 2 bytes reserved
+	packUint8(p.PayloadLength, out, 3)
+	packUint8(p.IntegrityAlg, out, 4)
+	packUint24(0, out, 5) // 3 bytes reserved
+	return out
+}
+
+func (p *IntegrityPayload) Unpack(msg []byte) error {
+	if len(msg) < 8 {
+		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 8)
+	}
+	p.PayloadType, _, _ = unpackUint8(msg, 0)
+	// 2 bytes reserved
+	p.PayloadLength, _, _ = unpackUint8(msg, 3)
+	p.IntegrityAlg, _, _ = unpackUint8(msg, 4)
+	// 3 bytes reserved
+	return nil
+}
+
+func (p *ConfidentialityPayload) Pack() []byte {
+	out := make([]byte, 8)
+	packUint8(p.PayloadType, out, 0)
+	packUint16(0, out, 1) // 2 bytes reserved
+	packUint8(p.PayloadLength, out, 3)
+	packUint8(p.CryptAlg, out, 4)
+	packUint24(0, out, 5) // 3 bytes reserved
+	return out
+}
+
+func (p *ConfidentialityPayload) Unpack(msg []byte) error {
+	if len(msg) < 8 {
+		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 8)
+	}
+	p.PayloadType, _, _ = unpackUint8(msg, 0)
+	// 2 bytes reserved
+	p.PayloadLength, _, _ = unpackUint8(msg, 3)
+	p.CryptAlg, _, _ = unpackUint8(msg, 4)
+	// 3 bytes reserved
+	return nil
+}
