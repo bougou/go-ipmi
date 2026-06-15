@@ -65,14 +65,14 @@ func (res *GetCommandSubfunctionEnablesResponse) Unpack(msg []byte) error {
 
 	for i := 0; i < bytesLen; i++ {
 		b := msg[i]
-		res.SubfunctionEnables[i*8+0] = ipmi.IsBit0Set(b)
-		res.SubfunctionEnables[i*8+1] = ipmi.IsBit1Set(b)
-		res.SubfunctionEnables[i*8+2] = ipmi.IsBit2Set(b)
-		res.SubfunctionEnables[i*8+3] = ipmi.IsBit3Set(b)
-		res.SubfunctionEnables[i*8+4] = ipmi.IsBit4Set(b)
-		res.SubfunctionEnables[i*8+5] = ipmi.IsBit5Set(b)
-		res.SubfunctionEnables[i*8+6] = ipmi.IsBit6Set(b)
-		res.SubfunctionEnables[i*8+7] = ipmi.IsBit7Set(b)
+		enables[i*8+0] = ipmi.IsBit0Set(b)
+		enables[i*8+1] = ipmi.IsBit1Set(b)
+		enables[i*8+2] = ipmi.IsBit2Set(b)
+		enables[i*8+3] = ipmi.IsBit3Set(b)
+		enables[i*8+4] = ipmi.IsBit4Set(b)
+		enables[i*8+5] = ipmi.IsBit5Set(b)
+		enables[i*8+6] = ipmi.IsBit6Set(b)
+		enables[i*8+7] = ipmi.IsBit7Set(b)
 	}
 
 	res.SubfunctionEnables = enables
