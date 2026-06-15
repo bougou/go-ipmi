@@ -270,6 +270,8 @@ func (c *Client) GetPEFConfigParams(ctx context.Context) (pefConfigParams *ipmi.
 		AlertStringsCount:   &ipmi.PEFConfigParam_AlertStringsCount{},
 		AlertStringKeys:     []*ipmi.PEFConfigParam_AlertStringKey{},
 		AlertStrings:        []*ipmi.PEFConfigParam_AlertString{},
+		GroupControlsCount:  &ipmi.PEFConfigParam_GroupControlsCount{},
+		GroupControls:       []*ipmi.PEFConfigParam_GroupControl{},
 	}
 
 	if err = c.GetPEFConfigParamsFor(ctx, pefConfigParams); err != nil {
