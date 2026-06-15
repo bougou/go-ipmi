@@ -316,7 +316,7 @@ func (c *Client) GetPEFConfigParamsFor(ctx context.Context, pefConfigParams *ipm
 
 	eventFiltersCount := uint8(0)
 	if pefConfigParams.EventFiltersCount != nil {
-		if err := c.GetPEFConfigParamFor(ctx, pefConfigParams.AlertPoliciesCount); err != nil {
+		if err := c.GetPEFConfigParamFor(ctx, pefConfigParams.EventFiltersCount); err != nil {
 			return err
 		}
 		eventFiltersCount = pefConfigParams.EventFiltersCount.Value

@@ -62,7 +62,7 @@ func (req *RearmSensorEventsRequest) Pack() []byte {
 		b4 = ipmi.SetOrClearBit5(b4, req.SensorEventFlag.SensorEvent_State_5_Deassert)
 		b4 = ipmi.SetOrClearBit4(b4, req.SensorEventFlag.SensorEvent_State_4_Deassert)
 		b4 = ipmi.SetOrClearBit3(b4, req.SensorEventFlag.SensorEvent_State_3_Deassert)
-		b4 = ipmi.SetOrClearBit2(b4, req.SensorEventFlag.SensorEvent_State_3_Deassert)
+		b4 = ipmi.SetOrClearBit2(b4, req.SensorEventFlag.SensorEvent_State_2_Deassert)
 		b4 = ipmi.SetOrClearBit1(b4, req.SensorEventFlag.SensorEvent_State_1_Deassert)
 		b4 = ipmi.SetOrClearBit0(b4, req.SensorEventFlag.SensorEvent_State_0_Deassert)
 
