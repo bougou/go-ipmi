@@ -143,7 +143,7 @@ func (flag *SensorEventFlag) TrueEvents() []SensorEvent {
 		out = append(out, SensorEvent_UNC_High_Assert)
 	}
 	if flag.SensorEvent_UNC_Low_Assert {
-		out = append(out, SensorEvent_UNC_Low_Deassert)
+		out = append(out, SensorEvent_UNC_Low_Assert)
 	}
 	if flag.SensorEvent_LNR_High_Assert {
 		out = append(out, SensorEvent_LNR_High_Assert)
