@@ -1108,7 +1108,7 @@ func (param *LanConfigParam_VLANID) Pack() []byte {
 
 	b := byte(param.ID >> 8)
 	b = SetOrClearBit7(b, param.Enabled)
-	out[0] = b
+	out[1] = b
 
 	return out
 }
@@ -1450,7 +1450,7 @@ func (param *LanConfigParam_IPv6Support) Pack() []byte {
 	b = SetOrClearBit1(b, param.CanUseBothIPv4AndIPv6)
 	b = SetOrClearBit0(b, param.CanUseIPv6Only)
 
-	out[1] = b
+	out[0] = b
 
 	return out
 }
