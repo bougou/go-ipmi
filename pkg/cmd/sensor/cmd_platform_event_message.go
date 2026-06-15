@@ -46,7 +46,7 @@ func (req *PlatformEventMessageRequest) Pack() []byte {
 	out[6] = req.EventData.EventData2
 	out[7] = req.EventData.EventData3
 
-	return []byte{}
+	return out
 }
 
 func (req *PlatformEventMessageRequest) Command() ipmi.Command {
