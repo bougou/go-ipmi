@@ -58,8 +58,8 @@ func (c *Client) GetSOLConfigParam(ctx context.Context, channelNumber uint8, par
 	request := &transport.GetSOLConfigParamRequest{
 		ChannelNumber: channelNumber,
 		ParamSelector: paramSelector,
-		SetSelector:   0x00,
-		BlockSelector: 0x00,
+		SetSelector:   setSelector,
+		BlockSelector: blockSelector,
 	}
 	response = &transport.GetSOLConfigParamResponse{}
 	err = c.Exchange(ctx, request, response)
