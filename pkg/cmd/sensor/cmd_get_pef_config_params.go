@@ -39,7 +39,7 @@ func (req *GetPEFConfigParamRequest) Pack() []byte {
 
 	out := make([]byte, 3)
 
-	b0 := uint8(req.ParamSelector) & 0x3f
+	b0 := uint8(req.ParamSelector) & 0x7f
 	if req.GetParamRevisionOnly {
 		b0 = ipmi.SetBit7(b0)
 	}
