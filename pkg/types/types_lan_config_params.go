@@ -985,7 +985,7 @@ func (param *LanConfigParam_AlertDestinationType) Unpack(data []byte) error {
 
 	param.SetSelector = data[0]
 	param.AlertAcknowledged = IsBit7Set(data[1])
-	param.DestinationType = data[1] & 0x03
+	param.DestinationType = data[1] & 0x07
 	param.AlertAcknowledgeTimeout = data[2]
 	param.Retries = data[3] & 0x07
 
@@ -997,7 +997,7 @@ func (param *LanConfigParam_AlertDestinationType) Pack() []byte {
 
 	out[0] = param.SetSelector
 
-	b := param.DestinationType & 0x03
+	b := param.DestinationType & 0x07
 	b = SetOrClearBit7(b, param.AlertAcknowledged)
 	out[1] = b
 
