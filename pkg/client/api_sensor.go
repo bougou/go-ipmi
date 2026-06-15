@@ -392,6 +392,7 @@ func (c *Client) GetPEFConfigParamsFor(ctx context.Context, pefConfigParams *ipm
 		if err := c.GetPEFConfigParamFor(ctx, pefConfigParams.AlertStringsCount); err != nil {
 			return err
 		}
+		alertStringsCount = pefConfigParams.AlertStringsCount.Value
 	}
 
 	if pefConfigParams.AlertStringKeys != nil {
