@@ -292,7 +292,7 @@ type PEFEventFilterType uint8
 
 const (
 	PEFEventFilterType_Configurable  PEFEventFilterType = 0x00
-	PEFEventFilterType_PreConfigured PEFEventFilterType = 0x10
+	PEFEventFilterType_PreConfigured PEFEventFilterType = 0x01
 )
 
 func (filterType PEFEventFilterType) String() string {
