@@ -434,6 +434,7 @@ func (c *Client) GetPEFConfigParamsFor(ctx context.Context, pefConfigParams *ipm
 		if err := c.GetPEFConfigParamFor(ctx, pefConfigParams.GroupControlsCount); err != nil {
 			return err
 		}
+		groupControlsCount = pefConfigParams.GroupControlsCount.Value
 	}
 
 	if pefConfigParams.GroupControls != nil {
