@@ -999,7 +999,7 @@ func (param *LanConfigParam_AlertDestinationType) Pack() []byte {
 
 	b := param.DestinationType & 0x03
 	b = SetOrClearBit7(b, param.AlertAcknowledged)
-	out[1] = b
+	out[0] = b
 
 	out[2] = param.AlertAcknowledgeTimeout
 	out[3] = param.Retries
