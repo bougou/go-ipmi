@@ -1315,7 +1315,9 @@ func (param *LanConfigParam_AlertDestinationVLAN) Pack() []byte {
 	out[0] = param.SetSelector
 
 	b1 := uint8(0)
-	b1 = SetOrClearBit5(b1, param.Enabled)
+	if param.Enabled {
+		b1 = 0x01
+	}
 	out[1] = b1
 
 	out[2] = uint8(param.VLANID)
@@ -1334,7 +1336,7 @@ func (param *LanConfigParam_AlertDestinationVLAN) Unpack(data []byte) error {
 	}
 
 	param.SetSelector = data[0]
-	param.Enabled = IsBit4Set(data[1])
+	param.Enabled = data[1]&0x0f == 0x01
 
 	param.CFI = IsBit4Set(data[3])
 	param.Priority = data[3] >> 5
