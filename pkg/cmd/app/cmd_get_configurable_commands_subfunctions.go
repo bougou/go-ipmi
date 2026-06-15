@@ -60,14 +60,14 @@ func (res *GetConfigurableCommandSubfunctionsResponse) Unpack(msg []byte) error 
 
 	for i := 0; i < 4; i++ {
 		b := msg[i]
-		res.SubfunctionsSupport[i*8+0] = ipmi.IsBit0Set(b)
-		res.SubfunctionsSupport[i*8+1] = ipmi.IsBit1Set(b)
-		res.SubfunctionsSupport[i*8+2] = ipmi.IsBit2Set(b)
-		res.SubfunctionsSupport[i*8+3] = ipmi.IsBit3Set(b)
-		res.SubfunctionsSupport[i*8+4] = ipmi.IsBit4Set(b)
-		res.SubfunctionsSupport[i*8+5] = ipmi.IsBit5Set(b)
-		res.SubfunctionsSupport[i*8+6] = ipmi.IsBit6Set(b)
-		res.SubfunctionsSupport[i*8+7] = ipmi.IsBit7Set(b)
+		supports[i*8+0] = ipmi.IsBit0Set(b)
+		supports[i*8+1] = ipmi.IsBit1Set(b)
+		supports[i*8+2] = ipmi.IsBit2Set(b)
+		supports[i*8+3] = ipmi.IsBit3Set(b)
+		supports[i*8+4] = ipmi.IsBit4Set(b)
+		supports[i*8+5] = ipmi.IsBit5Set(b)
+		supports[i*8+6] = ipmi.IsBit6Set(b)
+		supports[i*8+7] = ipmi.IsBit7Set(b)
 	}
 
 	if len(msg) == 4 {
@@ -81,14 +81,14 @@ func (res *GetConfigurableCommandSubfunctionsResponse) Unpack(msg []byte) error 
 
 	for i := 4; i < 8; i++ {
 		b := msg[i]
-		res.SubfunctionsSupport[i*8+0] = ipmi.IsBit0Set(b)
-		res.SubfunctionsSupport[i*8+1] = ipmi.IsBit1Set(b)
-		res.SubfunctionsSupport[i*8+2] = ipmi.IsBit2Set(b)
-		res.SubfunctionsSupport[i*8+3] = ipmi.IsBit3Set(b)
-		res.SubfunctionsSupport[i*8+4] = ipmi.IsBit4Set(b)
-		res.SubfunctionsSupport[i*8+5] = ipmi.IsBit5Set(b)
-		res.SubfunctionsSupport[i*8+6] = ipmi.IsBit6Set(b)
-		res.SubfunctionsSupport[i*8+7] = ipmi.IsBit7Set(b)
+		supports[i*8+0] = ipmi.IsBit0Set(b)
+		supports[i*8+1] = ipmi.IsBit1Set(b)
+		supports[i*8+2] = ipmi.IsBit2Set(b)
+		supports[i*8+3] = ipmi.IsBit3Set(b)
+		supports[i*8+4] = ipmi.IsBit4Set(b)
+		supports[i*8+5] = ipmi.IsBit5Set(b)
+		supports[i*8+6] = ipmi.IsBit6Set(b)
+		supports[i*8+7] = ipmi.IsBit7Set(b)
 	}
 
 	res.SubfunctionsSupport = supports[0:64]
