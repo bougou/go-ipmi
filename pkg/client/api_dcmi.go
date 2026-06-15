@@ -380,7 +380,7 @@ func (c *Client) SetDCMIMgmtControllerIdentifierFull(ctx context.Context, idStr 
 		return fmt.Errorf("the id str must be at most 63 bytes")
 	}
 
-	if idStr[len(idStr)-1] != 0x00 {
+	if len(idStr) == 0 || idStr[len(idStr)-1] != 0x00 {
 		idStr = append(idStr, 0x00)
 	}
 
