@@ -36,7 +36,7 @@ func (req *GetCommandSupportRequest) Pack() []byte {
 	out := make([]byte, 6)
 	ipmi.PackUint8(req.ChannelNumber, out, 0)
 
-	netfn := uint8(req.NetFn) & (uint8(req.CommandRangeMask) << 6)
+	netfn := (uint8(req.NetFn) & 0x3f) | (uint8(req.CommandRangeMask) << 6)
 	ipmi.PackUint8(netfn, out, 1)
 
 	ipmi.PackUint8(req.LUN&0x03, out, 2)

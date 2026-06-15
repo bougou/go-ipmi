@@ -31,7 +31,7 @@ func (req *SetCommandSubfunctionEnablesRequest) Pack() []byte {
 	out := make([]byte, maxLength)
 
 	out[0] = req.ChannelNumber
-	out[1] = uint8(req.NetFn) & (uint8(req.CommandRangeMask) << 6)
+	out[1] = (uint8(req.NetFn) & 0x3f) | (uint8(req.CommandRangeMask) << 6)
 	out[2] = req.LUN & 0x03
 	out[3] = req.Cmd
 
