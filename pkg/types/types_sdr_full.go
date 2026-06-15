@@ -396,7 +396,7 @@ func parseSDRFullSensor(data []byte, sdr *SDR) error {
 	s.SensorUnit = SensorUnit{
 		AnalogDataFormat: SensorAnalogUnitFormat((b20 & 0xc0) >> 6),
 		RateUnit:         SensorRateUnit((b20 & 0x38) >> 3),
-		ModifierRelation: SensorModifierRelation((b20 & 0x06) >> 2),
+		ModifierRelation: SensorModifierRelation((b20 & 0x06) >> 1),
 		Percentage:       IsBit0Set(b20),
 		BaseUnit:         SensorUnitType(b21),
 		ModifierUnit:     SensorUnitType(b22),
