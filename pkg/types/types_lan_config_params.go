@@ -1388,7 +1388,7 @@ func (param *LanConfigParam_BadPasswordThreshold) LanConfigParameter() (paramSel
 }
 
 func (param *LanConfigParam_BadPasswordThreshold) Pack() []byte {
-	out := make([]byte, 0)
+	out := make([]byte, 6)
 
 	b := uint8(0)
 	b = SetOrClearBit0(b, param.GenerateSessionAuditEvent)
