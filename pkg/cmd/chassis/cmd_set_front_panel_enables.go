@@ -24,16 +24,16 @@ func (req *SetFrontPanelEnablesRequest) Pack() []byte {
 	if req.DisableSleepButton {
 		b = ipmi.SetBit3(b)
 	}
-	if req.DisableSleepButton {
+	if req.DisableDiagnosticButton {
 		b = ipmi.SetBit2(b)
 	}
-	if req.DisableSleepButton {
+	if req.DisableResetButton {
 		b = ipmi.SetBit1(b)
 	}
-	if req.DisableSleepButton {
+	if req.DisablePoweroffButton {
 		b = ipmi.SetBit0(b)
 	}
-	ipmi.PackUint8(b, out, 1)
+	ipmi.PackUint8(b, out, 0)
 	return out
 }
 
