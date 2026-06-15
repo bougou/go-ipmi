@@ -213,7 +213,7 @@ func parseSDRCompactSensor(data []byte, sdr *SDR) error {
 	b22, _, _ := UnpackUint8(data, 22)
 	s.SensorUnit = SensorUnit{
 		AnalogDataFormat: SensorAnalogUnitFormat((b20 & 0xc0) >> 6),
-		RateUnit:         SensorRateUnit((b20 & 0x38) >> 4),
+		RateUnit:         SensorRateUnit((b20 & 0x38) >> 3),
 		ModifierRelation: SensorModifierRelation((b20 & 0x06) >> 2),
 		Percentage:       IsBit0Set(b20),
 		BaseUnit:         SensorUnitType(b21),
