@@ -467,7 +467,7 @@ func (p *BootOptionParam_BootFlags) Pack() []byte {
 	if p.BypassUserPassword {
 		b3 = SetBit3(b3)
 	}
-	if p.LockoutResetButton {
+	if p.LockoutSleepButton {
 		b3 = SetBit2(b3)
 	}
 	b3 |= uint8(p.ConsoleRedirectionControl)
@@ -508,7 +508,7 @@ func (p *BootOptionParam_BootFlags) Unpack(parameterData []byte) error {
 	p.BIOSVerbosity = BIOSVerbosity((b3 & 0x7f) >> 5)
 	p.ForceProgressEventTraps = IsBit4Set(b3)
 	p.BypassUserPassword = IsBit3Set(b3)
-	p.LockoutResetButton = IsBit2Set(b3)
+	p.LockoutSleepButton = IsBit2Set(b3)
 	p.ConsoleRedirectionControl = ConsoleRedirectionControl(b3 & 0x03)
 
 	b4, _, _ := UnpackUint8(parameterData, 3)
