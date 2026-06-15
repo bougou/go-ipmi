@@ -1240,7 +1240,7 @@ func (param *LanConfigParam_CipherSuitesPrivLevel) Pack() []byte {
 
 	for i := 0; i < 8; i++ {
 		o := byte(param.PrivLevels[2*i] & 0x0f)
-		o |= byte(param.PrivLevels[2*i+1] & 0x0f)
+		o |= byte(param.PrivLevels[2*i+1]&0x0f) << 4
 
 		out[i+1] = o
 	}
@@ -1260,7 +1260,7 @@ func (param *LanConfigParam_CipherSuitesPrivLevel) Unpack(data []byte) error {
 		}
 
 		param.PrivLevels[2*i-2] = PrivilegeLevel(v & 0x0f)
-		param.PrivLevels[2*i-1] = PrivilegeLevel(v & 0xf0 >> 4)
+		param.PrivLevels[2*i-1] = PrivilegeLevel((v & 0xf0) >> 4)
 	}
 
 	return nil
