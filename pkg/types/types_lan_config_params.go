@@ -1093,8 +1093,7 @@ func (param *LanConfigParam_VLANID) Unpack(data []byte) error {
 
 	param.Enabled = IsBit7Set(data[1])
 
-	id := uint16(data[1]) & 0x0f
-	id <<= 12
+	id := uint16(data[1]&0x0f) << 8
 	id |= uint16(data[0])
 	param.ID = id
 
@@ -1340,7 +1339,7 @@ func (param *LanConfigParam_AlertDestinationVLAN) Unpack(data []byte) error {
 	param.CFI = IsBit4Set(data[3])
 	param.Priority = data[3] >> 5
 
-	param.VLANID = uint16(data[3]&0x0f) << 12
+	param.VLANID = uint16(data[3]&0x0f) << 8
 	param.VLANID |= uint16(data[2])
 
 	return nil
