@@ -50,7 +50,10 @@ type SessionHeader15 struct {
 
 	SessionID uint32
 
-	// The Authentication Code field in the session header may or may not be present based on the Authentication Type. The authentication code field is absent whenever the Authentication Type is NONE. Whether the authentication code field is present or not when the Authentication Type = OEM is dependent on the OEM identified in the Get Channel Authentication Capabilities command.
+	// The Authentication Code field in the session header may or may not be present based on the Authentication Type.
+	// The authentication code field is absent whenever the Authentication Type is NONE.
+	// Whether the authentication code field is present or not when the Authentication Type = OEM is dependent on
+	// the OEM identified in the Get Channel Authentication Capabilities command.
 	//
 	// 16 bytes, not present when Authentication Type set to none
 	AuthCode []byte // IPMI 1.5
@@ -293,7 +296,7 @@ type SessionTrailer struct {
 	// Reserved in IPMI v2.0. Set to 07h for RMCP+ packets defined in this specification.
 	NextHeader uint8
 
-	// For IPMI v2.0 (RMCP+) if this field is present, then it is calculated according to the Integrity Algorithm that was negotiated during the session open process. See Table 13-, Integrity Algorithm Numbers.
+	// For IPMI v2.0 (RMCP+) if this field is present, then it is calculated according to the Integrity Algorithm that was negotiated during the session open process.
 	// This field is absent when the packet is unauthenticated.
 	AuthCode []byte // Integrity Data
 }

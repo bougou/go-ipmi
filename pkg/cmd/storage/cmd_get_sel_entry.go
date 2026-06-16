@@ -59,21 +59,3 @@ func (*GetSELEntryResponse) CompletionCodes() map[uint8]string {
 func (res *GetSELEntryResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
-
-// The reservationID is only required for partial Get, use 0000h otherwise.
-
-// GetSELEntries return all SEL records starting from the specified recordID.
-// Pass 0 means retrieve all SEL entries starting from the first record.
-
-// Todo
-// Notice, this extra GetSELInfo call is used to make sure the GetSELEntry works properly.
-// On Huawei TaiShan 200 (Model 2280), the NextRecordID (0xffff) in GetSELEntryResponse is NOT right occasionally.
-// $ ipmitool -I lanplus -H x.x.x.x -U xxx -P xxx raw 0x0a 0x43 0x00 0x00 0x01 0x00 0x00 0xff -v
-// RAW REQ (channel=0x0 netfn=0xa lun=0x0 cmd=0x43 data_len=6)
-// RAW REQUEST (6 bytes)
-// 00 00 01 00 00 ff
-// RAW RSP (18 bytes)
-// ff ff 01 00 02 6d 8e 91 5f 20 00 04 10 79 6f 02
-// ff ff
-//
-// This extra GetSELInfo can avoid it. (I don't known why!)

@@ -48,5 +48,3 @@ func (r *SetPEFConfigParamResponse) CompletionCodes() map[uint8]string {
 func (res *SetPEFConfigParamResponse) Format() string {
 	return ""
 }
-
-// Todo

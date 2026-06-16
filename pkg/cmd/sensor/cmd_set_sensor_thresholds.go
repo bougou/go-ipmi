@@ -97,6 +97,3 @@ func (res *SetSensorThresholdsResponse) Format() string {
 //	Lower Critical area
 //	-----------------LNR threshold
 //	Lower NonRecoverable area
-//
-// This command provides a mechanism for setting the hysteresis values associated
-// with the thresholds of a sensor that has threshold based event generation.

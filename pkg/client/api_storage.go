@@ -275,7 +275,6 @@ func (c *Client) GetSELEntry(ctx context.Context, reservationID uint16, recordID
 // GetSELEntries return all SEL records starting from the specified recordID.
 // Pass 0 means retrieve all SEL entries starting from the first record.
 func (c *Client) GetSELEntries(ctx context.Context, startRecordID uint16) ([]*ipmi.SEL, error) {
-
 	if _, err := c.GetSELInfo(ctx); err != nil {
 		return nil, fmt.Errorf("GetSELInfo failed, err: %w", err)
 	}

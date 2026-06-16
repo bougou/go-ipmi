@@ -386,7 +386,6 @@ func (param *PEFConfigParam_AlertStartupDelay) Format() string {
 
 // Number of event filters supported. 1-based.
 // This parameter does not need to be supported if Alerting is not supported.
-// READ ONLY
 type PEFConfigParam_EventFiltersCount struct {
 	Value uint8
 }
@@ -514,7 +513,6 @@ func (param *PEFConfigParam_EventFilterData1) Format() string {
 
 // Number of alert policy entries supported. 1-based.
 // This parameter does not need to be supported if Alerting is not supported.
-// READ ONLY
 type PEFConfigParam_AlertPoliciesCount struct {
 	Value uint8
 }
@@ -636,7 +634,6 @@ func (param *PEFConfigParam_SystemGUID) Format() string {
 
 // Number of alert strings supported in addition to Alert String 0. 1-based.
 // This parameter does not need to be supported if Alerting is not supported.
-// READ ONLY
 type PEFConfigParam_AlertStringsCount struct {
 	Value uint8
 }
@@ -748,7 +745,6 @@ func (param *PEFConfigParam_AlertString) Format() string {
 	return fmt.Sprintf("AlertStringSelector: %d, BlockSelector: %d, StringData: %s", param.SetSelector, param.BlockSelector, string(param.StringData))
 }
 
-// READ ONLY
 type PEFConfigParam_GroupControlsCount struct {
 	Value uint8
 }

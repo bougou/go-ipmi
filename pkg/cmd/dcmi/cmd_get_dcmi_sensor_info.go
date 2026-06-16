@@ -72,6 +72,3 @@ func (res *GetDCMISensorInfoResponse) Format() string {
 		fmt.Sprintf("Number of records      : %d\n", res.RecordsCount) +
 		fmt.Sprintf("SDR Record ID          : %v\n", res.SDRRecordID)
 }
-
-// GetDCMISensorInfo sends a DCMI "Get Power Reading" command.
-// See [GetDCMISensorInfoRequest] for details.

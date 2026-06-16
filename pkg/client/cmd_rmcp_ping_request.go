@@ -6,7 +6,6 @@ import (
 	ipmi "github.com/bougou/go-ipmi/pkg/types"
 )
 
-// RmcpPingRequest
 // 13.2.3 RMCP/ASF Presence Ping Message
 type RmcpPingRequest struct {
 	// empty

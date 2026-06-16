@@ -52,6 +52,3 @@ func (res *GetDCMIMgmtControllerIdentifierResponse) Unpack(msg []byte) error {
 func (res *GetDCMIMgmtControllerIdentifierResponse) Format() string {
 	return fmt.Sprintf("[%s] (returned length: %d,total length: %d)", string(res.IDStr), len(res.IDStr), res.IDStrLength)
 }
-
-// GetDCMIMgmtControllerIdentifier sends a DCMI "Get Asset Tag" command.
-// See [GetDCMIMgmtControllerIdentifierRequest] for details.

@@ -91,6 +91,3 @@ func (res *GetDCMIPowerReadingResponse) Format() string {
 		fmt.Sprintf("Sampling period                          : %d Seconds\n", res.ReportingPeriod/1000) +
 		fmt.Sprintf("Power reading state is                   : %s\n", ipmi.FormatBool(res.PowerMeasurementActive, "activated", "deactivated"))
 }
-
-// GetDCMIPowerReading sends a DCMI "Get Power Reading" command.
-// See [GetDCMIPowerReadingRequest] for details.

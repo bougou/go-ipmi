@@ -6,7 +6,7 @@ import (
 	ipmi "github.com/bougou/go-ipmi/pkg/types"
 )
 
-// GetSensorTypeRequest (31.2)
+// GetSensorTypeRequest (see [IPMI specification v2.0], section 35.16)
 type GetSensorTypeRequest struct {
 	SensorNumber uint8
 }

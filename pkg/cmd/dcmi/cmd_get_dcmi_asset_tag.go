@@ -66,8 +66,3 @@ func (res *GetDCMIAssetTagResponse) Unpack(msg []byte) error {
 func (res *GetDCMIAssetTagResponse) Format() string {
 	return fmt.Sprintf("%s (length: %d, total length: %d)", string(res.AssetTag), len(res.AssetTag), res.TotalLength)
 }
-
-// GetDCMIAssetTag sends a DCMI "Get Asset Tag" command.
-// See [GetDCMIAssetTagRequest] for details.
-
-// align the completion code with the FRU Type Length Byte Format

@@ -66,6 +66,3 @@ func (res *SetDCMIPowerLimitResponse) Unpack(msg []byte) error {
 func (res *SetDCMIPowerLimitResponse) Format() string {
 	return ""
 }
-
-// SetDCMIPowerLimit sends a DCMI "Get Power Reading" command.
-// See [SetDCMIPowerLimitRequest] for details.

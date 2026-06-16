@@ -49,30 +49,3 @@ func (res *GetSDRResponse) CompletionCodes() map[uint8]string {
 func (res *GetSDRResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
-
-// GetSDR returns raw SDR record.
-
-// try read partial data if err (ResponseError and CompletionCode) indicate
-// reading full data (0xff) exceeds the maximum transfer length for the interface
-
-// getSDR return SDR in a partial read way.
-
-// the actual data length of the SDR can only be determined after the first GetSDR request/response.
-
-// determine the total data length by parsing the SDR Header part
-
-// decrease the readBytes for the last read.
-
-// Only Full/Compact/EventOnly SDRs have a sensor number.
-
-// Only Full/Compact/EventOnly SDRs have a sensor name.
-
-// GetSDRs fetches the SDR records with the specified RecordTypes.
-// The parameter is a slice of SDRRecordType used as filter.
-// Empty means to get all SDR records.
-
-// GetSDRsMap returns all Full/Compact SDRs grouped by GeneratorID and SensorNumber.
-// The sensor name can only be got from SDR record.
-// So use this method to construct a map from which you can get sensor name.
-
-// enhanceSDR fills live sensor reading data into a Full or Compact SDR record.

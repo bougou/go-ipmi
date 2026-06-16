@@ -188,7 +188,6 @@ const (
 
 // the ACK/Normal Bit and the Message Class combine to identify the type of
 // message under RMCP
-// see: Table 13-, Message Type Determination Under RMCP
 func (r *RmcpHeader) MessageType() MessageType {
 	if r.ACKFlag {
 		switch r.MessageClass {

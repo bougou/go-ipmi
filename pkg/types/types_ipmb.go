@@ -11,9 +11,9 @@ type I2CAddress7Bit uint8
 
 // I2CAddress8Bit represents 8-bit I2C address, the 7-bit I2CAddress occupies bit 1 to bit 7, bit 0 indicates for write or read.
 //
-// eg:  `var a I2CAddress7Bit = 0x35`
+// eg:  `var a I2CAddress8Bit = 0x6A`
 //   - 0110 101 0  = 0x6A (for write)
-//   - 0110 101 1  = 0x6B (fore read)
+//   - 0110 101 1  = 0x6B (for read)
 //   - 7654 321 0  bit position
 type I2CAddress8Bit uint8
 

@@ -61,7 +61,3 @@ func (res *GetSystemInfoParamResponse) Format() string {
 		fmt.Sprintf("Param Revision : %d\n", res.ParamRevision) +
 		fmt.Sprintf("Param Data     : %v\n", res.ParamData)
 }
-
-// parameter not supported
-
-// For the first block of string data (set selector = 0),

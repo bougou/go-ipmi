@@ -39,6 +39,3 @@ func (r *SetSensorHysteresisResponse) CompletionCodes() map[uint8]string {
 func (res *SetSensorHysteresisResponse) Format() string {
 	return ""
 }
-
-// This command provides a mechanism for setting the hysteresis values associated
-// with the thresholds of a sensor that has threshold based event generation.

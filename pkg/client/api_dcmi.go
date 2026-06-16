@@ -9,7 +9,7 @@ import (
 	ipmi "github.com/bougou/go-ipmi/pkg/types"
 )
 
-// SetDCMIPowerLimit sends a DCMI "Get Power Reading" command.
+// SetDCMIPowerLimit sends a DCMI "Set Power Limit" command.
 // See [SetDCMIPowerLimitRequest] for details.
 func (c *Client) SetDCMIPowerLimit(ctx context.Context, request *dcmi.SetDCMIPowerLimitRequest) (response *dcmi.SetDCMIPowerLimitResponse, err error) {
 	response = &dcmi.SetDCMIPowerLimitResponse{}
@@ -17,7 +17,7 @@ func (c *Client) SetDCMIPowerLimit(ctx context.Context, request *dcmi.SetDCMIPow
 	return
 }
 
-// GetDCMISensorInfo sends a DCMI "Get Power Reading" command.
+// GetDCMISensorInfo sends a DCMI "Get Sensor Info" command.
 // See [GetDCMISensorInfoRequest] for details.
 func (c *Client) GetDCMISensorInfo(ctx context.Context, request *dcmi.GetDCMISensorInfoRequest) (response *dcmi.GetDCMISensorInfoResponse, err error) {
 	response = &dcmi.GetDCMISensorInfoResponse{}
@@ -66,7 +66,7 @@ func (c *Client) GetDCMIThermalLimit(ctx context.Context, entityID ipmi.EntityID
 	return
 }
 
-// GetDCMIPowerLimit sends a DCMI "Get Power Reading" command.
+// GetDCMIPowerLimit sends a DCMI "Get Power Limit" command.
 // See [GetDCMIPowerLimitRequest] for details.
 func (c *Client) GetDCMIPowerLimit(ctx context.Context) (response *dcmi.GetDCMIPowerLimitResponse, err error) {
 	request := &dcmi.GetDCMIPowerLimitRequest{}
@@ -236,7 +236,7 @@ func (c *Client) GetDCMIConfigParamsFor(ctx context.Context, dcmiConfigParams *i
 	return nil
 }
 
-// GetDCMIMgmtControllerIdentifier sends a DCMI "Get Asset Tag" command.
+// GetDCMIMgmtControllerIdentifier sends a DCMI "Get Management Controller Identifier" command.
 // See [GetDCMIMgmtControllerIdentifierRequest] for details.
 func (c *Client) GetDCMIMgmtControllerIdentifier(ctx context.Context, offset uint8) (response *dcmi.GetDCMIMgmtControllerIdentifierResponse, err error) {
 	request := &dcmi.GetDCMIMgmtControllerIdentifierRequest{Offset: offset}

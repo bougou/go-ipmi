@@ -87,7 +87,7 @@ func (res *OpenSessionResponse) Unpack(data []byte) error {
 	res.RemoteConsoleSessionID, _, _ = unpackUint32L(data, 4)
 
 	// If the previous message generated an error, then only the Status Code, Reserved, and Remote Console Session ID fields are returned.
-	// See Table 13-, RMCP+ and RAKP Message Status Codes.
+	// See Table 13-15, RMCP+ and RAKP Message Status Codes.
 	// The session establishment in progress is discarded at the BMC, and the
 	// remote console will need to start over with a new Open Session Request message.
 	// (Since the BMC has not yet delivered a Managed System Session ID to the remote console,

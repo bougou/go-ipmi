@@ -61,6 +61,3 @@ func (res *GetDCMIPowerLimitResponse) Format() string {
 		fmt.Sprintf("Statistics Sampling period   : %d Seconds\n", res.StatisticsSamplingPeriodSec)
 
 }
-
-// GetDCMIPowerLimit sends a DCMI "Get Power Reading" command.
-// See [GetDCMIPowerLimitRequest] for details.

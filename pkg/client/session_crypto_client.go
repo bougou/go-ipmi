@@ -188,7 +188,7 @@ func (c *Client) encryptPayload(rawPayload []byte, iv []byte) ([]byte, error) {
 		paddedData = append(paddedData, padLength) // now, the length of data SHOULD be multiple of 16
 		c.DebugBytes("padded data (before encrypt)", paddedData, 16)
 
-		// see 13.29 Table 13-, AES-CBC Encrypted Payload Fields
+		// see 13.29 AES-CBC Encrypted Payload Fields
 		if len(iv) == 0 {
 			iv = randomBytes(16) // Initialization Vector
 		}
@@ -219,7 +219,7 @@ func (c *Client) encryptPayload(rawPayload []byte, iv []byte) ([]byte, error) {
 	case ipmi.CryptAlg_xRC4_40, ipmi.CryptAlg_xRC4_128:
 		var out []byte
 
-		// see 13.30 Table 13-, xRC4-Encrypted Payload Fields
+		// see 13.30 xRC4-Encrypted Payload Fields
 		var confidentialityHeader []byte
 		var offset = make([]byte, 4)
 		if c.session.v20.accumulatedPayloadSize == 0 {

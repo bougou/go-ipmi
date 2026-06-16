@@ -49,22 +49,3 @@ func (r *GetDeviceSDRResponse) CompletionCodes() map[uint8]string {
 func (res *GetDeviceSDRResponse) Format() string {
 	return ""
 }
-
-// The Get Device SDR command allows SDR information for sensors for a Sensor Device
-// (typically implemented in a satellite management controller) to be returned.
-//
-// The Get Device SDR Command can return any type of SDR, not just Types 01h and 02h.
-// This is an optional command for Static Sensor Devices, and mandatory for Dynamic Sensor Devices.
-// The format and action of this command is similar to that for the Get SDR command
-// for SDR Repository Devices.
-//
-// Sensor Devices that support the Get Device SDR command return SDR Records that
-// match the SDR Repository formats.
-
-// getDeviceSDR reads the Device SDR record in partial read way.
-
-// the actual data length of the SDR can only be determined after the first GetSDR request/response.
-
-// determine the total data length by parsing the SDR Header part
-
-// decrease the readBytes for the last read.

@@ -70,7 +70,6 @@ func (c *Client) SetSensorType(ctx context.Context, sensorNumber uint8, sensorTy
 	return
 }
 
-// Todo
 func (c *Client) SetPEFConfigParam(ctx context.Context, paramSelector ipmi.PEFConfigParamSelector, paramData []byte) (response *sensor.SetPEFConfigParamResponse, err error) {
 	request := &sensor.SetPEFConfigParamRequest{
 		ParamSelector: paramSelector,
@@ -477,9 +476,6 @@ func (c *Client) GetPEFConfigParamsFor(ctx context.Context, pefConfigParams *ipm
 //	Lower Critical area
 //	-----------------LNR threshold
 //	Lower NonRecoverable area
-//
-// This command provides a mechanism for setting the hysteresis values associated
-// with the thresholds of a sensor that has threshold based event generation.
 func (c *Client) SetSensorThresholds(ctx context.Context, request *sensor.SetSensorThresholdsRequest) (response *sensor.SetSensorThresholdsResponse, err error) {
 	response = &sensor.SetSensorThresholdsResponse{}
 	err = c.Exchange(ctx, request, response)

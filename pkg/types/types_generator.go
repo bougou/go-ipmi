@@ -31,7 +31,6 @@ const (
 	SoftwareTypeReserved    SoftwareType = "Reserved"
 )
 
-// Software IDs can be cla
 func (i SoftwareID) Type() SoftwareType {
 	if i >= SoftwareID(0x01) && i <= SoftwareID(0x1f) {
 		return SoftwareTypeBIOS

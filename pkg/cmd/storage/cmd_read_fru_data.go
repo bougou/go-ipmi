@@ -52,16 +52,6 @@ func (res *ReadFRUDataResponse) Format() string {
 		fmt.Sprintf("Data           : %02x\n", res.Data)
 }
 
-// The command returns the specified data from the FRU Inventory Info area.
-
-// readFRUDataByLength reads FRU Data in loop until reaches the specified data length
-
-// update offset
-
-// tryReadFRUData will try to read FRU data with a read count which starts with
-// the minimal number of the specified length and the hard-coded 32, if the
-// ReadFRUData failed, it try another request with a decreased read count.
-
 func ReadFRUDataLength2Big(cc ipmi.CompletionCode) bool {
 	return cc == ipmi.CompletionCodeRequestDataLengthInvalid ||
 		cc == ipmi.CompletionCodeRequestDataLengthLimitExceeded ||
