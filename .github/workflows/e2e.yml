@@ -1,0 +1,73 @@
+---
+name: E2E Tests
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    types:
+    - opened
+    - synchronize
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Client E2E: goipmi → ipmi-simulator
+  # ---------------------------------------------------------------------------
+  client-e2e:
+    name: Client E2E (go-ipmi → ipmi-simulator)
+    runs-on: ubuntu-latest
+
+    services:
+      ipmi-simulator:
+        image: vaporio/ipmi-simulator:master
+        ports:
+          - 9623:623/udp
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Run client E2E tests
+        run: make test-e2e-client
+
+  # ---------------------------------------------------------------------------
+  # Server E2E: ipmitool → goipmi-server
+  # ---------------------------------------------------------------------------
+  server-e2e:
+    name: Server E2E (ipmitool → go-ipmi server)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Run server E2E tests
+        run: make test-e2e-server
+
+  # ---------------------------------------------------------------------------
+  # Self E2E: goipmi → goipmi-server (both from this repo)
+  # ---------------------------------------------------------------------------
+  self-e2e:
+    name: Self E2E (goipmi → goipmi-server)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Run self E2E tests
+        run: make test-e2e-self

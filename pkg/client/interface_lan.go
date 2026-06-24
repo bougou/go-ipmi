@@ -326,7 +326,14 @@ func (c *Client) Connect20(ctx context.Context) error {
 		c.maxPrivilegeLevel = ipmi.PrivilegeLevelAdministrator
 	}
 
+	// Per IPMI 2.0 spec §13.15, the initial Get Channel Authentication
+	// Capabilities command is sent in IPMI 1.5 packet format before the
+	// RMCP+ session is established.  Some BMC implementations (notably
+	// ipmi_sim) do not respond to this command when framed inside an
+	// RMCP+ session-zero (AuthType 0x06) header.
+	c.v20 = false
 	_, err = c.GetChannelAuthenticationCapabilities(ctx, channelNumber, c.maxPrivilegeLevel)
+	c.v20 = true
 	if err != nil {
 		return fmt.Errorf("cmd: Get Channel Authentication Capabilities failed, err: %w", err)
 	}

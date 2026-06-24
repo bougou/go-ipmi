@@ -146,11 +146,13 @@ func (*GetChannelAuthenticationCapabilitiesResponse) CompletionCodes() map[uint8
 }
 
 func (res *GetChannelAuthenticationCapabilitiesResponse) ChooseAuthType() ipmi.AuthType {
-	if res.AuthTypeMD2Supported {
-		return ipmi.AuthTypeMD2
-	}
+	// Prefer MD5 over MD2 when both are available, matching ipmitool behaviour
+	// (password supplied → use MD5 if supported).
 	if res.AuthTypeMD5Supported {
 		return ipmi.AuthTypeMD5
+	}
+	if res.AuthTypeMD2Supported {
+		return ipmi.AuthTypeMD2
 	}
 	if res.AuthTypePasswordSupported {
 		return ipmi.AuthTypePassword

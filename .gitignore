@@ -41,6 +41,7 @@ _output
 
 goipmitest
 cmd/goipmi/goipmi
+goipmi-server
 
 # asdf
 .tool-versions
