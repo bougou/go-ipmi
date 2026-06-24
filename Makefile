@@ -24,9 +24,10 @@ test: fmt vet
 			--cover --coverprofile cover.out --trace --progress  $(TEST_ARGS)\
 			./pkg/... ./cmd/...
 
-# Build goipmi binary
+# Build goipmi and goipmi-server binaries
 build: fmt vet
 	go build -ldflags "$(LDFLAGS)" -o $(OUTPUT_DIR)/goipmi ./cmd/goipmi
+	go build -o $(OUTPUT_DIR)/goipmi-server ./cmd/goipmi-server
 
 # Cross compiler
 build-all: fmt vet
@@ -51,3 +52,22 @@ dependencies:
 	GOBIN=$(BINDIR) go install github.com/onsi/ginkgo/ginkgo@v1.16.4
 
 	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s -- -b $(BINDIR) latest
+
+# ---------------------------------------------------------------------------
+# E2E tests
+# ---------------------------------------------------------------------------
+#   make test-e2e-client  — goipmi → ipmi-simulator
+#   make test-e2e-server  — ipmitool → goipmi-server
+#   make test-e2e-self    — goipmi → goipmi-server
+#   make test-e2e         — run all three
+
+test-e2e-client: build
+	./test/e2e/client_test.sh
+
+test-e2e-server: build
+	./test/e2e/server_test.sh
+
+test-e2e-self: build
+	./test/e2e/self_test.sh
+
+test-e2e: test-e2e-client test-e2e-server test-e2e-self
