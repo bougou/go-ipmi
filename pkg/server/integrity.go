@@ -3,6 +3,7 @@ package server
 import (
 	"crypto/hmac"
 	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/binary"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
@@ -91,6 +92,8 @@ func rmcpPlusIntegrityAuthCodeLen(alg bmc.IntegrityAlg) (int, bool) {
 		return 0, true
 	case bmc.IntegrityAlgHMACSHA1_96:
 		return 12, true
+	case bmc.IntegrityAlgHMACSHA256_128:
+		return 16, true
 	default:
 		return 0, false
 	}
@@ -102,6 +105,10 @@ func rmcpPlusIntegrityAuthCode(alg bmc.IntegrityAlg, data, key []byte) []byte {
 		h := hmac.New(sha1.New, key)
 		h.Write(data)
 		return h.Sum(nil)[:12]
+	case bmc.IntegrityAlgHMACSHA256_128:
+		h := hmac.New(sha256.New, key)
+		h.Write(data)
+		return h.Sum(nil)[:16]
 	default:
 		return nil
 	}

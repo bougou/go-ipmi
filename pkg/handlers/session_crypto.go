@@ -11,6 +11,7 @@ package handlers
 import (
 	"crypto/hmac"
 	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
 
@@ -160,20 +161,26 @@ func paddedPassword(sess *bmc.Session) []byte {
 }
 
 // computeHMAC selects the HMAC variant based on the auth algorithm.
-// Currently only RAKP-HMAC-SHA1 is implemented in the reference server.
+// Returns the full-length auth code (RAKP2/RAKP3 use the full digest; SIK/K1/K2
+// derivation also uses the full digest). Supported: RAKP-HMAC-SHA1 (20B) and
+// RAKP-HMAC-SHA256 (32B).
 func computeHMAC(alg bmc.AuthAlg, data, key []byte) ([]byte, error) {
 	switch alg {
 	case bmc.AuthAlgNone:
 		return nil, nil
 	case bmc.AuthAlgHMACSHA1:
 		return doHMACSHA1(data, key), nil
+	case bmc.AuthAlgHMACSHA256:
+		return doHMACSHA256(data, key), nil
 	default:
 		return nil, fmt.Errorf("unsupported auth algorithm: %d", alg)
 	}
 }
 
 // computeHMACIntegrity selects the HMAC variant based on the integrity algorithm
-// for RAKP4 and session trailer AuthCode.
+// for RAKP4 and session trailer AuthCode. The digest is truncated to the
+// algorithm's integrity length: HMAC-SHA1-96 → 12 bytes, HMAC-SHA256-128 → 16
+// bytes (spec §13.28).
 func computeHMACIntegrity(alg bmc.IntegrityAlg, data, key []byte) ([]byte, error) {
 	switch alg {
 	case bmc.IntegrityAlgNone:
@@ -181,6 +188,9 @@ func computeHMACIntegrity(alg bmc.IntegrityAlg, data, key []byte) ([]byte, error
 	case bmc.IntegrityAlgHMACSHA1_96:
 		full := doHMACSHA1(data, key)
 		return full[:12], nil // truncated to 96 bits
+	case bmc.IntegrityAlgHMACSHA256_128:
+		full := doHMACSHA256(data, key)
+		return full[:16], nil // truncated to 128 bits
 	default:
 		return nil, fmt.Errorf("unsupported integrity algorithm: %d", alg)
 	}
@@ -188,6 +198,12 @@ func computeHMACIntegrity(alg bmc.IntegrityAlg, data, key []byte) ([]byte, error
 
 func doHMACSHA1(data, key []byte) []byte {
 	h := hmac.New(sha1.New, key)
+	h.Write(data)
+	return h.Sum(nil)
+}
+
+func doHMACSHA256(data, key []byte) []byte {
+	h := hmac.New(sha256.New, key)
 	h.Write(data)
 	return h.Sum(nil)
 }
