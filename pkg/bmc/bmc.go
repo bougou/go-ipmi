@@ -6,6 +6,8 @@
 package bmc
 
 import (
+	"fmt"
+
 	"github.com/bougou/go-ipmi/pkg/clock"
 	"github.com/bougou/go-ipmi/pkg/hal"
 )
@@ -34,6 +36,13 @@ type BMC struct {
 	GUID [16]byte
 	KG   []byte // BMC key (Kg); nil means "one-key" mode using Kuid only
 
+	// CipherSuites is the set of RMCP+ cipher suites the server advertises and
+	// accepts during the Open Session handshake. Defaults to
+	// [DefaultCipherSuites] when nil. Each suite must be supported by the
+	// reference server (see [SupportedCipherSuite]); this is validated in
+	// [WithCipherSuites].
+	CipherSuites []CipherSuiteID
+
 	Users    *UserStore
 	Channels *ChannelStore
 	Sessions *SessionStore
@@ -60,6 +69,41 @@ func WithClock(c clock.Clock) Option {
 	return func(b *BMC) { b.clock = c }
 }
 
+// WithCipherSuites sets the RMCP+ cipher suites the server advertises and
+// accepts. Each ID must be a suite the reference server implements
+// ([SupportedCipherSuite]); otherwise an error is returned by New and the
+// default suite list is kept. Pass nil/empty to restore [DefaultCipherSuites].
+func WithCipherSuites(ids []CipherSuiteID) Option {
+	return func(b *BMC) {
+		b.setCipherSuites(ids)
+	}
+}
+
+// ResolvedCipherSuites returns the cipher suite list to use for advertisement,
+// falling back to [DefaultCipherSuites] when none was configured.
+func (b *BMC) ResolvedCipherSuites() []CipherSuiteID {
+	if len(b.CipherSuites) > 0 {
+		return b.CipherSuites
+	}
+	return DefaultCipherSuites
+}
+
+// SetCipherSuites replaces the configured cipher suite list. Each ID must be
+// supported by the reference server ([SupportedCipherSuite]); an unsupported
+// ID panics, failing at configuration time rather than at handshake time.
+func (b *BMC) SetCipherSuites(ids []CipherSuiteID) {
+	b.setCipherSuites(ids)
+}
+
+func (b *BMC) setCipherSuites(ids []CipherSuiteID) {
+	if len(ids) == 0 {
+		b.CipherSuites = nil
+		return
+	}
+	validateCipherSuites(ids)
+	b.CipherSuites = append(b.CipherSuites[:0:0], ids...)
+}
+
 // New creates a BMC with sane defaults.
 //
 // h is required; it provides hardware access.  opts are applied in order.
@@ -80,6 +124,17 @@ func New(info DeviceInfo, guid [16]byte, h hal.HAL, opts ...Option) *BMC {
 	// Re-apply clock to SessionStore after options in case WithClock was used.
 	b.Sessions.clock = b.clock
 	return b
+}
+
+// validateCipherSuites panics if any configured cipher suite is not implemented
+// by the reference server. Failing at construction avoids runtime handshake
+// failures from advertising suites we cannot negotiate.
+func validateCipherSuites(ids []CipherSuiteID) {
+	for _, id := range ids {
+		if !SupportedCipherSuite(id) {
+			panic(fmt.Sprintf("bmc: cipher suite %d is not implemented by the reference server", id))
+		}
+	}
 }
 
 // HAL returns the underlying hardware abstraction.

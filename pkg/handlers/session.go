@@ -83,26 +83,25 @@ func resolveChannelNumber(reqByte uint8) uint8 {
 }
 
 // handleGetChannelCipherSuites implements Get Channel Cipher Suites (App 0x54).
-// Returns a single record for cipher suite 3 (RAKP-HMAC-SHA1 + HMAC-SHA1-96 +
-// AES-CBC-128) — the suite the server actually supports in its RMCP+ handshake.
+// Returns one record per cipher suite configured on the BMC (default
+// {3, 17}), encoded per spec §22.15.1. Each standard record is:
+//
+//	0xC0 <id> 0x00|authAlg [0x40|integAlg] [0x80|cryptAlg]
+//
+// Records are returned in 16-byte windows addressed by the list index; the
+// remote console keeps incrementing the index until fewer than 16 record bytes
+// are returned.
 func handleGetChannelCipherSuites(_ context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
 	if len(req) < 2 {
 		return nil, CodeRequestDataTruncated, nil
 	}
+	if hctx == nil || hctx.BMC == nil {
+		return []byte{resolveChannelNumber(req[0])}, CodeOK, nil
+	}
 	// Byte 0: channel number (bits 3:0; 0x0E = current channel)
 	// Byte 1: payload type (0x00 = IPMI)
 	// Byte 2: bits 5:0 = list index; bit 6 = list mode flag (echoed unused here)
-	//
-	// The cipher suite records are returned in chunks of at most 16 bytes per
-	// request.  The list index addresses the next 16-byte window; the remote
-	// console keeps incrementing it until fewer than 16 record bytes are
-	// returned.  We expose a single standard record for cipher suite 3:
-	//   0xC0           start-of-record (standard)
-	//   0x03           cipher suite ID 3
-	//   0x01           auth alg  RAKP-HMAC-SHA1   (tag 00b)
-	//   0x41           integ alg HMAC-SHA1-96     (tag 01b)
-	//   0x81           crypt alg AES-CBC-128      (tag 10b)
-	record := []byte{0xC0, 0x03, 0x01, 0x41, 0x81}
+	record := cipherSuiteRecords(hctx.BMC)
 
 	var listIndex int
 	if len(req) >= 3 {
@@ -203,15 +202,19 @@ func HandleOpenSession(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, er
 	intAlg := bmc.IntegrityAlg(data[20]) // byte 4 of integrity payload
 	cryptAlg := bmc.CryptAlg(data[28])   // byte 4 of crypt payload
 
-	// Validate algorithm support.  We support RAKP-HMAC-SHA1 (0x01),
-	// HMAC-SHA1-96 (0x01), AES-CBC-128 (0x01) as the reference cipher suite.
-	if authAlg != bmc.AuthAlgNone && authAlg != bmc.AuthAlgHMACSHA1 {
+	// Validate algorithm support against the cipher suites this BMC is
+	// configured to accept. An algorithm is accepted if at least one
+	// configured suite uses it (or None, always accepted). Error codes per
+	// spec Table 13-17: 0x04 invalid auth, 0x05 invalid integrity, 0x10
+	// invalid confidentiality.
+	allowedAuth, allowedInt, allowedCrypt := allowedAlgorithms(b)
+	if !allowedAuth[authAlg] {
 		return buildOpenSessionError(tag, consoleID, 0x04), nil // Invalid auth alg
 	}
-	if intAlg != bmc.IntegrityAlgNone && intAlg != bmc.IntegrityAlgHMACSHA1_96 {
+	if !allowedInt[intAlg] {
 		return buildOpenSessionError(tag, consoleID, 0x05), nil // Invalid integrity alg
 	}
-	if cryptAlg != bmc.CryptAlgNone && cryptAlg != bmc.CryptAlgAESCBC128 {
+	if !allowedCrypt[cryptAlg] {
 		return buildOpenSessionError(tag, consoleID, 0x10), nil // Invalid confidentiality alg
 	}
 
