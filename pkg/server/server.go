@@ -367,12 +367,33 @@ func (s *Server) sendRMCPPlusSession(addr net.Addr, payloadType, flags uint8, se
 // that already exist in helpers_hmac.go in the main package.
 // We reproduce small wrappers here to avoid importing ourselves.
 
+// decryptPayload decrypts an AES-CBC-128 confidential payload and strips the
+// IPMI 2.0 padding (spec §13.29).  The wire format is:
+//
+//	IV(16) || AES-CBC( payload || pad bytes || pad-length )
+//
+// where the final decrypted byte is the number of pad bytes (0..15).  The
+// returned slice is the original payload with pad bytes and the pad-length
+// byte removed.
 func decryptPayload(cipherText, k2 []byte) ([]byte, error) {
 	if len(cipherText) < 16 {
 		return nil, fmt.Errorf("ciphertext too short")
 	}
 	iv := cipherText[:16]
-	return decryptAES(cipherText[16:], k2[:16], iv)
+	padded, err := decryptAES(cipherText[16:], k2[:16], iv)
+	if err != nil {
+		return nil, err
+	}
+	if len(padded) == 0 {
+		return nil, fmt.Errorf("decrypted payload is empty")
+	}
+	padLen := int(padded[len(padded)-1])
+	// pad-length must fit within the trailing pad region; a value >= len-1
+	// would leave no payload and indicates a corrupted/invalid padding.
+	if padLen >= len(padded) {
+		return nil, fmt.Errorf("invalid AES pad length %d for %d-byte block", padLen, len(padded))
+	}
+	return padded[:len(padded)-1-padLen], nil
 }
 
 func encryptPayload(plain, k2 []byte) ([]byte, error) {

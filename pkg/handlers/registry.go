@@ -20,6 +20,7 @@ const (
 	CodeRequestDataInvalid    CompletionCode = 0xCC
 	CodeCommandNotSupported   CompletionCode = 0xC1
 	CodeNodeBusy              CompletionCode = 0xC0
+	CodeParamNotSupported     CompletionCode = 0x80 // parameter not supported (e.g. Set/Get System Boot Options)
 	CodeUnspecifiedError      CompletionCode = 0xFF
 )
 

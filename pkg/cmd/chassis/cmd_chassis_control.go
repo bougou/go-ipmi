@@ -29,6 +29,16 @@ func (req *ChassisControlRequest) Pack() []byte {
 	return out
 }
 
+// Unpack parses a Chassis Control request body (§28.3): a single byte whose
+// lower nibble is the action. Upper nibble is reserved and ignored.
+func (req *ChassisControlRequest) Unpack(msg []byte) error {
+	if len(msg) < 1 {
+		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+	}
+	req.ChassisControl = ChassisControl(msg[0] & 0x0F)
+	return nil
+}
+
 func (req *ChassisControlRequest) Command() ipmi.Command {
 	return ipmi.CommandChassisControl
 }

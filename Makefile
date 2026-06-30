@@ -70,4 +70,7 @@ test-e2e-server: build
 test-e2e-self: build
 	./test/e2e/self_test.sh
 
-test-e2e: test-e2e-client test-e2e-server test-e2e-self
+test-e2e-chassis-codec: build
+	./test/e2e/chassis_codec_test.sh
+
+test-e2e: test-e2e-client test-e2e-server test-e2e-self test-e2e-chassis-codec

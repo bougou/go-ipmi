@@ -17,7 +17,11 @@
 //   - Bridges to existing daemon APIs (e.g. OpenBMC D-Bus)
 package hal
 
-import "context"
+import (
+	"context"
+
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
+)
 
 // HAL is the top-level hardware abstraction.  Implementations may return nil
 // for sub-interfaces that are not available on the target.
@@ -44,6 +48,10 @@ type ChassisHAL interface {
 	PowerState(ctx context.Context) (bool, error)
 	// SetPower powers the managed system on or off.
 	SetPower(ctx context.Context, on bool) error
+	// PowerCycle performs a full power cycle of the managed system
+	// (Chassis Control action 0x02, spec Table 28-3). The semantic meaning
+	// for a given BMC is defined by the upper-layer HAL implementation.
+	PowerCycle(ctx context.Context) error
 	// ColdReset performs a hardware cold reset of the managed system.
 	ColdReset(ctx context.Context) error
 	// WarmReset requests an OS-level warm reboot of the managed system.
@@ -55,6 +63,23 @@ type ChassisHAL interface {
 	// IntrusionState returns true when the chassis has been opened since last reset.
 	// Implementations that lack intrusion detection must return ErrNotSupported.
 	IntrusionState(ctx context.Context) (bool, error)
+	// SetBootFlags commits the full boot flags structure (spec Table 28-6).
+	// The upper layer decides which bits it cares about; HAL implementations
+	// must not silently drop fields they ignore. Implementations that do not
+	// maintain boot state return ErrNotSupported.
+	SetBootFlags(ctx context.Context, flags *ipmi.BootOptionParam_BootFlags) error
+	// GetBootFlags reads back the current boot flags, symmetric with
+	// [SetBootFlags]. Implementations that cannot read boot flags back must
+	// return ErrNotSupported; handlers translate that to the
+	// CodeParamNotSupported completion code.
+	GetBootFlags(ctx context.Context) (*ipmi.BootOptionParam_BootFlags, error)
+	// SetBootInfoAcknowledge persists the boot initiator acknowledge data
+	// (spec Table 28-14, param #4).  The HAL may implement this as a no-op
+	// (return nil) if it does not track boot initiator identity.
+	SetBootInfoAcknowledge(ctx context.Context, ack *ipmi.BootOptionParam_BootInfoAcknowledge) error
+	// GetBootInfoAcknowledge reads back the stored acknowledge data.
+	// Implementations that do not persist this return ErrNotSupported.
+	GetBootInfoAcknowledge(ctx context.Context) (*ipmi.BootOptionParam_BootInfoAcknowledge, error)
 }
 
 // SensorDescriptor describes a sensor exposed by the hardware.

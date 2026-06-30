@@ -2,24 +2,21 @@ package handlers
 
 import (
 	"context"
+	"errors"
+
+	"github.com/bougou/go-ipmi/pkg/cmd/chassis"
+	"github.com/bougou/go-ipmi/pkg/hal"
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
 )
 
-// IPMI Chassis command IDs.
+// IPMI Chassis command IDs (spec §28).
 const (
 	CmdGetChassisCapabilities uint8 = 0x00
 	CmdGetChassisStatus       uint8 = 0x01
 	CmdChassisControl         uint8 = 0x02
 	CmdChassisIdentify        uint8 = 0x04
-)
-
-// ChassisControl actions (Table 28-3).
-const (
-	ChassisControlPowerDown     uint8 = 0x00
-	ChassisControlPowerUp       uint8 = 0x01
-	ChassisControlPowerCycle    uint8 = 0x02
-	ChassisControlHardReset     uint8 = 0x03
-	ChassisControlDiagInterrupt uint8 = 0x04
-	ChassisControlSoftShutdown  uint8 = 0x05
+	CmdSetSystemBootOptions   uint8 = 0x08
+	CmdGetSystemBootOptions   uint8 = 0x09
 )
 
 // RegisterChassisHandlers adds all Chassis command handlers to r.
@@ -28,6 +25,8 @@ func RegisterChassisHandlers(r *Registry) {
 	r.Register(NetFnChassisRequest, CmdGetChassisStatus, HandlerFunc(handleGetChassisStatus))
 	r.Register(NetFnChassisRequest, CmdChassisControl, HandlerFunc(handleChassisControl))
 	r.Register(NetFnChassisRequest, CmdChassisIdentify, HandlerFunc(handleChassisIdentify))
+	r.Register(NetFnChassisRequest, CmdSetSystemBootOptions, HandlerFunc(handleSetSystemBootOptions))
+	r.Register(NetFnChassisRequest, CmdGetSystemBootOptions, HandlerFunc(handleGetSystemBootOptions))
 }
 
 // handleGetChassisCapabilities returns a minimal static response.
@@ -39,48 +38,62 @@ func handleGetChassisCapabilities(_ context.Context, _ *HandlerContext, _ []byte
 	return []byte{0x00, 0x20, 0x20, 0x20, 0x20}, CodeOK, nil
 }
 
-// handleGetChassisStatus implements Get Chassis Status (Chassis 0x01).
+// handleGetChassisStatus implements Get Chassis Status (Chassis 0x01, spec §28.2).
+// It builds a typed [chassis.GetChassisStatusResponse] from the HAL and
+// serialises it with [chassis.GetChassisStatusResponse.Pack], eliminating
+// hand-written byte assembly.
 func handleGetChassisStatus(ctx context.Context, hctx *HandlerContext, _ []byte) ([]byte, CompletionCode, error) {
 	ch := hctx.BMC.HAL().Chassis()
 
-	var powerOn bool
+	resp := &chassis.GetChassisStatusResponse{}
 	if ch != nil {
-		var err error
-		powerOn, err = ch.PowerState(ctx)
+		on, err := ch.PowerState(ctx)
 		if err != nil {
-			return nil, CodeUnspecifiedError, err
+			return nil, codeFromHalErr(err), err
 		}
+		resp.PowerIsOn = on
+		// IntrusionState is optional; absence (ErrNotSupported) leaves the
+		// bit zero, matching the "no intrusion detected" wire value.
+		if intruded, err := ch.IntrusionState(ctx); err == nil {
+			resp.ChassisIntrusionActive = intruded
+		}
+		resp.ChassisIdentifySupported = true
 	}
-
-	byte0 := uint8(0x00)
-	if powerOn {
-		byte0 |= 0x01 // bit 0: power on
-	}
-	// Bytes 1-3: last power event, misc chassis state, FP button disables.
-	// Return zeros (no specific event, no buttons disabled) for the reference impl.
-	return []byte{byte0, 0x00, 0x00, 0x00}, CodeOK, nil
+	return resp.Pack(), CodeOK, nil
 }
 
-// handleChassisControl implements Chassis Control (Chassis 0x02).
+// handleChassisControl implements Chassis Control (Chassis 0x02, spec §28.3).
+// The request is decoded with [chassis.ChassisControlRequest.Unpack] and
+// dispatched to the typed HAL method matching the spec Table 28-3 action.
+// The action→HAL method mapping is a spec-fixed protocol dispatch; the
+// upper-layer HAL implementation defines what each method means for the
+// managed system.
 func handleChassisControl(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
-	if len(req) < 1 {
-		return nil, CodeRequestDataTruncated, nil
-	}
 	ch := hctx.BMC.HAL().Chassis()
 	if ch == nil {
 		return nil, CodeNotSupportedInState, nil
 	}
 
-	action := req[0] & 0x0F
-	switch action {
-	case ChassisControlPowerDown:
+	var typed chassis.ChassisControlRequest
+	if err := typed.Unpack(req); err != nil {
+		return nil, CodeRequestDataTruncated, nil
+	}
+
+	switch typed.ChassisControl {
+	case chassis.ChassisControlPowerDown:
 		return nil, codeFromErr(ch.SetPower(ctx, false)), nil
-	case ChassisControlPowerUp:
+	case chassis.ChassisControlPowerUp:
 		return nil, codeFromErr(ch.SetPower(ctx, true)), nil
-	case ChassisControlHardReset:
+	case chassis.ChassisControlPowerCycle:
+		return nil, codeFromErr(ch.PowerCycle(ctx)), nil
+	case chassis.ChassisControlHardReset:
 		return nil, codeFromErr(ch.ColdReset(ctx)), nil
-	case ChassisControlSoftShutdown:
+	case chassis.ChassisControlSoftShutdown:
 		return nil, codeFromErr(ch.WarmReset(ctx)), nil
+	case chassis.ChassisControlDiagnosticInterrupt:
+		// No corresponding typed HAL method in the reference interface;
+		// treat as an unsupported chassis control action per spec.
+		return nil, CodeParamOutOfRange, nil
 	default:
 		return nil, CodeParamOutOfRange, nil
 	}
@@ -105,10 +118,122 @@ func handleChassisIdentify(ctx context.Context, hctx *HandlerContext, req []byte
 	return nil, codeFromErr(ch.Identify(ctx, seconds)), nil
 }
 
+// handleSetSystemBootOptions implements Set System Boot Options (Chassis 0x08,
+// spec §28.12 Table 28-12).  Supported parameter selectors:
+//   - 0x04: Boot Info Acknowledge (§28.14 Table 28-14 param #4)
+//   - 0x05: Boot Flags (§28.14 Table 28-14 param #5)
+//
+// The request format is:
+//
+//	byte 1: [7] parameter valid/invalid, [6:0] boot option parameter selector
+//	byte 2:N: boot option parameter data (0 bytes allowed per spec)
+//
+// Per spec the BMC must return:
+//   - 80h – parameter not supported
+//   - 81h – attempt to set 'set in progress' when not in 'set complete' state
+//   - 82h – attempt to write read-only parameter
+func handleSetSystemBootOptions(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
+	if len(req) < 1 {
+		return nil, CodeRequestDataTruncated, nil
+	}
+	// bit 7 = parameter valid flag (§28.12 byte 1).
+	_ = req[0] & 0x80 // accepted; HAL layer does not persist a lock state.
+	paramSelector := ipmi.BootOptionParamSelector(req[0] & 0x7f)
+	paramData := req[1:]
+
+	ch := hctx.BMC.HAL().Chassis()
+	if ch == nil {
+		return nil, CodeNotSupportedInState, nil
+	}
+
+	switch paramSelector {
+	case ipmi.BootOptionParamSelector_BootInfoAcknowledge:
+		// 0 bytes of data → toggling the valid/lock bit only.
+		if len(paramData) == 0 {
+			return nil, CodeOK, nil
+		}
+		var ack ipmi.BootOptionParam_BootInfoAcknowledge
+		if err := ack.Unpack(paramData); err != nil {
+			return nil, CodeRequestDataTruncated, nil
+		}
+		return nil, codeFromHalErr(ch.SetBootInfoAcknowledge(ctx, &ack)), nil
+
+	case ipmi.BootOptionParamSelector_BootFlags:
+		if len(paramData) == 0 {
+			return nil, CodeOK, nil
+		}
+		var flags ipmi.BootOptionParam_BootFlags
+		if err := flags.Unpack(paramData); err != nil {
+			return nil, CodeRequestDataTruncated, nil
+		}
+		return nil, codeFromHalErr(ch.SetBootFlags(ctx, &flags)), nil
+
+	default:
+		// Per spec Table 28-12: unimplemented parameter → 80h.
+		return nil, CodeBootParamNotSupported, nil
+	}
+}
+
+// handleGetSystemBootOptions implements Get System Boot Options (Chassis 0x09,
+// spec §28.13).  Supported parameter selectors:
+//   - 0x04: Boot Info Acknowledge
+//   - 0x05: Boot Flags
+func handleGetSystemBootOptions(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
+	if len(req) < 1 {
+		return nil, CodeRequestDataTruncated, nil
+	}
+	paramSelector := ipmi.BootOptionParamSelector(req[0] & 0x7f)
+
+	ch := hctx.BMC.HAL().Chassis()
+	if ch == nil {
+		return nil, CodeNotSupportedInState, nil
+	}
+
+	switch paramSelector {
+	case ipmi.BootOptionParamSelector_BootInfoAcknowledge:
+		ack, err := ch.GetBootInfoAcknowledge(ctx)
+		if err != nil {
+			return nil, codeFromHalErr(err), nil
+		}
+		resp := make([]byte, 0, 2+2)
+		resp = append(resp, 0x01) // parameter version
+		resp = append(resp, byte(paramSelector&0x7f))
+		resp = append(resp, ack.Pack()...)
+		return resp, CodeOK, nil
+
+	case ipmi.BootOptionParamSelector_BootFlags:
+		flags, err := ch.GetBootFlags(ctx)
+		if err != nil {
+			return nil, codeFromHalErr(err), nil
+		}
+		resp := make([]byte, 0, 2+5)
+		resp = append(resp, 0x01) // parameter version
+		resp = append(resp, byte(paramSelector&0x7f))
+		resp = append(resp, flags.Pack()...)
+		return resp, CodeOK, nil
+
+	default:
+		return nil, CodeBootParamNotSupported, nil
+	}
+}
+
 // codeFromErr maps a HAL error to a completion code.
 func codeFromErr(err error) CompletionCode {
 	if err == nil {
 		return CodeOK
+	}
+	return CodeUnspecifiedError
+}
+
+// codeFromHalErr maps a HAL error to a completion code, translating
+// [hal.ErrNotSupported] to [CodeBootParamNotSupported] so callers can distinguish
+// "parameter not supported by this BMC" from a generic failure.
+func codeFromHalErr(err error) CompletionCode {
+	if err == nil {
+		return CodeOK
+	}
+	if errors.Is(err, hal.ErrNotSupported) {
+		return CodeBootParamNotSupported
 	}
 	return CodeUnspecifiedError
 }
