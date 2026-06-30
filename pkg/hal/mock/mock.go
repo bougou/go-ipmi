@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/bougou/go-ipmi/pkg/hal"
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
 )
 
 // HAL is a fully in-memory [hal.HAL].
@@ -54,7 +55,10 @@ type Chassis struct {
 	Intruded        bool
 	ColdResets      int
 	WarmResets      int
+	PowerCycles     int
 	LastIdentifySec uint8
+	BootFlags       *ipmi.BootOptionParam_BootFlags
+	BootInfoAck     *ipmi.BootOptionParam_BootInfoAcknowledge
 
 	// Hook allows tests to inject custom behaviour.
 	SetPowerHook func(on bool) error
@@ -83,6 +87,17 @@ func (c *Chassis) ColdReset(_ context.Context) error {
 	return nil
 }
 
+// PowerCycle performs a power cycle. The mock counts calls independently so
+// tests can assert that Chassis Control action 0x02 dispatched here rather than
+// to ColdReset. Real noop HALs that lack a distinct power-cycle operation may
+// delegate to ColdReset; the mock keeps the counters separate for clarity.
+func (c *Chassis) PowerCycle(_ context.Context) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.PowerCycles++
+	return nil
+}
+
 func (c *Chassis) WarmReset(_ context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -101,6 +116,55 @@ func (c *Chassis) IntrusionState(_ context.Context) (bool, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.Intruded, nil
+}
+
+// SetBootFlags stores the full boot flags structure so tests and the
+// reference server can round-trip Set/Get System Boot Options.
+func (c *Chassis) SetBootFlags(_ context.Context, flags *ipmi.BootOptionParam_BootFlags) error {
+	if flags == nil {
+		return hal.ErrNotSupported
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	cp := *flags
+	c.BootFlags = &cp
+	return nil
+}
+
+// GetBootFlags returns the last stored boot flags, or [hal.ErrNotSupported]
+// when none have been set.
+func (c *Chassis) GetBootFlags(_ context.Context) (*ipmi.BootOptionParam_BootFlags, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.BootFlags == nil {
+		return nil, hal.ErrNotSupported
+	}
+	cp := *c.BootFlags
+	return &cp, nil
+}
+
+// SetBootInfoAcknowledge stores the boot info acknowledge data.
+func (c *Chassis) SetBootInfoAcknowledge(_ context.Context, ack *ipmi.BootOptionParam_BootInfoAcknowledge) error {
+	if ack == nil {
+		return hal.ErrNotSupported
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	cp := *ack
+	c.BootInfoAck = &cp
+	return nil
+}
+
+// GetBootInfoAcknowledge returns the last stored acknowledge data,
+// or a default value when none have been stored.
+func (c *Chassis) GetBootInfoAcknowledge(_ context.Context) (*ipmi.BootOptionParam_BootInfoAcknowledge, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.BootInfoAck == nil {
+		return &ipmi.BootOptionParam_BootInfoAcknowledge{}, nil
+	}
+	cp := *c.BootInfoAck
+	return &cp, nil
 }
 
 // --- Sensors ---

@@ -100,6 +100,100 @@ func (req *GetChassisStatusRequest) Pack() []byte {
 	return []byte{}
 }
 
+// Pack serialises the response per the bit layout in §28.2, the inverse of
+// [Unpack]. It emits 3 bytes when no front-panel button disable field is set,
+// and 4 bytes otherwise so Unpack can round-trip the optional 4th byte.
+func (res *GetChassisStatusResponse) Pack() []byte {
+	var b0 uint8
+	b0 |= (uint8(res.PowerRestorePolicy) & 0x07) << 5
+	if res.PowerControlFault {
+		b0 = ipmi.SetBit4(b0)
+	}
+	if res.PowerFault {
+		b0 = ipmi.SetBit3(b0)
+	}
+	if res.InterLock {
+		b0 = ipmi.SetBit2(b0)
+	}
+	if res.PowerOverload {
+		b0 = ipmi.SetBit1(b0)
+	}
+	if res.PowerIsOn {
+		b0 = ipmi.SetBit0(b0)
+	}
+
+	var b1 uint8
+	if res.LastPowerOnByCommand {
+		b1 = ipmi.SetBit4(b1)
+	}
+	if res.LastPowerDownByPowerFault {
+		b1 = ipmi.SetBit3(b1)
+	}
+	if res.LastPowerDownByPowerInterlockActivated {
+		b1 = ipmi.SetBit2(b1)
+	}
+	if res.LastPowerDownByPowerOverload {
+		b1 = ipmi.SetBit1(b1)
+	}
+	if res.ACFailed {
+		b1 = ipmi.SetBit0(b1)
+	}
+
+	var b2 uint8
+	if res.ChassisIdentifySupported {
+		b2 = ipmi.SetBit6(b2)
+	}
+	b2 |= (uint8(res.ChassisIdentifyState) & 0x03) << 4
+	if res.CollingFanFault {
+		b2 = ipmi.SetBit3(b2)
+	}
+	if res.DriveFault {
+		b2 = ipmi.SetBit2(b2)
+	}
+	if res.FrontPanelLockoutActive {
+		b2 = ipmi.SetBit1(b2)
+	}
+	if res.ChassisIntrusionActive {
+		b2 = ipmi.SetBit0(b2)
+	}
+
+	out := []byte{b0, b1, b2}
+
+	hasFrontPanel := res.SleepButtonDisableAllowed || res.DiagnosticButtonDisableAllowed ||
+		res.ResetButtonDisableAllowed || res.PoweroffButtonDisableAllowed ||
+		res.SleepButtonDisabled || res.DiagnosticButtonDisabled ||
+		res.ResetButtonDisabled || res.PoweroffButtonDisabled
+	if hasFrontPanel {
+		var b3 uint8
+		if res.SleepButtonDisableAllowed {
+			b3 = ipmi.SetBit7(b3)
+		}
+		if res.DiagnosticButtonDisableAllowed {
+			b3 = ipmi.SetBit6(b3)
+		}
+		if res.ResetButtonDisableAllowed {
+			b3 = ipmi.SetBit5(b3)
+		}
+		if res.PoweroffButtonDisableAllowed {
+			b3 = ipmi.SetBit4(b3)
+		}
+		if res.SleepButtonDisabled {
+			b3 = ipmi.SetBit3(b3)
+		}
+		if res.DiagnosticButtonDisabled {
+			b3 = ipmi.SetBit2(b3)
+		}
+		if res.ResetButtonDisabled {
+			b3 = ipmi.SetBit1(b3)
+		}
+		if res.PoweroffButtonDisabled {
+			b3 = ipmi.SetBit0(b3)
+		}
+		out = append(out, b3)
+	}
+	return out
+}
+
 func (req *GetChassisStatusRequest) Command() ipmi.Command {
 	return ipmi.CommandGetChassisStatus
 }
