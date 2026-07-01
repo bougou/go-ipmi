@@ -8,23 +8,23 @@ import (
 
 func TestGetChassisStatusResponse_PackUnpackRoundTrip(t *testing.T) {
 	original := &GetChassisStatusResponse{
-		PowerRestorePolicy:          PowerRestorePolicyAlwaysOn,
-		PowerControlFault:           true,
-		PowerFault:                  false,
-		InterLock:                   true,
-		PowerOverload:               false,
-		PowerIsOn:                   true,
-		LastPowerOnByCommand:        true,
-		LastPowerDownByPowerFault:   false,
-		ACFailed:                    true,
-		ChassisIdentifySupported:    true,
-		ChassisIdentifyState:        ChassisIdentifyStateTemporaryOn,
-		CollingFanFault:             true,
-		DriveFault:                  false,
-		FrontPanelLockoutActive:     true,
-		ChassisIntrusionActive:      false,
-		SleepButtonDisableAllowed:   true,
-		ResetButtonDisabled:         true,
+		PowerRestorePolicy:           PowerRestorePolicyAlwaysOn,
+		PowerControlFault:            true,
+		PowerFault:                   false,
+		InterLock:                    true,
+		PowerOverload:                false,
+		PowerIsOn:                    true,
+		LastPowerOnByCommand:         true,
+		LastPowerDownByPowerFault:    false,
+		ACFailed:                     true,
+		ChassisIdentifySupported:     true,
+		ChassisIdentifyState:         ChassisIdentifyStateTemporaryOn,
+		CollingFanFault:              true,
+		DriveFault:                   false,
+		FrontPanelLockoutActive:      true,
+		ChassisIntrusionActive:       false,
+		SleepButtonDisableAllowed:    true,
+		ResetButtonDisabled:          true,
 		PoweroffButtonDisableAllowed: true,
 	}
 
@@ -54,15 +54,21 @@ func TestGetChassisStatusResponse_PackUnpackRoundTrip(t *testing.T) {
 	}
 }
 
-func TestGetChassisStatusResponse_PackThreeBytesByDefault(t *testing.T) {
+func TestGetChassisStatusResponse_PackAlwaysFourBytes(t *testing.T) {
+	// Per §28.2 Table 28-3, byte 3 is optional but "Return as 00h if the panel
+	// button disable function is not supported." Pack always emits 4 bytes.
 	res := &GetChassisStatusResponse{PowerIsOn: true}
 	packed := res.Pack()
-	if len(packed) != 3 {
-		t.Fatalf("Pack without front-panel bits: want 3 bytes, got %d", len(packed))
+	if len(packed) != 4 {
+		t.Fatalf("Pack without front-panel bits: want 4 bytes (spec says return as 00h), got %d", len(packed))
 	}
 	// Byte 0 bit 0 must reflect PowerIsOn.
 	if packed[0]&0x01 == 0 {
 		t.Fatalf("PowerIsOn not encoded: byte0=0x%02x", packed[0])
+	}
+	// Byte 3 must be 0x00 when no front-panel button disable bits are set.
+	if packed[3] != 0x00 {
+		t.Fatalf("byte 3 with no front-panel bits: want 0x00, got 0x%02x", packed[3])
 	}
 }
 

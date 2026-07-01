@@ -166,16 +166,16 @@ test_set_boot_flags_zero_data() {
 	return 1
 }
 
-# Chassis Control with a reserved action (0x0F) — must return C8h (Parameter out
+# Chassis Control with a reserved action (0x0F) — must return C9h (Parameter out
 # of range) per §5.2 Table 5-2.  This validates the CodeParamOutOfRange fix
 # (was incorrectly 0xC9 before the spec alignment).
 test_chassis_control_unknown_action() {
 	local out
 	out=$(run_ipmitool raw 0x00 0x02 0x0F 2>&1) && { echo "${out}" >&2; return 1; }
-	if echo "${out}" | grep -q "rsp=0xc8"; then
+	if echo "${out}" | grep -q "rsp=0xc9"; then
 		return 0
 	fi
-	echo "  expected rsp=0xc8, got: ${out}" >&2
+	echo "  expected rsp=0xc9, got: ${out}" >&2
 	return 1
 }
 
@@ -198,10 +198,10 @@ failures=0
 e2e_run_test "chassis power cycle (PowerCycle dispatch)" test_power_cycle || ((failures++)) || true
 e2e_run_test "set/get boot flags PXE round-trip" test_bootdev_pxe_round_trip || ((failures++)) || true
 e2e_run_test "set/get boot flags CDROM round-trip" test_bootdev_cdrom_round_trip || ((failures++)) || true
- e2e_run_test "get unsupported boot param → 80h" test_get_unsupported_boot_param || ((failures++)) || true
- e2e_run_test "set unsupported boot param → 80h" test_set_unsupported_boot_param || ((failures++)) || true
- e2e_run_test "set boot flags with 0 data bytes → OK" test_set_boot_flags_zero_data || ((failures++)) || true
- e2e_run_test "chassis control unknown action → C8h" test_chassis_control_unknown_action || ((failures++)) || true
- e2e_run_test "chassis status always 4 bytes" test_chassis_status_always_4bytes || ((failures++)) || true
+e2e_run_test "get unsupported boot param → 80h" test_get_unsupported_boot_param || ((failures++)) || true
+e2e_run_test "set unsupported boot param → 80h" test_set_unsupported_boot_param || ((failures++)) || true
+e2e_run_test "set boot flags with 0 data bytes → OK" test_set_boot_flags_zero_data || ((failures++)) || true
+e2e_run_test "chassis control unknown action → C9h" test_chassis_control_unknown_action || ((failures++)) || true
+e2e_run_test "chassis status always 4 bytes" test_chassis_status_always_4bytes || ((failures++)) || true
 
 e2e_report "Chassis Codec E2E" "${failures}"

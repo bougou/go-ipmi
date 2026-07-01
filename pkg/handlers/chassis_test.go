@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
-	"github.com/bougou/go-ipmi/pkg/cmd/chassis"
 	"github.com/bougou/go-ipmi/pkg/clock"
+	"github.com/bougou/go-ipmi/pkg/cmd/chassis"
 	"github.com/bougou/go-ipmi/pkg/hal"
 	"github.com/bougou/go-ipmi/pkg/hal/mock"
 	ipmi "github.com/bougou/go-ipmi/pkg/types"
@@ -79,9 +79,9 @@ func TestHandleChassisControl_PowerCycle(t *testing.T) {
 
 func TestHandleChassisControl_TypedDispatch(t *testing.T) {
 	cases := []struct {
-		name    string
-		action  chassis.ChassisControl
-		check   func(*mock.Chassis) bool
+		name   string
+		action chassis.ChassisControl
+		check  func(*mock.Chassis) bool
 	}{
 		{"PowerDown", chassis.ChassisControlPowerDown, func(c *mock.Chassis) bool { return !c.On }},
 		{"PowerUp", chassis.ChassisControlPowerUp, func(c *mock.Chassis) bool { return c.On }},
@@ -176,8 +176,8 @@ func TestHandleGetSystemBootOptions_NotSupported(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if cc != CodeParamNotSupported {
-		t.Fatalf("want CodeParamNotSupported for ErrNotSupported, got %d", cc)
+	if cc != CodeBootParamNotSupported {
+		t.Fatalf("want CodeBootParamNotSupported for ErrNotSupported, got %d", cc)
 	}
 }
 
@@ -187,12 +187,12 @@ func TestHandleSetSystemBootOptions_OtherParam(t *testing.T) {
 	ch := b.HAL().Chassis().(*mock.Chassis)
 	hctx := &HandlerContext{BMC: b}
 
-	// Set In Progress (0x00) is not implemented by the handler; it must be
-	// silently accepted without touching the HAL.
+	// Set In Progress (0x00) is not implemented; spec §28.12 requires 80h (CodeBootParamNotSupported)
+	// for unsupported parameters.
 	req := []byte{byte(ipmi.BootOptionParamSelector_SetInProgress), 0x01}
 	_, cc, err := handleSetSystemBootOptions(context.Background(), hctx, req)
-	if err != nil || cc != CodeOK {
-		t.Fatalf("want CodeOK for unimplemented param, got cc=%d err=%v", cc, err)
+	if err != nil || cc != CodeBootParamNotSupported {
+		t.Fatalf("want CodeBootParamNotSupported (80h) for unimplemented param, got cc=%d err=%v", cc, err)
 	}
 	if ch.BootFlags != nil {
 		t.Fatalf("HAL SetBootFlags must not be called for non-BootFlags params")
@@ -222,8 +222,8 @@ func TestCodeFromHalErr(t *testing.T) {
 	if got := codeFromHalErr(nil); got != CodeOK {
 		t.Fatalf("nil: want CodeOK, got %d", got)
 	}
-	if got := codeFromHalErr(hal.ErrNotSupported); got != CodeParamNotSupported {
-		t.Fatalf("ErrNotSupported: want CodeParamNotSupported, got %d", got)
+	if got := codeFromHalErr(hal.ErrNotSupported); got != CodeBootParamNotSupported {
+		t.Fatalf("ErrNotSupported: want CodeBootParamNotSupported, got %d", got)
 	}
 	if got := codeFromHalErr(errors.New("boom")); got != CodeUnspecifiedError {
 		t.Fatalf("generic error: want CodeUnspecifiedError, got %d", got)

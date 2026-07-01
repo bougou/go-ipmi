@@ -9,19 +9,40 @@ import (
 // 0x00 means success; all other values indicate an error condition.
 // The constants below mirror the most commonly returned codes; handlers should
 // return the most specific code available.
+//
+// All value assignments are verified against:
+//
+//	IPMI v2.0 Rev 1.1, §5.2 Table 5-2, Completion Codes
+//	IPMI v2.0 Rev 1.1, §28.12 Table 28-12, Set System Boot Options
+//	IPMI v2.0 Rev 1.1, §28.13 Table 28-13, Get System Boot Options
 type CompletionCode uint8
 
+// Generic completion codes: 00h, C0h-FFh (§5.2 Table 5-2).
+// Command-specific completion codes: 80h-BEh (defined per-command).
 const (
-	CodeOK                    CompletionCode = 0x00
-	CodeInsufficientPrivilege CompletionCode = 0xD4
-	CodeNotSupportedInState   CompletionCode = 0xD5
-	CodeParamOutOfRange       CompletionCode = 0xC9
-	CodeRequestDataTruncated  CompletionCode = 0xC6
-	CodeRequestDataInvalid    CompletionCode = 0xCC
-	CodeCommandNotSupported   CompletionCode = 0xC1
-	CodeNodeBusy              CompletionCode = 0xC0
-	CodeParamNotSupported     CompletionCode = 0x80 // parameter not supported (e.g. Set/Get System Boot Options)
-	CodeUnspecifiedError      CompletionCode = 0xFF
+	CodeOK CompletionCode = 0x00 // 00h: Command Completed Normally.
+
+	// Generic error codes (§5.2 Table 5-2).
+	CodeNodeBusy            CompletionCode = 0xC0 // C0h: Node Busy.
+	CodeCommandNotSupported CompletionCode = 0xC1 // C1h: Invalid Command.
+
+	CodeParamOutOfRange      CompletionCode = 0xC9 // C9h: Parameter out of range. (§5.2 Table 5-2)
+	CodeRequestDataTruncated CompletionCode = 0xC6 // C6h: Request data truncated.
+	CodeRequestDataInvalid   CompletionCode = 0xCC // CCh: Invalid data field in Request.
+
+	CodeInsufficientPrivilege CompletionCode = 0xD4 // D4h: Insufficient privilege level or security restriction.
+	CodeNotSupportedInState   CompletionCode = 0xD5 // D5h: Command not supported in present state.
+
+	CodeUnspecifiedError CompletionCode = 0xFF // FFh: Unspecified error.
+
+	// Command-specific completion code (§28.12 Table 28-12, §28.13 Table 28-13):
+	// 80h = parameter not supported.  Defined for Set/Get System Boot Options
+	// when the requested boot option parameter selector is not implemented.
+	// Also defined for other config-parameter commands (e.g. §22.14a/b
+	// Set/Get System Info Parameters).  Separate from generic completion codes
+	// (00h, C0h-FFh); must only be returned by commands that explicitly define
+	// 80h in their command-specific completion code table.
+	CodeBootParamNotSupported CompletionCode = 0x80
 )
 
 // Handler processes a single IPMI command.
