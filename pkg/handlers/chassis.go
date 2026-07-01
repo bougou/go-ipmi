@@ -49,7 +49,11 @@ func handleGetChassisStatus(ctx context.Context, hctx *HandlerContext, _ []byte)
 	if ch != nil {
 		on, err := ch.PowerState(ctx)
 		if err != nil {
-			return nil, codeFromHalErr(err), err
+			// Use codeFromErr, not codeFromHalErr: GetChassisStatus (§28.2
+			// Table 28-3) does not define command-specific completion codes.
+			// 80h (CodeBootParamNotSupported) is only valid for
+			// Set/Get System Boot Options (§28.12/§28.13).
+			return nil, codeFromErr(err), err
 		}
 		resp.PowerIsOn = on
 		// IntrusionState is optional; absence (ErrNotSupported) leaves the

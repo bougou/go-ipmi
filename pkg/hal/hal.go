@@ -71,7 +71,7 @@ type ChassisHAL interface {
 	// GetBootFlags reads back the current boot flags, symmetric with
 	// [SetBootFlags]. Implementations that cannot read boot flags back must
 	// return ErrNotSupported; handlers translate that to the
-	// CodeParamNotSupported completion code.
+	// CodeBootParamNotSupported completion code.
 	GetBootFlags(ctx context.Context) (*ipmi.BootOptionParam_BootFlags, error)
 	// SetBootInfoAcknowledge persists the boot initiator acknowledge data
 	// (spec Table 28-14, param #4).  The HAL may implement this as a no-op
@@ -148,8 +148,10 @@ type I2CHAL interface {
 }
 
 // ErrNotSupported is returned by HAL methods when the hardware does not
-// support the requested operation.  Handlers map this to IPMI completion code
-// 0xD5 (command not supported in present state).
+// support the requested operation.  Handlers translate this to an appropriate
+// IPMI completion code: CodeBootParamNotSupported 0x80 (§28.12/§28.13) for
+// parameter-level operations, CodeUnspecifiedError 0xFF (§5.2 Table 5-2)
+// via codeFromErr for general error paths.
 var ErrNotSupported = errNotSupported{}
 
 type errNotSupported struct{}

@@ -100,9 +100,9 @@ func (req *GetChassisStatusRequest) Pack() []byte {
 	return []byte{}
 }
 
-// Pack serialises the response per the bit layout in §28.2, the inverse of
-// [Unpack]. It emits 3 bytes when no front-panel button disable field is set,
-// and 4 bytes otherwise so Unpack can round-trip the optional 4th byte.
+// Pack serialises the response per the bit layout in §28.2 Table 28-3, the
+// inverse of [Unpack]. Byte 3 (front-panel button disables) is always emitted
+// per spec: "Return as 00h if the panel button disable function is not supported."
 func (res *GetChassisStatusResponse) Pack() []byte {
 	var b0 uint8
 	b0 |= (uint8(res.PowerRestorePolicy) & 0x07) << 5
@@ -157,41 +157,33 @@ func (res *GetChassisStatusResponse) Pack() []byte {
 		b2 = ipmi.SetBit0(b2)
 	}
 
-	out := []byte{b0, b1, b2}
-
-	hasFrontPanel := res.SleepButtonDisableAllowed || res.DiagnosticButtonDisableAllowed ||
-		res.ResetButtonDisableAllowed || res.PoweroffButtonDisableAllowed ||
-		res.SleepButtonDisabled || res.DiagnosticButtonDisabled ||
-		res.ResetButtonDisabled || res.PoweroffButtonDisabled
-	if hasFrontPanel {
-		var b3 uint8
-		if res.SleepButtonDisableAllowed {
-			b3 = ipmi.SetBit7(b3)
-		}
-		if res.DiagnosticButtonDisableAllowed {
-			b3 = ipmi.SetBit6(b3)
-		}
-		if res.ResetButtonDisableAllowed {
-			b3 = ipmi.SetBit5(b3)
-		}
-		if res.PoweroffButtonDisableAllowed {
-			b3 = ipmi.SetBit4(b3)
-		}
-		if res.SleepButtonDisabled {
-			b3 = ipmi.SetBit3(b3)
-		}
-		if res.DiagnosticButtonDisabled {
-			b3 = ipmi.SetBit2(b3)
-		}
-		if res.ResetButtonDisabled {
-			b3 = ipmi.SetBit1(b3)
-		}
-		if res.PoweroffButtonDisabled {
-			b3 = ipmi.SetBit0(b3)
-		}
-		out = append(out, b3)
+	var b3 uint8
+	if res.SleepButtonDisableAllowed {
+		b3 = ipmi.SetBit7(b3)
 	}
-	return out
+	if res.DiagnosticButtonDisableAllowed {
+		b3 = ipmi.SetBit6(b3)
+	}
+	if res.ResetButtonDisableAllowed {
+		b3 = ipmi.SetBit5(b3)
+	}
+	if res.PoweroffButtonDisableAllowed {
+		b3 = ipmi.SetBit4(b3)
+	}
+	if res.SleepButtonDisabled {
+		b3 = ipmi.SetBit3(b3)
+	}
+	if res.DiagnosticButtonDisabled {
+		b3 = ipmi.SetBit2(b3)
+	}
+	if res.ResetButtonDisabled {
+		b3 = ipmi.SetBit1(b3)
+	}
+	if res.PoweroffButtonDisabled {
+		b3 = ipmi.SetBit0(b3)
+	}
+
+	return []byte{b0, b1, b2, b3}
 }
 
 func (req *GetChassisStatusRequest) Command() ipmi.Command {
@@ -208,8 +200,8 @@ func (res *GetChassisStatusResponse) Unpack(msg []byte) error {
 	}
 
 	b1, _, _ := ipmi.UnpackUint8(msg, 0)
-	// first clear bit 7, then shift right 5 bits
-	b := (b1 & 0x7f) >> 5
+	// Power restore policy occupies bits [7:5] per §28.2 Table 28-3.
+	b := (b1 & 0xE0) >> 5
 	res.PowerRestorePolicy = PowerRestorePolicy(b)
 	res.PowerControlFault = ipmi.IsBit4Set(b1)
 	res.PowerFault = ipmi.IsBit3Set(b1)
