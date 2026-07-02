@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
@@ -43,6 +45,17 @@ func run() error {
 	copy(guid[:], "go-ipmi-e2e\x00\x00\x00\x00")
 
 	b := bmc.New(info, guid, mock.New(), bmc.WithClock(clock.Real))
+
+	// Optional cipher suite override. GOIPMI_SERVER_CIPHER_SUITES is a
+	// comma-separated list of RMCP+ cipher suite IDs (e.g. "3,17" or
+	// "1,2,15,16"). Empty/unset falls back to bmc.DefaultCipherSuites.
+	if raw := strings.TrimSpace(os.Getenv("GOIPMI_SERVER_CIPHER_SUITES")); raw != "" {
+		ids, err := parseCipherSuites(raw)
+		if err != nil {
+			return err
+		}
+		b.SetCipherSuites(ids)
+	}
 
 	// User credentials for IPMI session authentication.
 	userName := os.Getenv("GOIPMI_SERVER_USER")
@@ -90,9 +103,40 @@ func run() error {
 	}()
 
 	fmt.Printf("goipmi-server: listening on %s (lanplus, user=%s, pass=%s)\n", addr, userName, userPass)
+	if len(b.ResolvedCipherSuites()) != 0 {
+		fmt.Printf("goipmi-server: cipher suites: %v\n", b.ResolvedCipherSuites())
+	}
 	if err := srv.Serve(ctx); err != nil && !errors.Is(err, context.Canceled) {
 		return fmt.Errorf("serve: %w", err)
 	}
 	fmt.Println("goipmi-server: stopped")
 	return nil
+}
+
+// parseCipherSuites parses a comma-separated list of cipher suite IDs from the
+// GOIPMI_SERVER_CIPHER_SUITES env var and validates each against the reference
+// server's supported set. Returns a descriptive error for bad input rather than
+// letting bmc.SetCipherSuites panic.
+func parseCipherSuites(raw string) ([]bmc.CipherSuiteID, error) {
+	parts := strings.Split(raw, ",")
+	ids := make([]bmc.CipherSuiteID, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		n, err := strconv.Atoi(p)
+		if err != nil || n < 0 || n > 255 {
+			return nil, fmt.Errorf("invalid cipher suite id %q: expected an integer 0..255", p)
+		}
+		id := bmc.CipherSuiteID(n)
+		if !bmc.SupportedCipherSuite(id) {
+			return nil, fmt.Errorf("cipher suite %d is not implemented by the reference server", id)
+		}
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 {
+		return nil, fmt.Errorf("GOIPMI_SERVER_CIPHER_SUITES contained no valid ids")
+	}
+	return ids, nil
 }
