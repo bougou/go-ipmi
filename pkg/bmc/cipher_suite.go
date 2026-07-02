@@ -8,7 +8,12 @@ package bmc
 type CipherSuiteID uint8
 
 const (
+	CipherSuiteID0  CipherSuiteID = 0  // RAKP-None + Integrity-None + Confidentiality-None (unauthenticated, unencrypted)
+	CipherSuiteID1  CipherSuiteID = 1  // RAKP-HMAC-SHA1 + Integrity-None + Confidentiality-None
+	CipherSuiteID2  CipherSuiteID = 2  // RAKP-HMAC-SHA1 + HMAC-SHA1-96 + Confidentiality-None
 	CipherSuiteID3  CipherSuiteID = 3  // RAKP-HMAC-SHA1 + HMAC-SHA1-96 + AES-CBC-128 (spec-mandatory)
+	CipherSuiteID15 CipherSuiteID = 15 // RAKP-HMAC-SHA256 + Integrity-None + Confidentiality-None
+	CipherSuiteID16 CipherSuiteID = 16 // RAKP-HMAC-SHA256 + HMAC-SHA256-128 + Confidentiality-None
 	CipherSuiteID17 CipherSuiteID = 17 // RAKP-HMAC-SHA256 + HMAC-SHA256-128 + AES-CBC-128
 )
 
@@ -20,22 +25,27 @@ var DefaultCipherSuites = []CipherSuiteID{CipherSuiteID3, CipherSuiteID17}
 // CipherSuiteAlgorithms expands a cipher suite ID into its auth / integrity /
 // confidentiality algorithm codes (spec §22.15.2). ok is false for IDs whose
 // algorithm triple is not known to this build.
+//
+// Suite 0 (AuthAlgNone) is intentionally NOT in DefaultCipherSuites: selecting
+// it disables RAKP authentication entirely, so the session is established
+// without any password verification. Operators who want this must add it
+// explicitly via [WithCipherSuites] / [BMC.SetCipherSuites].
 func CipherSuiteAlgorithms(id CipherSuiteID) (auth AuthAlg, integ IntegrityAlg, crypt CryptAlg, ok bool) {
 	switch id {
+	case CipherSuiteID0:
+		return AuthAlgNone, IntegrityAlgNone, CryptAlgNone, true
+	case CipherSuiteID1:
+		return AuthAlgHMACSHA1, IntegrityAlgNone, CryptAlgNone, true
+	case CipherSuiteID2:
+		return AuthAlgHMACSHA1, IntegrityAlgHMACSHA1_96, CryptAlgNone, true
 	case CipherSuiteID3:
 		return AuthAlgHMACSHA1, IntegrityAlgHMACSHA1_96, CryptAlgAESCBC128, true
+	case CipherSuiteID15:
+		return AuthAlgHMACSHA256, IntegrityAlgNone, CryptAlgNone, true
+	case CipherSuiteID16:
+		return AuthAlgHMACSHA256, IntegrityAlgHMACSHA256_128, CryptAlgNone, true
 	case CipherSuiteID17:
 		return AuthAlgHMACSHA256, IntegrityAlgHMACSHA256_128, CryptAlgAESCBC128, true
-	case 0:
-		return AuthAlgNone, IntegrityAlgNone, CryptAlgNone, true
-	case 1:
-		return AuthAlgHMACSHA1, IntegrityAlgNone, CryptAlgNone, true
-	case 2:
-		return AuthAlgHMACSHA1, IntegrityAlgHMACSHA1_96, CryptAlgNone, true
-	case 15:
-		return AuthAlgHMACSHA256, IntegrityAlgNone, CryptAlgNone, true
-	case 16:
-		return AuthAlgHMACSHA256, IntegrityAlgHMACSHA256_128, CryptAlgNone, true
 	default:
 		return 0, 0, 0, false
 	}

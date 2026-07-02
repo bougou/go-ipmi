@@ -207,6 +207,79 @@ func TestHandleOpenSession_RejectsUnsupported(t *testing.T) {
 	}
 }
 
+// TestHandleOpenSession_RejectsNoneByDefault verifies that the default cipher
+// suite set ({3, 17}) does NOT allow negotiating AuthAlgNone / IntegrityAlgNone
+// / CryptAlgNone. None is only reachable by explicitly configuring a suite that
+// uses it (e.g. suite 0). This guards against an authentication bypass where
+// AuthAlgNone skips RAKP password verification.
+func TestHandleOpenSession_RejectsNoneByDefault(t *testing.T) {
+	cases := []struct {
+		name    string
+		auth    bmc.AuthAlg
+		integ   bmc.IntegrityAlg
+		crypt   bmc.CryptAlg
+		wantErr uint8
+	}{
+		{"auth none", bmc.AuthAlgNone, bmc.IntegrityAlgHMACSHA1_96, bmc.CryptAlgAESCBC128, 0x04},
+		{"integrity none", bmc.AuthAlgHMACSHA1, bmc.IntegrityAlgNone, bmc.CryptAlgAESCBC128, 0x05},
+		{"crypt none", bmc.AuthAlgHMACSHA1, bmc.IntegrityAlgHMACSHA1_96, bmc.CryptAlgNone, 0x10},
+		{"all none", bmc.AuthAlgNone, bmc.IntegrityAlgNone, bmc.CryptAlgNone, 0x04},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			b := newTestBMC()
+			payload := openSessionPayload(0x01, 0x04, 0x01020304,
+				uint8(tc.auth), uint8(tc.integ), uint8(tc.crypt))
+			resp, err := HandleOpenSession(context.Background(), b, payload)
+			if err != nil {
+				t.Fatalf("HandleOpenSession: %v", err)
+			}
+			if len(resp) != 8 || resp[1] != tc.wantErr {
+				t.Fatalf("want status 0x%02x, got len=%d status=0x%02x", tc.wantErr, len(resp), safeStatus(resp))
+			}
+		})
+	}
+}
+
+// TestHandleOpenSession_AcceptsNoneWhenSuite0Configured verifies that an
+// operator who explicitly configures suite 0 (unauthenticated) can still
+// negotiate AuthAlgNone. This is the spec-defined way to opt in to
+// unauthenticated sessions; the security choice is the operator's.
+func TestHandleOpenSession_AcceptsNoneWhenSuite0Configured(t *testing.T) {
+	b := newTestBMC()
+	b.SetCipherSuites([]bmc.CipherSuiteID{bmc.CipherSuiteID0})
+
+	payload := openSessionPayload(0x01, 0x04, 0x01020304,
+		uint8(bmc.AuthAlgNone), uint8(bmc.IntegrityAlgNone), uint8(bmc.CryptAlgNone))
+	resp, err := HandleOpenSession(context.Background(), b, payload)
+	if err != nil {
+		t.Fatalf("HandleOpenSession: %v", err)
+	}
+	if len(resp) != 36 || resp[1] != 0x00 {
+		t.Fatalf("want success 36-byte response, got len=%d status=0x%02x", len(resp), safeStatus(resp))
+	}
+}
+
+// TestHandleOpenSession_AcceptsMixedSuites verifies that configuring a mix of
+// authenticated and unencrypted suites (e.g. 3 + 15) allows each suite's
+// algorithm triple to be negotiated individually, including IntegrityAlgNone
+// and CryptAlgNone from suite 15.
+func TestHandleOpenSession_AcceptsMixedSuites(t *testing.T) {
+	b := newTestBMC()
+	b.SetCipherSuites([]bmc.CipherSuiteID{bmc.CipherSuiteID3, bmc.CipherSuiteID15})
+
+	// Suite 15 triple: HMAC-SHA256 auth + None integ + None crypt.
+	payload := openSessionPayload(0x01, 0x04, 0x01020304,
+		uint8(bmc.AuthAlgHMACSHA256), uint8(bmc.IntegrityAlgNone), uint8(bmc.CryptAlgNone))
+	resp, err := HandleOpenSession(context.Background(), b, payload)
+	if err != nil {
+		t.Fatalf("HandleOpenSession: %v", err)
+	}
+	if len(resp) != 36 || resp[1] != 0x00 {
+		t.Fatalf("want success 36-byte response, got len=%d status=0x%02x", len(resp), safeStatus(resp))
+	}
+}
+
 func safeStatus(resp []byte) uint8 {
 	if len(resp) < 2 {
 		return 0xff

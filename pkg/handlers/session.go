@@ -203,10 +203,10 @@ func HandleOpenSession(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, er
 	cryptAlg := bmc.CryptAlg(data[28])   // byte 4 of crypt payload
 
 	// Validate algorithm support against the cipher suites this BMC is
-	// configured to accept. An algorithm is accepted if at least one
-	// configured suite uses it (or None, always accepted). Error codes per
-	// spec Table 13-17: 0x04 invalid auth, 0x05 invalid integrity, 0x10
-	// invalid confidentiality.
+	// configured to accept. An algorithm is accepted if and only if at least
+	// one configured suite uses it (None is not implicitly accepted). Error
+	// codes per spec Table 13-17: 0x04 invalid auth, 0x05 invalid integrity,
+	// 0x10 invalid confidentiality.
 	allowedAuth, allowedInt, allowedCrypt := allowedAlgorithms(b)
 	if !allowedAuth[authAlg] {
 		return buildOpenSessionError(tag, consoleID, 0x04), nil // Invalid auth alg
