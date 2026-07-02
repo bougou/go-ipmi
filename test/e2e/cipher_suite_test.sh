@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
-# cipher_suite_test.sh — E2E for RMCP+ cipher suite 17 (SHA256) support
-# (branch feat/server-cipher-suite-17).
+# cipher_suite_test.sh — E2E for RMCP+ cipher suite coverage.
 #
-# Starts goipmi-server (which advertises {3, 17} by default) and connects with
-# ipmitool using explicit cipher-suite selectors, so the server's RAKP/HMAC and
-# integrity handling for SHA256 is validated by an external, spec-faithful
-# client rather than our own client.
+# Starts two goipmi-server instances:
+#   1) default config ({3, 17})        — verifies suites 3/17 succeed and that
+#      suite 0 (AuthAlgNone) is rejected, guarding against the auth bypass.
+#   2) extended config ({1,2,15,16,3,17}) — verifies the remaining spec-defined
+#      suites (1, 2, 15, 16) succeed end-to-end with an external, spec-faithful
+#      ipmitool client. This exercises RAKP4 ICV derivation by the *auth*
+#      algorithm (spec §13.28.1/§13.28.1b) for suites that pair a non-None auth
+#      algorithm with Integrity=None (suites 1 and 15).
 #
 # Covers the acceptance criteria from docs/upstream-plan-2026-06.md §A.8:
 #   - ipmitool -C 17 (RAKP-HMAC-SHA256, HMAC-SHA256-128, AES-CBC-128) succeeds
 #   - ipmitool -C 3  (RAKP-HMAC-SHA1,  HMAC-SHA1-96,   AES-CBC-128) still works
 #
 # Environment variables:
-#   GOIPMI_SERVER_PORT – server listen port (default: random high port)
+#   GOIPMI_SERVER_PORT – default server listen port (default: random high port)
+#   GOIPMI_SERVER_PORT_EXTENDED – extended-config server port (default: random)
 #   IPMITOOL_BIN       – path to ipmitool   (auto-detected if unset)
 #
 # Requires: make build  (or: make test-e2e-cipher)
@@ -28,6 +32,7 @@ source "$(dirname "$0")/common.sh"
 e2e_init
 
 PORT="${GOIPMI_SERVER_PORT:-$((9900 + RANDOM % 1000))}"
+PORT_EXTENDED="${GOIPMI_SERVER_PORT_EXTENDED:-$((11100 + RANDOM % 1000))}"
 USER="${GOIPMI_USER:-ADMIN}"
 PASS="${GOIPMI_PASS:-ADMIN}"
 IPMITOOL_IMAGE="${IPMITOOL_IMAGE:-ghcr.io/halfcrazy/ipmitool:eecd64f}"
@@ -59,10 +64,15 @@ cleanup() {
 		kill "${SERVER_PID}" 2>/dev/null || true
 		wait "${SERVER_PID}" 2>/dev/null || true
 	fi
+	if [ -n "${EXTENDED_PID:-}" ] && kill -0 "${EXTENDED_PID}" 2>/dev/null; then
+		echo "==> Stopping extended-config goipmi-server (pid ${EXTENDED_PID}) ..."
+		kill "${EXTENDED_PID}" 2>/dev/null || true
+		wait "${EXTENDED_PID}" 2>/dev/null || true
+	fi
 }
 trap cleanup EXIT
 
-echo "==> Starting goipmi-server on :${PORT} ..."
+echo "==> Starting goipmi-server on :${PORT} (default cipher suites) ..."
 env \
 	GOIPMI_SERVER_PORT="${PORT}" \
 	GOIPMI_SERVER_USER="${USER}" \
@@ -76,14 +86,37 @@ if ! ss -uln | grep -q ":${PORT} "; then
 	exit 1
 fi
 
-IPMI_ARGS=(-H 127.0.0.1 -p "${PORT}" -U "${USER}" -P "${PASS}" -I lanplus)
+echo "==> Starting goipmi-server on :${PORT_EXTENDED} (extended cipher suites 1,2,15,16,3,17) ..."
+env \
+	GOIPMI_SERVER_PORT="${PORT_EXTENDED}" \
+	GOIPMI_SERVER_USER="${USER}" \
+	GOIPMI_SERVER_PASS="${PASS}" \
+	GOIPMI_SERVER_CIPHER_SUITES="1,2,15,16,3,17" \
+	"${SERVER_BIN}" &
+EXTENDED_PID=$!
+sleep 1
 
-# run_cipher <suite> <ipmitool-args...>
+if ! ss -uln | grep -q ":${PORT_EXTENDED} "; then
+	echo -e "${RED}ERROR: extended-config server failed to start${NC}" >&2
+	exit 1
+fi
+
+IPMI_ARGS=(-H 127.0.0.1 -p "${PORT}" -U "${USER}" -P "${PASS}" -I lanplus)
+IPMI_ARGS_EXTENDED=(-H 127.0.0.1 -p "${PORT_EXTENDED}" -U "${USER}" -P "${PASS}" -I lanplus)
+
+# run_cipher <suite> <ipmitool-args...>          — against the default server.
+# run_cipher_extended <suite> <ipmitool-args...> — against the extended server.
 run_cipher() {
 	local suite="$1"
 	shift
 	# shellcheck disable=SC2086
 	${IPMITOOL_RUN} "${IPMI_ARGS[@]}" -C "${suite}" "$@"
+}
+run_cipher_extended() {
+	local suite="$1"
+	shift
+	# shellcheck disable=SC2086
+	${IPMITOOL_RUN} "${IPMI_ARGS_EXTENDED[@]}" -C "${suite}" "$@"
 }
 
 # ---------------------------------------------------------------------------
@@ -91,7 +124,9 @@ run_cipher() {
 # ---------------------------------------------------------------------------
 echo ""
 echo "========================================"
-echo " Cipher Suite E2E: ipmitool → goipmi-server (:${PORT})"
+echo " Cipher Suite E2E: ipmitool → goipmi-server"
+echo "   default   :${PORT}  (suites 3, 17)"
+echo "   extended  :${PORT_EXTENDED}  (suites 1, 2, 15, 16, 3, 17)"
 echo "========================================"
 
 # Suite 17 = RAKP-HMAC-SHA256 / HMAC-SHA256-128 / AES-CBC-128.  The Get Channel
@@ -144,10 +179,60 @@ test_suite0_rejected_by_default() {
 	return 0
 }
 
+# The following suites are negotiated against the extended-config server
+# (GOIPMI_SERVER_CIPHER_SUITES="1,2,15,16,3,17"). Each must complete the full
+# RAKP handshake and an authenticated (optionally encrypted) command.
+
+# Suite 1 = RAKP-HMAC-SHA1 / Integrity-None / Confidentiality-None.
+# Exercises the spec-correct RAKP4 ICV: selected by the *auth* algorithm
+# (HMAC-SHA1-96, 12 bytes) even though Integrity=None (spec §13.28.1, §13.31).
+test_suite1_chassis_status() {
+	local out
+	out=$(run_cipher_extended 1 chassis status 2>&1) || { echo "${out}" >&2; return 1; }
+	echo "${out}" | grep -q "System Power" && return 0
+	echo "  suite 1 chassis status mismatch: ${out}" >&2
+	return 1
+}
+
+# Suite 2 = RAKP-HMAC-SHA1 / HMAC-SHA1-96 / Confidentiality-None.
+# Authenticated + integrity-protected, unencrypted.
+test_suite2_chassis_status() {
+	local out
+	out=$(run_cipher_extended 2 chassis status 2>&1) || { echo "${out}" >&2; return 1; }
+	echo "${out}" | grep -q "System Power" && return 0
+	echo "  suite 2 chassis status mismatch: ${out}" >&2
+	return 1
+}
+
+# Suite 15 = RAKP-HMAC-SHA256 / Integrity-None / Confidentiality-None.
+# Like suite 1 but with SHA256 auth: RAKP4 ICV = HMAC-SHA256-128 (16 bytes)
+# even though Integrity=None (spec §13.28.1b, §13.31).
+test_suite15_chassis_status() {
+	local out
+	out=$(run_cipher_extended 15 chassis status 2>&1) || { echo "${out}" >&2; return 1; }
+	echo "${out}" | grep -q "System Power" && return 0
+	echo "  suite 15 chassis status mismatch: ${out}" >&2
+	return 1
+}
+
+# Suite 16 = RAKP-HMAC-SHA256 / HMAC-SHA256-128 / Confidentiality-None.
+# Authenticated + integrity-protected, unencrypted.
+test_suite16_chassis_status() {
+	local out
+	out=$(run_cipher_extended 16 chassis status 2>&1) || { echo "${out}" >&2; return 1; }
+	echo "${out}" | grep -q "System Power" && return 0
+	echo "  suite 16 chassis status mismatch: ${out}" >&2
+	return 1
+}
+
 failures=0
 e2e_run_test "suite 17 (SHA256) chassis status" test_suite17_chassis_status || ((failures++)) || true
 e2e_run_test "suite 17 (SHA256) mc info"        test_suite17_mc_info        || ((failures++)) || true
 e2e_run_test "suite 3 (SHA1) chassis status"    test_suite3_chassis_status  || ((failures++)) || true
 e2e_run_test "suite 0 (AuthAlgNone) rejected by default" test_suite0_rejected_by_default || ((failures++)) || true
+e2e_run_test "suite 1 (SHA1, no integ/crypt)"   test_suite1_chassis_status  || ((failures++)) || true
+e2e_run_test "suite 2 (SHA1, no crypt)"         test_suite2_chassis_status  || ((failures++)) || true
+e2e_run_test "suite 15 (SHA256, no integ/crypt)" test_suite15_chassis_status || ((failures++)) || true
+e2e_run_test "suite 16 (SHA256, no crypt)"       test_suite16_chassis_status || ((failures++)) || true
 
 e2e_report "Cipher Suite E2E" "${failures}"

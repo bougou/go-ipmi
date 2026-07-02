@@ -72,21 +72,51 @@ func computeRAKP3AuthCode(sess *bmc.Session, b *bmc.BMC) ([]byte, error) {
 	return computeHMAC(sess.AuthAlg, buf, key)
 }
 
-// computeRAKP4AuthCode generates the confirmation code the BMC sends in RAKP4.
+// computeRAKP4AuthCode generates the Integrity Check Value the BMC sends in
+// RAKP Message 4.
 //
-// HMAC input:
+// HMAC input (spec §13.31):
 //
 //	ConsoleRand(16) || BMCID(4) || BMCGUID(16)
 //
-// The HMAC key for RAKP4 is the Session Integrity Key (SIK), not Kuid/KG.
-// The integrity algorithm (not auth algorithm) selects the HMAC variant.
+// The HMAC key is the Session Integrity Key (SIK). Per spec §13.28.1 / §13.28.1b
+// the RAKP4 Integrity Check Value is selected by the *authentication* algorithm,
+// not the session integrity algorithm:
+//   - RAKP-HMAC-SHA1   → HMAC-SHA1-96   (RFC2404, 12 bytes)
+//   - RAKP-HMAC-SHA256 → HMAC-SHA256-128 (RFC4868, 16 bytes)
+//   - RAKP-none        → absent (spec §13.28.2)
+//
+// Spec §13.31 additionally states that the RAKP steps are followed even when
+// the cipher suite has no integrity/encryption, so suites that pair a non-None
+// auth algorithm with Integrity=None (e.g. suite 1 / 15) still produce a
+// non-empty RAKP4 ICV. Using the integrity algorithm here was a spec deviation
+// that only worked for suites where the integrity truncation coincidentally
+// matched the auth algorithm's RAKP4 truncation (suites 2/3/16/17).
 func computeRAKP4AuthCode(sess *bmc.Session, b *bmc.BMC) ([]byte, error) {
+	// RAKP-none: the Integrity Check Value is absent (spec §13.28.2).
+	if sess.AuthAlg == bmc.AuthAlgNone {
+		return nil, nil
+	}
 	buf := make([]byte, 16+4+16)
 	copy(buf[0:16], sess.ConsoleRand[:])
 	binary.LittleEndian.PutUint32(buf[16:20], sess.BMCID)
 	copy(buf[20:36], b.GUID[:])
 
-	return computeHMACIntegrity(sess.IntegrityAlg, buf, sess.SIK)
+	return computeRAKP4ICV(sess.AuthAlg, buf, sess.SIK)
+}
+
+// computeRAKP4ICV computes the RAKP Message 4 Integrity Check Value for the
+// given authentication algorithm, using SIK as the HMAC key and truncating to
+// the length defined by the auth algorithm's RAKP4 ICV (12 / 16 bytes).
+func computeRAKP4ICV(authAlg bmc.AuthAlg, data, key []byte) ([]byte, error) {
+	switch authAlg {
+	case bmc.AuthAlgHMACSHA1:
+		return doHMACSHA1(data, key)[:12], nil // HMAC-SHA1-96
+	case bmc.AuthAlgHMACSHA256:
+		return doHMACSHA256(data, key)[:16], nil // HMAC-SHA256-128
+	default:
+		return nil, fmt.Errorf("unsupported auth algorithm for RAKP4 ICV: %d", authAlg)
+	}
 }
 
 // deriveSessKeys computes SIK, K1, and K2 from the session parameters per spec §13.31-13.32.
@@ -174,25 +204,6 @@ func computeHMAC(alg bmc.AuthAlg, data, key []byte) ([]byte, error) {
 		return doHMACSHA256(data, key), nil
 	default:
 		return nil, fmt.Errorf("unsupported auth algorithm: %d", alg)
-	}
-}
-
-// computeHMACIntegrity selects the HMAC variant based on the integrity algorithm
-// for RAKP4 and session trailer AuthCode. The digest is truncated to the
-// algorithm's integrity length: HMAC-SHA1-96 → 12 bytes, HMAC-SHA256-128 → 16
-// bytes (spec §13.28).
-func computeHMACIntegrity(alg bmc.IntegrityAlg, data, key []byte) ([]byte, error) {
-	switch alg {
-	case bmc.IntegrityAlgNone:
-		return nil, nil
-	case bmc.IntegrityAlgHMACSHA1_96:
-		full := doHMACSHA1(data, key)
-		return full[:12], nil // truncated to 96 bits
-	case bmc.IntegrityAlgHMACSHA256_128:
-		full := doHMACSHA256(data, key)
-		return full[:16], nil // truncated to 128 bits
-	default:
-		return nil, fmt.Errorf("unsupported integrity algorithm: %d", alg)
 	}
 }
 

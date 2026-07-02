@@ -338,9 +338,31 @@ func (c *Client) generate_rakp3_authcode() ([]byte, error) {
 }
 
 // 13.31 RMCP+ Authenticated Key-Exchange Protocol (RAKP)
-// 13.28
-// the client use this method to verify the authcode returned in rakp4
+// 13.28 Authentication, Integrity, and Confidentiality Algorithm Numbers
+//
+// generate_rakp4_authcode computes the Integrity Check Value the remote
+// console uses to verify RAKP Message 4 from the BMC.
+//
+// Per spec §13.28.1 / §13.28.1b / §13.28.3 / §13.31 the RAKP4 Integrity Check
+// Value is selected by the *authentication* algorithm (not the session
+// integrity algorithm), using SIK as the HMAC key:
+//   - RAKP-HMAC-SHA1   → HMAC-SHA1-96    (RFC2404, 12 bytes)
+//   - RAKP-HMAC-SHA256 → HMAC-SHA256-128 (RFC4868, 16 bytes)
+//   - RAKP-HMAC-MD5    → HMAC-MD5-128    (16 bytes)
+//   - RAKP-none        → absent (spec §13.28.2)
+//
+// Spec §13.31 states the RAKP steps run even when the cipher suite has no
+// integrity/encryption, so suites that pair a non-None auth algorithm with
+// Integrity=None (suites 1 and 15) still produce a non-empty RAKP4 ICV.
+// Selecting the HMAC variant by the integrity algorithm was a spec deviation
+// that only worked for suites where the integrity truncation coincided with
+// the auth algorithm's RAKP4 truncation (suites 2/3/16/17).
 func (c *Client) generate_rakp4_authcode() ([]byte, error) {
+	// RAKP-none: the Integrity Check Value is absent (spec §13.28.2).
+	if c.session.v20.authAlg == ipmi.AuthAlgRAKP_None {
+		return []byte{}, nil
+	}
+
 	var input []byte = []byte{}
 	input = append(input, c.session.v20.consoleRand[:]...) // 16 bytes, Console random number
 
@@ -355,44 +377,38 @@ func (c *Client) generate_rakp4_authcode() ([]byte, error) {
 	hmacKey := c.session.v20.sik
 	c.DebugBytes("rakp4 auth code key", hmacKey, 16)
 
-	b, err := generate_auth_hmac(c.session.v20.integrityAlg, input, hmacKey)
+	b, err := generate_auth_hmac(c.session.v20.authAlg, input, hmacKey)
 	if err != nil {
 		return nil, fmt.Errorf("generate hmac failed, err: %w", err)
 	}
 
 	c.DebugBytes("rakp4 generated authcode", b, 16)
 
-	var errHmacLen = func(length int, integrityAlg ipmi.IntegrityAlg) error {
-		return fmt.Errorf("the length of generated mac is not long enough, should be at least (%d) for integrity algorithm (%0x)", len(b), integrityAlg)
-	}
-
-	var out = b
-
-	integrityAlg := c.session.v20.integrityAlg
-	switch integrityAlg {
-	case ipmi.IntegrityAlg_None:
-		// nothing need to do
-	case ipmi.IntegrityAlg_HMAC_MD5_128:
-		// need to copy 16 bytes
-		if len(b) < 16 {
-			err = errHmacLen(len(b), integrityAlg)
-		}
-		out = b[0:16]
-	case ipmi.IntegrityAlg_HMAC_SHA1_96:
-		// need to copy 12 bytes
+	authAlg := c.session.v20.authAlg
+	var out []byte
+	switch authAlg {
+	case ipmi.AuthAlgRAKP_HMAC_SHA1:
+		// HMAC-SHA1-96: truncate to 12 bytes.
 		if len(b) < 12 {
-			err = errHmacLen(len(b), integrityAlg)
+			return nil, fmt.Errorf("rakp4: hmac sha1 length %d too short for SHA1-96 (auth alg 0x%x)", len(b), authAlg)
 		}
 		out = b[0:12]
-	case ipmi.IntegrityAlg_HMAC_SHA256_128:
+	case ipmi.AuthAlgRAKP_HMAC_SHA256:
+		// HMAC-SHA256-128: truncate to 16 bytes.
 		if len(b) < 16 {
-			err = errHmacLen(len(b), integrityAlg)
+			return nil, fmt.Errorf("rakp4: hmac sha256 length %d too short for SHA256-128 (auth alg 0x%x)", len(b), authAlg)
+		}
+		out = b[0:16]
+	case ipmi.AuthAlgRAKP_HMAC_MD5:
+		// HMAC-MD5-128: 16 bytes.
+		if len(b) < 16 {
+			return nil, fmt.Errorf("rakp4: hmac md5 length %d too short for MD5-128 (auth alg 0x%x)", len(b), authAlg)
 		}
 		out = b[0:16]
 	default:
-		err = fmt.Errorf("rakp4 message: no support for integrity algorithm %x", c.session.v20.integrityAlg)
+		return nil, fmt.Errorf("rakp4 message: no support for authentication algorithm 0x%x", authAlg)
 	}
 	c.DebugBytes("rakp4 used authcode", out, 16)
 
-	return out, err
+	return out, nil
 }

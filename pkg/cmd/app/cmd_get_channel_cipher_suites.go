@@ -72,8 +72,13 @@ func ParseCipherSuitesData(cipherSuitesData []byte) ([]ipmi.CipherSuiteRecord, e
 
 		switch startOfRecord {
 		case ipmi.StandardCipherSuite:
-			// id + 3 algs (4 bytes)
-			if offset+4 > len(cipherSuitesData)-1 {
+			// Per §22.15.1 the record is tag-delimited, not fixed-length: the
+			// start byte is followed by the cipher suite id and then 1..3
+			// algorithm bytes (auth is always present; integrity/confidentiality
+			// are omitted when the suite does not use them, e.g. suites 0/1/15).
+			// Only require the id byte here; the tag loop below handles the rest
+			// and its own end-of-data bounds check.
+			if offset+1 > len(cipherSuitesData)-1 {
 				return records, fmt.Errorf("incomplete cipher suite data")
 			}
 			offset++

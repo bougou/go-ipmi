@@ -280,6 +280,47 @@ func TestHandleOpenSession_AcceptsMixedSuites(t *testing.T) {
 	}
 }
 
+// TestComputeRAKP4AuthCode_UsesAuthAlgorithm verifies that the RAKP4 Integrity
+// Check Value is selected by the *authentication* algorithm (spec §13.28.1 /
+// §13.28.1b / §13.31), not the session integrity algorithm. This matters for
+// suites that pair a non-None auth algorithm with Integrity=None (suites 1 and
+// 15): the ICV must still be 12 / 16 bytes, not absent.
+func TestComputeRAKP4AuthCode_UsesAuthAlgorithm(t *testing.T) {
+	b := newTestBMC()
+	cases := []struct {
+		name    string
+		auth    bmc.AuthAlg
+		integ   bmc.IntegrityAlg
+		wantLen int
+	}{
+		{"SHA1 auth + None integ (suite 1)", bmc.AuthAlgHMACSHA1, bmc.IntegrityAlgNone, 12},
+		{"SHA256 auth + None integ (suite 15)", bmc.AuthAlgHMACSHA256, bmc.IntegrityAlgNone, 16},
+		{"SHA1 auth + SHA1-96 integ (suite 3)", bmc.AuthAlgHMACSHA1, bmc.IntegrityAlgHMACSHA1_96, 12},
+		{"SHA256 auth + SHA256-128 integ (suite 17)", bmc.AuthAlgHMACSHA256, bmc.IntegrityAlgHMACSHA256_128, 16},
+		{"None auth + None integ (suite 0)", bmc.AuthAlgNone, bmc.IntegrityAlgNone, 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			sess, err := b.Sessions.Allocate(0x11223344, tc.auth, tc.integ, bmc.CryptAlgNone)
+			if err != nil {
+				t.Fatalf("allocate session: %v", err)
+			}
+			for i := range sess.ConsoleRand {
+				sess.ConsoleRand[i] = byte(0xA0 + i)
+			}
+			sess.SIK = bytes.Repeat([]byte{0x5a}, 32) // any key longer than block size is fine
+
+			code, err := computeRAKP4AuthCode(sess, b)
+			if err != nil {
+				t.Fatalf("computeRAKP4AuthCode: %v", err)
+			}
+			if len(code) != tc.wantLen {
+				t.Fatalf("ICV length: want %d, got %d (code=%x)", tc.wantLen, len(code), code)
+			}
+		})
+	}
+}
+
 func safeStatus(resp []byte) uint8 {
 	if len(resp) < 2 {
 		return 0xff
