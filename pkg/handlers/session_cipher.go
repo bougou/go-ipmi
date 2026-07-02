@@ -33,16 +33,23 @@ func cipherSuiteRecords(b *bmc.BMC) []byte {
 	return out
 }
 
-// allowedAuthAlgorithms / allowedIntegrityAlgorithms / allowedCryptAlgorithms
-// return the sets of algorithm codes the server will accept in an Open Session
-// Request, derived from the configured cipher suites. An algorithm is accepted
-// if at least one configured suite uses it (or None, which is always accepted
-// for auth/integrity/crypt since the spec allows negotiating "no integrity" /
-// "no confidentiality" within a suite that supports them).
+// allowedAlgorithms returns the sets of auth / integrity / confidentiality
+// algorithm codes the server will accept in an RMCP+ Open Session Request,
+// derived strictly from the configured cipher suites (spec §22.15.2,
+// §13.17). An algorithm is accepted if and only if at least one configured
+// cipher suite uses it.
+//
+// None is NOT implicitly accepted. The default cipher suite set
+// ([bmc.DefaultCipherSuites], suites 3 and 17) does not contain any
+// unauthenticated or unencrypted suite, so AuthAlgNone / IntegrityAlgNone /
+// CryptAlgNone are rejected unless an operator explicitly configures a suite
+// that uses them (e.g. suite 0 for fully unauthenticated, suite 1/15 for
+// authenticated-but-unencrypted). This keeps Open Session negotiation
+// consistent with the suites advertised via Get Channel Cipher Suites.
 func allowedAlgorithms(b *bmc.BMC) (auth map[bmc.AuthAlg]bool, integ map[bmc.IntegrityAlg]bool, crypt map[bmc.CryptAlg]bool) {
-	auth = map[bmc.AuthAlg]bool{bmc.AuthAlgNone: true}
-	integ = map[bmc.IntegrityAlg]bool{bmc.IntegrityAlgNone: true}
-	crypt = map[bmc.CryptAlg]bool{bmc.CryptAlgNone: true}
+	auth = make(map[bmc.AuthAlg]bool)
+	integ = make(map[bmc.IntegrityAlg]bool)
+	crypt = make(map[bmc.CryptAlg]bool)
 	for _, id := range b.ResolvedCipherSuites() {
 		a, i, c, ok := bmc.CipherSuiteAlgorithms(id)
 		if !ok {

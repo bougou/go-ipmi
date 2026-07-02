@@ -125,9 +125,29 @@ test_suite3_chassis_status() {
 	return 1
 }
 
+# Suite 0 = RAKP-None / Integrity-None / Confidentiality-None.  The default
+# cipher suite set ({3, 17}) does not advertise suite 0, so the server must
+# reject the Open Session Request (error 0x04 invalid auth alg) and no
+# authenticated session may be established.  This guards against the
+# authentication bypass where AuthAlgNone skips RAKP password verification.
+test_suite0_rejected_by_default() {
+	local out rc
+	out=$(run_cipher 0 chassis status 2>&1) && rc=0 || rc=$?
+	if [ "${rc}" -eq 0 ]; then
+		echo "  suite 0 (AuthAlgNone) unexpectedly established a session: ${out}" >&2
+		return 1
+	fi
+	if echo "${out}" | grep -q "System Power"; then
+		echo "  suite 0 (AuthAlgNone) executed a command despite default config: ${out}" >&2
+		return 1
+	fi
+	return 0
+}
+
 failures=0
 e2e_run_test "suite 17 (SHA256) chassis status" test_suite17_chassis_status || ((failures++)) || true
 e2e_run_test "suite 17 (SHA256) mc info"        test_suite17_mc_info        || ((failures++)) || true
 e2e_run_test "suite 3 (SHA1) chassis status"    test_suite3_chassis_status  || ((failures++)) || true
+e2e_run_test "suite 0 (AuthAlgNone) rejected by default" test_suite0_rejected_by_default || ((failures++)) || true
 
 e2e_report "Cipher Suite E2E" "${failures}"
