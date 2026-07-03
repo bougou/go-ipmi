@@ -1,8 +1,17 @@
-// goipmi-server is a minimal IPMI BMC server for e2e testing.
+// goipmi-server is a reference IPMI BMC server for development and E2E testing.
 //
-// It uses the in-memory mock HAL and serves on UDP port 623.  By default it
-// creates a single user "ADMIN" with password "ADMIN" so that external tools
-// such as ipmitool can connect via lanplus.
+// By default it serves both IPMI protocol generations on the same UDP port:
+//   - IPMI v2.0 / RMCP+ (ipmitool -I lanplus, goipmi -I lanplus)
+//   - IPMI v1.5       (ipmitool -I lan -A MD5, goipmi -I lan)
+//
+// Environment variables:
+//
+//	GOIPMI_SERVER_PORT            – UDP listen port (default: 623)
+//	GOIPMI_SERVER_USER            – BMC username (default: ADMIN)
+//	GOIPMI_SERVER_PASS            – BMC password (default: ADMIN)
+//	GOIPMI_SERVER_CIPHER_SUITES   – RMCP+ cipher suite IDs, comma-separated (default: 3,17)
+//	GOIPMI_SERVER_V15_AUTH_TYPES  – v1.5 auth types: none,md2,md5,password,oem (default: md5)
+//	GOIPMI_SERVER_V15             – set to 0/false to disable v1.5 while keeping lanplus (default: 1)
 package main
 
 import (
@@ -11,8 +20,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strconv"
-	"strings"
 	"syscall"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
@@ -20,7 +27,6 @@ import (
 	"github.com/bougou/go-ipmi/pkg/hal/mock"
 	"github.com/bougou/go-ipmi/pkg/server"
 	"github.com/bougou/go-ipmi/pkg/transport/udp"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
 )
 
 func main() {
@@ -31,13 +37,17 @@ func main() {
 }
 
 func run() error {
-	// BMC identity (used in Get Device ID).
+	cfg, err := loadRuntimeConfig()
+	if err != nil {
+		return err
+	}
+
 	info := bmc.DeviceInfo{
 		DeviceID:                32,
 		DeviceRevision:          1,
 		FirmwareMajor:           1,
 		FirmwareMinor:           0,
-		IPMIVersion:             0x20, // IPMI 2.0
+		IPMIVersion:             0x20,
 		ManufacturerID:          0x000157,
 		ProductID:               0x0001,
 		AdditionalDeviceSupport: 0x3D,
@@ -46,46 +56,20 @@ func run() error {
 	copy(guid[:], "go-ipmi-e2e\x00\x00\x00\x00")
 
 	b := bmc.New(info, guid, mock.New(), bmc.WithClock(clock.Real))
+	applyRuntimeConfig(b, cfg)
 
-	// Optional cipher suite override. GOIPMI_SERVER_CIPHER_SUITES is a
-	// comma-separated list of RMCP+ cipher suite IDs (e.g. "3,17" or
-	// "1,2,15,16"). Empty/unset falls back to bmc.DefaultCipherSuites.
-	if raw := strings.TrimSpace(os.Getenv("GOIPMI_SERVER_CIPHER_SUITES")); raw != "" {
-		ids, err := parseCipherSuites(raw)
-		if err != nil {
-			return err
-		}
-		b.SetCipherSuites(ids)
-	}
-
-	// User credentials for IPMI session authentication.
-	userName := os.Getenv("GOIPMI_SERVER_USER")
-	if userName == "" {
-		userName = "ADMIN"
-	}
-	userPass := os.Getenv("GOIPMI_SERVER_PASS")
-	if userPass == "" {
-		userPass = "ADMIN"
-	}
-
-	// Add the user with Administrator privilege on LAN channel 1.
-	user, err := b.Users.Add(2, userName)
+	user, err := b.Users.Add(2, cfg.User)
 	if err != nil {
 		return fmt.Errorf("add user: %w", err)
 	}
-	user.SetPassword([]byte(userPass))
+	user.SetPassword([]byte(cfg.Password))
 	user.Enabled = true
 	user.ChannelAccess[1] = bmc.UserChannelAccess{
 		MaxPrivilege: bmc.PrivilegeLevelAdministrator,
 		Enabled:      true,
 	}
 
-	// Bind UDP on the configured port.
-	port := os.Getenv("GOIPMI_SERVER_PORT")
-	if port == "" {
-		port = "623"
-	}
-	addr := ":" + port
+	addr := ":" + cfg.Port
 	conn, err := udp.Listen(addr)
 	if err != nil {
 		return fmt.Errorf("listen udp: %w", err)
@@ -97,47 +81,16 @@ func run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	// Close the server when the process receives a signal to unblock Serve().
 	go func() {
 		<-ctx.Done()
 		srv.Close()
 	}()
 
-	fmt.Printf("goipmi-server: listening on %s (lanplus, user=%s, pass=%s)\n", addr, userName, userPass)
-	if len(b.ResolvedCipherSuites()) != 0 {
-		fmt.Printf("goipmi-server: cipher suites: %v\n", b.ResolvedCipherSuites())
-	}
+	printRuntimeBanner(cfg, b)
+
 	if err := srv.Serve(ctx); err != nil && !errors.Is(err, context.Canceled) {
 		return fmt.Errorf("serve: %w", err)
 	}
 	fmt.Println("goipmi-server: stopped")
 	return nil
-}
-
-// parseCipherSuites parses a comma-separated list of cipher suite IDs from the
-// GOIPMI_SERVER_CIPHER_SUITES env var and validates each against the reference
-// server's supported set. Returns a descriptive error for bad input rather than
-// letting bmc.SetCipherSuites panic.
-func parseCipherSuites(raw string) ([]ipmi.CipherSuiteID, error) {
-	parts := strings.Split(raw, ",")
-	ids := make([]ipmi.CipherSuiteID, 0, len(parts))
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p == "" {
-			continue
-		}
-		n, err := strconv.Atoi(p)
-		if err != nil || n < 0 || n > 255 {
-			return nil, fmt.Errorf("invalid cipher suite id %q: expected an integer 0..255", p)
-		}
-		id := ipmi.CipherSuiteID(n)
-		if !bmc.SupportedCipherSuite(id) {
-			return nil, fmt.Errorf("cipher suite %d is not implemented by the reference server", id)
-		}
-		ids = append(ids, id)
-	}
-	if len(ids) == 0 {
-		return nil, fmt.Errorf("GOIPMI_SERVER_CIPHER_SUITES contained no valid ids")
-	}
-	return ids, nil
 }

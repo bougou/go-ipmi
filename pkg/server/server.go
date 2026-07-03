@@ -84,6 +84,25 @@ func WithCipherSuites(ids []ipmi.CipherSuiteID) ServerOption {
 	}
 }
 
+// WithV15AuthTypes configures IPMI v1.5 authentication types the server
+// advertises and accepts (lan / -A MD5). Mirrors [bmc.WithV15AuthTypes].
+func WithV15AuthTypes(types []bmc.V15AuthType) ServerOption {
+	return func(s *Server) {
+		if s.bmc != nil {
+			bmc.WithV15AuthTypes(types)(s.bmc)
+		}
+	}
+}
+
+// WithV15Disabled disables IPMI v1.5 LAN sessions. RMCP+ (lanplus) is unaffected.
+func WithV15Disabled() ServerOption {
+	return func(s *Server) {
+		if s.bmc != nil {
+			bmc.WithV15Disabled()(s.bmc)
+		}
+	}
+}
+
 // NewServer creates a Server.
 //
 // b is the BMC state (create with [bmc.New]).
@@ -114,6 +133,10 @@ func NewServer(b *bmc.BMC, conn transport.PacketConn, opts ...ServerOption) *Ser
 // Serve reads packets from the transport and dispatches them until ctx is
 // cancelled or [Server.Close] is called.
 func (s *Server) Serve(ctx context.Context) error {
+	evictCtx, evictCancel := context.WithCancel(ctx)
+	defer evictCancel()
+	go s.runSessionEviction(evictCtx)
+
 	buf := make([]byte, s.bufSize)
 	for {
 		// Respect context cancellation between reads.
@@ -151,6 +174,24 @@ func (s *Server) isClosed() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.closed
+}
+
+// runSessionEviction periodically removes v1.5 and RMCP+ sessions that exceeded
+// the configured inactivity timeout (spec: 60s default; see bmc.DefaultInactivityTimeout).
+func (s *Server) runSessionEviction(ctx context.Context) {
+	ticker := s.clk.NewTicker(bmc.DefaultSessionEvictInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C():
+			if s.bmc != nil {
+				s.bmc.Sessions.EvictExpired()
+				s.bmc.V15Sessions.EvictExpired()
+			}
+		}
+	}
 }
 
 // handlePacket is the top-level packet dispatcher.
@@ -197,53 +238,6 @@ func (s *Server) handleIPMI(_ context.Context, addr net.Addr, pkt []byte) {
 	} else {
 		s.handleIPMIv15(addr, pkt)
 	}
-}
-
-// handleIPMIv15 provides minimal IPMI 1.5 support for the pre-session phase.
-//
-// Only unauthenticated (AuthType NONE) packets with session ID zero are
-// dispatched — this covers the Get Channel Authentication Capabilities
-// command that clients send before deciding whether to proceed with IPMI
-// 1.5 or upgrade to RMCP+ (IPMI 2.0).
-//
-// Authenticated IPMI 1.5 sessions, Activate Session, Get Session Challenge,
-// and all other IPMI 1.5 stateful operations remain unimplemented.  Packets
-// that do not match the narrow pre-session criteria are silently dropped.
-func (s *Server) handleIPMIv15(addr net.Addr, pkt []byte) {
-	if len(pkt) < 14 {
-		return
-	}
-
-	// Reuse Session15.Unpack to parse the IPMI 1.5 session wrapper.
-	var sess ipmi.Session15
-	if err := sess.Unpack(pkt[4:]); err != nil {
-		return
-	}
-	if sess.SessionHeader15.AuthType != ipmi.AuthTypeNone {
-		return
-	}
-
-	netFn, cmd, data, seq, ok := protocol.ParseIPMIRequest(sess.Payload)
-	if !ok {
-		return
-	}
-
-	ctx := context.Background()
-	hctx := &handlers.HandlerContext{BMC: s.bmc}
-	respData, cc, _ := s.reg.Dispatch(ctx, hctx, netFn, cmd, data)
-
-	ipmiResp := protocol.BuildIPMIResponse(netFn, cmd, seq, uint8(cc), respData)
-
-	// Build IPMI 1.5 response header (AuthType NONE).
-	respHdr := ipmi.SessionHeader15{
-		AuthType:      ipmi.AuthTypeNone,
-		PayloadLength: uint8(len(ipmiResp)),
-	}
-
-	rmcp := []byte{pkt[0], pkt[1], 0xFF, pkt[3]}
-	out := append(rmcp, respHdr.Pack()...)
-	out = append(out, ipmiResp...)
-	_, _ = s.conn.WriteTo(out, addr)
 }
 
 // handleRMCPPlus routes RMCP+ (IPMI 2.0) packets.

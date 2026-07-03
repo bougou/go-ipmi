@@ -27,9 +27,11 @@ type HandlerContext struct {
 	// BMC is the top-level BMC state.
 	BMC *bmc.BMC
 
-	// Session is the authenticated session this request arrived on, or nil for
-	// pre-session (unauthenticated) requests.
+	// Session is the authenticated RMCP+ session, or nil for pre-session requests.
 	Session *bmc.Session
+
+	// V15Session is the authenticated IPMI v1.5 session, or nil.
+	V15Session *bmc.V15Session
 
 	// Channel is the channel the request arrived on.
 	Channel *bmc.Channel

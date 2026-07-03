@@ -12,6 +12,7 @@ import (
 // IPMI session-management command IDs (NetFn 0x06 App).
 const (
 	CmdGetChannelAuthCapabilities uint8 = 0x38
+	CmdGetSessionChallenge        uint8 = 0x39
 	CmdActivateSession            uint8 = 0x3A
 	CmdSetSessionPrivilegeLevel   uint8 = 0x3B
 	CmdCloseSession               uint8 = 0x3C
@@ -27,6 +28,7 @@ func RegisterSessionHandlers(r *Registry) {
 	r.Register(NetFnAppRequest, CmdGetChannelCipherSuites, HandlerFunc(handleGetChannelCipherSuites))
 	r.Register(NetFnAppRequest, CmdSetSessionPrivilegeLevel, HandlerFunc(handleSetSessionPrivilegeLevel))
 	r.Register(NetFnAppRequest, CmdCloseSession, HandlerFunc(handleCloseSession))
+	registerV15SessionHandlers(r)
 }
 
 // ---------------------------------------------------------------------------
@@ -34,8 +36,7 @@ func RegisterSessionHandlers(r *Registry) {
 // ---------------------------------------------------------------------------
 
 // handleGetChannelAuthCaps implements Get Channel Authentication Capabilities (App 0x38).
-// Handles the pre-session probe that lanplus clients send in IPMI 1.5 framing,
-// while advertising only IPMI 2.0/RMCP+ session support.
+// Advertises both IPMI v1.5 (lan) and v2.0/RMCP+ (lanplus) when enabled on the BMC.
 func handleGetChannelAuthCaps(_ context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
 	if len(req) < 2 {
 		return nil, CodeRequestDataTruncated, nil
@@ -50,19 +51,24 @@ func handleGetChannelAuthCaps(_ context.Context, hctx *HandlerContext, req []byt
 	// resp[1] — auth type support (IPMI spec Table 22-15, byte 3):
 	//   bit 7 = IPMI v2.0 extended capabilities available
 	//   bits 5:0 = enabled IPMI v1.5 auth types
-	// We support only IPMI v2.0/RMCP+ sessions, so no v1.5 auth type is
-	// advertised; only the extended-capabilities bit is set.
-	resp[1] = 0x80 // 0b1000_0000: IPMI v2.0 ext only, no v1.5 auth types
-	// resp[2] — byte 4 of Table 22-15:
-	//   bit 5 = KgStatus (1b = Kg set to non-zero value)
-	//   bit 2 = Non-Null usernames enabled
-	resp[2] = 0x04 // 0b0000_0100: Non-Null usernames enabled
-	if hctx.BMC != nil && len(hctx.BMC.KG) > 0 {
-		resp[2] |= 0x20 // Kg is set to a non-zero value
+	resp[1] = 0x80
+	if hctx.BMC != nil && hctx.BMC.V15LANEnabled() {
+		for _, t := range hctx.BMC.ResolvedV15AuthTypes() {
+			resp[1] |= bmc.V15AuthTypeToCapsBit(t)
+		}
 	}
+	chNum := resolveChannelNumber(req[0])
+	var ch *bmc.Channel
+	if hctx.BMC != nil {
+		ch, _ = hctx.BMC.Channels.Get(chNum)
+	}
+	fillChannelAuthCapsByte4(resp, hctx.BMC, ch)
 	// resp[3] — extended capabilities (byte 5):
 	//   bit 1 = IPMI v2.0 connections supported; bit 0 = IPMI v1.5 supported
-	resp[3] = 0x02 // IPMI v2.0 connections only
+	resp[3] = 0x02 // IPMI v2.0 (lanplus) always available on the reference server
+	if hctx.BMC != nil && hctx.BMC.V15LANEnabled() {
+		resp[3] |= 0x01
+	}
 	resp[4] = 0x00 // OEM ID byte 1
 	resp[5] = 0x00 // OEM ID byte 2
 	resp[6] = 0x00 // OEM ID byte 3
@@ -128,11 +134,24 @@ func handleSetSessionPrivilegeLevel(_ context.Context, hctx *HandlerContext, req
 	if len(req) < 1 {
 		return nil, CodeRequestDataTruncated, nil
 	}
+
+	requested := bmc.PrivilegeLevel(req[0] & 0x0F)
+
+	if hctx.V15Session != nil {
+		if requested == 0 {
+			return []byte{uint8(hctx.V15Session.PrivilegeLevel)}, CodeOK, nil
+		}
+		if requested > hctx.V15Session.MaxPrivilege {
+			return nil, CodeInsufficientPrivilege, nil
+		}
+		hctx.V15Session.PrivilegeLevel = requested
+		return []byte{uint8(requested)}, CodeOK, nil
+	}
+
 	if hctx.Session == nil {
 		return nil, CodeNotSupportedInState, nil
 	}
 
-	requested := bmc.PrivilegeLevel(req[0] & 0x0F)
 	// Privilege 0 means "return current level" per spec.
 	if requested == 0 {
 		return []byte{uint8(hctx.Session.PrivilegeLevel)}, CodeOK, nil
@@ -154,7 +173,10 @@ func handleCloseSession(_ context.Context, hctx *HandlerContext, req []byte) ([]
 	}
 	sessionID := binary.LittleEndian.Uint32(req[0:4])
 
-	if err := hctx.BMC.Sessions.Close(sessionID); err != nil {
+	if err := hctx.BMC.Sessions.Close(sessionID); err == nil {
+		return nil, CodeOK, nil
+	}
+	if err := hctx.BMC.V15Sessions.Close(sessionID); err != nil {
 		return nil, CodeParamOutOfRange, nil
 	}
 	return nil, CodeOK, nil

@@ -109,8 +109,14 @@ func NewRegistry() *Registry {
 
 // Register adds or replaces the handler for (netFn, cmd).
 // netFn should be the *request* NetFn (even value).
+//
+// The handler is wrapped with a privilege check (innermost) and then any
+// registered middleware so that middleware can observe privilege rejections
+// (e.g. audit logging). Both wrappings happen at registration time to avoid
+// per-dispatch allocations.
 func (r *Registry) Register(netFn, cmd uint8, h Handler) {
-	r.handlers[makeKey(netFn, cmd)] = r.applyMiddleware(h)
+	checked := &dispatchingHandler{inner: h, netFn: netFn, cmd: cmd}
+	r.handlers[makeKey(netFn, cmd)] = r.applyMiddleware(checked)
 }
 
 // RegisterFunc is a convenience wrapper around [Register] for plain functions.
@@ -135,6 +141,8 @@ func (r *Registry) Merge(other *Registry) {
 }
 
 // Dispatch looks up and calls the handler for (netFn, cmd).
+// Privilege checking and middleware were applied at registration time
+// ([Register]), so this is a simple lookup with no per-call wrapping.
 // Returns [CodeCommandNotSupported] when no handler is registered.
 func (r *Registry) Dispatch(ctx context.Context, hctx *HandlerContext, netFn, cmd uint8, data []byte) ([]byte, CompletionCode, error) {
 	h, ok := r.handlers[makeKey(netFn, cmd)]

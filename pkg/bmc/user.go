@@ -52,6 +52,14 @@ func (u *User) SetPassword(raw []byte) {
 	u.Password = p
 }
 
+// PasswordV15Padded returns the user's password zero-padded to 16 bytes per
+// IPMI v1.5 AuthCode algorithms (spec §18.15.1).
+func (u *User) PasswordV15Padded() []byte {
+	var p [16]byte
+	copy(p[:], u.Password[:])
+	return p[:]
+}
+
 // VerifyPassword returns true when the supplied raw bytes match the stored password.
 // Uses constant-time comparison to avoid timing attacks.
 func (u *User) VerifyPassword(raw []byte) bool {
@@ -129,6 +137,28 @@ func (s *UserStore) GetByName(name string) (*User, error) {
 		}
 	}
 	return nil, fmt.Errorf("user %q: %w", name, ErrUserNotFound)
+}
+
+// FindEnabledByNameOnChannel scans user IDs 1..MaxUsers in order and returns
+// the first enabled user with a matching name and channel access (spec §18.14).
+func (s *UserStore) FindEnabledByNameOnChannel(name string, channel uint8) (*User, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for id := uint8(1); id <= MaxUsers; id++ {
+		u, ok := s.users[id]
+		if !ok || !u.Enabled {
+			continue
+		}
+		if u.Name != name {
+			continue
+		}
+		access, ok := u.ChannelAccess[channel]
+		if !ok || !access.Enabled {
+			continue
+		}
+		return u, nil
+	}
+	return nil, fmt.Errorf("user %q on channel %d: %w", name, channel, ErrUserNotFound)
 }
 
 // Delete removes a user by ID.  User 1 (anonymous) cannot be deleted.

@@ -32,7 +32,9 @@ func (a AuthCodeSingleSessionInput) AuthCode(authType ipmi.AuthType) []byte {
 	case ipmi.AuthTypePassword:
 		authCode = password
 	case ipmi.AuthTypeMD2:
-		authCode = md2.New().Sum(input)
+		h := md2.New()
+		h.Write(input)
+		authCode = h.Sum(nil)
 		authCode = authCode[:16]
 	case ipmi.AuthTypeMD5:
 		c := md5.Sum(input) // can not use md5.New().Sum(input)
@@ -81,7 +83,9 @@ func (i *AuthCodeMultiSessionInput) AuthCode(authType ipmi.AuthType) []byte {
 	case ipmi.AuthTypePassword:
 		authCode = password
 	case ipmi.AuthTypeMD2:
-		authCode = md2.New().Sum(input)
+		h := md2.New()
+		h.Write(input)
+		authCode = h.Sum(nil)
 		authCode = authCode[:16]
 	case ipmi.AuthTypeMD5:
 		c := md5.Sum(input) // can not use md5.New().Sum(input)

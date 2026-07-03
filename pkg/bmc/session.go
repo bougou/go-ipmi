@@ -11,8 +11,18 @@ import (
 	"github.com/bougou/go-ipmi/pkg/clock"
 )
 
-// Session inactivity timeout per IPMI spec section 6.12.15.
+// Session inactivity timeout per IPMI spec:
+//   - v1.5 §6.11.13 Session Inactivity Timeout
+//   - v2.0 §6.12.15 Session Inactivity Timeout
 const DefaultInactivityTimeout = 60 * time.Second
+
+// DefaultSessionEvictInterval is how often the server scans for idle sessions.
+// The spec defines the 60-second inactivity limit, not the scan period.
+const DefaultSessionEvictInterval = 3 * time.Second
+
+// DefaultInactivityTimeoutTolerance is the LAN inactivity tolerance per
+// IPMI v1.5 Table 6-7 (+/- 3 seconds).
+const DefaultInactivityTimeoutTolerance = 3 * time.Second
 
 // MaxSessions is the minimum number of concurrent sessions required by the spec.
 const MaxSessions = 4
@@ -230,7 +240,7 @@ func (s *SessionStore) evictExpiredLocked() int {
 	now := s.clock.Now()
 	n := 0
 	for id, sess := range s.sessions {
-		if now.Sub(sess.LastActivity) > s.timeout {
+		if now.Sub(sess.LastActivity) > s.timeout+DefaultInactivityTimeoutTolerance {
 			delete(s.sessions, id)
 			n++
 		}
