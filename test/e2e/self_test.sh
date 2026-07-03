@@ -2,6 +2,9 @@
 # self_test.sh — go-ipmi self-test: use goipmi (client) to talk to
 # goipmi-server (server), validating both ends in a single test.
 #
+# Exercises dual-stack serving: IPMI v2.0 (lanplus) and v1.5 (lan) on the
+# same UDP port.
+#
 # Environment variables:
 #   GOIPMI_SERVER_PORT – server listen port (default: random high port)
 #
@@ -17,7 +20,6 @@ set -euo pipefail
 source "$(dirname "$0")/common.sh"
 e2e_init
 
-# Pick a random high port to avoid conflicts.
 PORT="${GOIPMI_SERVER_PORT:-$((9623 + RANDOM % 1000))}"
 USER="${GOIPMI_USER:-ADMIN}"
 PASS="${GOIPMI_PASS:-ADMIN}"
@@ -34,7 +36,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "==> Starting goipmi-server on :${PORT} ..."
+echo "==> Starting goipmi-server on :${PORT} (dual-stack: lanplus + lan) ..."
 env \
 	GOIPMI_SERVER_PORT="${PORT}" \
 	GOIPMI_SERVER_USER="${USER}" \
@@ -54,10 +56,15 @@ fi
 echo ""
 echo "========================================"
 echo " Self E2E: goipmi → goipmi-server (:${PORT})"
+echo " (lanplus + lan dual-stack)"
 echo "========================================"
 
 failures=0
-e2e_run_chassis_cases failures \
+
+e2e_run_chassis_cases_lanplus failures \
 	"${GOIPMI}" -H 127.0.0.1 -p "${PORT}" -U "${USER}" -P "${PASS}" -I lanplus
+
+e2e_run_chassis_cases_lan failures \
+	"${GOIPMI}" -H 127.0.0.1 -p "${PORT}" -U "${USER}" -P "${PASS}" -I lan
 
 e2e_report "Self E2E" "${failures}"

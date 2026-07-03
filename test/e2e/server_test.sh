@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # server_test.sh — E2E test for go-ipmi as an IPMI BMC server.
 #
-# Starts goipmi-server, then connects with ipmitool (local or Docker) to
-# verify basic chassis commands.
+# Starts goipmi-server, then connects with ipmitool (local or Docker) over
+# both IPMI v2.0 (lanplus) and v1.5 (lan -A MD5) to verify dual-stack serving.
 #
 # Environment variables:
-#   GOIPMI_SERVER_PORT – port for the server to listen on (default: 623)
+#   GOIPMI_SERVER_PORT – port for the server to listen on (default: 9623)
 #                         Use a port >1024 to avoid sudo when testing locally.
 #   IPMITOOL_BIN       – path to ipmitool   (auto-detected if unset)
 #   IPMITOOL_IMAGE     – Docker image to use when ipmitool is not found
@@ -43,9 +43,6 @@ if [ -n "${IPMITOOL_BIN}" ]; then
 	IPMITOOL_RUN="${IPMITOOL_BIN}"
 else
 	echo "==> ipmitool not found locally, will use Docker: ${IPMITOOL_IMAGE}"
-	# We need --network host only when the server is on localhost AND the
-	# port is not reachable from the default Docker bridge.  For port 623
-	# bound to 0.0.0.0 the bridge works as long as we use the host IP.
 	IPMITOOL_RUN="docker run --rm --network host ${IPMITOOL_IMAGE}"
 fi
 
@@ -61,13 +58,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Use sudo only when binding to a privileged port.
 USE_SUDO=""
 if [ "${GOIPMI_SERVER_PORT}" -lt 1024 ]; then
 	USE_SUDO="sudo"
 fi
 
-echo "==> Starting goipmi-server on :${GOIPMI_SERVER_PORT} ..."
+echo "==> Starting goipmi-server on :${GOIPMI_SERVER_PORT} (dual-stack: lanplus + lan) ..."
 ${USE_SUDO} env \
 	GOIPMI_SERVER_PORT="${GOIPMI_SERVER_PORT}" \
 	GOIPMI_SERVER_USER="${GOIPMI_USER}" \
@@ -76,7 +72,6 @@ ${USE_SUDO} env \
 SERVER_PID=$!
 sleep 2
 
-# Verify the server is listening.
 if ! ss -uln | grep -q ":${GOIPMI_SERVER_PORT} "; then
 	echo "ERROR: server failed to bind port ${GOIPMI_SERVER_PORT}" >&2
 	exit 1
@@ -89,16 +84,20 @@ echo "==> Server is listening on :${GOIPMI_SERVER_PORT}"
 echo ""
 echo "========================================"
 echo " Server E2E: ipmitool → goipmi-server"
+echo " (lanplus + lan dual-stack)"
 echo "========================================"
-
-IPMITOOL_ARGS=(-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lanplus)
 
 run_ipmitool() {
 	# shellcheck disable=SC2086
-	${IPMITOOL_RUN} "${IPMITOOL_ARGS[@]}" "$@"
+	${IPMITOOL_RUN} "$@"
 }
 
 failures=0
-e2e_run_chassis_cases failures run_ipmitool
+
+e2e_run_chassis_cases_lanplus failures run_ipmitool \
+	-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lanplus
+
+e2e_run_chassis_cases_lan failures run_ipmitool \
+	-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lan -A MD5
 
 e2e_report "Server E2E" "${failures}"

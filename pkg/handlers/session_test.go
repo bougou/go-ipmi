@@ -11,7 +11,8 @@ import (
 )
 
 func TestHandleGetChannelAuthCapsAdvertisesRMCPPlusOnly(t *testing.T) {
-	resp, cc, err := handleGetChannelAuthCaps(context.Background(), &HandlerContext{}, []byte{0x8e, 0x04})
+	b := newTestBMC()
+	resp, cc, err := handleGetChannelAuthCaps(context.Background(), &HandlerContext{BMC: b}, []byte{0x8e, 0x04})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -24,11 +25,14 @@ func TestHandleGetChannelAuthCapsAdvertisesRMCPPlusOnly(t *testing.T) {
 	if resp[1]&0x80 == 0 {
 		t.Fatalf("expected IPMI v2.0 extended capabilities to be available, byte=0x%02x", resp[1])
 	}
+	if resp[1]&0x04 == 0 {
+		t.Fatalf("expected MD5 v1.5 auth type, byte=0x%02x", resp[1])
+	}
 	if resp[3]&0x02 == 0 {
 		t.Fatalf("expected IPMI v2.0 connection support, byte=0x%02x", resp[3])
 	}
-	if resp[3]&0x01 != 0 {
-		t.Fatalf("must not advertise IPMI v1.5 session support, byte=0x%02x", resp[3])
+	if resp[3]&0x01 == 0 {
+		t.Fatalf("expected IPMI v1.5 connection support, byte=0x%02x", resp[3])
 	}
 }
 

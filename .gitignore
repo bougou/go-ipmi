@@ -39,11 +39,10 @@ _output
 
 .DS_Store
 
-goipmitest
-cmd/goipmi/goipmi
-goipmi-server
+# e2e binaries produced by `make build` (see test/e2e/common.sh)
+/_output/goipmi
+/_output/goipmi-server
 
 # asdf
 .tool-versions
-goipmi
 .claude

@@ -34,6 +34,24 @@ e2e_run_chassis_cases() {
 	e2e_run_test "chassis power off" "$@" chassis power off || ((_fail++)) || true
 }
 
+# Run chassis cases over IPMI v2.0 / RMCP+ (ipmitool -I lanplus).
+e2e_run_chassis_cases_lanplus() {
+	local -n _fail="${1:?failures counter variable name required}"
+	shift
+	e2e_run_test "lanplus chassis status" "$@" chassis status || ((_fail++)) || true
+	e2e_run_test "lanplus chassis power on" "$@" chassis power on || ((_fail++)) || true
+	e2e_run_test "lanplus chassis power off" "$@" chassis power off || ((_fail++)) || true
+}
+
+# Run chassis cases over IPMI v1.5 (ipmitool -I lan -A MD5).
+e2e_run_chassis_cases_lan() {
+	local -n _fail="${1:?failures counter variable name required}"
+	shift
+	e2e_run_test "lan chassis status" "$@" chassis status || ((_fail++)) || true
+	e2e_run_test "lan chassis power on" "$@" chassis power on || ((_fail++)) || true
+	e2e_run_test "lan chassis power off" "$@" chassis power off || ((_fail++)) || true
+}
+
 e2e_report() {
 	local suite="$1"
 	local failures="$2"

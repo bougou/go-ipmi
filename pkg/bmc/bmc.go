@@ -48,6 +48,13 @@ type BMC struct {
 	Channels *ChannelStore
 	Sessions *SessionStore
 
+	// V15Sessions tracks IPMI v1.5 LAN sessions (separate from RMCP+ sessions).
+	V15Sessions *V15SessionStore
+	// V15AuthTypes lists the v1.5 authentication types this BMC advertises and accepts.
+	V15AuthTypes []V15AuthType
+	// v15Disabled disables IPMI v1.5 LAN sessions when true.
+	v15Disabled bool
+
 	hal   hal.HAL
 	clock clock.Clock
 }
@@ -68,6 +75,53 @@ func WithKG(kg []byte) Option {
 // WithClock injects a custom [clock.Clock].  Defaults to [clock.Real].
 func WithClock(c clock.Clock) Option {
 	return func(b *BMC) { b.clock = c }
+}
+
+// WithV15AuthTypes sets the IPMI v1.5 authentication types the BMC advertises
+// and accepts. Pass nil/empty to restore [DefaultV15AuthTypes].
+func WithV15AuthTypes(types []V15AuthType) Option {
+	return func(b *BMC) {
+		if len(types) == 0 {
+			b.V15AuthTypes = nil
+			return
+		}
+		b.V15AuthTypes = append(b.V15AuthTypes[:0:0], types...)
+		b.v15Disabled = false
+	}
+}
+
+// WithV15Disabled turns off IPMI v1.5 LAN session support. RMCP+ (v2.0) is unaffected.
+func WithV15Disabled() Option {
+	return func(b *BMC) { b.v15Disabled = true }
+}
+
+// V15LANEnabled reports whether the BMC advertises and accepts IPMI v1.5 sessions.
+func (b *BMC) V15LANEnabled() bool {
+	return b != nil && !b.v15Disabled && len(b.ResolvedV15AuthTypes()) > 0
+}
+
+// ResolvedV15AuthTypes returns the v1.5 auth type list, defaulting to MD5.
+func (b *BMC) ResolvedV15AuthTypes() []V15AuthType {
+	if b.v15Disabled {
+		return nil
+	}
+	if len(b.V15AuthTypes) > 0 {
+		return b.V15AuthTypes
+	}
+	return DefaultV15AuthTypes
+}
+
+// V15AuthTypeEnabled reports whether authType is configured on this BMC.
+func (b *BMC) V15AuthTypeEnabled(authType V15AuthType) bool {
+	if !b.V15LANEnabled() {
+		return false
+	}
+	for _, t := range b.ResolvedV15AuthTypes() {
+		if t == authType {
+			return true
+		}
+	}
+	return false
 }
 
 // WithCipherSuites sets the RMCP+ cipher suites the server advertises and
@@ -115,15 +169,17 @@ func New(info DeviceInfo, guid [16]byte, h hal.HAL, opts ...Option) *BMC {
 		hal:   h,
 		clock: clock.Real,
 
-		Users:    NewUserStore(),
-		Channels: NewChannelStore(),
-		Sessions: NewSessionStore(clock.Real),
+		Users:       NewUserStore(),
+		Channels:    NewChannelStore(),
+		Sessions:    NewSessionStore(clock.Real),
+		V15Sessions: NewV15SessionStore(clock.Real),
 	}
 	for _, o := range opts {
 		o(b)
 	}
-	// Re-apply clock to SessionStore after options in case WithClock was used.
+	// Re-apply clock to session stores after options in case WithClock was used.
 	b.Sessions.clock = b.clock
+	b.V15Sessions.clock = b.clock
 	return b
 }
 
