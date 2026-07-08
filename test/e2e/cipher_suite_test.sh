@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # cipher_suite_test.sh — E2E for RMCP+ cipher suite coverage.
 #
-# Starts two goipmi-server instances:
+# Starts three goipmi-server instances:
 #   1) default config ({3, 17})        — verifies suites 3/17 succeed and that
 #      suite 0 (AuthAlgNone) is rejected, guarding against the auth bypass.
 #   2) extended config ({1,2,15,16,3,17}) — verifies the remaining spec-defined
@@ -9,6 +9,10 @@
 #      ipmitool client. This exercises RAKP4 ICV derivation by the *auth*
 #      algorithm (spec §13.28.1/§13.28.1b) for suites that pair a non-None auth
 #      algorithm with Integrity=None (suites 1 and 15).
+#   3) cross-suite config ({2, 17})    — verifies that suite 3 (SHA1+SHA1-96+AES)
+#      is rejected even though each algorithm appears individually (SHA1/SHA1-96
+#      from suite 2, AES from suite 17). This guards against cross-suite
+#      algorithm recombination in Open Session negotiation.
 #
 # Covers the acceptance criteria from docs/upstream-plan-2026-06.md §A.8:
 #   - ipmitool -C 17 (RAKP-HMAC-SHA256, HMAC-SHA256-128, AES-CBC-128) succeeds
@@ -17,6 +21,7 @@
 # Environment variables:
 #   GOIPMI_SERVER_PORT – default server listen port (default: random high port)
 #   GOIPMI_SERVER_PORT_EXTENDED – extended-config server port (default: random)
+#   GOIPMI_SERVER_PORT_CROSS – cross-suite-test server port (default: random)
 #   IPMITOOL_BIN       – path to ipmitool   (auto-detected if unset)
 #
 # Requires: make build  (or: make test-e2e-cipher)
@@ -33,6 +38,7 @@ e2e_init
 
 PORT="${GOIPMI_SERVER_PORT:-$((9900 + RANDOM % 1000))}"
 PORT_EXTENDED="${GOIPMI_SERVER_PORT_EXTENDED:-$((11100 + RANDOM % 1000))}"
+PORT_CROSS="${GOIPMI_SERVER_PORT_CROSS:-$((11300 + RANDOM % 1000))}"
 USER="${GOIPMI_USER:-ADMIN}"
 PASS="${GOIPMI_PASS:-ADMIN}"
 IPMITOOL_IMAGE="${IPMITOOL_IMAGE:-ghcr.io/halfcrazy/ipmitool:eecd64f}"
@@ -69,6 +75,11 @@ cleanup() {
 		kill "${EXTENDED_PID}" 2>/dev/null || true
 		wait "${EXTENDED_PID}" 2>/dev/null || true
 	fi
+	if [ -n "${CROSS_PID:-}" ] && kill -0 "${CROSS_PID}" 2>/dev/null; then
+		echo "==> Stopping cross-suite-test goipmi-server (pid ${CROSS_PID}) ..."
+		kill "${CROSS_PID}" 2>/dev/null || true
+		wait "${CROSS_PID}" 2>/dev/null || true
+	fi
 }
 trap cleanup EXIT
 
@@ -101,11 +112,28 @@ if ! ss -uln | grep -q ":${PORT_EXTENDED} "; then
 	exit 1
 fi
 
+echo "==> Starting goipmi-server on :${PORT_CROSS} (cross-suite-test cipher suites 2,17) ..."
+env \
+	GOIPMI_SERVER_PORT="${PORT_CROSS}" \
+	GOIPMI_SERVER_USER="${USER}" \
+	GOIPMI_SERVER_PASS="${PASS}" \
+	GOIPMI_SERVER_CIPHER_SUITES="2,17" \
+	"${SERVER_BIN}" &
+CROSS_PID=$!
+sleep 1
+
+if ! ss -uln | grep -q ":${PORT_CROSS} "; then
+	echo -e "${RED}ERROR: cross-suite-test server failed to start${NC}" >&2
+	exit 1
+fi
+
 IPMI_ARGS=(-H 127.0.0.1 -p "${PORT}" -U "${USER}" -P "${PASS}" -I lanplus)
 IPMI_ARGS_EXTENDED=(-H 127.0.0.1 -p "${PORT_EXTENDED}" -U "${USER}" -P "${PASS}" -I lanplus)
+IPMI_ARGS_CROSS=(-H 127.0.0.1 -p "${PORT_CROSS}" -U "${USER}" -P "${PASS}" -I lanplus)
 
 # run_cipher <suite> <ipmitool-args...>          — against the default server.
 # run_cipher_extended <suite> <ipmitool-args...> — against the extended server.
+# run_cipher_cross <suite> <ipmitool-args...>    — against the cross-suite-test server.
 run_cipher() {
 	local suite="$1"
 	shift
@@ -118,6 +146,12 @@ run_cipher_extended() {
 	# shellcheck disable=SC2086
 	${IPMITOOL_RUN} "${IPMI_ARGS_EXTENDED[@]}" -C "${suite}" "$@"
 }
+run_cipher_cross() {
+	local suite="$1"
+	shift
+	# shellcheck disable=SC2086
+	${IPMITOOL_RUN} "${IPMI_ARGS_CROSS[@]}" -C "${suite}" "$@"
+}
 
 # ---------------------------------------------------------------------------
 # Run the tests
@@ -127,6 +161,7 @@ echo "========================================"
 echo " Cipher Suite E2E: ipmitool → goipmi-server"
 echo "   default   :${PORT}  (suites 3, 17)"
 echo "   extended  :${PORT_EXTENDED}  (suites 1, 2, 15, 16, 3, 17)"
+echo "   cross     :${PORT_CROSS}  (suites 2, 17)"
 echo "========================================"
 
 # Suite 17 = RAKP-HMAC-SHA256 / HMAC-SHA256-128 / AES-CBC-128.  The Get Channel
@@ -177,6 +212,46 @@ test_suite0_rejected_by_default() {
 		return 1
 	fi
 	return 0
+}
+
+# Cross-suite recombination guard: server configured with {2, 17} must reject
+# suite 3 (SHA1+SHA1-96+AES).  Each algorithm appears in some configured suite
+# (SHA1/SHA1-96 from suite 2, AES from suite 17), but the triple as a unit was
+# never advertised.  Accepting it would violate the cipher suite model and,
+# with certain configs (e.g. {3, 15}), could silently enable suite 1
+# (authenticated but no integrity check).
+test_suite3_rejected_by_cross_suite_server() {
+	local out rc
+	out=$(run_cipher_cross 3 chassis status 2>&1) && rc=0 || rc=$?
+	if [ "${rc}" -eq 0 ]; then
+		echo "  suite 3 (cross-suite recombination) unexpectedly established a session: ${out}" >&2
+		return 1
+	fi
+	if echo "${out}" | grep -q "System Power"; then
+		echo "  suite 3 (cross-suite recombination) executed a command despite not being configured: ${out}" >&2
+		return 1
+	fi
+	return 0
+}
+
+# Suite 2 against the cross-suite server ({2, 17}) must succeed — it is a
+# legitimately configured suite.
+test_suite2_cross_suite_server() {
+	local out
+	out=$(run_cipher_cross 2 chassis status 2>&1) || { echo "${out}" >&2; return 1; }
+	echo "${out}" | grep -q "System Power" && return 0
+	echo "  suite 2 (cross-suite server) chassis status mismatch: ${out}" >&2
+	return 1
+}
+
+# Suite 17 against the cross-suite server ({2, 17}) must succeed — it is a
+# legitimately configured suite.
+test_suite17_cross_suite_server() {
+	local out
+	out=$(run_cipher_cross 17 chassis status 2>&1) || { echo "${out}" >&2; return 1; }
+	echo "${out}" | grep -q "System Power" && return 0
+	echo "  suite 17 (cross-suite server) chassis status mismatch: ${out}" >&2
+	return 1
 }
 
 # The following suites are negotiated against the extended-config server
@@ -230,6 +305,9 @@ e2e_run_test "suite 17 (SHA256) chassis status" test_suite17_chassis_status || (
 e2e_run_test "suite 17 (SHA256) mc info"        test_suite17_mc_info        || ((failures++)) || true
 e2e_run_test "suite 3 (SHA1) chassis status"    test_suite3_chassis_status  || ((failures++)) || true
 e2e_run_test "suite 0 (AuthAlgNone) rejected by default" test_suite0_rejected_by_default || ((failures++)) || true
+e2e_run_test "suite 3 rejected by {2,17} cross-suite server" test_suite3_rejected_by_cross_suite_server || ((failures++)) || true
+e2e_run_test "suite 2 (SHA1, no crypt) on cross-suite server" test_suite2_cross_suite_server || ((failures++)) || true
+e2e_run_test "suite 17 (SHA256) on cross-suite server" test_suite17_cross_suite_server || ((failures++)) || true
 e2e_run_test "suite 1 (SHA1, no integ/crypt)"   test_suite1_chassis_status  || ((failures++)) || true
 e2e_run_test "suite 2 (SHA1, no crypt)"         test_suite2_chassis_status  || ((failures++)) || true
 e2e_run_test "suite 15 (SHA256, no integ/crypt)" test_suite15_chassis_status || ((failures++)) || true

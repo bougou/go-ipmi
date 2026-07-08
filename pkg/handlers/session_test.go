@@ -280,6 +280,78 @@ func TestHandleOpenSession_AcceptsMixedSuites(t *testing.T) {
 	}
 }
 
+// TestHandleOpenSession_RejectsCrossSuiteRecombination verifies that the
+// server rejects algorithm triples formed by recombining algorithms from
+// different configured suites. Configuring suites {2, 17} must NOT accept
+// suite 3 (SHA1 auth + SHA1-96 integ + AES crypt), even though each
+// component exists individually (SHA1 and SHA1-96 from suite 2, AES from
+// suite 17). The triple must come from a single configured suite.
+func TestHandleOpenSession_RejectsCrossSuiteRecombination(t *testing.T) {
+	type testCase struct {
+		name       string
+		suites     []bmc.CipherSuiteID
+		auth       bmc.AuthAlg
+		integ      bmc.IntegrityAlg
+		crypt      bmc.CryptAlg
+		wantStatus uint8
+	}
+
+	cases := []testCase{
+		{
+			// Suites {2, 17}: each component of suite 3 exists individually
+			// (SHA1/SHA1-96 from suite 2, AES from suite 17), but no single
+			// configured suite contains the triple.
+			name:       "{2,17} should reject suite 3 (cross-suite SHA1+SHA1-96+AES)",
+			suites:     []bmc.CipherSuiteID{bmc.CipherSuiteID2, bmc.CipherSuiteID17},
+			auth:       bmc.AuthAlgHMACSHA1,
+			integ:      bmc.IntegrityAlgHMACSHA1_96,
+			crypt:      bmc.CryptAlgAESCBC128,
+			wantStatus: 0x04,
+		},
+		{
+			// Suites {2, 17}: SHA256+SHA256-128+None = suite 16. Suite 16
+			// is not configured; SHA256/SHA256-128 are from suite 17, None
+			// is from suite 2's crypt.
+			name:       "{2,17} should reject suite 16 (cross-suite SHA256+SHA256-128+None)",
+			suites:     []bmc.CipherSuiteID{bmc.CipherSuiteID2, bmc.CipherSuiteID17},
+			auth:       bmc.AuthAlgHMACSHA256,
+			integ:      bmc.IntegrityAlgHMACSHA256_128,
+			crypt:      bmc.CryptAlgNone,
+			wantStatus: 0x04,
+		},
+		{
+			// Auth bypass: suites {3, 15} create auth={SHA1,SHA256},
+			// integ={SHA1-96,None}, crypt={AES,None}. Without triple
+			// validation, suite 1 (SHA1+None+None — authenticated but no
+			// integrity check) would be accepted even though it was never
+			// configured. This is the most dangerous recombination.
+			name:       "{3,15} should reject suite 1 (auth bypass SHA1+None+None)",
+			suites:     []bmc.CipherSuiteID{bmc.CipherSuiteID3, bmc.CipherSuiteID15},
+			auth:       bmc.AuthAlgHMACSHA1,
+			integ:      bmc.IntegrityAlgNone,
+			crypt:      bmc.CryptAlgNone,
+			wantStatus: 0x04,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			b := newTestBMC()
+			b.SetCipherSuites(tc.suites)
+
+			payload := openSessionPayload(0x01, 0x04, 0x01020304,
+				uint8(tc.auth), uint8(tc.integ), uint8(tc.crypt))
+			resp, err := HandleOpenSession(context.Background(), b, payload)
+			if err != nil {
+				t.Fatalf("HandleOpenSession: %v", err)
+			}
+			if len(resp) != 8 || resp[1] != tc.wantStatus {
+				t.Fatalf("want status 0x%02x, got len=%d status=0x%02x", tc.wantStatus, len(resp), safeStatus(resp))
+			}
+		})
+	}
+}
+
 // TestComputeRAKP4AuthCode_UsesAuthAlgorithm verifies that the RAKP4 Integrity
 // Check Value is selected by the *authentication* algorithm (spec §13.28.1 /
 // §13.28.1b / §13.31), not the session integrity algorithm. This matters for

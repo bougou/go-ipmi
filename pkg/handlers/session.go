@@ -202,20 +202,14 @@ func HandleOpenSession(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, er
 	intAlg := bmc.IntegrityAlg(data[20]) // byte 4 of integrity payload
 	cryptAlg := bmc.CryptAlg(data[28])   // byte 4 of crypt payload
 
-	// Validate algorithm support against the cipher suites this BMC is
-	// configured to accept. An algorithm is accepted if and only if at least
-	// one configured suite uses it (None is not implicitly accepted). Error
-	// codes per spec Table 13-17: 0x04 invalid auth, 0x05 invalid integrity,
-	// 0x10 invalid confidentiality.
-	allowedAuth, allowedInt, allowedCrypt := allowedAlgorithms(b)
-	if !allowedAuth[authAlg] {
-		return buildOpenSessionError(tag, consoleID, 0x04), nil // Invalid auth alg
-	}
-	if !allowedInt[intAlg] {
-		return buildOpenSessionError(tag, consoleID, 0x05), nil // Invalid integrity alg
-	}
-	if !allowedCrypt[cryptAlg] {
-		return buildOpenSessionError(tag, consoleID, 0x10), nil // Invalid confidentiality alg
+	// Validate that the requested algorithm triple matches a configured
+	// cipher suite (spec §22.15.2, §13.17). The triple must appear as a
+	// unit — cross-suite recombinations are rejected even when each
+	// individual algorithm exists in some configured suite. Error codes per
+	// spec Table 13-17: 0x04 invalid auth, 0x05 invalid integrity, 0x10
+	// invalid confidentiality.
+	if ok, code := isCipherSuiteAllowed(b, authAlg, intAlg, cryptAlg); !ok {
+		return buildOpenSessionError(tag, consoleID, code), nil
 	}
 
 	sess, err := b.Sessions.Allocate(consoleID, authAlg, intAlg, cryptAlg)
