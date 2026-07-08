@@ -33,31 +33,49 @@ func cipherSuiteRecords(b *bmc.BMC) []byte {
 	return out
 }
 
-// allowedAlgorithms returns the sets of auth / integrity / confidentiality
-// algorithm codes the server will accept in an RMCP+ Open Session Request,
-// derived strictly from the configured cipher suites (spec §22.15.2,
-// §13.17). An algorithm is accepted if and only if at least one configured
-// cipher suite uses it.
+// isCipherSuiteAllowed checks whether the (auth, integ, crypt) triple from an
+// Open Session Request matches at least one configured cipher suite (spec
+// §22.15.2, §13.17). It validates the triple as a whole — each algorithm must
+// come from the same suite. Cross-suite recombinations (where each algorithm
+// appears in some configured suite but the triple as a unit was never
+// advertised via Get Channel Cipher Suites) are rejected.
 //
-// None is NOT implicitly accepted. The default cipher suite set
-// ([bmc.DefaultCipherSuites], suites 3 and 17) does not contain any
-// unauthenticated or unencrypted suite, so AuthAlgNone / IntegrityAlgNone /
-// CryptAlgNone are rejected unless an operator explicitly configures a suite
-// that uses them (e.g. suite 0 for fully unauthenticated, suite 1/15 for
-// authenticated-but-unencrypted). This keeps Open Session negotiation
-// consistent with the suites advertised via Get Channel Cipher Suites.
-func allowedAlgorithms(b *bmc.BMC) (auth map[bmc.AuthAlg]bool, integ map[bmc.IntegrityAlg]bool, crypt map[bmc.CryptAlg]bool) {
-	auth = make(map[bmc.AuthAlg]bool)
-	integ = make(map[bmc.IntegrityAlg]bool)
-	crypt = make(map[bmc.CryptAlg]bool)
+// When the triple is rejected, the error code attributes the failure to the
+// first algorithm that does not appear in any configured suite. If all three
+// algorithms exist individually but the triple is not a recognised suite
+// combination, 0x04 (invalid authentication algorithm) is returned.
+func isCipherSuiteAllowed(b *bmc.BMC, auth bmc.AuthAlg, integ bmc.IntegrityAlg, crypt bmc.CryptAlg) (ok bool, errCode uint8) {
+	authKnown := false
+	integKnown := false
+	cryptKnown := false
 	for _, id := range b.ResolvedCipherSuites() {
 		a, i, c, ok := bmc.CipherSuiteAlgorithms(id)
 		if !ok {
 			continue
 		}
-		auth[a] = true
-		integ[i] = true
-		crypt[c] = true
+		if !authKnown {
+			authKnown = a == auth
+		}
+		if !integKnown {
+			integKnown = i == integ
+		}
+		if !cryptKnown {
+			cryptKnown = c == crypt
+		}
+		if a == auth && i == integ && c == crypt {
+			return true, 0
+		}
 	}
-	return
+	if !authKnown {
+		return false, 0x04 // Invalid authentication algorithm
+	}
+	if !integKnown {
+		return false, 0x05 // Invalid integrity algorithm
+	}
+	if !cryptKnown {
+		return false, 0x10 // Invalid confidentiality algorithm
+	}
+	// All three algorithms appear individually in some configured suite, but
+	// no single suite contains this triple — a cross-suite recombination.
+	return false, 0x04
 }
