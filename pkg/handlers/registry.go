@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"fmt"
+
+	types "github.com/bougou/go-ipmi/pkg/types"
 )
 
 // CompletionCode is an IPMI completion code byte.
@@ -44,6 +46,20 @@ const (
 	// 80h in their command-specific completion code table.
 	CodeBootParamNotSupported CompletionCode = 0x80
 )
+
+// String returns the IPMI spec description for the completion code,
+// delegating to the canonical CC map in [types].
+func (cc CompletionCode) String() string {
+	if s := types.CC[uint8(cc)]; s != "" {
+		return s
+	}
+	return fmt.Sprintf("0x%02x", uint8(cc))
+}
+
+// Error makes CompletionCode implement the error interface.
+func (cc CompletionCode) Error() string {
+	return fmt.Sprintf("IPMI completion code %s", cc.String())
+}
 
 // Handler processes a single IPMI command.
 //

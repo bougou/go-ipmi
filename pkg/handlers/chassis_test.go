@@ -77,6 +77,26 @@ func TestHandleChassisControl_PowerCycle(t *testing.T) {
 	}
 }
 
+// TestHandleChassisControl_NodeBusy verifies that when a HAL method returns a
+// [CompletionCode] as an error (e.g. [CodeNodeBusy]), [codeFromErr] extracts
+// the specific code rather than falling back to [CodeUnspecifiedError].
+func TestHandleChassisControl_NodeBusy(t *testing.T) {
+	m := mock.New()
+	b := newTestBMCWithMock(m)
+	ch := b.HAL().Chassis().(*mock.Chassis)
+	// SetPowerHook allows the test to inject a CompletionCode as error.
+	ch.SetPowerHook = func(on bool) error {
+		return CodeNodeBusy
+	}
+	hctx := &HandlerContext{BMC: b}
+
+	req := (&chassis.ChassisControlRequest{ChassisControl: chassis.ChassisControlPowerDown}).Pack()
+	_, cc, _ := handleChassisControl(context.Background(), hctx, req)
+	if cc != CodeNodeBusy {
+		t.Fatalf("want CodeNodeBusy (0xC0), got cc=%d", cc)
+	}
+}
+
 func TestHandleChassisControl_TypedDispatch(t *testing.T) {
 	cases := []struct {
 		name   string
