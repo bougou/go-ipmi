@@ -1,7 +1,7 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 35.17 Set Sensor Reading And Event Status Command
 )
 
@@ -14,7 +14,7 @@ type SetSensorReadingAndEventStatusRequest struct {
 	SensorReadingOperation   uint8
 
 	SensorReading uint8
-	ipmi.SensorEventFlag
+	types.SensorEventFlag
 
 	EventData1 uint8
 	EventData2 uint8
@@ -25,22 +25,22 @@ type SetSensorReadingAndEventStatusResponse struct {
 	// empty
 }
 
-func (req *SetSensorReadingAndEventStatusRequest) Command() ipmi.Command {
-	return ipmi.CommandSetSensorReadingAndEventStatus
+func (req *SetSensorReadingAndEventStatusRequest) Command() types.Command {
+	return types.CommandSetSensorReadingAndEventStatus
 }
 
 func (req *SetSensorReadingAndEventStatusRequest) Pack() []byte {
 	out := make([]byte, 9)
-	ipmi.PackUint8(req.SensorNumber, out, 0)
+	types.PackUint8(req.SensorNumber, out, 0)
 
 	var operation uint8
 	operation |= uint8(req.EventDataBytesOperation) << 6
 	operation |= (uint8(req.AssertionBitsOperation) & 0x3f) << 4
 	operation |= (uint8(req.DeassertionBitsOperation) & 0x0f) << 2
 	operation |= uint8(req.SensorReadingOperation) & 0x03
-	ipmi.PackUint8(operation, out, 1)
+	types.PackUint8(operation, out, 1)
 
-	ipmi.PackUint8(req.SensorReading, out, 2)
+	types.PackUint8(req.SensorReading, out, 2)
 
 	// Todo determine sensor is threshold based or discrete
 

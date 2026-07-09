@@ -3,7 +3,7 @@ package dcmi
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // GetDCMIAssetTagRequest represents a "Get Asset Tag" request according
@@ -30,11 +30,11 @@ func (req *GetDCMIAssetTagRequest) Pack() []byte {
 	// Number of bytes to read (16 bytes maximum)
 	// using the fixed (maximum) value is OK here.
 	var readBytes = uint8(0x10)
-	return []byte{ipmi.GroupExtensionDCMI, req.Offset, readBytes}
+	return []byte{types.GroupExtensionDCMI, req.Offset, readBytes}
 }
 
-func (req *GetDCMIAssetTagRequest) Command() ipmi.Command {
-	return ipmi.CommandGetDCMIAssetTag
+func (req *GetDCMIAssetTagRequest) Command() types.Command {
+	return types.CommandGetDCMIAssetTag
 }
 
 func (res *GetDCMIAssetTagResponse) CompletionCodes() map[uint8]string {
@@ -48,16 +48,16 @@ func (res *GetDCMIAssetTagResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetDCMIAssetTagResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
-	if err := ipmi.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
+	if err := types.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
 		return err
 	}
 
-	res.TotalLength, _, _ = ipmi.UnpackUint8(msg, 1)
+	res.TotalLength, _, _ = types.UnpackUint8(msg, 1)
 	if len(msg) > 2 {
-		res.AssetTag, _, _ = ipmi.UnpackBytesMost(msg, 2, 16)
+		res.AssetTag, _, _ = types.UnpackBytesMost(msg, 2, 16)
 	}
 
 	return nil

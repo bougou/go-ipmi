@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 22.19
 )
 
@@ -18,16 +18,16 @@ type CloseSessionResponse struct {
 
 func (req *CloseSessionRequest) Pack() []byte {
 	msg := make([]byte, 4)
-	ipmi.PackUint32L(req.SessionID, msg, 0)
+	types.PackUint32L(req.SessionID, msg, 0)
 	if req.SessionID == 0 {
 		msg = append(msg, 0)
-		ipmi.PackUint8(req.SessionHandle, msg, 4)
+		types.PackUint8(req.SessionHandle, msg, 4)
 	}
 	return msg
 }
 
-func (req *CloseSessionRequest) Command() ipmi.Command {
-	return ipmi.CommandCloseSession
+func (req *CloseSessionRequest) Command() types.Command {
+	return types.CommandCloseSession
 }
 
 func (res *CloseSessionResponse) Unpack(msg []byte) error {

@@ -3,14 +3,14 @@ package transport
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 24.10 Get Channel OEM Payload Info Command
 type GetChannelOEMPayloadInfoRequest struct {
 	ChannelNumber uint8
 
-	PayloadType ipmi.PayloadType
+	PayloadType types.PayloadType
 
 	// OEM IANA. When Payload Type Number is 02h (OEM Explicit) this field
 	// holds the OEM IANA for the OEM payload type to look up information for. Otherwise, this field is set to 00_00_00h.
@@ -19,7 +19,7 @@ type GetChannelOEMPayloadInfoRequest struct {
 }
 
 type GetChannelOEMPayloadInfoResponse struct {
-	PayloadType  ipmi.PayloadType
+	PayloadType  types.PayloadType
 	OEMIANA      uint32
 	OEMPayloadID uint16
 
@@ -33,14 +33,14 @@ func (req *GetChannelOEMPayloadInfoRequest) Pack() []byte {
 	out[0] = req.ChannelNumber
 	out[1] = byte(req.PayloadType)
 
-	ipmi.PackUint24L(req.OEMIANA, out, 2)
-	ipmi.PackUint16L(req.OEMPayloadID, out, 5)
+	types.PackUint24L(req.OEMIANA, out, 2)
+	types.PackUint16L(req.OEMPayloadID, out, 5)
 
 	return out
 }
 
-func (req *GetChannelOEMPayloadInfoRequest) Command() ipmi.Command {
-	return ipmi.CommandGetChannelOEMPayloadInfo
+func (req *GetChannelOEMPayloadInfoRequest) Command() types.Command {
+	return types.CommandGetChannelOEMPayloadInfo
 }
 
 func (res *GetChannelOEMPayloadInfoResponse) CompletionCodes() map[uint8]string {
@@ -51,12 +51,12 @@ func (res *GetChannelOEMPayloadInfoResponse) CompletionCodes() map[uint8]string 
 
 func (res *GetChannelOEMPayloadInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 7 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 7)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 7)
 	}
 
-	res.PayloadType = ipmi.PayloadType(msg[0])
-	res.OEMIANA, _, _ = ipmi.UnpackUint24L(msg, 1)
-	res.OEMPayloadID, _, _ = ipmi.UnpackUint16L(msg, 4)
+	res.PayloadType = types.PayloadType(msg[0])
+	res.OEMIANA, _, _ = types.UnpackUint24L(msg, 1)
+	res.OEMPayloadID, _, _ = types.UnpackUint16L(msg, 4)
 	res.MajorVersion = msg[6] >> 4
 	res.MinorVersion = msg[6] & 0x0f
 

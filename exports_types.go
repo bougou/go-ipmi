@@ -3,10 +3,10 @@ package ipmi
 import types "github.com/bougou/go-ipmi/pkg/types"
 
 const (
-	AuthAlgRAKP_HMAC_MD5                                         = types.AuthAlgRAKP_HMAC_MD5
-	AuthAlgRAKP_HMAC_SHA1                                        = types.AuthAlgRAKP_HMAC_SHA1
-	AuthAlgRAKP_HMAC_SHA256                                      = types.AuthAlgRAKP_HMAC_SHA256
-	AuthAlgRAKP_None                                             = types.AuthAlgRAKP_None
+	AuthAlgRAKP_HMAC_MD5                                         = types.AuthAlg_HMAC_MD5
+	AuthAlgRAKP_HMAC_SHA1                                        = types.AuthAlg_HMAC_SHA1
+	AuthAlgRAKP_HMAC_SHA256                                      = types.AuthAlg_HMAC_SHA256
+	AuthAlgRAKP_None                                             = types.AuthAlg_None
 	AuthTypeMD2                                                  = types.AuthTypeMD2
 	AuthTypeMD5                                                  = types.AuthTypeMD5
 	AuthTypeNone                                                 = types.AuthTypeNone

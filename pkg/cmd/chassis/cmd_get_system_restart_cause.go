@@ -3,7 +3,7 @@ package chassis
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 28.11 Get System Restart Cause Command
@@ -45,8 +45,8 @@ func (req *GetSystemRestartCauseRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (req *GetSystemRestartCauseRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSystemRestartCause
+func (req *GetSystemRestartCauseRequest) Command() types.Command {
+	return types.CommandGetSystemRestartCause
 }
 
 func (res *GetSystemRestartCauseResponse) CompletionCodes() map[uint8]string {
@@ -55,12 +55,12 @@ func (res *GetSystemRestartCauseResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetSystemRestartCauseResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
-	b, _, _ := ipmi.UnpackUint8(msg, 0)
+	b, _, _ := types.UnpackUint8(msg, 0)
 	res.SystemRestartCause = SystemRestartCause(b)
-	res.ChannelNumber, _, _ = ipmi.UnpackUint8(msg, 1)
+	res.ChannelNumber, _, _ = types.UnpackUint8(msg, 1)
 	return nil
 }
 

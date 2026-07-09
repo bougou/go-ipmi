@@ -3,7 +3,7 @@ package client
 import (
 	"errors"
 	"fmt"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 var (
@@ -24,8 +24,8 @@ func ErrDCMIGroupExtensionIDMismatchWith(expected uint8, actual uint8) error {
 }
 
 func CheckDCMIGroupExenstionMatch(grpExt uint8) error {
-	if grpExt != ipmi.GroupExtensionDCMI {
-		return ErrDCMIGroupExtensionIDMismatchWith(ipmi.GroupExtensionDCMI, grpExt)
+	if grpExt != types.GroupExtensionDCMI {
+		return ErrDCMIGroupExtensionIDMismatchWith(types.GroupExtensionDCMI, grpExt)
 	}
 	return nil
 }

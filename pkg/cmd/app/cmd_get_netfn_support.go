@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 21.2 Get NetFn Support Command
 )
 
@@ -35,8 +35,8 @@ func (l LUNSupport) String() string {
 	return ""
 }
 
-func (req *GetNetFnSupportRequest) Command() ipmi.Command {
-	return ipmi.CommandGetNetFnSupport
+func (req *GetNetFnSupportRequest) Command() types.Command {
+	return types.CommandGetNetFnSupport
 }
 
 func (req *GetNetFnSupportRequest) Pack() []byte {
@@ -45,15 +45,15 @@ func (req *GetNetFnSupportRequest) Pack() []byte {
 
 func (res *GetNetFnSupportResponse) Unpack(msg []byte) error {
 	if len(msg) < 17 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 17)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 17)
 	}
-	b, _, _ := ipmi.UnpackUint8(msg, 0)
+	b, _, _ := types.UnpackUint8(msg, 0)
 	res.LUN3Support = LUNSupport(b >> 6)
 	res.LUN2Support = LUNSupport((b & 0x3f) >> 4)
 	res.LUN1Support = LUNSupport((b & 0x0f) >> 2)
 	res.LUN0Support = LUNSupport(b & 0x03)
 
-	res.NetFnPairsSupport, _, _ = ipmi.UnpackBytes(msg, 1, 16)
+	res.NetFnPairsSupport, _, _ = types.UnpackBytes(msg, 1, 16)
 	return nil
 }
 

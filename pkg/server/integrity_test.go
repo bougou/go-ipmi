@@ -7,6 +7,7 @@ import (
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/protocol"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 type capturePacketConn struct {
@@ -37,7 +38,7 @@ func TestSendRMCPPlusSessionAddsIntegrityTrailer(t *testing.T) {
 	sess := &bmc.Session{
 		ConsoleID:    0x11223344,
 		OutboundSeq:  7,
-		IntegrityAlg: bmc.IntegrityAlgHMACSHA1_96,
+		IntegrityAlg: types.IntegrityAlg_HMAC_SHA1_96,
 		K1:           []byte("0123456789abcdefghij"),
 	}
 	payload := []byte{0x20, 0x18, 0xc8, 0x81, 0x00}
@@ -64,7 +65,7 @@ func TestSendRMCPPlusSessionAddsIntegrityTrailer(t *testing.T) {
 
 func TestVerifyRMCPPlusIntegrityRequiresAuthenticatedFlag(t *testing.T) {
 	sess := &bmc.Session{
-		IntegrityAlg: bmc.IntegrityAlgHMACSHA1_96,
+		IntegrityAlg: types.IntegrityAlg_HMAC_SHA1_96,
 		K1:           []byte("0123456789abcdefghij"),
 	}
 	pkt := protocol.BuildRMCPPlusPacket(srvPayloadIPMI, protocol.PayloadAuthenticatedFlag, 1, 1, []byte{0x01, 0x02})
@@ -82,7 +83,7 @@ func TestRMCPPlusIntegrity_SHA256_128(t *testing.T) {
 	sess := &bmc.Session{
 		ConsoleID:    0x11223344,
 		OutboundSeq:  3,
-		IntegrityAlg: bmc.IntegrityAlgHMACSHA256_128,
+		IntegrityAlg: types.IntegrityAlg_HMAC_SHA256_128,
 		// SHA256-128 uses a 128-bit (16-byte) K1; any 16+ byte key works.
 		K1: []byte("0123456789abcdef"),
 	}

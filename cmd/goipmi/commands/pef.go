@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -79,7 +79,7 @@ func NewCmdPEFStatus() *cobra.Command {
 			}
 
 			{
-				param := &ipmi.PEFConfigParam_Control{}
+				param := &types.PEFConfigParam_Control{}
 				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 					CheckErr(fmt.Errorf("GetLastProcessedEventId failed, err: %w", err))
 				}
@@ -87,7 +87,7 @@ func NewCmdPEFStatus() *cobra.Command {
 			}
 
 			{
-				param := &ipmi.PEFConfigParam_ActionGlobalControl{}
+				param := &types.PEFConfigParam_ActionGlobalControl{}
 				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 					CheckErr(fmt.Errorf("GetLastProcessedEventId failed, err: %w", err))
 				}
@@ -123,19 +123,19 @@ func NewCmdPEFFilterList() *cobra.Command {
 			var numberOfEventFilters uint8
 
 			{
-				param := &ipmi.PEFConfigParam_EventFiltersCount{}
+				param := &types.PEFConfigParam_EventFiltersCount{}
 				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 					CheckErr(fmt.Errorf("get number of event filters failed, err: %w", err))
 				}
 				numberOfEventFilters = param.Value
 			}
 
-			var eventFilters = make([]*ipmi.PEFEventFilter, numberOfEventFilters)
+			var eventFilters = make([]*types.PEFEventFilter, numberOfEventFilters)
 			for i := uint8(0); i < numberOfEventFilters; i++ {
 				// 1-based
 				filterNumber := i + 1
 
-				param := &ipmi.PEFConfigParam_EventFilter{
+				param := &types.PEFConfigParam_EventFilter{
 					SetSelector: filterNumber,
 				}
 				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
@@ -145,7 +145,7 @@ func NewCmdPEFFilterList() *cobra.Command {
 				eventFilters[i] = param.Filter
 			}
 
-			fmt.Println(ipmi.FormatEventFilters(eventFilters))
+			fmt.Println(types.FormatEventFilters(eventFilters))
 		},
 	}
 	return cmd
@@ -159,7 +159,7 @@ func NewCmdPEFInfo() *cobra.Command {
 			ctx := context.Background()
 
 			{
-				param := &ipmi.PEFConfigParam_SystemGUID{}
+				param := &types.PEFConfigParam_SystemGUID{}
 				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 					CheckErr(err)
 				}
@@ -172,12 +172,12 @@ func NewCmdPEFInfo() *cobra.Command {
 						CheckErr(err)
 					}
 					fmt.Println("Get System GUID")
-					fmt.Println(ipmi.FormatGUIDDetails(res.GUID))
+					fmt.Println(types.FormatGUIDDetails(res.GUID))
 				}
 			}
 
 			{
-				param := &ipmi.PEFConfigParam_AlertPoliciesCount{}
+				param := &types.PEFConfigParam_AlertPoliciesCount{}
 				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 					CheckErr(err)
 				}
@@ -221,7 +221,7 @@ func NewCmdPEFPolicyList() *cobra.Command {
 
 			numberOfAlertPolicies := uint8(0)
 			{
-				param := &ipmi.PEFConfigParam_AlertPoliciesCount{}
+				param := &types.PEFConfigParam_AlertPoliciesCount{}
 				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
 					CheckErr(err)
 				}
@@ -233,7 +233,7 @@ func NewCmdPEFPolicyList() *cobra.Command {
 			for i := uint8(0); i < numberOfAlertPolicies; i++ {
 				entry := i + 1
 
-				param := &ipmi.PEFConfigParam_AlertPolicy{
+				param := &types.PEFConfigParam_AlertPolicy{
 					SetSelector: entry,
 				}
 				if err := client.GetPEFConfigParamFor(ctx, param); err != nil {
@@ -248,7 +248,7 @@ func NewCmdPEFPolicyList() *cobra.Command {
 				}
 
 				// Todo Get Lan Config Param
-				// if resp.ChannelMedium == ipmi.ChannelMediumLAN {
+				// if resp.ChannelMedium == types.ChannelMediumLAN {
 				// Number of Destinations : 0x11 (17)
 				// Destination Type : 0x12 (18)
 				// Community String : 0x10 (16)
@@ -282,7 +282,7 @@ func NewCmdPEFPolicyList() *cobra.Command {
 				"AlertStringKey",
 			}
 
-			fmt.Println(ipmi.RenderTable(headers, rows))
+			fmt.Println(types.RenderTable(headers, rows))
 
 		},
 	}

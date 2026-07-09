@@ -3,7 +3,7 @@ package storage
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 34.3 Write FRU Data Command
@@ -17,26 +17,26 @@ type WriteFRUDataResponse struct {
 	CountWritten uint8
 }
 
-func (req *WriteFRUDataRequest) Command() ipmi.Command {
-	return ipmi.CommandWriteFRUData
+func (req *WriteFRUDataRequest) Command() types.Command {
+	return types.CommandWriteFRUData
 }
 
 func (req *WriteFRUDataRequest) Pack() []byte {
 	out := make([]byte, 3+len(req.WriteData))
-	ipmi.PackUint8(req.FRUDeviceID, out, 0)
-	ipmi.PackUint16L(req.WriteOffset, out, 1)
+	types.PackUint8(req.FRUDeviceID, out, 0)
+	types.PackUint16L(req.WriteOffset, out, 1)
 	if len(req.WriteData) > 0 {
-		ipmi.PackBytes(req.WriteData, out, 3)
+		types.PackBytes(req.WriteData, out, 3)
 	}
 	return out
 }
 
 func (res *WriteFRUDataResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
-	res.CountWritten, _, _ = ipmi.UnpackUint8(msg, 0)
+	res.CountWritten, _, _ = types.UnpackUint8(msg, 0)
 	return nil
 }
 

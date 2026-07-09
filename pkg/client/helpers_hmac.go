@@ -9,7 +9,8 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"fmt"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // generate_hmac generates message authentication code.
@@ -52,24 +53,24 @@ func generate_hmac(alg string, data []byte, key []byte) ([]byte, error) {
 func generate_auth_hmac(authAlg any, data []byte, key []byte) ([]byte, error) {
 	algorithm := ""
 	switch authAlg.(type) {
-	case ipmi.AuthAlg:
+	case types.AuthAlg:
 		switch authAlg {
-		case ipmi.AuthAlgRAKP_HMAC_SHA1:
+		case types.AuthAlg_HMAC_SHA1:
 			algorithm = "sha1"
-		case ipmi.AuthAlgRAKP_HMAC_MD5:
+		case types.AuthAlg_HMAC_MD5:
 			algorithm = "md5"
-		case ipmi.AuthAlgRAKP_HMAC_SHA256:
+		case types.AuthAlg_HMAC_SHA256:
 			algorithm = "sha256"
 		default:
 			return nil, fmt.Errorf("not support for authentication algorithm %x", authAlg)
 		}
-	case ipmi.IntegrityAlg:
+	case types.IntegrityAlg:
 		switch authAlg {
-		case ipmi.IntegrityAlg_HMAC_SHA1_96:
+		case types.IntegrityAlg_HMAC_SHA1_96:
 			algorithm = "sha1"
-		case ipmi.IntegrityAlg_HMAC_MD5_128:
+		case types.IntegrityAlg_HMAC_MD5_128:
 			algorithm = "md5"
-		case ipmi.IntegrityAlg_HMAC_SHA256_128:
+		case types.IntegrityAlg_HMAC_SHA256_128:
 			algorithm = "sha256"
 		default:
 			return nil, fmt.Errorf("not support for integrity algorithm %x", authAlg)

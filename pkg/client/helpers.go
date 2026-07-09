@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 
 	"github.com/kr/pretty"
 	"github.com/olekukonko/tablewriter"
@@ -735,11 +735,11 @@ func RenderTableStream(headers []string, rowSeq iter.Seq[map[string]string]) err
 
 type itemToRowFn[T any] func(item *T, options ...any) map[string]string
 
-func formatStream[T any](seq iter.Seq[*ipmi.Result[T]], headers []string, itemToRowFn itemToRowFn[T], itemToRowFnOptions ...any) error {
+func formatStream[T any](seq iter.Seq[*types.Result[T]], headers []string, itemToRowFn itemToRowFn[T], itemToRowFnOptions ...any) error {
 	var resultErr error
 
 	// convert channel to sequence.
-	rowSeq := func(seq iter.Seq[*ipmi.Result[T]]) iter.Seq[map[string]string] {
+	rowSeq := func(seq iter.Seq[*types.Result[T]]) iter.Seq[map[string]string] {
 		return func(yield func(map[string]string) bool) {
 			for result := range seq {
 				if result == nil {
@@ -790,7 +790,7 @@ func isErrOfCompletionCodes(err error, codes ...uint8) bool {
 		return false
 	}
 
-	if respErr, ok := ipmi.IsResponseError(err); ok {
+	if respErr, ok := types.IsResponseError(err); ok {
 		cc := respErr.CompletionCode()
 		for _, code := range codes {
 			if uint8(cc) == code {

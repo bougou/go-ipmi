@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 22.10 Get BT Interface Capabilities Command
 )
 
@@ -17,8 +17,8 @@ type GetBTInterfaceCapabilitiesResponse struct {
 	RecommendedRetries                uint8
 }
 
-func (req *GetBTInterfaceCapabilitiesRequest) Command() ipmi.Command {
-	return ipmi.CommandGetBTInterfaceCapabilities
+func (req *GetBTInterfaceCapabilitiesRequest) Command() types.Command {
+	return types.CommandGetBTInterfaceCapabilities
 }
 
 func (req *GetBTInterfaceCapabilitiesRequest) Pack() []byte {
@@ -28,14 +28,14 @@ func (req *GetBTInterfaceCapabilitiesRequest) Pack() []byte {
 func (res *GetBTInterfaceCapabilitiesResponse) Unpack(msg []byte) error {
 	// at least 3 bytes
 	if len(msg) < 5 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 5)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 5)
 	}
 
-	res.OutstandingRequestsCountSupported, _, _ = ipmi.UnpackUint8(msg, 0)
-	res.InputBufferMessageSizeBytes, _, _ = ipmi.UnpackUint8(msg, 1)
-	res.OutputBufferMessageSizeBytes, _, _ = ipmi.UnpackUint8(msg, 2)
-	res.BMCRequestToResponseTimeSec, _, _ = ipmi.UnpackUint8(msg, 3)
-	res.RecommendedRetries, _, _ = ipmi.UnpackUint8(msg, 4)
+	res.OutstandingRequestsCountSupported, _, _ = types.UnpackUint8(msg, 0)
+	res.InputBufferMessageSizeBytes, _, _ = types.UnpackUint8(msg, 1)
+	res.OutputBufferMessageSizeBytes, _, _ = types.UnpackUint8(msg, 2)
+	res.BMCRequestToResponseTimeSec, _, _ = types.UnpackUint8(msg, 3)
+	res.RecommendedRetries, _, _ = types.UnpackUint8(msg, 4)
 	return nil
 }
 

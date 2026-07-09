@@ -3,7 +3,7 @@ package dcmi
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // GetDCMICapParamRequest provides version information for DCMI and information about
@@ -15,7 +15,7 @@ import (
 //
 // [DCMI specification v1.5] 6.1.1 Get DCMI Capabilities Info Command
 type GetDCMICapParamRequest struct {
-	ParamSelector ipmi.DCMICapParamSelector
+	ParamSelector types.DCMICapParamSelector
 }
 
 type GetDCMICapParamResponse struct {
@@ -26,21 +26,21 @@ type GetDCMICapParamResponse struct {
 }
 
 func (req *GetDCMICapParamRequest) Pack() []byte {
-	return []byte{ipmi.GroupExtensionDCMI, byte(req.ParamSelector)}
+	return []byte{types.GroupExtensionDCMI, byte(req.ParamSelector)}
 }
 
 func (req *GetDCMICapParamRequest) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
-	req.ParamSelector = ipmi.DCMICapParamSelector(msg[1])
+	req.ParamSelector = types.DCMICapParamSelector(msg[1])
 
 	return nil
 }
 
-func (req *GetDCMICapParamRequest) Command() ipmi.Command {
-	return ipmi.CommandGetDCMICapParam
+func (req *GetDCMICapParamRequest) Command() types.Command {
+	return types.CommandGetDCMICapParam
 }
 
 func (res *GetDCMICapParamResponse) CompletionCodes() map[uint8]string {
@@ -50,7 +50,7 @@ func (res *GetDCMICapParamResponse) CompletionCodes() map[uint8]string {
 func (res *GetDCMICapParamResponse) Pack() []byte {
 	out := make([]byte, 4+len(res.ParamData))
 
-	out[0] = ipmi.GroupExtensionDCMI
+	out[0] = types.GroupExtensionDCMI
 	out[1] = res.MajorVersion
 	out[2] = res.MinorVersion
 	out[3] = res.ParamRevision
@@ -61,17 +61,17 @@ func (res *GetDCMICapParamResponse) Pack() []byte {
 
 func (res *GetDCMICapParamResponse) Unpack(msg []byte) error {
 	if len(msg) < 5 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 5)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 5)
 	}
 
-	if err := ipmi.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
+	if err := types.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
 		return err
 	}
 
-	res.MajorVersion, _, _ = ipmi.UnpackUint8(msg, 1)
-	res.MinorVersion, _, _ = ipmi.UnpackUint8(msg, 2)
-	res.ParamRevision, _, _ = ipmi.UnpackUint8(msg, 3)
-	res.ParamData, _, _ = ipmi.UnpackBytes(msg, 4, len(msg)-4)
+	res.MajorVersion, _, _ = types.UnpackUint8(msg, 1)
+	res.MinorVersion, _, _ = types.UnpackUint8(msg, 2)
+	res.ParamRevision, _, _ = types.UnpackUint8(msg, 3)
+	res.ParamData, _, _ = types.UnpackBytes(msg, 4, len(msg)-4)
 
 	return nil
 }

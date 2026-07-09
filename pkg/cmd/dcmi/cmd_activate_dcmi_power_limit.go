@@ -1,7 +1,7 @@
 package dcmi
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// [DCMI specification v1.5]: 6.6.4 Activate/Deactivate Power Limit
 )
 
@@ -18,11 +18,11 @@ func (req *ActivateDCMIPowerLimitRequest) Pack() []byte {
 		activate = 0x01
 	}
 
-	return []byte{ipmi.GroupExtensionDCMI, activate, 0x00, 0x00}
+	return []byte{types.GroupExtensionDCMI, activate, 0x00, 0x00}
 }
 
-func (req *ActivateDCMIPowerLimitRequest) Command() ipmi.Command {
-	return ipmi.CommandActivateDCMIPowerLimit
+func (req *ActivateDCMIPowerLimitRequest) Command() types.Command {
+	return types.CommandActivateDCMIPowerLimit
 }
 
 func (res *ActivateDCMIPowerLimitResponse) CompletionCodes() map[uint8]string {
@@ -31,10 +31,10 @@ func (res *ActivateDCMIPowerLimitResponse) CompletionCodes() map[uint8]string {
 
 func (res *ActivateDCMIPowerLimitResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
-	if err := ipmi.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
+	if err := types.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
 		return err
 	}
 

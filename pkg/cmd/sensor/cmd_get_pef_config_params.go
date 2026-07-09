@@ -3,7 +3,7 @@ package sensor
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 30.4 Get PEF Configuration Parameters Command
@@ -11,7 +11,7 @@ type GetPEFConfigParamRequest struct {
 	// [7] - 1b = get parameter revision only. 0b = get parameter
 	// [6:0] - Parameter selector
 	GetParamRevisionOnly bool
-	ParamSelector        ipmi.PEFConfigParamSelector
+	ParamSelector        types.PEFConfigParamSelector
 
 	SetSelector   uint8 // 00h if parameter does not require a Set Selector
 	BlockSelector uint8 // 00h if parameter does not require a block number
@@ -30,8 +30,8 @@ type GetPEFConfigParamResponse struct {
 	ParamData []byte
 }
 
-func (req *GetPEFConfigParamRequest) Command() ipmi.Command {
-	return ipmi.CommandGetPEFConfigParam
+func (req *GetPEFConfigParamRequest) Command() types.Command {
+	return types.CommandGetPEFConfigParam
 }
 
 func (req *GetPEFConfigParamRequest) Pack() []byte {
@@ -41,24 +41,24 @@ func (req *GetPEFConfigParamRequest) Pack() []byte {
 
 	b0 := uint8(req.ParamSelector) & 0x7f
 	if req.GetParamRevisionOnly {
-		b0 = ipmi.SetBit7(b0)
+		b0 = types.SetBit7(b0)
 	}
-	ipmi.PackUint8(b0, out, 0)
-	ipmi.PackUint8(req.SetSelector, out, 1)
-	ipmi.PackUint8(req.BlockSelector, out, 2)
+	types.PackUint8(b0, out, 0)
+	types.PackUint8(req.SetSelector, out, 1)
+	types.PackUint8(req.BlockSelector, out, 2)
 
 	return out
 }
 
 func (res *GetPEFConfigParamResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShort
+		return types.ErrUnpackedDataTooShort
 	}
 
 	res.ParamRevision = msg[0]
 
 	if len(msg) > 1 {
-		res.ParamData, _, _ = ipmi.UnpackBytes(msg, 1, len(msg)-1)
+		res.ParamData, _, _ = types.UnpackBytes(msg, 1, len(msg)-1)
 	}
 
 	return nil

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 31.10 Get SEL Time Command
@@ -21,17 +21,17 @@ func (req *GetSELTimeRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (req *GetSELTimeRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSELTime
+func (req *GetSELTimeRequest) Command() types.Command {
+	return types.CommandGetSELTime
 }
 
 func (res *GetSELTimeResponse) Unpack(msg []byte) error {
 	if len(msg) < 4 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 4)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 4)
 	}
 
-	t, _, _ := ipmi.UnpackUint32L(msg, 0)
-	res.Time = ipmi.ParseTimestamp(t)
+	t, _, _ := types.UnpackUint32L(msg, 0)
+	res.Time = types.ParseTimestamp(t)
 	return nil
 }
 

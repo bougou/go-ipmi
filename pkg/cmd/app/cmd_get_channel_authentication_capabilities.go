@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 13.14
@@ -24,7 +24,7 @@ type GetChannelAuthenticationCapabilitiesRequest struct {
 	ChannelNumber uint8
 
 	// Requested Maximum Privilege Level
-	MaximumPrivilegeLevel ipmi.PrivilegeLevel
+	MaximumPrivilegeLevel types.PrivilegeLevel
 }
 
 type GetChannelAuthenticationCapabilitiesResponse struct {
@@ -98,45 +98,45 @@ func (req *GetChannelAuthenticationCapabilitiesRequest) Pack() []byte {
 	if req.IPMIv20Extended {
 		byte1 = byte1 | 0x80
 	}
-	ipmi.PackUint8(byte1, msg, 0)
-	ipmi.PackUint8(uint8(req.MaximumPrivilegeLevel), msg, 1)
+	types.PackUint8(byte1, msg, 0)
+	types.PackUint8(uint8(req.MaximumPrivilegeLevel), msg, 1)
 	return msg
 }
 
-func (req *GetChannelAuthenticationCapabilitiesRequest) Command() ipmi.Command {
-	return ipmi.CommandGetChannelAuthCapabilities
+func (req *GetChannelAuthenticationCapabilitiesRequest) Command() types.Command {
+	return types.CommandGetChannelAuthCapabilities
 }
 
 func (res *GetChannelAuthenticationCapabilitiesResponse) Unpack(msg []byte) error {
 	if len(msg) < 8 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 8)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
 
-	res.ChannelNumber, _, _ = ipmi.UnpackUint8(msg, 0)
+	res.ChannelNumber, _, _ = types.UnpackUint8(msg, 0)
 
-	b, _, _ := ipmi.UnpackUint8(msg, 1)
-	res.IPMIv20ExtendedAvailable = ipmi.IsBit7Set(b)
-	res.AuthTypeOEMProprietarySupported = ipmi.IsBit5Set(b)
-	res.AuthTypePasswordSupported = ipmi.IsBit4Set(b)
-	res.AuthTypeMD5Supported = ipmi.IsBit2Set(b)
-	res.AuthTypeMD2Supported = ipmi.IsBit1Set(b)
+	b, _, _ := types.UnpackUint8(msg, 1)
+	res.IPMIv20ExtendedAvailable = types.IsBit7Set(b)
+	res.AuthTypeOEMProprietarySupported = types.IsBit5Set(b)
+	res.AuthTypePasswordSupported = types.IsBit4Set(b)
+	res.AuthTypeMD5Supported = types.IsBit2Set(b)
+	res.AuthTypeMD2Supported = types.IsBit1Set(b)
 
-	c, _, _ := ipmi.UnpackUint8(msg, 2)
-	res.KgStatus = ipmi.IsBit5Set(c)
-	res.PerMessageAuthenticationDisabled = ipmi.IsBit4Set(c)
-	res.UserLevelAuthenticationDisabled = ipmi.IsBit3Set(c)
-	res.NonNullUsernamesEnabled = ipmi.IsBit2Set(c)
-	res.NullUsernamesEnabled = ipmi.IsBit1Set(c)
-	res.AnonymousLoginEnabled = ipmi.IsBit0Set(c)
+	c, _, _ := types.UnpackUint8(msg, 2)
+	res.KgStatus = types.IsBit5Set(c)
+	res.PerMessageAuthenticationDisabled = types.IsBit4Set(c)
+	res.UserLevelAuthenticationDisabled = types.IsBit3Set(c)
+	res.NonNullUsernamesEnabled = types.IsBit2Set(c)
+	res.NullUsernamesEnabled = types.IsBit1Set(c)
+	res.AnonymousLoginEnabled = types.IsBit0Set(c)
 
-	d, _, _ := ipmi.UnpackUint8(msg, 3)
+	d, _, _ := types.UnpackUint8(msg, 3)
 	if res.IPMIv20ExtendedAvailable {
-		res.SupportIPMIv20 = ipmi.IsBit1Set(d)
-		res.SupportIPMIv15 = ipmi.IsBit0Set(d)
+		res.SupportIPMIv20 = types.IsBit1Set(d)
+		res.SupportIPMIv15 = types.IsBit0Set(d)
 	}
 
-	res.OEMID, _, _ = ipmi.UnpackUint24L(msg, 4)
-	res.OEMAuxiliaryData, _, _ = ipmi.UnpackUint8(msg, 7)
+	res.OEMID, _, _ = types.UnpackUint24L(msg, 4)
+	res.OEMAuxiliaryData, _, _ = types.UnpackUint8(msg, 7)
 	return nil
 }
 
@@ -145,25 +145,25 @@ func (*GetChannelAuthenticationCapabilitiesResponse) CompletionCodes() map[uint8
 	return map[uint8]string{}
 }
 
-func (res *GetChannelAuthenticationCapabilitiesResponse) ChooseAuthType() ipmi.AuthType {
+func (res *GetChannelAuthenticationCapabilitiesResponse) ChooseAuthType() types.AuthType {
 	// Prefer MD5 over MD2 when both are available, matching ipmitool behaviour
 	// (password supplied → use MD5 if supported).
 	if res.AuthTypeMD5Supported {
-		return ipmi.AuthTypeMD5
+		return types.AuthTypeMD5
 	}
 	if res.AuthTypeMD2Supported {
-		return ipmi.AuthTypeMD2
+		return types.AuthTypeMD2
 	}
 	if res.AuthTypePasswordSupported {
-		return ipmi.AuthTypePassword
+		return types.AuthTypePassword
 	}
 	if res.AuthTypeOEMProprietarySupported {
-		return ipmi.AuthTypeOEM
+		return types.AuthTypeOEM
 	}
 	if res.AuthTypeNoneSupported {
-		return ipmi.AuthTypeNone
+		return types.AuthTypeNone
 	}
-	return ipmi.AuthTypeNone
+	return types.AuthTypeNone
 }
 
 func (res *GetChannelAuthenticationCapabilitiesResponse) Format() string {

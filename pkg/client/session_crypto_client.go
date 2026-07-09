@@ -4,15 +4,15 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"fmt"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-func (c *Client) genSession15(rawPayload []byte) (*ipmi.Session15, error) {
+func (c *Client) genSession15(rawPayload []byte) (*types.Session15, error) {
 	c.lock()
 	defer c.unlock()
 
-	sessionHeader := &ipmi.SessionHeader15{
-		AuthType:      ipmi.AuthTypeNone,
+	sessionHeader := &types.SessionHeader15{
+		AuthType:      types.AuthTypeNone,
 		Sequence:      0,
 		SessionID:     0,
 		AuthCode:      nil, // AuthCode would be filled afterward
@@ -29,26 +29,26 @@ func (c *Client) genSession15(rawPayload []byte) (*ipmi.Session15, error) {
 		sessionHeader.Sequence = c.session.v15.inSeq
 	}
 
-	if sessionHeader.AuthType != ipmi.AuthTypeNone {
+	if sessionHeader.AuthType != types.AuthTypeNone {
 		authCode := c.genAuthCodeForMultiSession(rawPayload)
 		sessionHeader.AuthCode = authCode
 	}
 
-	return &ipmi.Session15{
+	return &types.Session15{
 		SessionHeader15: sessionHeader,
 		Payload:         rawPayload,
 	}, nil
 }
 
-func (c *Client) genSession20(payloadType ipmi.PayloadType, rawPayload []byte) (*ipmi.Session20, error) {
+func (c *Client) genSession20(payloadType types.PayloadType, rawPayload []byte) (*types.Session20, error) {
 	c.lock()
 	defer c.unlock()
 
 	//
 	// Session Header
 	//
-	sessionHeader := &ipmi.SessionHeader20{
-		AuthType:             ipmi.AuthTypeRMCPPlus, // Auth Type / Format is always 0x06 for IPMI v2
+	sessionHeader := &types.SessionHeader20{
+		AuthType:             types.AuthTypeRMCPPlus, // Auth Type / Format is always 0x06 for IPMI v2
 		PayloadType:          payloadType,
 		PayloadAuthenticated: false,
 		PayloadEncrypted:     false,
@@ -57,7 +57,7 @@ func (c *Client) genSession20(payloadType ipmi.PayloadType, rawPayload []byte) (
 		PayloadLength:        0, // PayloadLength would be updated later after encryption if necessary.
 	}
 
-	if c.session.v20.state == ipmi.SessionStateActive {
+	if c.session.v20.state == types.SessionStateActive {
 		sessionHeader.PayloadAuthenticated = true
 		sessionHeader.PayloadEncrypted = true
 		sessionHeader.SessionID = c.session.v20.bmcSessionID // use bmc session id
@@ -70,7 +70,7 @@ func (c *Client) genSession20(payloadType ipmi.PayloadType, rawPayload []byte) (
 	// Session Payload
 	//
 	sessionPayload := rawPayload
-	if c.session.v20.state == ipmi.SessionStateActive && sessionHeader.PayloadEncrypted {
+	if c.session.v20.state == types.SessionStateActive && sessionHeader.PayloadEncrypted {
 		e, err := c.encryptPayload(rawPayload, nil)
 		if err != nil {
 			return nil, fmt.Errorf("encrypt payload failed, err: %w", err)
@@ -87,7 +87,7 @@ func (c *Client) genSession20(payloadType ipmi.PayloadType, rawPayload []byte) (
 	//
 	// Session Trailer
 	//
-	var sessionTrailer *ipmi.SessionTrailer = nil
+	var sessionTrailer *types.SessionTrailer = nil
 	var err error
 	// For IPMI v2.0 RMCP+ packets, the IPMI Session Trailer is absent
 	// whenever the Session ID is 0000_0000h, or the packet is unauthenticated
@@ -98,7 +98,7 @@ func (c *Client) genSession20(payloadType ipmi.PayloadType, rawPayload []byte) (
 		}
 	}
 
-	return &ipmi.Session20{
+	return &types.Session20{
 		SessionHeader20: sessionHeader,
 		SessionPayload:  sessionPayload,
 		SessionTrailer:  sessionTrailer,
@@ -126,14 +126,14 @@ func genSessionTrailerPadLength(sessionHeader []byte, sessionPayload []byte) int
 // Unless otherwise specified, the integrity algorithm is applied to the packet
 // data starting with the AuthType/Format field up to and including the field
 // that immediately precedes the AuthCode field itself.
-func (c *Client) genSessionTrailer(sessionHeader []byte, sessionPayload []byte) (*ipmi.SessionTrailer, error) {
+func (c *Client) genSessionTrailer(sessionHeader []byte, sessionPayload []byte) (*types.SessionTrailer, error) {
 	padSize := genSessionTrailerPadLength(sessionHeader, sessionPayload)
 	var pad = make([]byte, padSize)
 	for i := 0; i < padSize; i++ {
 		pad[i] = 0xff
 	}
 
-	sessionTrailer := &ipmi.SessionTrailer{
+	sessionTrailer := &types.SessionTrailer{
 		IntegrityPAD: pad,
 		PadLength:    uint8(padSize),
 		NextHeader:   0x07, /* Hardcoded per the spec, table 13-8 */
@@ -169,16 +169,16 @@ func (c *Client) genSessionTrailer(sessionHeader []byte, sessionPayload []byte) 
 func (c *Client) encryptPayload(rawPayload []byte, iv []byte) ([]byte, error) {
 
 	switch c.session.v20.cryptAlg {
-	case ipmi.CryptAlg_None:
+	case types.CryptAlg_None:
 		return rawPayload, nil
 
-	case ipmi.CryptAlg_AES_CBC_128:
+	case types.CryptAlg_AES_CBC_128:
 		// The input to the AES encryption algorithm has to be a multiple of the block size (16 bytes).
 		// The extra byte we are adding is the pad length byte.
 		var paddedData = rawPayload
 		var padLength uint8
-		if mod := (len(rawPayload) + 1) % int(ipmi.Encryption_AES_CBS_128_BlockSize); mod > 0 {
-			padLength = ipmi.Encryption_AES_CBS_128_BlockSize - uint8(mod)
+		if mod := (len(rawPayload) + 1) % int(types.Encryption_AES_CBS_128_BlockSize); mod > 0 {
+			padLength = types.Encryption_AES_CBS_128_BlockSize - uint8(mod)
 		} else {
 			padLength = 0
 		}
@@ -216,7 +216,7 @@ func (c *Client) encryptPayload(rawPayload []byte, iv []byte) ([]byte, error) {
 
 		return out, nil
 
-	case ipmi.CryptAlg_xRC4_40, ipmi.CryptAlg_xRC4_128:
+	case types.CryptAlg_xRC4_40, types.CryptAlg_xRC4_128:
 		var out []byte
 
 		// see 13.30 xRC4-Encrypted Payload Fields
@@ -244,11 +244,11 @@ func (c *Client) encryptPayload(rawPayload []byte, iv []byte) ([]byte, error) {
 
 		var cipherKey []byte
 		switch c.session.v20.cryptAlg {
-		case ipmi.CryptAlg_xRC4_40:
+		case types.CryptAlg_xRC4_40:
 			// For xRC4 using a 40-bit key, only the most significant forty bits of Krc are used
 			cipherKey = keyRC[:5]
 
-		case ipmi.CryptAlg_xRC4_128:
+		case types.CryptAlg_xRC4_128:
 			// For xRC4 using a 128-bit key, all bits of Krc are used for initialization
 			cipherKey = keyRC[:16]
 		}
@@ -273,10 +273,10 @@ func (c *Client) encryptPayload(rawPayload []byte, iv []byte) ([]byte, error) {
 func (c *Client) decryptPayload(data []byte) ([]byte, error) {
 	switch c.session.v20.cryptAlg {
 
-	case ipmi.CryptAlg_None:
+	case types.CryptAlg_None:
 		return data, nil
 
-	case ipmi.CryptAlg_AES_CBC_128:
+	case types.CryptAlg_AES_CBC_128:
 		iv := data[0:16] // the first 16 byte is the initialization vector
 		cipherText := data[16:]
 		cipherKey := c.session.v20.k2[0:16]
@@ -288,7 +288,7 @@ func (c *Client) decryptPayload(data []byte) ([]byte, error) {
 		dEnd := len(d) - int(padLength) - 1
 		return d[0:dEnd], nil
 
-	case ipmi.CryptAlg_xRC4_40, ipmi.CryptAlg_xRC4_128:
+	case types.CryptAlg_xRC4_40, types.CryptAlg_xRC4_128:
 		// the first received packet
 		if data[0] == 0x0 && data[1] == 0x0 && data[2] == 0x0 && data[3] == 0x0 {
 			c.session.v20.rc4DecryptIV = array16(data[4:20])
@@ -299,11 +299,11 @@ func (c *Client) decryptPayload(data []byte) ([]byte, error) {
 		keyRC := md5.Sum(input)
 		var cipherKey []byte
 		switch c.session.v20.cryptAlg {
-		case ipmi.CryptAlg_xRC4_40:
+		case types.CryptAlg_xRC4_40:
 			// For xRC4 using a 40-bit key, only the most significant forty bits of Krc are used
 			cipherKey = keyRC[:5]
 
-		case ipmi.CryptAlg_xRC4_128:
+		case types.CryptAlg_xRC4_128:
 			// For xRC4 using a 128-bit key, all bits of Krc are used for initialization
 			cipherKey = keyRC[:16]
 		}

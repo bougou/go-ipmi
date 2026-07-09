@@ -12,7 +12,7 @@ import (
 	"sync"
 
 	"github.com/bougou/go-ipmi/pkg/hal"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // HAL is a fully in-memory [hal.HAL].
@@ -57,8 +57,8 @@ type Chassis struct {
 	WarmResets      int
 	PowerCycles     int
 	LastIdentifySec uint8
-	BootFlags       *ipmi.BootOptionParam_BootFlags
-	BootInfoAck     *ipmi.BootOptionParam_BootInfoAcknowledge
+	BootFlags       *types.BootOptionParam_BootFlags
+	BootInfoAck     *types.BootOptionParam_BootInfoAcknowledge
 
 	// Hook allows tests to inject custom behaviour.
 	SetPowerHook func(on bool) error
@@ -120,7 +120,7 @@ func (c *Chassis) IntrusionState(_ context.Context) (bool, error) {
 
 // SetBootFlags stores the full boot flags structure so tests and the
 // reference server can round-trip Set/Get System Boot Options.
-func (c *Chassis) SetBootFlags(_ context.Context, flags *ipmi.BootOptionParam_BootFlags) error {
+func (c *Chassis) SetBootFlags(_ context.Context, flags *types.BootOptionParam_BootFlags) error {
 	if flags == nil {
 		return hal.ErrNotSupported
 	}
@@ -133,7 +133,7 @@ func (c *Chassis) SetBootFlags(_ context.Context, flags *ipmi.BootOptionParam_Bo
 
 // GetBootFlags returns the last stored boot flags, or [hal.ErrNotSupported]
 // when none have been set.
-func (c *Chassis) GetBootFlags(_ context.Context) (*ipmi.BootOptionParam_BootFlags, error) {
+func (c *Chassis) GetBootFlags(_ context.Context) (*types.BootOptionParam_BootFlags, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.BootFlags == nil {
@@ -144,7 +144,7 @@ func (c *Chassis) GetBootFlags(_ context.Context) (*ipmi.BootOptionParam_BootFla
 }
 
 // SetBootInfoAcknowledge stores the boot info acknowledge data.
-func (c *Chassis) SetBootInfoAcknowledge(_ context.Context, ack *ipmi.BootOptionParam_BootInfoAcknowledge) error {
+func (c *Chassis) SetBootInfoAcknowledge(_ context.Context, ack *types.BootOptionParam_BootInfoAcknowledge) error {
 	if ack == nil {
 		return hal.ErrNotSupported
 	}
@@ -157,11 +157,11 @@ func (c *Chassis) SetBootInfoAcknowledge(_ context.Context, ack *ipmi.BootOption
 
 // GetBootInfoAcknowledge returns the last stored acknowledge data,
 // or a default value when none have been stored.
-func (c *Chassis) GetBootInfoAcknowledge(_ context.Context) (*ipmi.BootOptionParam_BootInfoAcknowledge, error) {
+func (c *Chassis) GetBootInfoAcknowledge(_ context.Context) (*types.BootOptionParam_BootInfoAcknowledge, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.BootInfoAck == nil {
-		return &ipmi.BootOptionParam_BootInfoAcknowledge{}, nil
+		return &types.BootOptionParam_BootInfoAcknowledge{}, nil
 	}
 	cp := *c.BootInfoAck
 	return &cp, nil

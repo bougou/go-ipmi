@@ -1,7 +1,7 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 29.3 Platform Event Message Command
 )
 
@@ -21,9 +21,9 @@ type PlatformEventMessageRequest struct {
 	EvMRev       uint8
 	SensorType   uint8
 	SensorNumber uint8
-	EventDir     ipmi.EventDir
-	EventType    ipmi.EventReadingType
-	EventData    ipmi.EventData
+	EventDir     types.EventDir
+	EventType    types.EventReadingType
+	EventData    types.EventData
 }
 
 type PlatformEventMessageResponse struct {
@@ -49,8 +49,8 @@ func (req *PlatformEventMessageRequest) Pack() []byte {
 	return out
 }
 
-func (req *PlatformEventMessageRequest) Command() ipmi.Command {
-	return ipmi.CommandPlatformEventMessage
+func (req *PlatformEventMessageRequest) Command() types.Command {
+	return types.CommandPlatformEventMessage
 }
 
 func (res *PlatformEventMessageResponse) CompletionCodes() map[uint8]string {

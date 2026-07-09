@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // IPMI session-management command IDs (NetFn 0x06 App).
@@ -220,9 +221,9 @@ func HandleOpenSession(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, er
 	consoleID := binary.LittleEndian.Uint32(data[4:8])
 
 	// Parse algorithm payloads (3 x 8-byte records at offsets 8, 16, 24).
-	authAlg := bmc.AuthAlg(data[12])     // byte 4 of auth payload
-	intAlg := bmc.IntegrityAlg(data[20]) // byte 4 of integrity payload
-	cryptAlg := bmc.CryptAlg(data[28])   // byte 4 of crypt payload
+	authAlg := types.AuthAlg(data[12])     // byte 4 of auth payload
+	intAlg := types.IntegrityAlg(data[20]) // byte 4 of integrity payload
+	cryptAlg := types.CryptAlg(data[28])   // byte 4 of crypt payload
 
 	// Validate that the requested algorithm triple matches a configured
 	// cipher suite (spec §22.15.2, §13.17). The triple must appear as a

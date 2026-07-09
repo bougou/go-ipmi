@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 33.9 Get SDR Repository Info Command
@@ -36,34 +36,34 @@ func (req *GetSDRRepoInfoRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (req *GetSDRRepoInfoRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSDRRepoInfo
+func (req *GetSDRRepoInfoRequest) Command() types.Command {
+	return types.CommandGetSDRRepoInfo
 }
 
 func (res *GetSDRRepoInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 14 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 14)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 14)
 	}
 
-	res.SDRVersion, _, _ = ipmi.UnpackUint8(msg, 0)
-	res.RecordCount, _, _ = ipmi.UnpackUint16L(msg, 1)
-	res.FreeSpaceBytes, _, _ = ipmi.UnpackUint16L(msg, 3)
+	res.SDRVersion, _, _ = types.UnpackUint8(msg, 0)
+	res.RecordCount, _, _ = types.UnpackUint16L(msg, 1)
+	res.FreeSpaceBytes, _, _ = types.UnpackUint16L(msg, 3)
 
-	addTS, _, _ := ipmi.UnpackUint32L(msg, 5)
-	res.MostRecentAdditionTime = ipmi.ParseTimestamp(addTS)
+	addTS, _, _ := types.UnpackUint32L(msg, 5)
+	res.MostRecentAdditionTime = types.ParseTimestamp(addTS)
 
-	deleteTS, _, _ := ipmi.UnpackUint32L(msg, 9)
-	res.MostRecentEraseTime = ipmi.ParseTimestamp(deleteTS)
+	deleteTS, _, _ := types.UnpackUint32L(msg, 9)
+	res.MostRecentEraseTime = types.ParseTimestamp(deleteTS)
 
-	b, _, _ := ipmi.UnpackUint8(msg, 13)
+	b, _, _ := types.UnpackUint8(msg, 13)
 	res.SDROperationSupport = SDROperationSupport{
-		Overflow:                     ipmi.IsBit7Set(b),
-		SupportModalSDRRepoUpdate:    ipmi.IsBit6Set(b),
-		SupportNonModalSDRRepoUpdate: ipmi.IsBit5Set(b),
-		SupportDeleteSDR:             ipmi.IsBit3Set(b),
-		SupportPartialAddSDR:         ipmi.IsBit2Set(b),
-		SupportReserveSDRRepo:        ipmi.IsBit1Set(b),
-		SupportGetSDRRepoAllocInfo:   ipmi.IsBit0Set(b),
+		Overflow:                     types.IsBit7Set(b),
+		SupportModalSDRRepoUpdate:    types.IsBit6Set(b),
+		SupportNonModalSDRRepoUpdate: types.IsBit5Set(b),
+		SupportDeleteSDR:             types.IsBit3Set(b),
+		SupportPartialAddSDR:         types.IsBit2Set(b),
+		SupportReserveSDRRepo:        types.IsBit1Set(b),
+		SupportGetSDRRepoAllocInfo:   types.IsBit0Set(b),
 	}
 	return nil
 }
@@ -90,8 +90,8 @@ func (res *GetSDRRepoInfoResponse) Format() string {
 		fmt.Sprintf("SDR Version                         : %#02x\n", res.SDRVersion) +
 		fmt.Sprintf("Record Count                        : %d\n", res.RecordCount) +
 		fmt.Sprintf("Free Space                          : %d bytes\n", res.FreeSpaceBytes) +
-		fmt.Sprintf("Most recent Addition                : %s\n", res.MostRecentAdditionTime.Format(ipmi.TimeFormat)) +
-		fmt.Sprintf("Most recent Erase                   : %s\n", res.MostRecentEraseTime.Format(ipmi.TimeFormat)) +
+		fmt.Sprintf("Most recent Addition                : %s\n", res.MostRecentAdditionTime.Format(types.TimeFormat)) +
+		fmt.Sprintf("Most recent Erase                   : %s\n", res.MostRecentEraseTime.Format(types.TimeFormat)) +
 		fmt.Sprintf("SDR overflow                        : %v\n", res.SDROperationSupport.Overflow) +
 		fmt.Sprintf("SDR Repository Update Support       : %s\n", s) +
 		fmt.Sprintf("Delete SDR supported                : %v\n", res.SDROperationSupport.SupportDeleteSDR) +

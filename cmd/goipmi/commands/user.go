@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	ipmiapp "github.com/bougou/go-ipmi/pkg/cmd/app"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +36,7 @@ func NewCmdUserList() *cobra.Command {
 			var channelNumber uint8
 
 			if len(args) == 0 {
-				channelNumber = ipmi.ChannelNumberSelf
+				channelNumber = types.ChannelNumberSelf
 			}
 
 			if len(args) >= 1 {
@@ -66,7 +66,7 @@ func NewCmdUserSummary() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			var channelNumber uint8
 			if len(args) == 0 {
-				channelNumber = ipmi.ChannelNumberSelf
+				channelNumber = types.ChannelNumberSelf
 			}
 
 			if len(args) >= 1 {

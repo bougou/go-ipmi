@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 20.1 Get Device ID Command
@@ -93,8 +93,8 @@ type AdditionalDeviceSupport struct {
 	SupportSensor             bool
 }
 
-func (req *GetDeviceIDRequest) Command() ipmi.Command {
-	return ipmi.CommandGetDeviceID
+func (req *GetDeviceIDRequest) Command() types.Command {
+	return types.CommandGetDeviceID
 }
 
 func (req *GetDeviceIDRequest) Pack() []byte {
@@ -107,44 +107,44 @@ func (res *GetDeviceIDResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetDeviceIDResponse) Unpack(msg []byte) error {
 	if len(msg) < 11 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 11)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 11)
 	}
 
-	res.DeviceID, _, _ = ipmi.UnpackUint8(msg, 0)
+	res.DeviceID, _, _ = types.UnpackUint8(msg, 0)
 
-	b2, _, _ := ipmi.UnpackUint8(msg, 1)
-	res.ProvideDeviceSDRs = ipmi.IsBit7Set(b2)
+	b2, _, _ := types.UnpackUint8(msg, 1)
+	res.ProvideDeviceSDRs = types.IsBit7Set(b2)
 	res.DeviceRevision = b2 & 0x0f
 
-	b3, _, _ := ipmi.UnpackUint8(msg, 2)
-	res.DeviceAvailable = !ipmi.IsBit7Set(b3)
+	b3, _, _ := types.UnpackUint8(msg, 2)
+	res.DeviceAvailable = !types.IsBit7Set(b3)
 	res.MajorFirmwareRevision = b3 & 0x7f // binary encoded
 
-	b4, _, _ := ipmi.UnpackUint8(msg, 3) // BCD encoded
-	res.MinorFirmwareRevision = ipmi.BCDUint8(b4)
+	b4, _, _ := types.UnpackUint8(msg, 3) // BCD encoded
+	res.MinorFirmwareRevision = types.BCDUint8(b4)
 
-	ipmiVersionBCD, _, _ := ipmi.UnpackUint8(msg, 4) // BCD encoded
+	ipmiVersionBCD, _, _ := types.UnpackUint8(msg, 4) // BCD encoded
 	res.MajorIPMIVersion = ipmiVersionBCD & 0x0f
 	res.MinorIPMIVersion = ipmiVersionBCD >> 4
 
-	b6, _, _ := ipmi.UnpackUint8(msg, 5)
+	b6, _, _ := types.UnpackUint8(msg, 5)
 
-	res.SupportChassis = ipmi.IsBit7Set(b6)
-	res.SupportBridge = ipmi.IsBit6Set(b6)
-	res.SupportIPMBEventGenerator = ipmi.IsBit5Set(b6)
-	res.SupportIPMBEventReceiver = ipmi.IsBit4Set(b6)
-	res.SupportFRUInventory = ipmi.IsBit3Set(b6)
-	res.SupportSEL = ipmi.IsBit2Set(b6)
-	res.SupportSDRRepo = ipmi.IsBit1Set(b6)
-	res.SupportSensor = ipmi.IsBit0Set(b6)
+	res.SupportChassis = types.IsBit7Set(b6)
+	res.SupportBridge = types.IsBit6Set(b6)
+	res.SupportIPMBEventGenerator = types.IsBit5Set(b6)
+	res.SupportIPMBEventReceiver = types.IsBit4Set(b6)
+	res.SupportFRUInventory = types.IsBit3Set(b6)
+	res.SupportSEL = types.IsBit2Set(b6)
+	res.SupportSDRRepo = types.IsBit1Set(b6)
+	res.SupportSensor = types.IsBit0Set(b6)
 
-	res.ManufacturerID, _, _ = ipmi.UnpackUint24L(msg, 6)
-	res.ProductID, _, _ = ipmi.UnpackUint16L(msg, 9)
+	res.ManufacturerID, _, _ = types.UnpackUint24L(msg, 6)
+	res.ProductID, _, _ = types.UnpackUint16L(msg, 9)
 
 	if len(msg) > 11 && len(msg) < 15 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 15)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 15)
 	} else {
-		res.AuxiliaryFirmwareRevision, _, _ = ipmi.UnpackBytes(msg, 11, 4)
+		res.AuxiliaryFirmwareRevision, _, _ = types.UnpackBytes(msg, 11, 4)
 	}
 	return nil
 }
@@ -191,11 +191,11 @@ func (res *GetDeviceIDResponse) Format() string {
 		fmt.Sprintf("Firmware Revision         : %d.%d\n", res.MajorFirmwareRevision, res.MinorFirmwareRevision) +
 		fmt.Sprintf("IPMI Version              : %d.%d\n", res.MajorIPMIVersion, res.MinorIPMIVersion) +
 		fmt.Sprintf("Manufacturer ID           : %d (%#02x)\n", res.ManufacturerID, res.ManufacturerID) +
-		fmt.Sprintf("Manufacturer Name         : %s\n", ipmi.OEM(res.ManufacturerID)) +
+		fmt.Sprintf("Manufacturer Name         : %s\n", types.OEM(res.ManufacturerID)) +
 		fmt.Sprintf("Product ID                : %d (%#04x)\n", res.ProductID, res.ProductID) +
 		fmt.Sprintf("Product Name              : %#04x\n", res.ProductID) +
-		fmt.Sprintf("Device Available          : %s\n", ipmi.FormatBool(res.DeviceAvailable, "yes", "no")) +
-		fmt.Sprintf("Provides Device SDRs      : %s\n", ipmi.FormatBool(res.ProvideDeviceSDRs, "yes", "no")) +
+		fmt.Sprintf("Device Available          : %s\n", types.FormatBool(res.DeviceAvailable, "yes", "no")) +
+		fmt.Sprintf("Provides Device SDRs      : %s\n", types.FormatBool(res.ProvideDeviceSDRs, "yes", "no")) +
 		fmt.Sprintf("Additional Device Support :\n%s\n", strings.Join(deviceSupport, "    \n")) +
 		fmt.Sprintf("Aux Firmware Rev Info     :\n%s\n", strings.Join(auxFirmwareInfo, "    \n"))
 }

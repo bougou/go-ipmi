@@ -3,7 +3,7 @@ package storage
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 type GetSELAllocInfoRequest struct {
@@ -22,19 +22,19 @@ func (req *GetSELAllocInfoRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (req *GetSELAllocInfoRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSELAllocInfo
+func (req *GetSELAllocInfoRequest) Command() types.Command {
+	return types.CommandGetSELAllocInfo
 }
 
 func (res *GetSELAllocInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 9 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 9)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 9)
 	}
-	res.PossibleAllocUnits, _, _ = ipmi.UnpackUint16L(msg, 0)
-	res.AllocUnitsSize, _, _ = ipmi.UnpackUint16L(msg, 2)
-	res.FreeAllocUnits, _, _ = ipmi.UnpackUint16L(msg, 4)
-	res.LargestFreeBlock, _, _ = ipmi.UnpackUint16L(msg, 6)
-	res.MaximumRecordSize, _, _ = ipmi.UnpackUint8(msg, 8)
+	res.PossibleAllocUnits, _, _ = types.UnpackUint16L(msg, 0)
+	res.AllocUnitsSize, _, _ = types.UnpackUint16L(msg, 2)
+	res.FreeAllocUnits, _, _ = types.UnpackUint16L(msg, 4)
+	res.LargestFreeBlock, _, _ = types.UnpackUint16L(msg, 6)
+	res.MaximumRecordSize, _, _ = types.UnpackUint8(msg, 8)
 	return nil
 }
 

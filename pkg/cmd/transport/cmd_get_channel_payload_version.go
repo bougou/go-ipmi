@@ -3,14 +3,14 @@ package transport
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 24.9 Get Channel Payload Version Command
 type GetChannelPayloadVersionRequest struct {
 	ChannelNumber uint8
 
-	PayloadType ipmi.PayloadType
+	PayloadType types.PayloadType
 }
 
 type GetChannelPayloadVersionResponse struct {
@@ -22,8 +22,8 @@ func (req *GetChannelPayloadVersionRequest) Pack() []byte {
 	return []byte{req.ChannelNumber, uint8(req.PayloadType)}
 }
 
-func (req *GetChannelPayloadVersionRequest) Command() ipmi.Command {
-	return ipmi.CommandGetChannelPayloadVersion
+func (req *GetChannelPayloadVersionRequest) Command() types.Command {
+	return types.CommandGetChannelPayloadVersion
 }
 
 func (res *GetChannelPayloadVersionResponse) CompletionCodes() map[uint8]string {
@@ -34,7 +34,7 @@ func (res *GetChannelPayloadVersionResponse) CompletionCodes() map[uint8]string 
 
 func (res *GetChannelPayloadVersionResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
 	res.MajorVersion = msg[0] >> 4

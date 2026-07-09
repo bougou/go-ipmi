@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/bougou/go-ipmi/pkg/bmc"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // cipherSuiteRecords builds the wire bytes for the Get Channel Cipher Suites
@@ -17,16 +18,16 @@ func cipherSuiteRecords(b *bmc.BMC) []byte {
 	ids := b.ResolvedCipherSuites()
 	out := make([]byte, 0, len(ids)*5)
 	for _, id := range ids {
-		auth, integ, crypt, ok := bmc.CipherSuiteAlgorithms(id)
+		auth, integ, crypt, ok := types.GetCipherSuiteAlgorithms(id)
 		if !ok {
 			continue
 		}
 		out = append(out, 0xC0, byte(id))
 		out = append(out, 0x00|byte(auth))
-		if integ != bmc.IntegrityAlgNone {
+		if integ != types.IntegrityAlg_None {
 			out = append(out, 0x40|byte(integ))
 		}
-		if crypt != bmc.CryptAlgNone {
+		if crypt != types.CryptAlg_None {
 			out = append(out, 0x80|byte(crypt))
 		}
 	}
@@ -44,12 +45,12 @@ func cipherSuiteRecords(b *bmc.BMC) []byte {
 // first algorithm that does not appear in any configured suite. If all three
 // algorithms exist individually but the triple is not a recognised suite
 // combination, 0x04 (invalid authentication algorithm) is returned.
-func isCipherSuiteAllowed(b *bmc.BMC, auth bmc.AuthAlg, integ bmc.IntegrityAlg, crypt bmc.CryptAlg) (ok bool, errCode uint8) {
+func isCipherSuiteAllowed(b *bmc.BMC, auth types.AuthAlg, integ types.IntegrityAlg, crypt types.CryptAlg) (ok bool, errCode uint8) {
 	authKnown := false
 	integKnown := false
 	cryptKnown := false
 	for _, id := range b.ResolvedCipherSuites() {
-		a, i, c, ok := bmc.CipherSuiteAlgorithms(id)
+		a, i, c, ok := types.GetCipherSuiteAlgorithms(id)
 		if !ok {
 			continue
 		}

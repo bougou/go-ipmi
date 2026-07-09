@@ -3,7 +3,7 @@ package storage
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 33.12 Get SDR Command
@@ -21,23 +21,23 @@ type GetSDRResponse struct {
 
 func (req *GetSDRRequest) Pack() []byte {
 	msg := make([]byte, 6)
-	ipmi.PackUint16L(req.ReservationID, msg, 0)
-	ipmi.PackUint16L(req.RecordID, msg, 2)
-	ipmi.PackUint8(req.ReadOffset, msg, 4)
-	ipmi.PackUint8(req.ReadBytes, msg, 5)
+	types.PackUint16L(req.ReservationID, msg, 0)
+	types.PackUint16L(req.RecordID, msg, 2)
+	types.PackUint8(req.ReadOffset, msg, 4)
+	types.PackUint8(req.ReadBytes, msg, 5)
 	return msg
 }
 
-func (req *GetSDRRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSDR
+func (req *GetSDRRequest) Command() types.Command {
+	return types.CommandGetSDR
 }
 
 func (res *GetSDRResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
-	res.NextRecordID, _, _ = ipmi.UnpackUint16L(msg, 0)
-	res.RecordData, _, _ = ipmi.UnpackBytes(msg, 2, len(msg)-2)
+	res.NextRecordID, _, _ = types.UnpackUint16L(msg, 0)
+	res.RecordData, _, _ = types.UnpackBytes(msg, 2, len(msg)-2)
 	return nil
 }
 

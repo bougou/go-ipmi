@@ -1,7 +1,7 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 35.8 Set Sensor Thresholds Command
 )
 
@@ -29,41 +29,41 @@ type SetSensorThresholdsResponse struct {
 	// empty
 }
 
-func (req *SetSensorThresholdsRequest) Command() ipmi.Command {
-	return ipmi.CommandSetSensorThresholds
+func (req *SetSensorThresholdsRequest) Command() types.Command {
+	return types.CommandSetSensorThresholds
 }
 
 func (req *SetSensorThresholdsRequest) Pack() []byte {
 	out := make([]byte, 8)
-	ipmi.PackUint8(req.SensorNumber, out, 0)
+	types.PackUint8(req.SensorNumber, out, 0)
 
 	var b uint8
 	if req.SetUNR {
-		b = ipmi.SetBit5(b)
+		b = types.SetBit5(b)
 	}
 	if req.SetUCR {
-		b = ipmi.SetBit4(b)
+		b = types.SetBit4(b)
 	}
 	if req.SetUNC {
-		b = ipmi.SetBit3(b)
+		b = types.SetBit3(b)
 	}
 	if req.SetLNR {
-		b = ipmi.SetBit2(b)
+		b = types.SetBit2(b)
 	}
 	if req.SetLCR {
-		b = ipmi.SetBit1(b)
+		b = types.SetBit1(b)
 	}
 	if req.SetLNC {
-		b = ipmi.SetBit0(b)
+		b = types.SetBit0(b)
 	}
-	ipmi.PackUint8(b, out, 1)
+	types.PackUint8(b, out, 1)
 
-	ipmi.PackUint8(req.LNC_Raw, out, 2)
-	ipmi.PackUint8(req.LCR_Raw, out, 3)
-	ipmi.PackUint8(req.LNR_Raw, out, 4)
-	ipmi.PackUint8(req.UNC_Raw, out, 5)
-	ipmi.PackUint8(req.UCR_Raw, out, 6)
-	ipmi.PackUint8(req.UNR_Raw, out, 7)
+	types.PackUint8(req.LNC_Raw, out, 2)
+	types.PackUint8(req.LCR_Raw, out, 3)
+	types.PackUint8(req.LNR_Raw, out, 4)
+	types.PackUint8(req.UNC_Raw, out, 5)
+	types.PackUint8(req.UCR_Raw, out, 6)
+	types.PackUint8(req.UNR_Raw, out, 7)
 	return out
 }
 

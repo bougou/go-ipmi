@@ -3,7 +3,7 @@ package dcmi
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // [DCMI specification v1.5] 6.4.3 Set Asset Tag Command
@@ -33,15 +33,15 @@ type SetDCMIAssetTagResponse struct {
 
 func (req *SetDCMIAssetTagRequest) Pack() []byte {
 	out := make([]byte, 3+len(req.AssetTag))
-	ipmi.PackUint8(ipmi.GroupExtensionDCMI, out, 0)
-	ipmi.PackUint8(req.Offset, out, 1)
-	ipmi.PackUint8(req.WriteBytes, out, 2)
-	ipmi.PackBytes(req.AssetTag, out, 3)
+	types.PackUint8(types.GroupExtensionDCMI, out, 0)
+	types.PackUint8(req.Offset, out, 1)
+	types.PackUint8(req.WriteBytes, out, 2)
+	types.PackBytes(req.AssetTag, out, 3)
 	return out
 }
 
-func (req *SetDCMIAssetTagRequest) Command() ipmi.Command {
-	return ipmi.CommandSetDCMIAssetTag
+func (req *SetDCMIAssetTagRequest) Command() types.Command {
+	return types.CommandSetDCMIAssetTag
 }
 
 func (res *SetDCMIAssetTagResponse) CompletionCodes() map[uint8]string {
@@ -50,10 +50,10 @@ func (res *SetDCMIAssetTagResponse) CompletionCodes() map[uint8]string {
 
 func (res *SetDCMIAssetTagResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
-	if err := ipmi.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
+	if err := types.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
 		return err
 	}
 

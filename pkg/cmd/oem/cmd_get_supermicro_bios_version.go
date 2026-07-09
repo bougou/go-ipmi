@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 type CommandGetSupermicroBiosVersionRequest struct {
@@ -14,8 +14,8 @@ type CommandGetSupermicroBiosVersionResponse struct {
 	Version string
 }
 
-func (req *CommandGetSupermicroBiosVersionRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSupermicroBiosVersion
+func (req *CommandGetSupermicroBiosVersionRequest) Command() types.Command {
+	return types.CommandGetSupermicroBiosVersion
 }
 
 func (req *CommandGetSupermicroBiosVersionRequest) Pack() []byte {

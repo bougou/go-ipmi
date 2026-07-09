@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // GetDCMIPowerReadingRequest represents a "Get Power Reading" request according
@@ -45,11 +45,11 @@ type GetDCMIPowerReadingResponse struct {
 
 func (req *GetDCMIPowerReadingRequest) Pack() []byte {
 	// second byte 0x01 = "basic" System Power Statistics
-	return []byte{ipmi.GroupExtensionDCMI, 0x01, 0x00, 0x00}
+	return []byte{types.GroupExtensionDCMI, 0x01, 0x00, 0x00}
 }
 
-func (req *GetDCMIPowerReadingRequest) Command() ipmi.Command {
-	return ipmi.CommandGetDCMIPowerReading
+func (req *GetDCMIPowerReadingRequest) Command() types.Command {
+	return types.CommandGetDCMIPowerReading
 }
 
 func (res *GetDCMIPowerReadingResponse) CompletionCodes() map[uint8]string {
@@ -58,24 +58,24 @@ func (res *GetDCMIPowerReadingResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetDCMIPowerReadingResponse) Unpack(msg []byte) error {
 	if len(msg) < 18 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 19)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 19)
 	}
 
 	var off int
 
-	if err := ipmi.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
+	if err := types.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
 		return err
 	}
 
-	res.CurrentPower, off, _ = ipmi.UnpackUint16L(msg, 1)
-	res.MinimumPower, off, _ = ipmi.UnpackUint16L(msg, off)
-	res.MaximumPower, off, _ = ipmi.UnpackUint16L(msg, off)
-	res.AveragePower, off, _ = ipmi.UnpackUint16L(msg, off)
-	res.Timestamp, off, _ = ipmi.UnpackUint32L(msg, off)
-	res.ReportingPeriod, off, _ = ipmi.UnpackUint32L(msg, off)
+	res.CurrentPower, off, _ = types.UnpackUint16L(msg, 1)
+	res.MinimumPower, off, _ = types.UnpackUint16L(msg, off)
+	res.MaximumPower, off, _ = types.UnpackUint16L(msg, off)
+	res.AveragePower, off, _ = types.UnpackUint16L(msg, off)
+	res.Timestamp, off, _ = types.UnpackUint32L(msg, off)
+	res.ReportingPeriod, off, _ = types.UnpackUint32L(msg, off)
 
-	state, _, _ := ipmi.UnpackUint8(msg, off)
-	res.PowerMeasurementActive = ipmi.IsBit6Set(state)
+	state, _, _ := types.UnpackUint8(msg, off)
+	res.PowerMeasurementActive = types.IsBit6Set(state)
 
 	return nil
 }
@@ -89,5 +89,5 @@ func (res *GetDCMIPowerReadingResponse) Format() string {
 		fmt.Sprintf("Average power reading over sample period : %5d Watts\n", res.AveragePower) +
 		fmt.Sprintf("IPMI timestamp                           : %s\n", ts.Format("01/02/06 15:04:05 UTC")) +
 		fmt.Sprintf("Sampling period                          : %d Seconds\n", res.ReportingPeriod/1000) +
-		fmt.Sprintf("Power reading state is                   : %s\n", ipmi.FormatBool(res.PowerMeasurementActive, "activated", "deactivated"))
+		fmt.Sprintf("Power reading state is                   : %s\n", types.FormatBool(res.PowerMeasurementActive, "activated", "deactivated"))
 }

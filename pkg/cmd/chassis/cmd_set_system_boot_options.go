@@ -1,7 +1,7 @@
 package chassis
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 28.12 Set System Boot Options Command
@@ -11,7 +11,7 @@ type SetSystemBootOptionsParamRequest struct {
 	//  - 0b = mark parameter valid / unlocked
 	MarkParameterInvalid bool
 	// [6:0] - boot option parameter selector
-	ParamSelector ipmi.BootOptionParamSelector
+	ParamSelector types.BootOptionParamSelector
 
 	ParamData []byte
 }
@@ -27,19 +27,19 @@ func (req *SetSystemBootOptionsParamRequest) Pack() []byte {
 
 	b := uint8(req.ParamSelector)
 	if req.MarkParameterInvalid {
-		b = ipmi.SetBit7(b)
+		b = types.SetBit7(b)
 	} else {
-		b = ipmi.ClearBit7(b)
+		b = types.ClearBit7(b)
 	}
-	ipmi.PackUint8(b, out, 0)
+	types.PackUint8(b, out, 0)
 
-	ipmi.PackBytes(req.ParamData, out, 1)
+	types.PackBytes(req.ParamData, out, 1)
 
 	return out
 }
 
-func (req *SetSystemBootOptionsParamRequest) Command() ipmi.Command {
-	return ipmi.CommandSetSystemBootOptions
+func (req *SetSystemBootOptionsParamRequest) Command() types.Command {
+	return types.CommandSetSystemBootOptions
 }
 
 func (res *SetSystemBootOptionsParamResponse) CompletionCodes() map[uint8]string {

@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 const (
@@ -15,7 +15,7 @@ type GetChannelCipherSuitesRequest struct {
 	// 0h-Bh, Fh = channel numbers
 	// Eh = retrieve information for channel this request was issued on
 	ChannelNumber uint8
-	PayloadType   ipmi.PayloadType
+	PayloadType   types.PayloadType
 	ListIndex     uint8
 }
 
@@ -24,25 +24,25 @@ type GetChannelCipherSuitesResponse struct {
 	CipherSuiteRecords []byte
 }
 
-func (req *GetChannelCipherSuitesRequest) Command() ipmi.Command {
-	return ipmi.CommandGetChannelCipherSuites
+func (req *GetChannelCipherSuitesRequest) Command() types.Command {
+	return types.CommandGetChannelCipherSuites
 }
 
 func (req *GetChannelCipherSuitesRequest) Pack() []byte {
 	var msg = make([]byte, 3)
-	ipmi.PackUint8(req.ChannelNumber, msg, 0)
-	ipmi.PackUint8(uint8(req.PayloadType), msg, 1)
-	ipmi.PackUint8(ipmi.LIST_ALGORITHMS_BY_CIPHER_SUITE|req.ListIndex, msg, 2)
+	types.PackUint8(req.ChannelNumber, msg, 0)
+	types.PackUint8(uint8(req.PayloadType), msg, 1)
+	types.PackUint8(types.LIST_ALGORITHMS_BY_CIPHER_SUITE|req.ListIndex, msg, 2)
 	return msg
 }
 
 func (res *GetChannelCipherSuitesResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
-	res.ChannelNumber, _, _ = ipmi.UnpackUint8(msg, 0)
+	res.ChannelNumber, _, _ = types.UnpackUint8(msg, 0)
 	if len(msg) > 1 {
-		res.CipherSuiteRecords, _, _ = ipmi.UnpackBytesMost(msg, 1, 16)
+		res.CipherSuiteRecords, _, _ = types.UnpackBytesMost(msg, 1, 16)
 	}
 	return nil
 }
@@ -61,17 +61,17 @@ func (res *GetChannelCipherSuitesResponse) Format() string {
 // The algorithms are used in combination as 'Cipher Suites'.
 // This command only applies to implementations that support IPMI v2.0/RMCP+ sessions.
 
-func ParseCipherSuitesData(cipherSuitesData []byte) ([]ipmi.CipherSuiteRecord, error) {
+func ParseCipherSuitesData(cipherSuitesData []byte) ([]types.CipherSuiteRecord, error) {
 	offset := 0
-	records := []ipmi.CipherSuiteRecord{}
+	records := []types.CipherSuiteRecord{}
 
 	for offset < len(cipherSuitesData) {
-		csRecord := ipmi.CipherSuiteRecord{}
+		csRecord := types.CipherSuiteRecord{}
 		startOfRecord := cipherSuitesData[offset]
 		csRecord.StartOfRecord = startOfRecord
 
 		switch startOfRecord {
-		case ipmi.StandardCipherSuite:
+		case types.StandardCipherSuite:
 			// Per §22.15.1 the record is tag-delimited, not fixed-length: the
 			// start byte is followed by the cipher suite id and then 1..3
 			// algorithm bytes (auth is always present; integrity/confidentiality
@@ -82,17 +82,17 @@ func ParseCipherSuitesData(cipherSuitesData []byte) ([]ipmi.CipherSuiteRecord, e
 				return records, fmt.Errorf("incomplete cipher suite data")
 			}
 			offset++
-			csRecord.CipherSuitID = ipmi.CipherSuiteID(cipherSuitesData[offset])
+			csRecord.CipherSuitID = types.CipherSuiteID(cipherSuitesData[offset])
 
-		case ipmi.OEMCipherSuite:
+		case types.OEMCipherSuite:
 			// id + iana (3) + 3 algs (7 bytes)
 			if offset+7 > len(cipherSuitesData)-1 {
 				return records, fmt.Errorf("incomplete cipher suite data")
 			}
 			offset++
-			csRecord.CipherSuitID = ipmi.CipherSuiteID(cipherSuitesData[offset])
+			csRecord.CipherSuitID = types.CipherSuiteID(cipherSuitesData[offset])
 			offset++
-			csRecord.OEMIanaID, _, _ = ipmi.UnpackUint24L(cipherSuitesData, offset)
+			csRecord.OEMIanaID, _, _ = types.UnpackUint24L(cipherSuitesData, offset)
 
 		default:
 			return records, fmt.Errorf("bad start of record byte in the cipher suite data, value %x", startOfRecord)
@@ -105,18 +105,18 @@ func ParseCipherSuitesData(cipherSuitesData []byte) ([]ipmi.CipherSuiteRecord, e
 			}
 
 			algByte := cipherSuitesData[offset]
-			if algByte == ipmi.StandardCipherSuite || algByte == ipmi.OEMCipherSuite {
+			if algByte == types.StandardCipherSuite || algByte == types.OEMCipherSuite {
 				break
 			}
 
-			algTag := algByte & ipmi.CipherAlgTagBitMask // clear lowest 6 bits
-			algNumber := algByte & ipmi.CipherAlgMask    // clear highest 2 bits
+			algTag := algByte & types.CipherAlgTagBitMask // clear lowest 6 bits
+			algNumber := algByte & types.CipherAlgMask    // clear highest 2 bits
 			switch algTag {
-			case ipmi.CipherAlgTagBitAuthMask:
+			case types.CipherAlgTagBitAuthMask:
 				csRecord.AuthAlg = algNumber
-			case ipmi.CipherAlgTagBitIntegrityMask:
+			case types.CipherAlgTagBitIntegrityMask:
 				csRecord.IntegrityAlgs = append(csRecord.IntegrityAlgs, algNumber)
-			case ipmi.CipherAlgTagBitEncryptionMask:
+			case types.CipherAlgTagBitEncryptionMask:
 				csRecord.CryptAlgs = append(csRecord.CryptAlgs, algNumber)
 			}
 		}

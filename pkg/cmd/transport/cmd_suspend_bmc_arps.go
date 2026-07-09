@@ -1,7 +1,7 @@
 package transport
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 23.3 Suspend BMC ARPs Command
 )
 
@@ -21,22 +21,22 @@ type SuspendARPsResponse struct {
 func (req *SuspendARPsRequest) Pack() []byte {
 	out := make([]byte, 2)
 
-	ipmi.PackUint8(req.ChannelNumber, out, 0)
+	types.PackUint8(req.ChannelNumber, out, 0)
 
 	var b uint8
 	if req.SuspendARP {
-		b = ipmi.SetBit1(b)
+		b = types.SetBit1(b)
 	}
 	if req.SuspendGratuitousARP {
-		b = ipmi.SetBit0(b)
+		b = types.SetBit0(b)
 	}
-	ipmi.PackUint8(b, out, 1)
+	types.PackUint8(b, out, 1)
 
 	return out
 }
 
-func (req *SuspendARPsRequest) Command() ipmi.Command {
-	return ipmi.CommandSuspendARPs
+func (req *SuspendARPsRequest) Command() types.Command {
+	return types.CommandSuspendARPs
 }
 
 func (res *SuspendARPsResponse) CompletionCodes() map[uint8]string {
@@ -47,12 +47,12 @@ func (res *SuspendARPsResponse) CompletionCodes() map[uint8]string {
 
 func (res *SuspendARPsResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
-	b, _, _ := ipmi.UnpackUint8(msg, 0)
-	res.IsARPOccurring = ipmi.IsBit1Set(b)
-	res.IsGratuitousARPOccurring = ipmi.IsBit0Set(b)
+	b, _, _ := types.UnpackUint8(msg, 0)
+	res.IsARPOccurring = types.IsBit1Set(b)
+	res.IsGratuitousARPOccurring = types.IsBit0Set(b)
 	return nil
 }
 

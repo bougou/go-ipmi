@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 22.20 Get Session Info Command
@@ -27,7 +27,7 @@ type GetSessionInfoResponse struct {
 	CurrentActiveSessions  uint8 // Number of currently active sessions on all channels on this controller
 
 	UserID                  uint8
-	OperatingPrivilegeLevel ipmi.PrivilegeLevel
+	OperatingPrivilegeLevel types.PrivilegeLevel
 
 	// [7:4] - Session protocol auxiliary data
 	// For Channel Type = 802.3 LAN:
@@ -50,19 +50,19 @@ type GetSessionInfoResponse struct {
 	RemoteConsolePort_PPP uint16
 }
 
-func (req *GetSessionInfoRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSessionInfo
+func (req *GetSessionInfoRequest) Command() types.Command {
+	return types.CommandGetSessionInfo
 }
 
 func (req *GetSessionInfoRequest) Pack() []byte {
 	out := make([]byte, 5)
-	ipmi.PackUint8(req.SessionIndex, out, 0)
+	types.PackUint8(req.SessionIndex, out, 0)
 	if req.SessionIndex == 0xfe {
-		ipmi.PackUint8(req.SessionHandle, out, 1)
+		types.PackUint8(req.SessionHandle, out, 1)
 		return out[0:2]
 	}
 	if req.SessionIndex == 0xff {
-		ipmi.PackUint32L(req.SessionID, out, 1)
+		types.PackUint32L(req.SessionID, out, 1)
 		return out[0:5]
 	}
 	return out[0:1]
@@ -71,11 +71,11 @@ func (req *GetSessionInfoRequest) Pack() []byte {
 func (res *GetSessionInfoResponse) Unpack(msg []byte) error {
 	// at least 3 bytes
 	if len(msg) < 3 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 3)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 3)
 	}
-	res.SessionHandle, _, _ = ipmi.UnpackUint8(msg, 0)
-	res.PossibleActiveSessions, _, _ = ipmi.UnpackUint8(msg, 1)
-	res.CurrentActiveSessions, _, _ = ipmi.UnpackUint8(msg, 2)
+	res.SessionHandle, _, _ = types.UnpackUint8(msg, 0)
+	res.PossibleActiveSessions, _, _ = types.UnpackUint8(msg, 1)
+	res.CurrentActiveSessions, _, _ = types.UnpackUint8(msg, 2)
 
 	if len(msg) == 3 {
 		return nil
@@ -83,29 +83,29 @@ func (res *GetSessionInfoResponse) Unpack(msg []byte) error {
 
 	// if len(msg) > 3, then at least 6 bytes
 	if len(msg) < 6 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 6)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 6)
 	}
-	res.UserID, _, _ = ipmi.UnpackUint8(msg, 3)
-	b5, _, _ := ipmi.UnpackUint8(msg, 4)
-	res.OperatingPrivilegeLevel = ipmi.PrivilegeLevel(b5)
-	b6, _, _ := ipmi.UnpackUint8(msg, 5)
+	res.UserID, _, _ = types.UnpackUint8(msg, 3)
+	b5, _, _ := types.UnpackUint8(msg, 4)
+	res.OperatingPrivilegeLevel = types.PrivilegeLevel(b5)
+	b6, _, _ := types.UnpackUint8(msg, 5)
 	res.AuxiliaryData = b6 >> 4
 	res.ChannelNumber = b6 & 0x0f
 
 	//  Channel Type = 802.3 LAN:
 	if len(msg) >= 18 {
-		ipBytes, _, _ := ipmi.UnpackBytes(msg, 6, 4)
+		ipBytes, _, _ := types.UnpackBytes(msg, 6, 4)
 		res.RemoteConsoleIPAddr = net.IP(ipBytes)
-		macBytes, _, _ := ipmi.UnpackBytes(msg, 10, 6)
+		macBytes, _, _ := types.UnpackBytes(msg, 10, 6)
 		res.RemoteConsoleMacAddr = net.HardwareAddr(macBytes)
-		res.RemoteConsolePort, _, _ = ipmi.UnpackUint16L(msg, 16)
+		res.RemoteConsolePort, _, _ = types.UnpackUint16L(msg, 16)
 	}
 
 	if len(msg) >= 14 {
-		res.SessionChannelActivityType, _, _ = ipmi.UnpackUint8(msg, 6)
-		res.DestinationSelector, _, _ = ipmi.UnpackUint8(msg, 7)
-		res.RemoteConsoleIPAddr_PPP, _, _ = ipmi.UnpackUint32(msg, 8)
-		res.RemoteConsolePort_PPP, _, _ = ipmi.UnpackUint16L(msg, 12)
+		res.SessionChannelActivityType, _, _ = types.UnpackUint8(msg, 6)
+		res.DestinationSelector, _, _ = types.UnpackUint8(msg, 7)
+		res.RemoteConsoleIPAddr_PPP, _, _ = types.UnpackUint32(msg, 8)
+		res.RemoteConsolePort_PPP, _, _ = types.UnpackUint16L(msg, 12)
 	}
 
 	return nil

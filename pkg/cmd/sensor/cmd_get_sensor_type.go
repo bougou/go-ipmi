@@ -3,7 +3,7 @@ package sensor
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // GetSensorTypeRequest (see [IPMI specification v2.0], section 35.16)
@@ -12,28 +12,28 @@ type GetSensorTypeRequest struct {
 }
 
 type GetSensorTypeResponse struct {
-	SensorType       ipmi.SensorType
-	EventReadingType ipmi.EventReadingType
+	SensorType       types.SensorType
+	EventReadingType types.EventReadingType
 }
 
-func (req *GetSensorTypeRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSensorType
+func (req *GetSensorTypeRequest) Command() types.Command {
+	return types.CommandGetSensorType
 }
 
 func (req *GetSensorTypeRequest) Pack() []byte {
 	out := make([]byte, 1)
-	ipmi.PackUint8(req.SensorNumber, out, 0)
+	types.PackUint8(req.SensorNumber, out, 0)
 	return out
 }
 
 func (res *GetSensorTypeResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
-	b1, _, _ := ipmi.UnpackUint8(msg, 0)
-	res.SensorType = ipmi.SensorType(b1)
-	b2, _, _ := ipmi.UnpackUint8(msg, 1)
-	res.EventReadingType = ipmi.EventReadingType(b2)
+	b1, _, _ := types.UnpackUint8(msg, 0)
+	res.SensorType = types.SensorType(b1)
+	b2, _, _ := types.UnpackUint8(msg, 1)
+	res.EventReadingType = types.EventReadingType(b2)
 	return nil
 }
 

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	ipmiclient "github.com/bougou/go-ipmi/pkg/client"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -97,19 +97,19 @@ func initClient() error {
 
 	client.WithDebug(debug)
 
-	var privLevel ipmi.PrivilegeLevel = ipmi.PrivilegeLevelUnspecified
+	var privLevel types.PrivilegeLevel = types.PrivilegeLevelUnspecified
 	switch strings.ToUpper(privilegeLevel) {
 	case "CALLBACK":
-		privLevel = ipmi.PrivilegeLevelCallback
+		privLevel = types.PrivilegeLevelCallback
 	case "USER":
-		privLevel = ipmi.PrivilegeLevelUser
+		privLevel = types.PrivilegeLevelUser
 	case "OPERATOR":
-		privLevel = ipmi.PrivilegeLevelOperator
+		privLevel = types.PrivilegeLevelOperator
 	case "ADMINISTRATOR":
-		privLevel = ipmi.PrivilegeLevelAdministrator
+		privLevel = types.PrivilegeLevelAdministrator
 	}
 
-	if privLevel != ipmi.PrivilegeLevelUnspecified {
+	if privLevel != types.PrivilegeLevelUnspecified {
 		client.WithMaxPrivilegeLevel(privLevel)
 	}
 

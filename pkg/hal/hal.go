@@ -20,7 +20,7 @@ package hal
 import (
 	"context"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // HAL is the top-level hardware abstraction.  Implementations may return nil
@@ -67,19 +67,19 @@ type ChassisHAL interface {
 	// The upper layer decides which bits it cares about; HAL implementations
 	// must not silently drop fields they ignore. Implementations that do not
 	// maintain boot state return ErrNotSupported.
-	SetBootFlags(ctx context.Context, flags *ipmi.BootOptionParam_BootFlags) error
+	SetBootFlags(ctx context.Context, flags *types.BootOptionParam_BootFlags) error
 	// GetBootFlags reads back the current boot flags, symmetric with
 	// [SetBootFlags]. Implementations that cannot read boot flags back must
 	// return ErrNotSupported; handlers translate that to the
 	// CodeBootParamNotSupported completion code.
-	GetBootFlags(ctx context.Context) (*ipmi.BootOptionParam_BootFlags, error)
+	GetBootFlags(ctx context.Context) (*types.BootOptionParam_BootFlags, error)
 	// SetBootInfoAcknowledge persists the boot initiator acknowledge data
 	// (spec Table 28-14, param #4).  The HAL may implement this as a no-op
 	// (return nil) if it does not track boot initiator identity.
-	SetBootInfoAcknowledge(ctx context.Context, ack *ipmi.BootOptionParam_BootInfoAcknowledge) error
+	SetBootInfoAcknowledge(ctx context.Context, ack *types.BootOptionParam_BootInfoAcknowledge) error
 	// GetBootInfoAcknowledge reads back the stored acknowledge data.
 	// Implementations that do not persist this return ErrNotSupported.
-	GetBootInfoAcknowledge(ctx context.Context) (*ipmi.BootOptionParam_BootInfoAcknowledge, error)
+	GetBootInfoAcknowledge(ctx context.Context) (*types.BootOptionParam_BootInfoAcknowledge, error)
 }
 
 // SensorDescriptor describes a sensor exposed by the hardware.

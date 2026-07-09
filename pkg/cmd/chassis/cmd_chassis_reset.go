@@ -1,7 +1,7 @@
 package chassis
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 28.4 Chassis Reset Command
 )
 
@@ -17,8 +17,8 @@ func (req *ChassisResetRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (req *ChassisResetRequest) Command() ipmi.Command {
-	return ipmi.CommandChassisReset
+func (req *ChassisResetRequest) Command() types.Command {
+	return types.CommandChassisReset
 }
 
 func (res *ChassisResetResponse) CompletionCodes() map[uint8]string {

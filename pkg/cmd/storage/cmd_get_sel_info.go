@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // GetSELInfoRequest (31.2) command returns the number of entries in the SEL.
@@ -29,8 +29,8 @@ type SELOperationSupport struct {
 	GetSELAllocInfo bool
 }
 
-func (req *GetSELInfoRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSELInfo
+func (req *GetSELInfoRequest) Command() types.Command {
+	return types.CommandGetSELInfo
 }
 
 func (req *GetSELInfoRequest) Pack() []byte {
@@ -40,25 +40,25 @@ func (req *GetSELInfoRequest) Pack() []byte {
 
 func (res *GetSELInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 14 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 14)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 14)
 	}
-	res.SELVersion, _, _ = ipmi.UnpackUint8(msg, 0)
-	res.Entries, _, _ = ipmi.UnpackUint16L(msg, 1)
-	res.FreeBytes, _, _ = ipmi.UnpackUint16L(msg, 3)
+	res.SELVersion, _, _ = types.UnpackUint8(msg, 0)
+	res.Entries, _, _ = types.UnpackUint16L(msg, 1)
+	res.FreeBytes, _, _ = types.UnpackUint16L(msg, 3)
 
-	addTS, _, _ := ipmi.UnpackUint32L(msg, 5)
-	res.RecentAdditionTime = ipmi.ParseTimestamp(addTS)
+	addTS, _, _ := types.UnpackUint32L(msg, 5)
+	res.RecentAdditionTime = types.ParseTimestamp(addTS)
 
-	eraseTS, _, _ := ipmi.UnpackUint32L(msg, 9)
-	res.RecentEraseTime = ipmi.ParseTimestamp(eraseTS)
+	eraseTS, _, _ := types.UnpackUint32L(msg, 9)
+	res.RecentEraseTime = types.ParseTimestamp(eraseTS)
 
 	b := msg[13]
 	res.OperationSupport = SELOperationSupport{
-		Overflow:        ipmi.IsBit7Set(b),
-		DeleteSEL:       ipmi.IsBit3Set(b),
-		PartialAddSEL:   ipmi.IsBit2Set(b),
-		ReserveSEL:      ipmi.IsBit1Set(b),
-		GetSELAllocInfo: ipmi.IsBit0Set(b),
+		Overflow:        types.IsBit7Set(b),
+		DeleteSEL:       types.IsBit3Set(b),
+		PartialAddSEL:   types.IsBit2Set(b),
+		ReserveSEL:      types.IsBit1Set(b),
+		GetSELAllocInfo: types.IsBit0Set(b),
 	}
 
 	return nil
@@ -86,8 +86,8 @@ func (res *GetSELInfoResponse) Format() string {
 		fmt.Sprintf("Entries                      : %d\n", res.Entries) +
 		fmt.Sprintf("Free Space                   : %d bytes\n", res.FreeBytes) +
 		fmt.Sprintf("Percent Used                 : %.2f%%\n", usedPct) +
-		fmt.Sprintf("Last Add Time                : %s\n", res.RecentAdditionTime.Format(ipmi.TimeFormat)) +
-		fmt.Sprintf("Last Del Time                : %s\n", res.RecentEraseTime.Format(ipmi.TimeFormat)) +
+		fmt.Sprintf("Last Add Time                : %s\n", res.RecentAdditionTime.Format(types.TimeFormat)) +
+		fmt.Sprintf("Last Del Time                : %s\n", res.RecentEraseTime.Format(types.TimeFormat)) +
 		fmt.Sprintf("Overflow                     : %v\n", res.OperationSupport.Overflow) +
 		fmt.Sprintf("Delete SEL supported         : %v\n", res.OperationSupport.DeleteSEL) +
 		fmt.Sprintf("Partial Add SEL supported    : %v\n", res.OperationSupport.PartialAddSEL) +

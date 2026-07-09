@@ -3,13 +3,13 @@ package transport
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 23.2 Get LAN Configuration Parameters Command
 type GetLanConfigParamRequest struct {
 	ChannelNumber uint8
-	ParamSelector ipmi.LanConfigParamSelector
+	ParamSelector types.LanConfigParamSelector
 	SetSelector   uint8
 	BlockSelector uint8
 }
@@ -21,15 +21,15 @@ type GetLanConfigParamResponse struct {
 
 func (req *GetLanConfigParamRequest) Pack() []byte {
 	out := make([]byte, 4)
-	ipmi.PackUint8(req.ChannelNumber, out, 0)
-	ipmi.PackUint8(uint8(req.ParamSelector), out, 1)
-	ipmi.PackUint8(req.SetSelector, out, 2)
-	ipmi.PackUint8(req.BlockSelector, out, 3)
+	types.PackUint8(req.ChannelNumber, out, 0)
+	types.PackUint8(uint8(req.ParamSelector), out, 1)
+	types.PackUint8(req.SetSelector, out, 2)
+	types.PackUint8(req.BlockSelector, out, 3)
 	return out
 }
 
-func (req *GetLanConfigParamRequest) Command() ipmi.Command {
-	return ipmi.CommandGetLanConfigParam
+func (req *GetLanConfigParamRequest) Command() types.Command {
+	return types.CommandGetLanConfigParam
 }
 
 func (res *GetLanConfigParamResponse) CompletionCodes() map[uint8]string {
@@ -40,10 +40,10 @@ func (res *GetLanConfigParamResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetLanConfigParamResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
-	res.ParamRevision, _, _ = ipmi.UnpackUint8(msg, 0)
-	res.ParamData, _, _ = ipmi.UnpackBytes(msg, 1, len(msg)-1)
+	res.ParamRevision, _, _ = types.UnpackUint8(msg, 0)
+	res.ParamData, _, _ = types.UnpackBytes(msg, 1, len(msg)-1)
 	return nil
 }
 

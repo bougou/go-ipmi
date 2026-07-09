@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 22.26 Set User Access Command
 )
 
@@ -26,8 +26,8 @@ type SetUserAccessRequest struct {
 type SetUserAccessResponse struct {
 }
 
-func (req *SetUserAccessRequest) Command() ipmi.Command {
-	return ipmi.CommandSetUserAccess
+func (req *SetUserAccessRequest) Command() types.Command {
+	return types.CommandSetUserAccess
 }
 
 func (req *SetUserAccessRequest) Pack() []byte {
@@ -35,21 +35,21 @@ func (req *SetUserAccessRequest) Pack() []byte {
 
 	b := req.ChannelNumber & 0x0f
 	if req.EnableChanging {
-		b = ipmi.SetBit7(b)
+		b = types.SetBit7(b)
 	}
 	if req.RestrictedToCallback {
-		b = ipmi.SetBit6(b)
+		b = types.SetBit6(b)
 	}
 	if req.EnableLinkAuth {
-		b = ipmi.SetBit5(b)
+		b = types.SetBit5(b)
 	}
 	if req.EnableIPMIMessaging {
-		b = ipmi.SetBit4(b)
+		b = types.SetBit4(b)
 	}
-	ipmi.PackUint8(b, out, 0)
-	ipmi.PackUint8(req.UserID&0x3f, out, 1)
-	ipmi.PackUint8(req.MaxPrivLevel&0x3f, out, 2)
-	ipmi.PackUint8(req.SessionLimit&0x0f, out, 3)
+	types.PackUint8(b, out, 0)
+	types.PackUint8(req.UserID&0x3f, out, 1)
+	types.PackUint8(req.MaxPrivLevel&0x3f, out, 2)
+	types.PackUint8(req.SessionLimit&0x0f, out, 3)
 
 	return out
 }

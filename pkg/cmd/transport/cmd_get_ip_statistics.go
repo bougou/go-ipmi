@@ -3,7 +3,7 @@ package transport
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 23.4 Get IP/UDP/RMCP Statistics Command
@@ -27,19 +27,19 @@ type GetIPStatisticsResponse struct {
 func (req *GetIPStatisticsRequest) Pack() []byte {
 	out := make([]byte, 2)
 
-	ipmi.PackUint8(req.ChannelNumber, out, 0)
+	types.PackUint8(req.ChannelNumber, out, 0)
 
 	var b uint8
 	if req.ClearAllStatistics {
-		b = ipmi.SetBit0(b)
+		b = types.SetBit0(b)
 	}
-	ipmi.PackUint8(b, out, 1)
+	types.PackUint8(b, out, 1)
 
 	return out
 }
 
-func (req *GetIPStatisticsRequest) Command() ipmi.Command {
-	return ipmi.CommandGetIPStatistics
+func (req *GetIPStatisticsRequest) Command() types.Command {
+	return types.CommandGetIPStatistics
 }
 
 func (res *GetIPStatisticsResponse) CompletionCodes() map[uint8]string {
@@ -48,18 +48,18 @@ func (res *GetIPStatisticsResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetIPStatisticsResponse) Unpack(msg []byte) error {
 	if len(msg) < 18 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 18)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 18)
 	}
 
-	res.IPPacketsReceived, _, _ = ipmi.UnpackUint16L(msg, 0)
-	res.IPHeaderErrorsReceived, _, _ = ipmi.UnpackUint16L(msg, 2)
-	res.IPAddressErrorsReceived, _, _ = ipmi.UnpackUint16L(msg, 4)
-	res.IPPacketsFragmentedReceived, _, _ = ipmi.UnpackUint16L(msg, 6)
-	res.IPPacketsTransmitted, _, _ = ipmi.UnpackUint16L(msg, 8)
-	res.UDPPacketsReceived, _, _ = ipmi.UnpackUint16L(msg, 10)
-	res.RMCPPacketsValidReceived, _, _ = ipmi.UnpackUint16L(msg, 12)
-	res.UDPProxyPacketsReceived, _, _ = ipmi.UnpackUint16L(msg, 14)
-	res.UDPProxyPacketsDropped, _, _ = ipmi.UnpackUint16L(msg, 16)
+	res.IPPacketsReceived, _, _ = types.UnpackUint16L(msg, 0)
+	res.IPHeaderErrorsReceived, _, _ = types.UnpackUint16L(msg, 2)
+	res.IPAddressErrorsReceived, _, _ = types.UnpackUint16L(msg, 4)
+	res.IPPacketsFragmentedReceived, _, _ = types.UnpackUint16L(msg, 6)
+	res.IPPacketsTransmitted, _, _ = types.UnpackUint16L(msg, 8)
+	res.UDPPacketsReceived, _, _ = types.UnpackUint16L(msg, 10)
+	res.RMCPPacketsValidReceived, _, _ = types.UnpackUint16L(msg, 12)
+	res.UDPProxyPacketsReceived, _, _ = types.UnpackUint16L(msg, 14)
+	res.UDPProxyPacketsDropped, _, _ = types.UnpackUint16L(msg, 16)
 
 	return nil
 }

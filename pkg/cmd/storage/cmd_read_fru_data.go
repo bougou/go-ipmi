@@ -3,7 +3,7 @@ package storage
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 34.2 Read FRU Data Command
@@ -18,25 +18,25 @@ type ReadFRUDataResponse struct {
 	Data          []byte
 }
 
-func (req *ReadFRUDataRequest) Command() ipmi.Command {
-	return ipmi.CommandReadFRUData
+func (req *ReadFRUDataRequest) Command() types.Command {
+	return types.CommandReadFRUData
 }
 
 func (req *ReadFRUDataRequest) Pack() []byte {
 	out := make([]byte, 4)
-	ipmi.PackUint8(req.FRUDeviceID, out, 0)
-	ipmi.PackUint16L(req.ReadOffset, out, 1)
-	ipmi.PackUint8(req.ReadCount, out, 3)
+	types.PackUint8(req.FRUDeviceID, out, 0)
+	types.PackUint16L(req.ReadOffset, out, 1)
+	types.PackUint8(req.ReadCount, out, 3)
 	return out
 }
 
 func (res *ReadFRUDataResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
-	res.CountReturned, _, _ = ipmi.UnpackUint8(msg, 0)
-	res.Data, _, _ = ipmi.UnpackBytes(msg, 1, len(msg)-1)
+	res.CountReturned, _, _ = types.UnpackUint8(msg, 0)
+	res.Data, _, _ = types.UnpackBytes(msg, 1, len(msg)-1)
 	return nil
 }
 
@@ -52,8 +52,8 @@ func (res *ReadFRUDataResponse) Format() string {
 		fmt.Sprintf("Data           : %02x\n", res.Data)
 }
 
-func ReadFRUDataLength2Big(cc ipmi.CompletionCode) bool {
-	return cc == ipmi.CompletionCodeRequestDataLengthInvalid ||
-		cc == ipmi.CompletionCodeRequestDataLengthLimitExceeded ||
-		cc == ipmi.CompletionCodeCannotReturnRequestedDataBytes
+func ReadFRUDataLength2Big(cc types.CompletionCode) bool {
+	return cc == types.CompletionCodeRequestDataLengthInvalid ||
+		cc == types.CompletionCodeRequestDataLengthLimitExceeded ||
+		cc == types.CompletionCodeCannotReturnRequestedDataBytes
 }

@@ -3,7 +3,7 @@ package dcmi
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // [DCMI specification v1.5]: 6.6.2 Get Power Limit
@@ -11,7 +11,7 @@ type GetDCMIPowerLimitRequest struct {
 }
 
 type GetDCMIPowerLimitResponse struct {
-	ExceptionAction ipmi.DCMIExceptionAction
+	ExceptionAction types.DCMIExceptionAction
 	// Power Limit Requested in Watts
 	PowerLimitRequested uint16
 	// Maximum time taken to limit the power after the platform power has reached
@@ -22,11 +22,11 @@ type GetDCMIPowerLimitResponse struct {
 }
 
 func (req *GetDCMIPowerLimitRequest) Pack() []byte {
-	return []byte{ipmi.GroupExtensionDCMI, 0x00, 0x00}
+	return []byte{types.GroupExtensionDCMI, 0x00, 0x00}
 }
 
-func (req *GetDCMIPowerLimitRequest) Command() ipmi.Command {
-	return ipmi.CommandGetDCMIPowerLimit
+func (req *GetDCMIPowerLimitRequest) Command() types.Command {
+	return types.CommandGetDCMIPowerLimit
 }
 
 func (res *GetDCMIPowerLimitResponse) CompletionCodes() map[uint8]string {
@@ -37,18 +37,18 @@ func (res *GetDCMIPowerLimitResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetDCMIPowerLimitResponse) Unpack(msg []byte) error {
 	if len(msg) < 14 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 14)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 14)
 	}
 
-	if err := ipmi.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
+	if err := types.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
 		return err
 	}
 
-	exceptionAction, _, _ := ipmi.UnpackUint8(msg, 3)
-	res.ExceptionAction = ipmi.DCMIExceptionAction(exceptionAction)
-	res.PowerLimitRequested, _, _ = ipmi.UnpackUint16L(msg, 4)
-	res.CorrectionTimeLimitMilliSec, _, _ = ipmi.UnpackUint32L(msg, 6)
-	res.StatisticsSamplingPeriodSec, _, _ = ipmi.UnpackUint16L(msg, 12)
+	exceptionAction, _, _ := types.UnpackUint8(msg, 3)
+	res.ExceptionAction = types.DCMIExceptionAction(exceptionAction)
+	res.PowerLimitRequested, _, _ = types.UnpackUint16L(msg, 4)
+	res.CorrectionTimeLimitMilliSec, _, _ = types.UnpackUint32L(msg, 6)
+	res.StatisticsSamplingPeriodSec, _, _ = types.UnpackUint16L(msg, 12)
 
 	return nil
 }

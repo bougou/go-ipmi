@@ -1,7 +1,7 @@
 package storage
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 31.4 Reserve SEL Command
 )
 
@@ -13,8 +13,8 @@ type ReserveSELResponse struct {
 	ReservationID uint16
 }
 
-func (req *ReserveSELRequest) Command() ipmi.Command {
-	return ipmi.CommandReserveSEL
+func (req *ReserveSELRequest) Command() types.Command {
+	return types.CommandReserveSEL
 }
 
 func (req *ReserveSELRequest) Pack() []byte {
@@ -23,9 +23,9 @@ func (req *ReserveSELRequest) Pack() []byte {
 
 func (res *ReserveSELResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
-	res.ReservationID, _, _ = ipmi.UnpackUint16L(msg, 0)
+	res.ReservationID, _, _ = types.UnpackUint16L(msg, 0)
 	return nil
 }
 

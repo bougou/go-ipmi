@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // GetFRUData return all data bytes, the data size is firstly determined by
@@ -30,18 +30,18 @@ func (c *Client) GetFRUData(ctx context.Context, deviceID uint8) ([]byte, error)
 
 // GetFRU return FRU for the specified deviceID.
 // The deviceName is not a must, pass empty string if not known.
-func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) (*ipmi.FRU, error) {
+func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) (*types.FRU, error) {
 	c.Debugf("GetFRU device name (%s) id (%#02x)\n", deviceName, deviceID)
 
-	fru := &ipmi.FRU{
+	fru := &types.FRU{
 		DeviceID:   deviceID,
 		DeviceName: deviceName,
 	}
 
 	fruAreaInfoRes, err := c.GetFRUInventoryAreaInfo(ctx, deviceID)
 	if err != nil {
-		if respErr, ok := ipmi.IsResponseError(err); ok {
-			if respErr.CompletionCode() == ipmi.CompletionCodeRequestedDataNotPresent {
+		if respErr, ok := types.IsResponseError(err); ok {
+			if respErr.CompletionCode() == types.CompletionCodeRequestedDataNotPresent {
 				fru.DeviceNotPresent = true
 				fru.DeviceNotPresentReason = "InventoryRecordNotExist"
 				return fru, nil
@@ -56,15 +56,15 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 	}
 
 	// retrieve the FRU header, just fetch FRUCommonHeaderSize bytes to construct a FRU Header
-	readFRURes, err := c.ReadFRUData(ctx, deviceID, 0, ipmi.FRUCommonHeaderSize)
+	readFRURes, err := c.ReadFRUData(ctx, deviceID, 0, types.FRUCommonHeaderSize)
 	if err != nil {
-		if respErr, ok := ipmi.IsResponseError(err); ok {
+		if respErr, ok := types.IsResponseError(err); ok {
 			switch respErr.CompletionCode() {
-			case ipmi.CompletionCodeRequestedDataNotPresent:
+			case types.CompletionCodeRequestedDataNotPresent:
 				fru.DeviceNotPresent = true
 				fru.DeviceNotPresentReason = "DataNotPresent"
 				return fru, nil
-			case ipmi.CompletionCodeProcessTimeout:
+			case types.CompletionCodeProcessTimeout:
 				fru.DeviceNotPresent = true
 				fru.DeviceNotPresentReason = "Timeout"
 				return fru, nil
@@ -73,11 +73,11 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 		return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
 	}
 
-	fruHeader := &ipmi.FRUCommonHeader{}
+	fruHeader := &types.FRUCommonHeader{}
 	if err := fruHeader.Unpack(readFRURes.Data); err != nil {
 		return nil, fmt.Errorf("unpack fru data failed, err: %w", err)
 	}
-	if fruHeader.FormatVersion != ipmi.FRUFormatVersion {
+	if fruHeader.FormatVersion != types.FRUFormatVersion {
 		return nil, fmt.Errorf("unknown FRU header version %#02x", fruHeader.FormatVersion)
 	}
 	c.Debug("FRU Common Header", fruHeader)
@@ -129,8 +129,8 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 	return fru, nil
 }
 
-func (c *Client) GetFRUs(ctx context.Context) ([]*ipmi.FRU, error) {
-	var frus = make([]*ipmi.FRU, 0)
+func (c *Client) GetFRUs(ctx context.Context) ([]*types.FRU, error) {
+	var frus = make([]*types.FRU, 0)
 
 	// Do a Get Device ID command to determine device support
 	deviceRes, err := c.GetDeviceID(ctx)
@@ -154,7 +154,7 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*ipmi.FRU, error) {
 	// Walk the SDRs to look for FRU Devices and Management Controller Devices.
 	// For FRU devices, print the FRU from the SDR locator record.
 	// For MC devices, issue FRU commands to the satellite controller to print FRU data.
-	sdrs, err := c.GetSDRs(ctx, ipmi.SDRRecordTypeFRUDeviceLocator, ipmi.SDRRecordTypeManagementControllerDeviceLocator)
+	sdrs, err := c.GetSDRs(ctx, types.SDRRecordTypeFRUDeviceLocator, types.SDRRecordTypeManagementControllerDeviceLocator)
 	if err != nil {
 		return nil, fmt.Errorf("GetSDRS failed, err: %w", err)
 	}
@@ -162,7 +162,7 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*ipmi.FRU, error) {
 	for _, sdr := range sdrs {
 		switch sdr.RecordHeader.RecordType {
 
-		case ipmi.SDRRecordTypeFRUDeviceLocator:
+		case types.SDRRecordTypeFRUDeviceLocator:
 
 			deviceType := sdr.FRUDeviceLocator.DeviceType
 			deviceTypeModifier := sdr.FRUDeviceLocator.DeviceTypeModifier
@@ -183,7 +183,7 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*ipmi.FRU, error) {
 
 			// see 38. Accessing FRU Devices
 			switch fruLocation {
-			case ipmi.FRULocation_MgmtController:
+			case types.FRULocation_MgmtController:
 				if accessLUN == 0x00 && deviceIDOrSlaveAddress == 0x00 {
 					// this is the Builtin FRU device, already got
 					continue
@@ -196,7 +196,7 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*ipmi.FRU, error) {
 				}
 				frus = append(frus, fru)
 
-			case ipmi.FRULocation_PrivateBus:
+			case types.FRULocation_PrivateBus:
 				// Todo,
 				switch deviceType {
 				case 0x10:
@@ -221,11 +221,11 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*ipmi.FRU, error) {
 					// Todo
 				}
 
-			case ipmi.FRULocation_IPMB:
+			case types.FRULocation_IPMB:
 
 			}
 
-		case ipmi.SDRRecordTypeManagementControllerDeviceLocator:
+		case types.SDRRecordTypeManagementControllerDeviceLocator:
 
 		}
 	}
@@ -233,7 +233,7 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*ipmi.FRU, error) {
 	return frus, nil
 }
 
-func (c *Client) GetFRUAreaChassis(ctx context.Context, deviceID uint8, offset uint16) (*ipmi.FRUChassisInfoArea, error) {
+func (c *Client) GetFRUAreaChassis(ctx context.Context, deviceID uint8, offset uint16) (*types.FRUChassisInfoArea, error) {
 	// read enough (2 bytes) to check the length field
 	res, err := c.ReadFRUData(ctx, deviceID, offset, 2)
 	if err != nil {
@@ -248,7 +248,7 @@ func (c *Client) GetFRUAreaChassis(ctx context.Context, deviceID uint8, offset u
 	}
 	c.Debugf("Got %d fru data\n", len(data))
 
-	fruChassis := &ipmi.FRUChassisInfoArea{}
+	fruChassis := &types.FRUChassisInfoArea{}
 	if err := fruChassis.Unpack(data); err != nil {
 		return nil, fmt.Errorf("unpack fru chassis failed, err: %w", err)
 	}
@@ -256,7 +256,7 @@ func (c *Client) GetFRUAreaChassis(ctx context.Context, deviceID uint8, offset u
 	return fruChassis, nil
 }
 
-func (c *Client) GetFRUAreaBoard(ctx context.Context, deviceID uint8, offset uint16) (*ipmi.FRUBoardInfoArea, error) {
+func (c *Client) GetFRUAreaBoard(ctx context.Context, deviceID uint8, offset uint16) (*types.FRUBoardInfoArea, error) {
 	// read enough (2 bytes) to check the length field
 	res, err := c.ReadFRUData(ctx, deviceID, offset, 2)
 	if err != nil {
@@ -271,7 +271,7 @@ func (c *Client) GetFRUAreaBoard(ctx context.Context, deviceID uint8, offset uin
 	}
 	c.Debugf("Got %d fru data\n", len(data))
 
-	fruBoard := &ipmi.FRUBoardInfoArea{}
+	fruBoard := &types.FRUBoardInfoArea{}
 	if err := fruBoard.Unpack(data); err != nil {
 		return nil, fmt.Errorf("unpack fru board failed, err: %w", err)
 	}
@@ -279,7 +279,7 @@ func (c *Client) GetFRUAreaBoard(ctx context.Context, deviceID uint8, offset uin
 	return fruBoard, nil
 }
 
-func (c *Client) GetFRUAreaProduct(ctx context.Context, deviceID uint8, offset uint16) (*ipmi.FRUProductInfoArea, error) {
+func (c *Client) GetFRUAreaProduct(ctx context.Context, deviceID uint8, offset uint16) (*types.FRUProductInfoArea, error) {
 	// read enough (2 bytes) to check the length field
 	res, err := c.ReadFRUData(ctx, deviceID, offset, 2)
 	if err != nil {
@@ -294,7 +294,7 @@ func (c *Client) GetFRUAreaProduct(ctx context.Context, deviceID uint8, offset u
 	}
 	c.Debugf("Got %d fru data\n", len(data))
 
-	fruProduct := &ipmi.FRUProductInfoArea{}
+	fruProduct := &types.FRUProductInfoArea{}
 	if err := fruProduct.Unpack(data); err != nil {
 		return nil, fmt.Errorf("unpack fru board failed, err: %w", err)
 	}
@@ -302,8 +302,8 @@ func (c *Client) GetFRUAreaProduct(ctx context.Context, deviceID uint8, offset u
 	return fruProduct, nil
 }
 
-func (c *Client) GetFRUAreaMultiRecords(ctx context.Context, deviceID uint8, offset uint16) ([]*ipmi.FRUMultiRecord, error) {
-	records := make([]*ipmi.FRUMultiRecord, 0)
+func (c *Client) GetFRUAreaMultiRecords(ctx context.Context, deviceID uint8, offset uint16) ([]*types.FRUMultiRecord, error) {
+	records := make([]*types.FRUMultiRecord, 0)
 
 	for {
 		// read enough (5 bytes) to check the length of each record
@@ -325,7 +325,7 @@ func (c *Client) GetFRUAreaMultiRecords(ctx context.Context, deviceID uint8, off
 		}
 		c.Debugf("Got %d fru data\n", len(data))
 
-		record := &ipmi.FRUMultiRecord{}
+		record := &types.FRUMultiRecord{}
 		if err := record.Unpack(data); err != nil {
 			return nil, fmt.Errorf("unpack fru multi record failed, err: %w", err)
 		}

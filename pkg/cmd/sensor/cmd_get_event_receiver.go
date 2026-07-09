@@ -1,7 +1,7 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 29.2 Get Event Receiver Command
 )
 
@@ -17,8 +17,8 @@ func (req *GetEventReceiverRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (req *GetEventReceiverRequest) Command() ipmi.Command {
-	return ipmi.CommandGetEventReceiver
+func (req *GetEventReceiverRequest) Command() types.Command {
+	return types.CommandGetEventReceiver
 }
 
 func (res *GetEventReceiverResponse) CompletionCodes() map[uint8]string {
@@ -27,7 +27,7 @@ func (res *GetEventReceiverResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetEventReceiverResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 	res.SlaveAddress = msg[0]
 	res.LUN = msg[1]

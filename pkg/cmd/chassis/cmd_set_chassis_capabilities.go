@@ -1,7 +1,7 @@
 package chassis
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 28.7 Set Chassis Capabilities Command
 )
 
@@ -28,21 +28,21 @@ func (req *SetChassisCapabilitiesRequest) Pack() []byte {
 
 	var b uint8 = 0
 	if req.ProvideFrontPanelLockout {
-		b = ipmi.SetBit1(b)
+		b = types.SetBit1(b)
 	}
 	if req.ProvideIntrusionSensor {
-		b = ipmi.SetBit0(b)
+		b = types.SetBit0(b)
 	}
-	ipmi.PackUint8(b, out, 0)
-	ipmi.PackUint8(req.FRUDeviceAddress, out, 1)
-	ipmi.PackUint8(req.SDRDeviceAddress, out, 2)
-	ipmi.PackUint8(req.SELDeviceAddress, out, 3)
-	ipmi.PackUint8(req.SystemManagementDeviceAddress, out, 4)
+	types.PackUint8(b, out, 0)
+	types.PackUint8(req.FRUDeviceAddress, out, 1)
+	types.PackUint8(req.SDRDeviceAddress, out, 2)
+	types.PackUint8(req.SELDeviceAddress, out, 3)
+	types.PackUint8(req.SystemManagementDeviceAddress, out, 4)
 	return out
 }
 
-func (req *SetChassisCapabilitiesRequest) Command() ipmi.Command {
-	return ipmi.CommandSetChassisCapabilities
+func (req *SetChassisCapabilitiesRequest) Command() types.Command {
+	return types.CommandSetChassisCapabilities
 }
 
 func (res *SetChassisCapabilitiesResponse) CompletionCodes() map[uint8]string {

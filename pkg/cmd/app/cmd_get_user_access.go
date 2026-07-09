@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 22.27 Get User Access Command
@@ -48,11 +48,11 @@ type GetUserAccessResponse struct {
 	IPMIMessagingEnabled bool
 
 	// [3:0] - User Privilege Limit for given Channel
-	MaxPrivLevel ipmi.PrivilegeLevel
+	MaxPrivLevel types.PrivilegeLevel
 }
 
-func (req *GetUserAccessRequest) Command() ipmi.Command {
-	return ipmi.CommandGetUserAccess
+func (req *GetUserAccessRequest) Command() types.Command {
+	return types.CommandGetUserAccess
 }
 
 func (req *GetUserAccessRequest) Pack() []byte {
@@ -65,23 +65,23 @@ func (res *GetUserAccessResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetUserAccessResponse) Unpack(msg []byte) error {
 	if len(msg) < 4 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 4)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 4)
 	}
 
-	res.MaxUsersIDCount, _, _ = ipmi.UnpackUint8(msg, 0)
+	res.MaxUsersIDCount, _, _ = types.UnpackUint8(msg, 0)
 
-	b1, _, _ := ipmi.UnpackUint8(msg, 1)
+	b1, _, _ := types.UnpackUint8(msg, 1)
 	res.EnableStatus = b1 & 0xc0 >> 6
 	res.EnabledUserIDsCount = b1 & 0x3f
 
-	b2, _, _ := ipmi.UnpackUint8(msg, 2)
+	b2, _, _ := types.UnpackUint8(msg, 2)
 	res.FixedNameUseIDsCount = b2 & 0x3f
 
-	b3, _, _ := ipmi.UnpackUint8(msg, 3)
-	res.CallbackOnly = ipmi.IsBit6Set(b3)
-	res.LinkAuthEnabled = ipmi.IsBit5Set(b3)
-	res.IPMIMessagingEnabled = ipmi.IsBit4Set(b3)
-	res.MaxPrivLevel = ipmi.PrivilegeLevel(b3 & 0x0f)
+	b3, _, _ := types.UnpackUint8(msg, 3)
+	res.CallbackOnly = types.IsBit6Set(b3)
+	res.LinkAuthEnabled = types.IsBit5Set(b3)
+	res.IPMIMessagingEnabled = types.IsBit4Set(b3)
+	res.MaxPrivLevel = types.PrivilegeLevel(b3 & 0x0f)
 	return nil
 }
 
@@ -100,7 +100,7 @@ type User struct {
 	Callin               bool
 	LinkAuthEnabled      bool
 	IPMIMessagingEnabled bool
-	MaxPrivLevel         ipmi.PrivilegeLevel
+	MaxPrivLevel         types.PrivilegeLevel
 }
 
 func FormatUsers(users []*User) string {
@@ -126,5 +126,5 @@ func FormatUsers(users []*User) string {
 		"Channel Priv Limit",
 	}
 
-	return ipmi.RenderTable(headers, rows)
+	return types.RenderTable(headers, rows)
 }

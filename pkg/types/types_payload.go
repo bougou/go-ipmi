@@ -71,10 +71,10 @@ func (pt PayloadType) String() string {
 type AuthAlg uint8
 
 const (
-	AuthAlgRAKP_None        AuthAlg = 0x00 // Mandatory
-	AuthAlgRAKP_HMAC_SHA1   AuthAlg = 0x01 // Mandatory
-	AuthAlgRAKP_HMAC_MD5    AuthAlg = 0x02 // Optional
-	AuthAlgRAKP_HMAC_SHA256 AuthAlg = 0x03 // Optional
+	AuthAlg_None        AuthAlg = 0x00 // Mandatory
+	AuthAlg_HMAC_SHA1   AuthAlg = 0x01 // Mandatory
+	AuthAlg_HMAC_MD5    AuthAlg = 0x02 // Optional
+	AuthAlg_HMAC_SHA256 AuthAlg = 0x03 // Optional
 )
 
 func (authAlg AuthAlg) String() string {

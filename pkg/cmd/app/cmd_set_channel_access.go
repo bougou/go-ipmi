@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 22.22 Set Channel Access Command
 )
 
@@ -16,7 +16,7 @@ type SetChannelAccessRequest struct {
 	DisablePEFAlerting   bool
 	DisablePerMsgAuth    bool
 	DisableUserLevelAuth bool
-	AccessMode           ipmi.ChannelAccessMode
+	AccessMode           types.ChannelAccessMode
 
 	PrivilegeOption   uint8
 	MaxPrivilegeLevel uint8
@@ -28,30 +28,30 @@ type SetChannelAccessResponse struct {
 func (req *SetChannelAccessRequest) Pack() []byte {
 	out := make([]byte, 3)
 
-	ipmi.PackUint8(req.ChannelNumber, out, 0)
+	types.PackUint8(req.ChannelNumber, out, 0)
 
 	var b = req.AccessOption << 6
 	if req.DisablePEFAlerting {
-		b = ipmi.SetBit5(b)
+		b = types.SetBit5(b)
 	}
 	if req.DisablePerMsgAuth {
-		b = ipmi.SetBit4(b)
+		b = types.SetBit4(b)
 	}
 	if req.DisableUserLevelAuth {
-		b = ipmi.SetBit3(b)
+		b = types.SetBit3(b)
 	}
 	b |= uint8(req.AccessMode) & 0x07
-	ipmi.PackUint8(b, out, 1)
+	types.PackUint8(b, out, 1)
 
 	var b2 = req.PrivilegeOption << 6
 	b2 |= req.MaxPrivilegeLevel & 0x3f
-	ipmi.PackUint8(b2, out, 2)
+	types.PackUint8(b2, out, 2)
 
 	return out
 }
 
-func (req *SetChannelAccessRequest) Command() ipmi.Command {
-	return ipmi.CommandSetChannelAccess
+func (req *SetChannelAccessRequest) Command() types.Command {
+	return types.CommandSetChannelAccess
 }
 
 func (res *SetChannelAccessResponse) CompletionCodes() map[uint8]string {

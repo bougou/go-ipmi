@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bougou/go-ipmi/open"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"math/rand"
 	"os"
 	"unsafe"
@@ -74,7 +74,7 @@ func (c *Client) closeOpen(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) exchangeOpen(ctx context.Context, request ipmi.Request, response ipmi.Response) error {
+func (c *Client) exchangeOpen(ctx context.Context, request types.Request, response types.Response) error {
 	if c.openipmi.targetAddr != 0 && c.openipmi.targetAddr != c.openipmi.myAddr {
 
 	} else {
@@ -97,9 +97,9 @@ func (c *Client) exchangeOpen(ctx context.Context, request ipmi.Request, respons
 
 	ccode := recv[0]
 	if ccode != 0x00 {
-		return ipmi.NewResponseError(
-			ipmi.CompletionCode(ccode),
-			fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, ipmi.StrCC(response, ccode)),
+		return types.NewResponseError(
+			types.CompletionCode(ccode),
+			fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, types.StrCC(response, ccode)),
 		)
 	}
 
@@ -109,8 +109,8 @@ func (c *Client) exchangeOpen(ctx context.Context, request ipmi.Request, respons
 	}
 
 	if err := response.Unpack(unpackData); err != nil {
-		return ipmi.NewResponseError(
-			ipmi.CompletionCode(recv[0]),
+		return types.NewResponseError(
+			types.CompletionCode(recv[0]),
 			fmt.Sprintf("unpack response failed, err: %s", err),
 		)
 	}
@@ -119,7 +119,7 @@ func (c *Client) exchangeOpen(ctx context.Context, request ipmi.Request, respons
 	return nil
 }
 
-func (c *Client) openSendRequest(ctx context.Context, request ipmi.Request) ([]byte, error) {
+func (c *Client) openSendRequest(ctx context.Context, request types.Request) ([]byte, error) {
 
 	var dataPtr *byte
 

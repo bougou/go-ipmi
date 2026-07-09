@@ -1,20 +1,20 @@
 package transport
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 24.2 Deactivate Payload Command
 )
 
 type DeactivatePayloadRequest struct {
-	PayloadType     ipmi.PayloadType
+	PayloadType     types.PayloadType
 	PayloadInstance uint8
 }
 
 type DeactivatePayloadResponse struct {
 }
 
-func (req DeactivatePayloadRequest) Command() ipmi.Command {
-	return ipmi.CommandDeactivatePayload
+func (req DeactivatePayloadRequest) Command() types.Command {
+	return types.CommandDeactivatePayload
 }
 
 func (req *DeactivatePayloadRequest) Pack() []byte {

@@ -3,7 +3,7 @@ package storage
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 31.11a Get SEL Time UTC Offset
@@ -20,17 +20,17 @@ func (req *GetSELTimeUTCOffsetRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (req *GetSELTimeUTCOffsetRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSELTimeUTCOffset
+func (req *GetSELTimeUTCOffsetRequest) Command() types.Command {
+	return types.CommandGetSELTimeUTCOffset
 }
 
 func (res *GetSELTimeUTCOffsetResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
-	b, _, _ := ipmi.UnpackUint16L(msg, 0)
-	c := ipmi.TwoSComplement(uint32(b), 16)
+	b, _, _ := types.UnpackUint16L(msg, 0)
+	c := types.TwoSComplement(uint32(b), 16)
 	res.MinutesOffset = int16(c)
 	return nil
 }

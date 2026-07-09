@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -26,7 +26,7 @@ func (c *Client) closeTool(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) exchangeTool(ctx context.Context, request ipmi.Request, response ipmi.Response) error {
+func (c *Client) exchangeTool(ctx context.Context, request types.Request, response types.Response) error {
 	data := request.Pack()
 	msg := make([]byte, 2+len(data))
 	msg[0] = uint8(request.Command().NetFn)
@@ -56,8 +56,8 @@ func (c *Client) exchangeTool(ctx context.Context, request ipmi.Request, respons
 				if err != nil {
 					return fmt.Errorf("CompletionCode parse failed, err: %w", err)
 				}
-				return ipmi.NewResponseError(
-					ipmi.CompletionCode(uint8(code)),
+				return types.NewResponseError(
+					types.CompletionCode(uint8(code)),
 					fmt.Sprintf("Raw command failed, err: %s", string(submatches[6])),
 				)
 			}

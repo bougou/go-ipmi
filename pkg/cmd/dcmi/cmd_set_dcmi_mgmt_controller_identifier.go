@@ -3,7 +3,7 @@ package dcmi
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // [DCMI specification v1.5] 6.4.6.2 Set Management Controller Identifier String Command
@@ -23,15 +23,15 @@ type SetDCMIMgmtControllerIdentifierResponse struct {
 
 func (req *SetDCMIMgmtControllerIdentifierRequest) Pack() []byte {
 	out := make([]byte, 3+len(req.IDStr))
-	ipmi.PackUint8(ipmi.GroupExtensionDCMI, out, 0)
-	ipmi.PackUint8(req.Offset, out, 1)
-	ipmi.PackUint8(req.WriteBytes, out, 2)
-	ipmi.PackBytes(req.IDStr, out, 3)
+	types.PackUint8(types.GroupExtensionDCMI, out, 0)
+	types.PackUint8(req.Offset, out, 1)
+	types.PackUint8(req.WriteBytes, out, 2)
+	types.PackBytes(req.IDStr, out, 3)
 	return out
 }
 
-func (req *SetDCMIMgmtControllerIdentifierRequest) Command() ipmi.Command {
-	return ipmi.CommandSetDCMIMgmtControllerIdentifier
+func (req *SetDCMIMgmtControllerIdentifierRequest) Command() types.Command {
+	return types.CommandSetDCMIMgmtControllerIdentifier
 }
 
 func (res *SetDCMIMgmtControllerIdentifierResponse) CompletionCodes() map[uint8]string {
@@ -40,10 +40,10 @@ func (res *SetDCMIMgmtControllerIdentifierResponse) CompletionCodes() map[uint8]
 
 func (res *SetDCMIMgmtControllerIdentifierResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
-	if err := ipmi.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
+	if err := types.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
 		return err
 	}
 

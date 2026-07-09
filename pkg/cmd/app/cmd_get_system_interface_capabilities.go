@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 22.9 Get System Interface Capabilities Command
 )
 
@@ -30,8 +30,8 @@ const (
 	SystemInterfaceTypeSMIC SystemInterfaceType = 0x02
 )
 
-func (req *GetSystemInterfaceCapabilitiesRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSystemInterfaceCapabilities
+func (req *GetSystemInterfaceCapabilitiesRequest) Command() types.Command {
+	return types.CommandGetSystemInterfaceCapabilities
 }
 
 func (req *GetSystemInterfaceCapabilitiesRequest) Pack() []byte {
@@ -41,22 +41,22 @@ func (req *GetSystemInterfaceCapabilitiesRequest) Pack() []byte {
 func (res *GetSystemInterfaceCapabilitiesResponse) Unpack(msg []byte) error {
 	// at least 3 bytes
 	if len(msg) < 3 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 3)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 3)
 	}
 
 	// For System Interface Type = SSIF:
-	b, _, _ := ipmi.UnpackUint8(msg, 1)
+	b, _, _ := types.UnpackUint8(msg, 1)
 	res.TransactionSupportMask = b >> 6
-	res.PECSupported = ipmi.IsBit3Set(b)
+	res.PECSupported = types.IsBit3Set(b)
 	res.SSIFVersion = b & 0x07
-	res.InputMessageSizeBytes, _, _ = ipmi.UnpackUint8(msg, 2)
+	res.InputMessageSizeBytes, _, _ = types.UnpackUint8(msg, 2)
 
 	// For System Interface Type = KCS or SMIC
 	res.SystemInterfaceVersion = b & 0x07
-	res.InputMaximumMessageSizeBytes, _, _ = ipmi.UnpackUint8(msg, 2)
+	res.InputMaximumMessageSizeBytes, _, _ = types.UnpackUint8(msg, 2)
 
 	if len(msg) >= 4 {
-		res.OutputMessageSizeBytes, _, _ = ipmi.UnpackUint8(msg, 3)
+		res.OutputMessageSizeBytes, _, _ = types.UnpackUint8(msg, 3)
 	}
 	return nil
 }

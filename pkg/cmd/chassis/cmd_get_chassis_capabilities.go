@@ -1,7 +1,7 @@
 package chassis
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 28.1 Get Chassis Capabilities Command
 )
 
@@ -32,8 +32,8 @@ func (req *GetChassisCapabilitiesRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (req *GetChassisCapabilitiesRequest) Command() ipmi.Command {
-	return ipmi.CommandGetChassisCapabilities
+func (req *GetChassisCapabilitiesRequest) Command() types.Command {
+	return types.CommandGetChassisCapabilities
 }
 
 func (res *GetChassisCapabilitiesResponse) CompletionCodes() map[uint8]string {
@@ -42,22 +42,22 @@ func (res *GetChassisCapabilitiesResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetChassisCapabilitiesResponse) Unpack(msg []byte) error {
 	if len(msg) < 5 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 5)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 5)
 	}
 
-	b1, _, _ := ipmi.UnpackUint8(msg, 0)
-	res.ProvidePowerInterlock = ipmi.IsBit3Set(b1)
-	res.ProvideDiagnosticInterrupt = ipmi.IsBit2Set(b1)
-	res.ProvideFrontPanelLockout = ipmi.IsBit1Set(b1)
-	res.ProvideIntrusionSensor = ipmi.IsBit0Set(b1)
+	b1, _, _ := types.UnpackUint8(msg, 0)
+	res.ProvidePowerInterlock = types.IsBit3Set(b1)
+	res.ProvideDiagnosticInterrupt = types.IsBit2Set(b1)
+	res.ProvideFrontPanelLockout = types.IsBit1Set(b1)
+	res.ProvideIntrusionSensor = types.IsBit0Set(b1)
 
-	res.FRUDeviceAddress, _, _ = ipmi.UnpackUint8(msg, 1)
-	res.SDRDeviceAddress, _, _ = ipmi.UnpackUint8(msg, 2)
-	res.SELDeviceAddress, _, _ = ipmi.UnpackUint8(msg, 3)
-	res.SystemManagementDeviceAddress, _, _ = ipmi.UnpackUint8(msg, 4)
+	res.FRUDeviceAddress, _, _ = types.UnpackUint8(msg, 1)
+	res.SDRDeviceAddress, _, _ = types.UnpackUint8(msg, 2)
+	res.SELDeviceAddress, _, _ = types.UnpackUint8(msg, 3)
+	res.SystemManagementDeviceAddress, _, _ = types.UnpackUint8(msg, 4)
 
 	if len(msg) == 6 {
-		res.BridgeDeviceAddress, _, _ = ipmi.UnpackUint8(msg, 5)
+		res.BridgeDeviceAddress, _, _ = types.UnpackUint8(msg, 5)
 	}
 	return nil
 }

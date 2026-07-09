@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/bougou/go-ipmi/pkg/cmd/chassis"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-func (c *Client) SetBootParamSetInProgress(ctx context.Context, setInProgress ipmi.SetInProgressState) error {
-	param := &ipmi.BootOptionParam_SetInProgress{
+func (c *Client) SetBootParamSetInProgress(ctx context.Context, setInProgress types.SetInProgressState) error {
+	param := &types.BootOptionParam_SetInProgress{
 		Value: setInProgress,
 	}
 
@@ -20,8 +20,8 @@ func (c *Client) SetBootParamSetInProgress(ctx context.Context, setInProgress ip
 	return nil
 }
 
-func (c *Client) SetBootParamBootFlags(ctx context.Context, bootFlags *ipmi.BootOptionParam_BootFlags) error {
-	if err := c.SetBootParamSetInProgress(ctx, ipmi.SetInProgress_SetInProgress); err != nil {
+func (c *Client) SetBootParamBootFlags(ctx context.Context, bootFlags *types.BootOptionParam_BootFlags) error {
+	if err := c.SetBootParamSetInProgress(ctx, types.SetInProgress_SetInProgress); err != nil {
 		goto OUT
 	} else {
 		if err := c.SetSystemBootOptionsParamFor(ctx, bootFlags); err != nil {
@@ -30,26 +30,26 @@ func (c *Client) SetBootParamBootFlags(ctx context.Context, bootFlags *ipmi.Boot
 	}
 
 OUT:
-	if err := c.SetBootParamSetInProgress(ctx, ipmi.SetInProgress_SetComplete); err != nil {
+	if err := c.SetBootParamSetInProgress(ctx, types.SetInProgress_SetComplete); err != nil {
 		return fmt.Errorf("SetBootParamSetInProgress failed, err: %w", err)
 	}
 
 	return nil
 }
 
-func (c *Client) SetBootParamClearAck(ctx context.Context, by ipmi.BootInfoAcknowledgeBy) error {
-	param := &ipmi.BootOptionParam_BootInfoAcknowledge{}
+func (c *Client) SetBootParamClearAck(ctx context.Context, by types.BootInfoAcknowledgeBy) error {
+	param := &types.BootOptionParam_BootInfoAcknowledge{}
 
 	switch by {
-	case ipmi.BootInfoAcknowledgeByBIOSPOST:
+	case types.BootInfoAcknowledgeByBIOSPOST:
 		param.ByBIOSPOST = true
-	case ipmi.BootInfoAcknowledgeByOSLoader:
+	case types.BootInfoAcknowledgeByOSLoader:
 		param.ByOSLoader = true
-	case ipmi.BootInfoAcknowledgeByOSServicePartition:
+	case types.BootInfoAcknowledgeByOSServicePartition:
 		param.ByOSServicePartition = true
-	case ipmi.BootInfoAcknowledgeBySMS:
+	case types.BootInfoAcknowledgeBySMS:
 		param.BySMS = true
-	case ipmi.BootInfoAcknowledgeByOEM:
+	case types.BootInfoAcknowledgeByOEM:
 		param.ByOEM = true
 	}
 
@@ -63,8 +63,8 @@ func (c *Client) SetBootParamClearAck(ctx context.Context, by ipmi.BootInfoAckno
 // SetBootDevice set the boot device for next boot.
 // persist of false means it applies to next boot only.
 // persist of true means this setting is persistent for all future boots.
-func (c *Client) SetBootDevice(ctx context.Context, bootDeviceSelector ipmi.BootDeviceSelector, bootType ipmi.BIOSBootType, persist bool) error {
-	param := &ipmi.BootOptionParam_BootFlags{
+func (c *Client) SetBootDevice(ctx context.Context, bootDeviceSelector types.BootDeviceSelector, bootType types.BIOSBootType, persist bool) error {
+	param := &types.BootOptionParam_BootFlags{
 		BootFlagsValid:     true,
 		Persist:            persist,
 		BIOSBootType:       bootType,
@@ -164,8 +164,8 @@ func (c *Client) SetSystemBootOptionsParam(ctx context.Context, request *chassis
 	return
 }
 
-func (c *Client) SetSystemBootOptionsParamFor(ctx context.Context, param ipmi.BootOptionParameter) error {
-	if ipmi.IsNilBootOptionParameter(param) {
+func (c *Client) SetSystemBootOptionsParamFor(ctx context.Context, param types.BootOptionParameter) error {
+	if types.IsNilBootOptionParameter(param) {
 		return fmt.Errorf("param is nil")
 	}
 	paramSelector, _, _ := param.BootOptionParameter()
@@ -211,7 +211,7 @@ func (c *Client) SetPowerCycleInterval(ctx context.Context, intervalInSec uint8)
 	return
 }
 
-func (c *Client) GetSystemBootOptionsParam(ctx context.Context, paramSelector ipmi.BootOptionParamSelector, setSelector uint8, blockSelector uint8) (response *chassis.GetSystemBootOptionsParamResponse, err error) {
+func (c *Client) GetSystemBootOptionsParam(ctx context.Context, paramSelector types.BootOptionParamSelector, setSelector uint8, blockSelector uint8) (response *chassis.GetSystemBootOptionsParamResponse, err error) {
 	request := &chassis.GetSystemBootOptionsParamRequest{
 		ParamSelector: paramSelector,
 		SetSelector:   setSelector,
@@ -222,8 +222,8 @@ func (c *Client) GetSystemBootOptionsParam(ctx context.Context, paramSelector ip
 	return
 }
 
-func (c *Client) GetSystemBootOptionsParamFor(ctx context.Context, param ipmi.BootOptionParameter) error {
-	if ipmi.IsNilBootOptionParameter(param) {
+func (c *Client) GetSystemBootOptionsParamFor(ctx context.Context, param types.BootOptionParameter) error {
+	if types.IsNilBootOptionParameter(param) {
 		return nil
 	}
 	paramSelector, setSelector, blockSelector := param.BootOptionParameter()
@@ -241,16 +241,16 @@ func (c *Client) GetSystemBootOptionsParamFor(ctx context.Context, param ipmi.Bo
 }
 
 // GetSystemBootOptionsParams get all parameters of boot options.
-func (c *Client) GetSystemBootOptionsParams(ctx context.Context) (*ipmi.BootOptionsParams, error) {
-	bootOptionsParams := &ipmi.BootOptionsParams{
-		SetInProgress:            &ipmi.BootOptionParam_SetInProgress{},
-		ServicePartitionSelector: &ipmi.BootOptionParam_ServicePartitionSelector{},
-		ServicePartitionScan:     &ipmi.BootOptionParam_ServicePartitionScan{},
-		BMCBootFlagValidBitClear: &ipmi.BootOptionParam_BMCBootFlagValidBitClear{},
-		BootInfoAcknowledge:      &ipmi.BootOptionParam_BootInfoAcknowledge{},
-		BootFlags:                &ipmi.BootOptionParam_BootFlags{},
-		BootInitiatorInfo:        &ipmi.BootOptionParam_BootInitiatorInfo{},
-		BootInitiatorMailbox:     &ipmi.BootOptionParam_BootInitiatorMailbox{},
+func (c *Client) GetSystemBootOptionsParams(ctx context.Context) (*types.BootOptionsParams, error) {
+	bootOptionsParams := &types.BootOptionsParams{
+		SetInProgress:            &types.BootOptionParam_SetInProgress{},
+		ServicePartitionSelector: &types.BootOptionParam_ServicePartitionSelector{},
+		ServicePartitionScan:     &types.BootOptionParam_ServicePartitionScan{},
+		BMCBootFlagValidBitClear: &types.BootOptionParam_BMCBootFlagValidBitClear{},
+		BootInfoAcknowledge:      &types.BootOptionParam_BootInfoAcknowledge{},
+		BootFlags:                &types.BootOptionParam_BootFlags{},
+		BootInitiatorInfo:        &types.BootOptionParam_BootInitiatorInfo{},
+		BootInitiatorMailbox:     &types.BootOptionParam_BootInitiatorMailbox{},
 	}
 
 	if err := c.GetSystemBootOptionsParamsFor(ctx, bootOptionsParams); err != nil {
@@ -260,7 +260,7 @@ func (c *Client) GetSystemBootOptionsParams(ctx context.Context) (*ipmi.BootOpti
 	return bootOptionsParams, nil
 }
 
-func (c *Client) GetSystemBootOptionsParamsFor(ctx context.Context, bootOptionsParams *ipmi.BootOptionsParams) error {
+func (c *Client) GetSystemBootOptionsParamsFor(ctx context.Context, bootOptionsParams *types.BootOptionsParams) error {
 	if bootOptionsParams == nil {
 		return nil
 	}

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/bougou/go-ipmi/pkg/cmd/transport"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"golang.org/x/term"
 )
 
@@ -48,8 +48,8 @@ func solActivatePayloadInstance(opts *SOLActivateOptions) uint8 {
 }
 
 // SOLPayload exchanges a single SOL payload packet over an active RMCP+ session.
-func (c *Client) SOLPayload(ctx context.Context, request *ipmi.SOLPayloadRequest) (response *ipmi.SOLPayloadResponse, err error) {
-	response = &ipmi.SOLPayloadResponse{}
+func (c *Client) SOLPayload(ctx context.Context, request *types.SOLPayloadRequest) (response *types.SOLPayloadResponse, err error) {
+	response = &types.SOLPayloadResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }
@@ -92,11 +92,11 @@ func (c *Client) SOLActivate(ctx context.Context, in io.Reader, out io.Writer, o
 	}
 
 	activatePayloadResponse, err := c.ActivatePayload(ctx, &transport.ActivatePayloadRequest{
-		PayloadType:     ipmi.PayloadTypeSOL,
+		PayloadType:     types.PayloadTypeSOL,
 		PayloadInstance: payloadInstance,
 	})
 	if err != nil {
-		if respErr, ok := ipmi.IsResponseError(err); ok && respErr.CompletionCode() == ipmi.CompletionCode(0x80) {
+		if respErr, ok := types.IsResponseError(err); ok && respErr.CompletionCode() == types.CompletionCode(0x80) {
 			return errors.New("SOL payload already active on another session")
 		}
 		return err
@@ -107,7 +107,7 @@ func (c *Client) SOLActivate(ctx context.Context, in io.Reader, out io.Writer, o
 
 	defer func() {
 		_, _ = c.DeactivatePayload(ctx, &transport.DeactivatePayloadRequest{
-			PayloadType:     ipmi.PayloadTypeSOL,
+			PayloadType:     types.PayloadTypeSOL,
 			PayloadInstance: payloadInstance,
 		})
 
@@ -145,8 +145,8 @@ func (c *Client) SOLActivate(ctx context.Context, in io.Reader, out io.Writer, o
 	pendingEscape := false
 
 	sendPacket := func(chars []byte) error {
-		req := &ipmi.SOLPayloadRequest{
-			SOLPayloadPacket: ipmi.SOLPayloadPacket{
+		req := &types.SOLPayloadRequest{
+			SOLPayloadPacket: types.SOLPayloadPacket{
 				SequenceNumber:         localSeq,
 				AckedSequenceNumber:    remoteSeq,
 				AcceptedCharacterCount: pendingAckCount,

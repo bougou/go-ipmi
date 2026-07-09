@@ -10,7 +10,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/clock"
 	"github.com/bougou/go-ipmi/pkg/hal/mock"
 	"github.com/bougou/go-ipmi/pkg/handlers"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // TestRAKP_SHA256_CrossValidation drives the reference server's RAKP1/RAKP3
@@ -28,7 +28,7 @@ func TestRAKP_SHA256_CrossValidation(t *testing.T) {
 	b := newSHA256TestBMC(t, username, password)
 
 	sess, err := b.Sessions.Allocate(consoleID,
-		bmc.AuthAlgHMACSHA256, bmc.IntegrityAlgHMACSHA256_128, bmc.CryptAlgAESCBC128)
+		types.AuthAlg_HMAC_SHA256, types.IntegrityAlg_HMAC_SHA256_128, types.CryptAlg_AES_CBC_128)
 	if err != nil {
 		t.Fatalf("allocate session: %v", err)
 	}
@@ -60,8 +60,8 @@ func TestRAKP_SHA256_CrossValidation(t *testing.T) {
 	// Configure the client session to mirror the exchange and let the client
 	// recompute the RAKP2 auth code.
 	c := newTestClient(t, username, password)
-	c.session.v20.authAlg = ipmi.AuthAlgRAKP_HMAC_SHA256
-	c.session.v20.integrityAlg = ipmi.IntegrityAlg_HMAC_SHA256_128
+	c.session.v20.authAlg = types.AuthAlg_HMAC_SHA256
+	c.session.v20.integrityAlg = types.IntegrityAlg_HMAC_SHA256_128
 	c.session.v20.consoleSessionID = consoleID
 	c.session.v20.bmcSessionID = sess.BMCID
 	c.session.v20.consoleRand = consoleRand
@@ -152,34 +152,34 @@ func TestRAKP4_CrossValidation_AuthAlgorithm(t *testing.T) {
 
 	cases := []struct {
 		name         string
-		authAlg      bmc.AuthAlg
-		integrityAlg bmc.IntegrityAlg
-		clientAuth   ipmi.AuthAlg
-		clientInt    ipmi.IntegrityAlg
+		authAlg      types.AuthAlg
+		integrityAlg types.IntegrityAlg
+		clientAuth   types.AuthAlg
+		clientInt    types.IntegrityAlg
 		wantICVLen   int
 	}{
 		{
 			name:    "suite 1 (RAKP-HMAC-SHA1 + Integrity-None)",
-			authAlg: bmc.AuthAlgHMACSHA1, integrityAlg: bmc.IntegrityAlgNone,
-			clientAuth: ipmi.AuthAlgRAKP_HMAC_SHA1, clientInt: ipmi.IntegrityAlg_None,
+			authAlg: types.AuthAlg_HMAC_SHA1, integrityAlg: types.IntegrityAlg_None,
+			clientAuth: types.AuthAlg_HMAC_SHA1, clientInt: types.IntegrityAlg_None,
 			wantICVLen: 12, // HMAC-SHA1-96
 		},
 		{
 			name:    "suite 15 (RAKP-HMAC-SHA256 + Integrity-None)",
-			authAlg: bmc.AuthAlgHMACSHA256, integrityAlg: bmc.IntegrityAlgNone,
-			clientAuth: ipmi.AuthAlgRAKP_HMAC_SHA256, clientInt: ipmi.IntegrityAlg_None,
+			authAlg: types.AuthAlg_HMAC_SHA256, integrityAlg: types.IntegrityAlg_None,
+			clientAuth: types.AuthAlg_HMAC_SHA256, clientInt: types.IntegrityAlg_None,
 			wantICVLen: 16, // HMAC-SHA256-128
 		},
 		{
 			name:    "suite 3 (RAKP-HMAC-SHA1 + HMAC-SHA1-96)",
-			authAlg: bmc.AuthAlgHMACSHA1, integrityAlg: bmc.IntegrityAlgHMACSHA1_96,
-			clientAuth: ipmi.AuthAlgRAKP_HMAC_SHA1, clientInt: ipmi.IntegrityAlg_HMAC_SHA1_96,
+			authAlg: types.AuthAlg_HMAC_SHA1, integrityAlg: types.IntegrityAlg_HMAC_SHA1_96,
+			clientAuth: types.AuthAlg_HMAC_SHA1, clientInt: types.IntegrityAlg_HMAC_SHA1_96,
 			wantICVLen: 12,
 		},
 		{
 			name:    "suite 17 (RAKP-HMAC-SHA256 + HMAC-SHA256-128)",
-			authAlg: bmc.AuthAlgHMACSHA256, integrityAlg: bmc.IntegrityAlgHMACSHA256_128,
-			clientAuth: ipmi.AuthAlgRAKP_HMAC_SHA256, clientInt: ipmi.IntegrityAlg_HMAC_SHA256_128,
+			authAlg: types.AuthAlg_HMAC_SHA256, integrityAlg: types.IntegrityAlg_HMAC_SHA256_128,
+			clientAuth: types.AuthAlg_HMAC_SHA256, clientInt: types.IntegrityAlg_HMAC_SHA256_128,
 			wantICVLen: 16,
 		},
 	}
@@ -188,7 +188,7 @@ func TestRAKP4_CrossValidation_AuthAlgorithm(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			b := newSHA256TestBMC(t, username, password)
 
-			sess, err := b.Sessions.Allocate(consoleID, tc.authAlg, tc.integrityAlg, bmc.CryptAlgNone)
+			sess, err := b.Sessions.Allocate(consoleID, tc.authAlg, tc.integrityAlg, types.CryptAlg_None)
 			if err != nil {
 				t.Fatalf("allocate session: %v", err)
 			}

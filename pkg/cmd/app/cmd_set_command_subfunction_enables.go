@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 21.9 Set Configurable Command Sub-function Enables Command
 )
 
@@ -9,7 +9,7 @@ type SetCommandSubfunctionEnablesRequest struct {
 	ChannelNumber uint8
 
 	CommandRangeMask CommandRangeMask
-	NetFn            ipmi.NetFn
+	NetFn            types.NetFn
 	LUN              uint8
 	Cmd              uint8
 
@@ -22,8 +22,8 @@ type SetCommandSubfunctionEnablesRequest struct {
 type SetCommandSubfunctionEnablesResponse struct {
 }
 
-func (req *SetCommandSubfunctionEnablesRequest) Command() ipmi.Command {
-	return ipmi.CommandSetCommandSubfunctionEnables
+func (req *SetCommandSubfunctionEnablesRequest) Command() types.Command {
+	return types.CommandSetCommandSubfunctionEnables
 }
 
 func (req *SetCommandSubfunctionEnablesRequest) Pack() []byte {
@@ -43,7 +43,7 @@ func (req *SetCommandSubfunctionEnablesRequest) Pack() []byte {
 	}
 
 	if uint8(req.NetFn) == 0x2e {
-		ipmi.PackUint24L(req.OEMIANA, out, 4)
+		types.PackUint24L(req.OEMIANA, out, 4)
 		startIndexOfEnables = 7
 	}
 
@@ -56,14 +56,14 @@ func (req *SetCommandSubfunctionEnablesRequest) Pack() []byte {
 
 	for i := 0; i < enableBytesLength; i++ {
 		var b uint8
-		b = ipmi.SetOrClearBit0(b, req.SubfunctionEnables[i*8+0])
-		b = ipmi.SetOrClearBit1(b, req.SubfunctionEnables[i*8+1])
-		b = ipmi.SetOrClearBit2(b, req.SubfunctionEnables[i*8+2])
-		b = ipmi.SetOrClearBit3(b, req.SubfunctionEnables[i*8+3])
-		b = ipmi.SetOrClearBit4(b, req.SubfunctionEnables[i*8+4])
-		b = ipmi.SetOrClearBit5(b, req.SubfunctionEnables[i*8+5])
-		b = ipmi.SetOrClearBit6(b, req.SubfunctionEnables[i*8+6])
-		b = ipmi.SetOrClearBit7(b, req.SubfunctionEnables[i*8+7])
+		b = types.SetOrClearBit0(b, req.SubfunctionEnables[i*8+0])
+		b = types.SetOrClearBit1(b, req.SubfunctionEnables[i*8+1])
+		b = types.SetOrClearBit2(b, req.SubfunctionEnables[i*8+2])
+		b = types.SetOrClearBit3(b, req.SubfunctionEnables[i*8+3])
+		b = types.SetOrClearBit4(b, req.SubfunctionEnables[i*8+4])
+		b = types.SetOrClearBit5(b, req.SubfunctionEnables[i*8+5])
+		b = types.SetOrClearBit6(b, req.SubfunctionEnables[i*8+6])
+		b = types.SetOrClearBit7(b, req.SubfunctionEnables[i*8+7])
 
 		out[startIndexOfEnables+i] = b
 	}

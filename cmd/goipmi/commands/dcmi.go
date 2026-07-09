@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	ipmidcmi "github.com/bougou/go-ipmi/pkg/cmd/dcmi"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -193,11 +193,11 @@ set_limit <parameter> <value>
 			case "action":
 				switch value {
 				case "no_action":
-					req.ExceptionAction = ipmi.DCMIExceptionAction_NoAction
+					req.ExceptionAction = types.DCMIExceptionAction_NoAction
 				case "sel_logging":
-					req.ExceptionAction = ipmi.DCMIExceptionAction_LogSEL
+					req.ExceptionAction = types.DCMIExceptionAction_LogSEL
 				case "power_off":
-					req.ExceptionAction = ipmi.DCMIExceptionAction_PowerOffAndLogSEL
+					req.ExceptionAction = types.DCMIExceptionAction_PowerOffAndLogSEL
 				default:
 					CheckErr(fmt.Errorf("invalid value for parameter action: %s", value))
 				}
@@ -324,9 +324,9 @@ func NewCmdDCMISensors() *cobra.Command {
 		Short: "sensors",
 		Run: func(cmd *cobra.Command, args []string) {
 
-			const EntityID_DCMI_Inlet ipmi.EntityID = 0x40
-			const EntityID_DCMI_CPU ipmi.EntityID = 0x41
-			const EntityID_DCMI_Baseboard ipmi.EntityID = 0x42
+			const EntityID_DCMI_Inlet types.EntityID = 0x40
+			const EntityID_DCMI_CPU types.EntityID = 0x41
+			const EntityID_DCMI_Baseboard types.EntityID = 0x42
 
 			ctx := context.Background()
 
@@ -337,7 +337,7 @@ func NewCmdDCMISensors() *cobra.Command {
 				}
 				fmt.Printf("Inlet: %d temperature sensors found\n", len(sdrs))
 				if len(sdrs) > 0 {
-					fmt.Println(ipmi.FormatSDRs(sdrs))
+					fmt.Println(types.FormatSDRs(sdrs))
 				}
 			}
 
@@ -348,7 +348,7 @@ func NewCmdDCMISensors() *cobra.Command {
 				}
 				fmt.Printf("CPU: %d temperature sensors found\n", len(sdrs))
 				if len(sdrs) > 0 {
-					fmt.Println(ipmi.FormatSDRs(sdrs))
+					fmt.Println(types.FormatSDRs(sdrs))
 				}
 			}
 
@@ -359,7 +359,7 @@ func NewCmdDCMISensors() *cobra.Command {
 				}
 				fmt.Printf("Baseboard: %d temperature sensors found\n", len(sdrs))
 				if len(sdrs) > 0 {
-					fmt.Println(ipmi.FormatSDRs(sdrs))
+					fmt.Println(types.FormatSDRs(sdrs))
 				}
 			}
 
@@ -443,7 +443,7 @@ func newCmdDCMIThermalPolicyGet() *cobra.Command {
 			}
 
 			ctx := context.Background()
-			resp, err := client.GetDCMIThermalLimit(ctx, ipmi.EntityID(entityID), ipmi.EntityInstance(entityInstance))
+			resp, err := client.GetDCMIThermalLimit(ctx, types.EntityID(entityID), types.EntityInstance(entityInstance))
 			if err != nil {
 				CheckErr(fmt.Errorf("GetDCMIThermalLimit failed, err: %w", err))
 			}
@@ -522,8 +522,8 @@ thermalpolicy instance parameters:
 			}
 
 			req := &ipmidcmi.SetDCMIThermalLimitRequest{
-				EntityID:                          ipmi.EntityID(entityID),
-				EntityInstance:                    ipmi.EntityInstance(entityInstance),
+				EntityID:                          types.EntityID(entityID),
+				EntityInstance:                    types.EntityInstance(entityInstance),
 				ExceptionAction_PowerOffAndLogSEL: powerOff,
 				ExceptionAction_LogSELOnly:        sel,
 				TemperatureLimit:                  uint8(temperatureLimit),
@@ -547,9 +547,9 @@ func NewCmdDCMIGetTempReading() *cobra.Command {
 		Short: "get_temp_reading",
 		Run: func(cmd *cobra.Command, args []string) {
 
-			const EntityID_DCMI_Inlet ipmi.EntityID = 0x40
-			const EntityID_DCMI_CPU ipmi.EntityID = 0x41
-			const EntityID_DCMI_Baseboard ipmi.EntityID = 0x42
+			const EntityID_DCMI_Inlet types.EntityID = 0x40
+			const EntityID_DCMI_CPU types.EntityID = 0x41
+			const EntityID_DCMI_Baseboard types.EntityID = 0x42
 
 			ctx := context.Background()
 

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/bougou/go-ipmi/pkg/clock"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // Session inactivity timeout per IPMI spec:
@@ -45,37 +46,6 @@ const (
 	SessionStateClosed
 )
 
-// AuthAlg mirrors the IPMI auth algorithm codes to avoid a circular import.
-type AuthAlg uint8
-
-const (
-	AuthAlgNone       AuthAlg = 0x00
-	AuthAlgHMACSHA1   AuthAlg = 0x01
-	AuthAlgHMACMD5    AuthAlg = 0x02
-	AuthAlgHMACSHA256 AuthAlg = 0x03
-)
-
-// IntegrityAlg mirrors the IPMI integrity algorithm codes.
-type IntegrityAlg uint8
-
-const (
-	IntegrityAlgNone           IntegrityAlg = 0x00
-	IntegrityAlgHMACSHA1_96    IntegrityAlg = 0x01
-	IntegrityAlgHMACMD5_128    IntegrityAlg = 0x02
-	IntegrityAlgMD5_128        IntegrityAlg = 0x03
-	IntegrityAlgHMACSHA256_128 IntegrityAlg = 0x04
-)
-
-// CryptAlg mirrors the IPMI confidentiality algorithm codes.
-type CryptAlg uint8
-
-const (
-	CryptAlgNone      CryptAlg = 0x00
-	CryptAlgAESCBC128 CryptAlg = 0x01
-	CryptAlgxRC4_128  CryptAlg = 0x02
-	CryptAlgxRC4_40   CryptAlg = 0x03
-)
-
 // Session holds all state for one active or pending IPMI session.
 type Session struct {
 	// BMCID is the session ID assigned by the BMC (sent in Open Session Response).
@@ -86,9 +56,9 @@ type Session struct {
 	State SessionState
 
 	// Negotiated algorithms
-	AuthAlg      AuthAlg
-	IntegrityAlg IntegrityAlg
-	CryptAlg     CryptAlg
+	AuthAlg      types.AuthAlg
+	IntegrityAlg types.IntegrityAlg
+	CryptAlg     types.CryptAlg
 
 	// Sequence tracking.
 	// InboundSeq is the last accepted sequence number from the console.
@@ -164,7 +134,7 @@ func NewSessionStoreWithOptions(clk clock.Clock, opts ...SessionStoreOption) *Se
 // Allocate creates a new pending session and returns it.
 // If capacity is reached, it evicts the oldest pending session (LRU per spec).
 // Returns [ErrSessionFull] only when all slots are occupied by active sessions.
-func (s *SessionStore) Allocate(consoleID uint32, authAlg AuthAlg, integrityAlg IntegrityAlg, cryptAlg CryptAlg) (*Session, error) {
+func (s *SessionStore) Allocate(consoleID uint32, authAlg types.AuthAlg, integrityAlg types.IntegrityAlg, cryptAlg types.CryptAlg) (*Session, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

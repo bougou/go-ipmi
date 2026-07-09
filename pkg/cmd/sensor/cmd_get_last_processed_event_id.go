@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 30.6 Get Last Processed Event ID Command
@@ -19,8 +19,8 @@ type GetLastProcessedEventIdResponse struct {
 	LastBMCProcessedEventRecordID      uint16 // Returns 0000h when event has been processed but could not be logged because the SEL is full or logging has been disabled.
 }
 
-func (req *GetLastProcessedEventIdRequest) Command() ipmi.Command {
-	return ipmi.CommandGetLastProcessedEventId
+func (req *GetLastProcessedEventIdRequest) Command() types.Command {
+	return types.CommandGetLastProcessedEventId
 }
 
 func (req *GetLastProcessedEventIdRequest) Pack() []byte {
@@ -29,14 +29,14 @@ func (req *GetLastProcessedEventIdRequest) Pack() []byte {
 
 func (res *GetLastProcessedEventIdResponse) Unpack(msg []byte) error {
 	if len(msg) < 10 {
-		return ipmi.ErrUnpackedDataTooShort
+		return types.ErrUnpackedDataTooShort
 	}
 
-	ts, _, _ := ipmi.UnpackUint32L(msg, 0)
-	res.MostRecentAdditionTime = ipmi.ParseTimestamp(ts)
-	res.LastRecordID, _, _ = ipmi.UnpackUint16L(msg, 4)
-	res.LastSoftwareProcessedEventRecordID, _, _ = ipmi.UnpackUint16L(msg, 6)
-	res.LastBMCProcessedEventRecordID, _, _ = ipmi.UnpackUint16L(msg, 8)
+	ts, _, _ := types.UnpackUint32L(msg, 0)
+	res.MostRecentAdditionTime = types.ParseTimestamp(ts)
+	res.LastRecordID, _, _ = types.UnpackUint16L(msg, 4)
+	res.LastSoftwareProcessedEventRecordID, _, _ = types.UnpackUint16L(msg, 6)
+	res.LastBMCProcessedEventRecordID, _, _ = types.UnpackUint16L(msg, 8)
 	return nil
 }
 

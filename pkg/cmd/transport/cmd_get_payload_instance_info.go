@@ -3,12 +3,12 @@ package transport
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 24.5 Get Payload Instance Info Command
 type GetPayloadInstanceInfoRequest struct {
-	PayloadType     ipmi.PayloadType
+	PayloadType     types.PayloadType
 	PayloadInstance uint8
 }
 
@@ -21,7 +21,7 @@ type GetPayloadInstanceInfoResponse struct {
 	//    1-based. 0h = unspecified. Used when more than one port can be redirected on a system.
 	PortNumber uint8
 
-	PayloadType ipmi.PayloadType
+	PayloadType types.PayloadType
 }
 
 func (req *GetPayloadInstanceInfoRequest) Pack() []byte {
@@ -31,8 +31,8 @@ func (req *GetPayloadInstanceInfoRequest) Pack() []byte {
 	return out
 }
 
-func (req *GetPayloadInstanceInfoRequest) Command() ipmi.Command {
-	return ipmi.CommandGetPayloadInstanceInfo
+func (req *GetPayloadInstanceInfoRequest) Command() types.Command {
+	return types.CommandGetPayloadInstanceInfo
 }
 
 func (res *GetPayloadInstanceInfoResponse) CompletionCodes() map[uint8]string {
@@ -41,10 +41,10 @@ func (res *GetPayloadInstanceInfoResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetPayloadInstanceInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 12 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 12)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 12)
 	}
 
-	res.SessionID, _, _ = ipmi.UnpackUint32L(msg, 0)
+	res.SessionID, _, _ = types.UnpackUint32L(msg, 0)
 	res.PortNumber = msg[4]
 
 	return nil

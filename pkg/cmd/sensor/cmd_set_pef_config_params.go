@@ -1,12 +1,12 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 30.3 Set PEF Configuration Parameters Command
 )
 
 type SetPEFConfigParamRequest struct {
-	ParamSelector ipmi.PEFConfigParamSelector
+	ParamSelector types.PEFConfigParamSelector
 	ParamData     []byte
 }
 
@@ -14,8 +14,8 @@ type SetPEFConfigParamResponse struct {
 	// empty
 }
 
-func (req *SetPEFConfigParamRequest) Command() ipmi.Command {
-	return ipmi.CommandSetPEFConfigParam
+func (req *SetPEFConfigParamRequest) Command() types.Command {
+	return types.CommandSetPEFConfigParam
 }
 
 func (req *SetPEFConfigParamRequest) Pack() []byte {
@@ -24,9 +24,9 @@ func (req *SetPEFConfigParamRequest) Pack() []byte {
 	out := make([]byte, 1+len(req.ParamData))
 
 	// out[0] = req.ParamSelector
-	ipmi.PackUint8(uint8(req.ParamSelector), out, 0)
+	types.PackUint8(uint8(req.ParamSelector), out, 0)
 	if len(req.ParamData) > 0 {
-		ipmi.PackBytes(req.ParamData, out, 1)
+		types.PackBytes(req.ParamData, out, 1)
 	}
 	return out
 }

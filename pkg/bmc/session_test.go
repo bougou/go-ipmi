@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/bougou/go-ipmi/pkg/clock"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // mockClock is a simple fixed-time clock for session tests.
@@ -18,7 +19,7 @@ func TestSessionStore_AllocateAndGet(t *testing.T) {
 	clk := &mockClock{now: time.Now()}
 	s := NewSessionStore(clk)
 
-	sess, err := s.Allocate(0xABCD1234, AuthAlgHMACSHA1, IntegrityAlgHMACSHA1_96, CryptAlgAESCBC128)
+	sess, err := s.Allocate(0xABCD1234, types.AuthAlg_HMAC_SHA1, types.IntegrityAlg_HMAC_SHA1_96, types.CryptAlg_AES_CBC_128)
 	if err != nil {
 		t.Fatalf("Allocate: %v", err)
 	}
@@ -40,7 +41,7 @@ func TestSessionStore_AllocateAndGet(t *testing.T) {
 
 func TestSessionStore_Close(t *testing.T) {
 	s := NewSessionStore(clock.Real)
-	sess, _ := s.Allocate(1, AuthAlgNone, IntegrityAlgNone, CryptAlgNone)
+	sess, _ := s.Allocate(1, types.AuthAlg_None, types.IntegrityAlg_None, types.CryptAlg_None)
 
 	if err := s.Close(sess.BMCID); err != nil {
 		t.Fatalf("Close: %v", err)
@@ -54,7 +55,7 @@ func TestSessionStore_EvictExpired(t *testing.T) {
 	clk := &mockClock{now: time.Now()}
 	s := NewSessionStoreWithOptions(clk, WithInactivityTimeout(10*time.Second))
 
-	sess, _ := s.Allocate(1, AuthAlgNone, IntegrityAlgNone, CryptAlgNone)
+	sess, _ := s.Allocate(1, types.AuthAlg_None, types.IntegrityAlg_None, types.CryptAlg_None)
 
 	// Advance time past the timeout.
 	clk.now = clk.now.Add(20 * time.Second)
@@ -71,13 +72,13 @@ func TestSessionStore_FullEvictsOldestPending(t *testing.T) {
 	clk := &mockClock{now: time.Now()}
 	s := NewSessionStoreWithOptions(clk, WithMaxSessions(2))
 
-	s1, _ := s.Allocate(1, AuthAlgNone, IntegrityAlgNone, CryptAlgNone)
+	s1, _ := s.Allocate(1, types.AuthAlg_None, types.IntegrityAlg_None, types.CryptAlg_None)
 	clk.now = clk.now.Add(time.Second)
-	_, _ = s.Allocate(2, AuthAlgNone, IntegrityAlgNone, CryptAlgNone)
+	_, _ = s.Allocate(2, types.AuthAlg_None, types.IntegrityAlg_None, types.CryptAlg_None)
 
 	// Third allocation should evict s1 (oldest pending).
 	clk.now = clk.now.Add(time.Second)
-	_, err := s.Allocate(3, AuthAlgNone, IntegrityAlgNone, CryptAlgNone)
+	_, err := s.Allocate(3, types.AuthAlg_None, types.IntegrityAlg_None, types.CryptAlg_None)
 	if err != nil {
 		t.Fatalf("expected successful allocation after eviction, got: %v", err)
 	}

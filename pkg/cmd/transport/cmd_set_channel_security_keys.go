@@ -3,7 +3,7 @@ package transport
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 22.25 Set Channel Security Keys Command
@@ -72,14 +72,14 @@ func (req *SetChannelSecurityKeysRequest) Pack() []byte {
 	out[2] = req.KeyID
 
 	if len(req.KeyValue) > 0 {
-		ipmi.PackBytes(req.KeyValue, out, 3)
+		types.PackBytes(req.KeyValue, out, 3)
 	}
 
 	return out
 }
 
-func (req *SetChannelSecurityKeysRequest) Command() ipmi.Command {
-	return ipmi.CommandSetChannelSecurityKeys
+func (req *SetChannelSecurityKeysRequest) Command() types.Command {
+	return types.CommandSetChannelSecurityKeys
 }
 
 func (res *SetChannelSecurityKeysResponse) CompletionCodes() map[uint8]string {
@@ -94,13 +94,13 @@ func (res *SetChannelSecurityKeysResponse) CompletionCodes() map[uint8]string {
 
 func (res *SetChannelSecurityKeysResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
 	res.LockStatus = ChannelSecurityKeysLockStatus(msg[0])
 
 	if len(msg) > 1 {
-		res.KeyValue, _, _ = ipmi.UnpackBytes(msg, 1, len(msg)-1)
+		res.KeyValue, _, _ = types.UnpackBytes(msg, 1, len(msg)-1)
 	}
 
 	return nil

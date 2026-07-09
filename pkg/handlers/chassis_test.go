@@ -10,7 +10,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/cmd/chassis"
 	"github.com/bougou/go-ipmi/pkg/hal"
 	"github.com/bougou/go-ipmi/pkg/hal/mock"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // newTestBMCWithMock builds a BMC backed by the supplied mock HAL so tests can
@@ -134,12 +134,12 @@ func TestHandleSetSystemBootOptions_BootFlags(t *testing.T) {
 	ch := b.HAL().Chassis().(*mock.Chassis)
 	hctx := &HandlerContext{BMC: b}
 
-	flags := &ipmi.BootOptionParam_BootFlags{
+	flags := &types.BootOptionParam_BootFlags{
 		BootFlagsValid:     true,
 		Persist:            true,
-		BootDeviceSelector: ipmi.BootDeviceSelectorForcePXE,
+		BootDeviceSelector: types.BootDeviceSelectorForcePXE,
 	}
-	req := append([]byte{byte(ipmi.BootOptionParamSelector_BootFlags)}, flags.Pack()...)
+	req := append([]byte{byte(types.BootOptionParamSelector_BootFlags)}, flags.Pack()...)
 
 	_, cc, err := handleSetSystemBootOptions(context.Background(), hctx, req)
 	if err != nil || cc != CodeOK {
@@ -151,7 +151,7 @@ func TestHandleSetSystemBootOptions_BootFlags(t *testing.T) {
 	if !ch.BootFlags.Persist {
 		t.Fatalf("Persist bit lost: HAL received %+v", ch.BootFlags)
 	}
-	if ch.BootFlags.BootDeviceSelector != ipmi.BootDeviceSelectorForcePXE {
+	if ch.BootFlags.BootDeviceSelector != types.BootDeviceSelectorForcePXE {
 		t.Fatalf("BootDeviceSelector: want PXE, got %v", ch.BootFlags.BootDeviceSelector)
 	}
 }
@@ -160,13 +160,13 @@ func TestHandleGetSystemBootOptions_BootFlags(t *testing.T) {
 	m := mock.New()
 	b := newTestBMCWithMock(m)
 	ch := b.HAL().Chassis().(*mock.Chassis)
-	ch.BootFlags = &ipmi.BootOptionParam_BootFlags{
+	ch.BootFlags = &types.BootOptionParam_BootFlags{
 		BootFlagsValid:     true,
-		BootDeviceSelector: ipmi.BootDeviceSelectorForcePXE,
+		BootDeviceSelector: types.BootDeviceSelectorForcePXE,
 	}
 	hctx := &HandlerContext{BMC: b}
 
-	req := []byte{byte(ipmi.BootOptionParamSelector_BootFlags)}
+	req := []byte{byte(types.BootOptionParamSelector_BootFlags)}
 	resp, cc, err := handleGetSystemBootOptions(context.Background(), hctx, req)
 	if err != nil || cc != CodeOK {
 		t.Fatalf("want CodeOK, got cc=%d err=%v", cc, err)
@@ -175,11 +175,11 @@ func TestHandleGetSystemBootOptions_BootFlags(t *testing.T) {
 		t.Fatalf("response too short: %d", len(resp))
 	}
 	// resp[0]=version, resp[1]=selector, resp[2:]=param data (5 bytes).
-	var decoded ipmi.BootOptionParam_BootFlags
+	var decoded types.BootOptionParam_BootFlags
 	if err := decoded.Unpack(resp[2:]); err != nil {
 		t.Fatalf("Unpack boot flags: %v", err)
 	}
-	if decoded.BootDeviceSelector != ipmi.BootDeviceSelectorForcePXE {
+	if decoded.BootDeviceSelector != types.BootDeviceSelectorForcePXE {
 		t.Fatalf("BootDeviceSelector round-trip: want PXE, got %v", decoded.BootDeviceSelector)
 	}
 }
@@ -191,7 +191,7 @@ func TestHandleGetSystemBootOptions_NotSupported(t *testing.T) {
 	b := newTestBMCWithMock(m)
 	hctx := &HandlerContext{BMC: b}
 
-	req := []byte{byte(ipmi.BootOptionParamSelector_BootFlags)}
+	req := []byte{byte(types.BootOptionParamSelector_BootFlags)}
 	_, cc, err := handleGetSystemBootOptions(context.Background(), hctx, req)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -209,7 +209,7 @@ func TestHandleSetSystemBootOptions_OtherParam(t *testing.T) {
 
 	// Set In Progress (0x00) is not implemented; spec §28.12 requires 80h (CodeBootParamNotSupported)
 	// for unsupported parameters.
-	req := []byte{byte(ipmi.BootOptionParamSelector_SetInProgress), 0x01}
+	req := []byte{byte(types.BootOptionParamSelector_SetInProgress), 0x01}
 	_, cc, err := handleSetSystemBootOptions(context.Background(), hctx, req)
 	if err != nil || cc != CodeBootParamNotSupported {
 		t.Fatalf("want CodeBootParamNotSupported (80h) for unimplemented param, got cc=%d err=%v", cc, err)
@@ -225,7 +225,7 @@ func TestHandleSetSystemBootOptions_Truncated(t *testing.T) {
 	hctx := &HandlerContext{BMC: b}
 
 	// BootFlags param selector but only 2 bytes of data (need 5).
-	req := []byte{byte(ipmi.BootOptionParamSelector_BootFlags), 0x01, 0x02}
+	req := []byte{byte(types.BootOptionParamSelector_BootFlags), 0x01, 0x02}
 	_, cc, _ := handleSetSystemBootOptions(context.Background(), hctx, req)
 	if cc != CodeRequestDataTruncated {
 		t.Fatalf("want CodeRequestDataTruncated, got %d", cc)

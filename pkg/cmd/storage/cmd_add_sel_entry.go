@@ -3,20 +3,20 @@ package storage
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 31.6 Add SEL Entry Command
 type AddSELEntryRequest struct {
-	SEL *ipmi.SEL
+	SEL *types.SEL
 }
 
 type AddSELEntryResponse struct {
 	RecordID uint16 // Record ID for added record, LS Byte first
 }
 
-func (req *AddSELEntryRequest) Command() ipmi.Command {
-	return ipmi.CommandAddSELEntry
+func (req *AddSELEntryRequest) Command() types.Command {
+	return types.CommandAddSELEntry
 }
 
 func (req *AddSELEntryRequest) Pack() []byte {
@@ -25,9 +25,9 @@ func (req *AddSELEntryRequest) Pack() []byte {
 
 func (res *AddSELEntryResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
-	res.RecordID, _, _ = ipmi.UnpackUint16L(msg, 0)
+	res.RecordID, _, _ = types.UnpackUint16L(msg, 0)
 	return nil
 }
 

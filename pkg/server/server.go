@@ -27,7 +27,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/handlers"
 	"github.com/bougou/go-ipmi/pkg/protocol"
 	"github.com/bougou/go-ipmi/pkg/transport"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // Payload type aliases from pkg/protocol for readability within this file.
@@ -76,7 +76,7 @@ func WithServerBufferSize(n int) ServerOption {
 // and accepts. Each ID must be a suite the reference server implements
 // (validated by [bmc.BMC.SetCipherSuites]); passing an unsupported suite
 // panics. Use this to advertise only a subset, e.g. only suite 17.
-func WithCipherSuites(ids []ipmi.CipherSuiteID) ServerOption {
+func WithCipherSuites(ids []types.CipherSuiteID) ServerOption {
 	return func(s *Server) {
 		if s.bmc != nil {
 			s.bmc.SetCipherSuites(ids)
@@ -357,7 +357,7 @@ func (s *Server) sendRMCPPlus(addr net.Addr, payloadType, flags uint8, payload [
 
 // sendRMCPPlusSession sends an authenticated / optionally encrypted RMCP+ packet.
 func (s *Server) sendRMCPPlusSession(addr net.Addr, payloadType, flags uint8, sess *bmc.Session, payload []byte) {
-	if sess.IntegrityAlg != bmc.IntegrityAlgNone {
+	if sess.IntegrityAlg != types.IntegrityAlg_None {
 		flags |= protocol.PayloadAuthenticatedFlag
 	}
 	pkt := protocol.BuildRMCPPlusPacket(payloadType, flags, sess.ConsoleID, sess.OutboundSeq, payload)

@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/bougou/go-ipmi/pkg/cmd/dcmi"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // SetDCMIPowerLimit sends a DCMI "Set Power Limit" command.
@@ -25,12 +25,12 @@ func (c *Client) GetDCMISensorInfo(ctx context.Context, request *dcmi.GetDCMISen
 	return
 }
 
-func (c *Client) GetDCMISensors(ctx context.Context, entityIDs ...ipmi.EntityID) ([]*ipmi.SDR, error) {
-	out := make([]*ipmi.SDR, 0)
+func (c *Client) GetDCMISensors(ctx context.Context, entityIDs ...types.EntityID) ([]*types.SDR, error) {
+	out := make([]*types.SDR, 0)
 
 	for _, entityID := range entityIDs {
 		request := &dcmi.GetDCMISensorInfoRequest{
-			SensorType:          ipmi.SensorTypeTemperature,
+			SensorType:          types.SensorTypeTemperature,
 			EntityID:            entityID,
 			EntityInstance:      0x00,
 			EntityInstanceStart: 0,
@@ -53,7 +53,7 @@ func (c *Client) GetDCMISensors(ctx context.Context, entityIDs ...ipmi.EntityID)
 	return out, nil
 }
 
-func (c *Client) GetDCMIThermalLimit(ctx context.Context, entityID ipmi.EntityID, entityInstance ipmi.EntityInstance) (response *dcmi.GetDCMIThermalLimitResponse, err error) {
+func (c *Client) GetDCMIThermalLimit(ctx context.Context, entityID types.EntityID, entityInstance types.EntityInstance) (response *dcmi.GetDCMIThermalLimitResponse, err error) {
 	if uint8(entityID) != 0x37 && uint8(entityID) != 0x40 {
 		return nil, errors.New("only Inlet Temperature entityID (0x37 or 0x40) is supported")
 	}
@@ -124,12 +124,12 @@ func (c *Client) GetDCMITemperatureReadings(ctx context.Context, request *dcmi.G
 	return
 }
 
-func (c *Client) GetDCMITemperatureReadingsForEntities(ctx context.Context, entityIDs ...ipmi.EntityID) ([]dcmi.DCMITemperatureReading, error) {
+func (c *Client) GetDCMITemperatureReadingsForEntities(ctx context.Context, entityIDs ...types.EntityID) ([]dcmi.DCMITemperatureReading, error) {
 	out := make([]dcmi.DCMITemperatureReading, 0)
 
 	for _, entityID := range entityIDs {
 		request := &dcmi.GetDCMITemperatureReadingsRequest{
-			SensorType:          ipmi.SensorTypeTemperature,
+			SensorType:          types.SensorTypeTemperature,
 			EntityID:            entityID,
 			EntityInstance:      0x00,
 			EntityInstanceStart: 0,
@@ -152,7 +152,7 @@ func (c *Client) SetDCMIThermalLimit(ctx context.Context, request *dcmi.SetDCMIT
 	return
 }
 
-func (c *Client) GetDCMIConfigParam(ctx context.Context, paramSelector ipmi.DCMIConfigParamSelector, setSelector uint8) (response *dcmi.GetDCMIConfigParamResponse, err error) {
+func (c *Client) GetDCMIConfigParam(ctx context.Context, paramSelector types.DCMIConfigParamSelector, setSelector uint8) (response *dcmi.GetDCMIConfigParamResponse, err error) {
 	request := &dcmi.GetDCMIConfigParamRequest{
 		ParamSelector: paramSelector,
 		SetSelector:   setSelector,
@@ -162,8 +162,8 @@ func (c *Client) GetDCMIConfigParam(ctx context.Context, paramSelector ipmi.DCMI
 	return
 }
 
-func (c *Client) GetDCMIConfigParamFor(ctx context.Context, param ipmi.DCMIConfigParameter) error {
-	if ipmi.IsNilDCMIConfigParameter(param) {
+func (c *Client) GetDCMIConfigParamFor(ctx context.Context, param types.DCMIConfigParameter) error {
+	if types.IsNilDCMIConfigParameter(param) {
 		return nil
 	}
 
@@ -182,13 +182,13 @@ func (c *Client) GetDCMIConfigParamFor(ctx context.Context, param ipmi.DCMIConfi
 	return nil
 }
 
-func (c *Client) GetDCMIConfigParams(ctx context.Context) (*ipmi.DCMIConfigParams, error) {
-	dcmiConfigParams := &ipmi.DCMIConfigParams{
-		ActivateDHCP:           &ipmi.DCMIConfigParam_ActivateDHCP{},
-		DiscoveryConfiguration: &ipmi.DCMIConfigParam_DiscoveryConfiguration{},
-		DHCPTiming1:            &ipmi.DCMIConfigParam_DHCPTiming1{},
-		DHCPTiming2:            &ipmi.DCMIConfigParam_DHCPTiming2{},
-		DHCPTiming3:            &ipmi.DCMIConfigParam_DHCPTiming3{},
+func (c *Client) GetDCMIConfigParams(ctx context.Context) (*types.DCMIConfigParams, error) {
+	dcmiConfigParams := &types.DCMIConfigParams{
+		ActivateDHCP:           &types.DCMIConfigParam_ActivateDHCP{},
+		DiscoveryConfiguration: &types.DCMIConfigParam_DiscoveryConfiguration{},
+		DHCPTiming1:            &types.DCMIConfigParam_DHCPTiming1{},
+		DHCPTiming2:            &types.DCMIConfigParam_DHCPTiming2{},
+		DHCPTiming3:            &types.DCMIConfigParam_DHCPTiming3{},
 	}
 
 	if err := c.GetDCMIConfigParamsFor(ctx, dcmiConfigParams); err != nil {
@@ -198,7 +198,7 @@ func (c *Client) GetDCMIConfigParams(ctx context.Context) (*ipmi.DCMIConfigParam
 	return dcmiConfigParams, nil
 }
 
-func (c *Client) GetDCMIConfigParamsFor(ctx context.Context, dcmiConfigParams *ipmi.DCMIConfigParams) error {
+func (c *Client) GetDCMIConfigParamsFor(ctx context.Context, dcmiConfigParams *types.DCMIConfigParams) error {
 	if dcmiConfigParams == nil {
 		return nil
 	}
@@ -283,15 +283,15 @@ func (c *Client) GetDCMIPowerReading(ctx context.Context) (response *dcmi.GetDCM
 	return
 }
 
-func (c *Client) GetDCMICapParam(ctx context.Context, paramSelector ipmi.DCMICapParamSelector) (response *dcmi.GetDCMICapParamResponse, err error) {
+func (c *Client) GetDCMICapParam(ctx context.Context, paramSelector types.DCMICapParamSelector) (response *dcmi.GetDCMICapParamResponse, err error) {
 	request := &dcmi.GetDCMICapParamRequest{ParamSelector: paramSelector}
 	response = &dcmi.GetDCMICapParamResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) GetDCMICapParamFor(ctx context.Context, param ipmi.DCMICapParameter) error {
-	if ipmi.IsNilDCMICapParameter(param) {
+func (c *Client) GetDCMICapParamFor(ctx context.Context, param types.DCMICapParameter) error {
+	if types.IsNilDCMICapParameter(param) {
 		return nil
 	}
 
@@ -310,13 +310,13 @@ func (c *Client) GetDCMICapParamFor(ctx context.Context, param ipmi.DCMICapParam
 	return nil
 }
 
-func (c *Client) GetDCMICapParams(ctx context.Context) (*ipmi.DCMICapParams, error) {
-	dcmiCapParams := &ipmi.DCMICapParams{
-		SupportedDCMICapabilities:               &ipmi.DCMICapParam_SupportedDCMICapabilities{},
-		MandatoryPlatformAttributes:             &ipmi.DCMICapParam_MandatoryPlatformAttributes{},
-		OptionalPlatformAttributes:              &ipmi.DCMICapParam_OptionalPlatformAttributes{},
-		ManageabilityAccessAttributes:           &ipmi.DCMICapParam_ManageabilityAccessAttributes{},
-		EnhancedSystemPowerStatisticsAttributes: &ipmi.DCMICapParam_EnhancedSystemPowerStatisticsAttributes{},
+func (c *Client) GetDCMICapParams(ctx context.Context) (*types.DCMICapParams, error) {
+	dcmiCapParams := &types.DCMICapParams{
+		SupportedDCMICapabilities:               &types.DCMICapParam_SupportedDCMICapabilities{},
+		MandatoryPlatformAttributes:             &types.DCMICapParam_MandatoryPlatformAttributes{},
+		OptionalPlatformAttributes:              &types.DCMICapParam_OptionalPlatformAttributes{},
+		ManageabilityAccessAttributes:           &types.DCMICapParam_ManageabilityAccessAttributes{},
+		EnhancedSystemPowerStatisticsAttributes: &types.DCMICapParam_EnhancedSystemPowerStatisticsAttributes{},
 	}
 
 	if err := c.GetDCMICapParamsFor(ctx, dcmiCapParams); err != nil {
@@ -326,7 +326,7 @@ func (c *Client) GetDCMICapParams(ctx context.Context) (*ipmi.DCMICapParams, err
 	return dcmiCapParams, nil
 }
 
-func (c *Client) GetDCMICapParamsFor(ctx context.Context, dcmiCapParams *ipmi.DCMICapParams) error {
+func (c *Client) GetDCMICapParamsFor(ctx context.Context, dcmiCapParams *types.DCMICapParams) error {
 	if dcmiCapParams == nil {
 		return nil
 	}
@@ -409,7 +409,7 @@ func (c *Client) SetDCMIMgmtControllerIdentifierFull(ctx context.Context, idStr 
 	return nil
 }
 
-func (c *Client) SetDCMIConfigParam(ctx context.Context, paramSelector ipmi.DCMIConfigParamSelector, setSelector uint8, paramData []byte) (response *dcmi.SetDCMIConfigParamResponse, err error) {
+func (c *Client) SetDCMIConfigParam(ctx context.Context, paramSelector types.DCMIConfigParamSelector, setSelector uint8, paramData []byte) (response *dcmi.SetDCMIConfigParamResponse, err error) {
 	request := &dcmi.SetDCMIConfigParamRequest{
 		ParamSelector: paramSelector,
 		SetSelector:   setSelector,
@@ -420,8 +420,8 @@ func (c *Client) SetDCMIConfigParam(ctx context.Context, paramSelector ipmi.DCMI
 	return
 }
 
-func (c *Client) SetDCMIConfigParamFor(ctx context.Context, param ipmi.DCMIConfigParameter) (response *dcmi.SetDCMIConfigParamResponse, err error) {
-	if ipmi.IsNilDCMIConfigParameter(param) {
+func (c *Client) SetDCMIConfigParamFor(ctx context.Context, param types.DCMIConfigParameter) (response *dcmi.SetDCMIConfigParamResponse, err error) {
+	if types.IsNilDCMIConfigParameter(param) {
 		return nil, fmt.Errorf("param is nil")
 	}
 
@@ -445,7 +445,7 @@ func (c *Client) GetDCMIAssetTag(ctx context.Context, offset uint8) (response *d
 	return
 }
 
-func (c *Client) GetDCMIAssetTagFull(ctx context.Context) (assetTagRaw []byte, typeLength ipmi.TypeLength, err error) {
+func (c *Client) GetDCMIAssetTagFull(ctx context.Context) (assetTagRaw []byte, typeLength types.TypeLength, err error) {
 	assetTagRaw = make([]byte, 0)
 
 	typeCode := uint8(0)
@@ -454,7 +454,7 @@ func (c *Client) GetDCMIAssetTagFull(ctx context.Context) (assetTagRaw []byte, t
 	for {
 		resp, err := c.GetDCMIAssetTag(ctx, offset)
 		if err != nil {
-			if respErr, ok := ipmi.IsResponseError(err); ok {
+			if respErr, ok := types.IsResponseError(err); ok {
 				cc := uint8(respErr.CompletionCode())
 				switch cc {
 
@@ -481,7 +481,7 @@ func (c *Client) GetDCMIAssetTagFull(ctx context.Context) (assetTagRaw []byte, t
 		offset += uint8(len(resp.AssetTag))
 	}
 
-	typeLength = ipmi.TypeLength(typeCode<<6 | uint8(len(assetTagRaw)))
+	typeLength = types.TypeLength(typeCode<<6 | uint8(len(assetTagRaw)))
 
 	return
 }

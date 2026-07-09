@@ -3,7 +3,7 @@ package dcmi
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // [DCMI specification v1.5]: 6.4.6.1 Get Management Controller Identifier String Command
@@ -24,11 +24,11 @@ func (req *GetDCMIMgmtControllerIdentifierRequest) Pack() []byte {
 	// Number of bytes to read (16 bytes maximum)
 	// using the fixed (maximum) value is OK here.
 	var readBytes = uint8(0x10)
-	return []byte{ipmi.GroupExtensionDCMI, req.Offset, readBytes}
+	return []byte{types.GroupExtensionDCMI, req.Offset, readBytes}
 }
 
-func (req *GetDCMIMgmtControllerIdentifierRequest) Command() ipmi.Command {
-	return ipmi.CommandGetDCMIMgmtControllerIdentifier
+func (req *GetDCMIMgmtControllerIdentifierRequest) Command() types.Command {
+	return types.CommandGetDCMIMgmtControllerIdentifier
 }
 
 func (res *GetDCMIMgmtControllerIdentifierResponse) CompletionCodes() map[uint8]string {
@@ -37,15 +37,15 @@ func (res *GetDCMIMgmtControllerIdentifierResponse) CompletionCodes() map[uint8]
 
 func (res *GetDCMIMgmtControllerIdentifierResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
-	if err := ipmi.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
+	if err := types.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
 		return err
 	}
 
 	res.IDStrLength = msg[1]
-	res.IDStr, _, _ = ipmi.UnpackBytes(msg, 2, len(msg)-2)
+	res.IDStr, _, _ = types.UnpackBytes(msg, 2, len(msg)-2)
 	return nil
 }
 

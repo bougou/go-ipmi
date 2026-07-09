@@ -3,7 +3,7 @@ package sensor
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 35.7 Get Sensor Hysteresis Command
@@ -16,23 +16,23 @@ type GetSensorHysteresisResponse struct {
 	NegativeRaw uint8
 }
 
-func (req *GetSensorHysteresisRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSensorHysteresis
+func (req *GetSensorHysteresisRequest) Command() types.Command {
+	return types.CommandGetSensorHysteresis
 }
 
 func (req *GetSensorHysteresisRequest) Pack() []byte {
 	out := make([]byte, 2)
-	ipmi.PackUint8(req.SensorNumber, out, 0)
-	ipmi.PackUint8(0xff, out, 1) // reserved for future "hysteresis mask" definition. Write as "FFh"
+	types.PackUint8(req.SensorNumber, out, 0)
+	types.PackUint8(0xff, out, 1) // reserved for future "hysteresis mask" definition. Write as "FFh"
 	return out
 }
 
 func (res *GetSensorHysteresisResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
-	res.PositiveRaw, _, _ = ipmi.UnpackUint8(msg, 0)
-	res.NegativeRaw, _, _ = ipmi.UnpackUint8(msg, 1)
+	res.PositiveRaw, _, _ = types.UnpackUint8(msg, 0)
+	res.NegativeRaw, _, _ = types.UnpackUint8(msg, 1)
 	return nil
 }
 

@@ -1,7 +1,7 @@
 package chassis
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 28.9 Set Power Cycle Interval
 )
 
@@ -15,12 +15,12 @@ type SetPowerCycleIntervalResponse struct {
 
 func (req *SetPowerCycleIntervalRequest) Pack() []byte {
 	out := make([]byte, 1)
-	ipmi.PackUint8(req.IntervalInSec, out, 0)
+	types.PackUint8(req.IntervalInSec, out, 0)
 	return out
 }
 
-func (req *SetPowerCycleIntervalRequest) Command() ipmi.Command {
-	return ipmi.CommandSetPowerCycleInterval
+func (req *SetPowerCycleIntervalRequest) Command() types.Command {
+	return types.CommandSetPowerCycleInterval
 }
 
 func (res *SetPowerCycleIntervalResponse) CompletionCodes() map[uint8]string {

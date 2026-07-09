@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bougou/go-ipmi/pkg/cmd/app"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 func (c *Client) SetWatchdogTimer(ctx context.Context) (response *app.SetWatchdogTimerResponse, err error) {
@@ -53,7 +53,7 @@ func (c *Client) EnableMessageChannelReceive(ctx context.Context, channelNumber 
 	return
 }
 
-func (c *Client) GetSystemInfoParam(ctx context.Context, paramSelector ipmi.SystemInfoParamSelector, setSelector uint8, blockSelector uint8) (response *app.GetSystemInfoParamResponse, err error) {
+func (c *Client) GetSystemInfoParam(ctx context.Context, paramSelector types.SystemInfoParamSelector, setSelector uint8, blockSelector uint8) (response *app.GetSystemInfoParamResponse, err error) {
 	request := &app.GetSystemInfoParamRequest{
 		ParamSelector: paramSelector,
 		SetSelector:   setSelector,
@@ -64,8 +64,8 @@ func (c *Client) GetSystemInfoParam(ctx context.Context, paramSelector ipmi.Syst
 	return
 }
 
-func (c *Client) GetSystemInfoParamFor(ctx context.Context, param ipmi.SystemInfoParameter) error {
-	if ipmi.IsNilSystemInfoParamete(param) {
+func (c *Client) GetSystemInfoParamFor(ctx context.Context, param types.SystemInfoParameter) error {
+	if types.IsNilSystemInfoParamete(param) {
 		return nil
 	}
 
@@ -82,16 +82,16 @@ func (c *Client) GetSystemInfoParamFor(ctx context.Context, param ipmi.SystemInf
 	return nil
 }
 
-func (c *Client) GetSystemInfoParams(ctx context.Context) (*ipmi.SystemInfoParams, error) {
-	systemInfo := &ipmi.SystemInfoParams{
-		SetInProgress:          &ipmi.SystemInfoParam_SetInProgress{},
-		SystemFirmwareVersions: make([]*ipmi.SystemInfoParam_SystemFirmwareVersion, 0),
-		SystemNames:            make([]*ipmi.SystemInfoParam_SystemName, 0),
-		PrimaryOSNames:         make([]*ipmi.SystemInfoParam_PrimaryOSName, 0),
-		OSNames:                make([]*ipmi.SystemInfoParam_OSName, 0),
-		OSVersions:             make([]*ipmi.SystemInfoParam_OSVersion, 0),
-		BMCURLs:                make([]*ipmi.SystemInfoParam_BMCURL, 0),
-		ManagementURLs:         make([]*ipmi.SystemInfoParam_ManagementURL, 0),
+func (c *Client) GetSystemInfoParams(ctx context.Context) (*types.SystemInfoParams, error) {
+	systemInfo := &types.SystemInfoParams{
+		SetInProgress:          &types.SystemInfoParam_SetInProgress{},
+		SystemFirmwareVersions: make([]*types.SystemInfoParam_SystemFirmwareVersion, 0),
+		SystemNames:            make([]*types.SystemInfoParam_SystemName, 0),
+		PrimaryOSNames:         make([]*types.SystemInfoParam_PrimaryOSName, 0),
+		OSNames:                make([]*types.SystemInfoParam_OSName, 0),
+		OSVersions:             make([]*types.SystemInfoParam_OSVersion, 0),
+		BMCURLs:                make([]*types.SystemInfoParam_BMCURL, 0),
+		ManagementURLs:         make([]*types.SystemInfoParam_ManagementURL, 0),
 	}
 
 	if err := c.GetSystemInfoParamsFor(ctx, systemInfo); err != nil {
@@ -101,7 +101,7 @@ func (c *Client) GetSystemInfoParams(ctx context.Context) (*ipmi.SystemInfoParam
 	return systemInfo, nil
 }
 
-func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.SystemInfoParams) error {
+func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *types.SystemInfoParams) error {
 	if params == nil {
 		return nil
 	}
@@ -128,7 +128,7 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 
 	if params.SystemFirmwareVersions != nil {
 		if len(params.SystemFirmwareVersions) == 0 {
-			p := &ipmi.SystemInfoParam_SystemFirmwareVersion{
+			p := &types.SystemInfoParam_SystemFirmwareVersion{
 				SetSelector: 0,
 			}
 			if err := c.GetSystemInfoParamFor(ctx, p); canIgnore(err) != nil {
@@ -139,9 +139,9 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 				return nil
 			}
 
-			params.SystemFirmwareVersions = make([]*ipmi.SystemInfoParam_SystemFirmwareVersion, setsCount)
+			params.SystemFirmwareVersions = make([]*types.SystemInfoParam_SystemFirmwareVersion, setsCount)
 			for i := uint8(0); i < setsCount; i++ {
-				p := &ipmi.SystemInfoParam_SystemFirmwareVersion{
+				p := &types.SystemInfoParam_SystemFirmwareVersion{
 					SetSelector: i,
 				}
 				params.SystemFirmwareVersions[i] = p
@@ -157,7 +157,7 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 
 	if params.SystemNames != nil {
 		if len(params.SystemNames) == 0 {
-			p := &ipmi.SystemInfoParam_SystemName{
+			p := &types.SystemInfoParam_SystemName{
 				SetSelector: 0,
 			}
 			if err := c.GetSystemInfoParamFor(ctx, p); canIgnore(err) != nil {
@@ -168,9 +168,9 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 				return nil
 			}
 
-			params.SystemNames = make([]*ipmi.SystemInfoParam_SystemName, setsCount)
+			params.SystemNames = make([]*types.SystemInfoParam_SystemName, setsCount)
 			for i := uint8(0); i < setsCount; i++ {
-				p := &ipmi.SystemInfoParam_SystemName{
+				p := &types.SystemInfoParam_SystemName{
 					SetSelector: i,
 				}
 				params.SystemNames[i] = p
@@ -186,7 +186,7 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 
 	if params.PrimaryOSNames != nil {
 		if len(params.PrimaryOSNames) == 0 {
-			p := &ipmi.SystemInfoParam_PrimaryOSName{
+			p := &types.SystemInfoParam_PrimaryOSName{
 				SetSelector: 0,
 			}
 			if err := c.GetSystemInfoParamFor(ctx, p); canIgnore(err) != nil {
@@ -197,9 +197,9 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 				return nil
 			}
 
-			params.PrimaryOSNames = make([]*ipmi.SystemInfoParam_PrimaryOSName, setsCount)
+			params.PrimaryOSNames = make([]*types.SystemInfoParam_PrimaryOSName, setsCount)
 			for i := uint8(0); i < setsCount; i++ {
-				p := &ipmi.SystemInfoParam_PrimaryOSName{
+				p := &types.SystemInfoParam_PrimaryOSName{
 					SetSelector: i,
 				}
 				params.PrimaryOSNames[i] = p
@@ -215,7 +215,7 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 
 	if params.OSNames != nil {
 		if len(params.OSNames) == 0 {
-			p := &ipmi.SystemInfoParam_OSName{
+			p := &types.SystemInfoParam_OSName{
 				SetSelector: 0,
 			}
 			if err := c.GetSystemInfoParamFor(ctx, p); canIgnore(err) != nil {
@@ -226,9 +226,9 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 				return nil
 			}
 
-			params.OSNames = make([]*ipmi.SystemInfoParam_OSName, setsCount)
+			params.OSNames = make([]*types.SystemInfoParam_OSName, setsCount)
 			for i := uint8(0); i < setsCount; i++ {
-				p := &ipmi.SystemInfoParam_OSName{
+				p := &types.SystemInfoParam_OSName{
 					SetSelector: i,
 				}
 				params.OSNames[i] = p
@@ -244,7 +244,7 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 
 	if params.OSVersions != nil {
 		if len(params.OSVersions) == 0 {
-			p := &ipmi.SystemInfoParam_OSVersion{
+			p := &types.SystemInfoParam_OSVersion{
 				SetSelector: 0,
 			}
 			if err := c.GetSystemInfoParamFor(ctx, p); canIgnore(err) != nil {
@@ -255,9 +255,9 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 				return nil
 			}
 
-			params.OSVersions = make([]*ipmi.SystemInfoParam_OSVersion, setsCount)
+			params.OSVersions = make([]*types.SystemInfoParam_OSVersion, setsCount)
 			for i := uint8(0); i < setsCount; i++ {
-				p := &ipmi.SystemInfoParam_OSVersion{
+				p := &types.SystemInfoParam_OSVersion{
 					SetSelector: i,
 				}
 				params.OSVersions[i] = p
@@ -273,7 +273,7 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 
 	if params.BMCURLs != nil {
 		if len(params.BMCURLs) == 0 {
-			p := &ipmi.SystemInfoParam_BMCURL{
+			p := &types.SystemInfoParam_BMCURL{
 				SetSelector: 0,
 			}
 			if err := c.GetSystemInfoParamFor(ctx, p); canIgnore(err) != nil {
@@ -284,9 +284,9 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 				return nil
 			}
 
-			params.BMCURLs = make([]*ipmi.SystemInfoParam_BMCURL, setsCount)
+			params.BMCURLs = make([]*types.SystemInfoParam_BMCURL, setsCount)
 			for i := uint8(0); i < setsCount; i++ {
-				p := &ipmi.SystemInfoParam_BMCURL{
+				p := &types.SystemInfoParam_BMCURL{
 					SetSelector: i,
 				}
 				params.BMCURLs[i] = p
@@ -302,7 +302,7 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 
 	if params.ManagementURLs != nil {
 		if len(params.ManagementURLs) == 0 {
-			p := &ipmi.SystemInfoParam_ManagementURL{
+			p := &types.SystemInfoParam_ManagementURL{
 				SetSelector: 0,
 			}
 			if err := c.GetSystemInfoParamFor(ctx, p); canIgnore(err) != nil {
@@ -313,9 +313,9 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 				return nil
 			}
 
-			params.ManagementURLs = make([]*ipmi.SystemInfoParam_ManagementURL, setsCount)
+			params.ManagementURLs = make([]*types.SystemInfoParam_ManagementURL, setsCount)
 			for i := uint8(0); i < setsCount; i++ {
-				p := &ipmi.SystemInfoParam_ManagementURL{
+				p := &types.SystemInfoParam_ManagementURL{
 					SetSelector: i,
 				}
 				params.ManagementURLs[i] = p
@@ -332,7 +332,7 @@ func (c *Client) GetSystemInfoParamsFor(ctx context.Context, params *ipmi.System
 	return nil
 }
 
-func (c *Client) GetSystemInfo(ctx context.Context) (*ipmi.SystemInfo, error) {
+func (c *Client) GetSystemInfo(ctx context.Context) (*types.SystemInfo, error) {
 	systemInfoParams, err := c.GetSystemInfoParams(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("GetSystemInfo failed, err: %w", err)
@@ -363,8 +363,8 @@ func (c *Client) GetUsers(ctx context.Context, channelNumber uint8) ([]*app.User
 
 		res2, err := c.GetUsername(ctx, userID)
 		if err != nil {
-			if respErr, ok := ipmi.IsResponseError(err); ok {
-				if respErr.CompletionCode() == ipmi.CompletionCodeRequestDataFieldInvalid {
+			if respErr, ok := types.IsResponseError(err); ok {
+				if respErr.CompletionCode() == types.CompletionCodeRequestDataFieldInvalid {
 
 					username = ""
 				}
@@ -447,7 +447,7 @@ func (c *Client) GetUsername(ctx context.Context, userID uint8) (response *app.G
 	return
 }
 
-func (c *Client) GetConfigurableCommands(ctx context.Context, channelNumber uint8, commandRangeMask app.CommandRangeMask, netFn ipmi.NetFn, lun uint8, code uint8, oemIANA uint32) (response *app.GetConfigurableCommandsResponse, err error) {
+func (c *Client) GetConfigurableCommands(ctx context.Context, channelNumber uint8, commandRangeMask app.CommandRangeMask, netFn types.NetFn, lun uint8, code uint8, oemIANA uint32) (response *app.GetConfigurableCommandsResponse, err error) {
 	request := &app.GetConfigurableCommandsRequest{
 		ChannelNumber:    channelNumber,
 		CommandRangeMask: commandRangeMask,
@@ -481,7 +481,7 @@ func (c *Client) SetCommandSubfunctionEnables(ctx context.Context, request *app.
 	return
 }
 
-func (c *Client) SetSessionPrivilegeLevel(ctx context.Context, privilegeLevel ipmi.PrivilegeLevel) (response *app.SetSessionPrivilegeLevelResponse, err error) {
+func (c *Client) SetSessionPrivilegeLevel(ctx context.Context, privilegeLevel types.PrivilegeLevel) (response *app.SetSessionPrivilegeLevelResponse, err error) {
 	request := &app.SetSessionPrivilegeLevelRequest{
 		PrivilegeLevel: privilegeLevel,
 	}
@@ -534,7 +534,7 @@ func (c *Client) EnableUser(ctx context.Context, userID uint8) (err error) {
 	return err
 }
 
-func (c *Client) SetSystemInfoParam(ctx context.Context, paramSelector ipmi.SystemInfoParamSelector, paramData []byte) (response *app.SetSystemInfoParamResponse, err error) {
+func (c *Client) SetSystemInfoParam(ctx context.Context, paramSelector types.SystemInfoParamSelector, paramData []byte) (response *app.SetSystemInfoParamResponse, err error) {
 	request := &app.SetSystemInfoParamRequest{
 		ParamSelector: paramSelector,
 		ParamData:     paramData,
@@ -544,8 +544,8 @@ func (c *Client) SetSystemInfoParam(ctx context.Context, paramSelector ipmi.Syst
 	return
 }
 
-func (c *Client) SetSystemInfoParamFor(ctx context.Context, param ipmi.SystemInfoParameter) error {
-	if ipmi.IsNilSystemInfoParamete(param) {
+func (c *Client) SetSystemInfoParamFor(ctx context.Context, param types.SystemInfoParameter) error {
+	if types.IsNilSystemInfoParamete(param) {
 		return nil
 	}
 
@@ -559,7 +559,7 @@ func (c *Client) SetSystemInfoParamFor(ctx context.Context, param ipmi.SystemInf
 	return nil
 }
 
-func (c *Client) GetCommandSupport(ctx context.Context, channelNumber uint8, commandRangeMask app.CommandRangeMask, netFn ipmi.NetFn, lun uint8, code uint8, oemIANA uint32) (response *app.GetCommandSupportResponse, err error) {
+func (c *Client) GetCommandSupport(ctx context.Context, channelNumber uint8, commandRangeMask app.CommandRangeMask, netFn types.NetFn, lun uint8, code uint8, oemIANA uint32) (response *app.GetCommandSupportResponse, err error) {
 	request := &app.GetCommandSupportRequest{
 		ChannelNumber:    channelNumber,
 		CommandRangeMask: commandRangeMask,
@@ -573,7 +573,7 @@ func (c *Client) GetCommandSupport(ctx context.Context, channelNumber uint8, com
 	return
 }
 
-func (c *Client) GetChannelAccess(ctx context.Context, channelNumber uint8, accessOption ipmi.ChannelAccessOption) (response *app.GetChannelAccessResponse, err error) {
+func (c *Client) GetChannelAccess(ctx context.Context, channelNumber uint8, accessOption types.ChannelAccessOption) (response *app.GetChannelAccessResponse, err error) {
 	request := &app.GetChannelAccessRequest{
 		ChannelNumber: channelNumber,
 		AccessOption:  accessOption,
@@ -595,14 +595,14 @@ func (c *Client) SetCommandEnables(ctx context.Context, request *app.SetCommandE
 	return
 }
 
-func (c *Client) SetUserPayloadAccess(ctx context.Context, payloadType ipmi.PayloadType, payloadInstance uint8) (response *app.SetUserPayloadAccessResponse, err error) {
+func (c *Client) SetUserPayloadAccess(ctx context.Context, payloadType types.PayloadType, payloadInstance uint8) (response *app.SetUserPayloadAccessResponse, err error) {
 	request := &app.SetUserPayloadAccessRequest{}
 	response = &app.SetUserPayloadAccessResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
 }
 
-func (c *Client) GetCommandSubfunctionSupport(ctx context.Context, channelNumber uint8, netFn ipmi.NetFn, lun uint8, code uint8, oemIANA uint32) (response *app.GetCommandSubfunctionSupportResponse, err error) {
+func (c *Client) GetCommandSubfunctionSupport(ctx context.Context, channelNumber uint8, netFn types.NetFn, lun uint8, code uint8, oemIANA uint32) (response *app.GetCommandSubfunctionSupportResponse, err error) {
 	request := &app.GetCommandSubfunctionSupportRequest{
 		ChannelNumber:  channelNumber,
 		NetFn:          netFn,
@@ -721,7 +721,7 @@ func (c *Client) ManufacturingTestOn(ctx context.Context) (response *app.Manufac
 	return
 }
 
-func (c *Client) GetCommandEnables(ctx context.Context, channelNumber uint8, commandRangeMask app.CommandRangeMask, netFn ipmi.NetFn, lun uint8, code uint8, oemIANA uint32) (response *app.GetCommandEnablesResponse, err error) {
+func (c *Client) GetCommandEnables(ctx context.Context, channelNumber uint8, commandRangeMask app.CommandRangeMask, netFn types.NetFn, lun uint8, code uint8, oemIANA uint32) (response *app.GetCommandEnablesResponse, err error) {
 	request := &app.GetCommandEnablesRequest{
 		ChannelNumber:    channelNumber,
 		CommandRangeMask: commandRangeMask,
@@ -744,7 +744,7 @@ func (c *Client) GetCommandEnables(ctx context.Context, channelNumber uint8, com
 // When activating a session, the privilege level passed in this command will
 // normally be the same Requested Maximum Privilege level that will be used
 // for a subsequent Activate Session command.
-func (c *Client) GetChannelAuthenticationCapabilities(ctx context.Context, channelNumber uint8, privilegeLevel ipmi.PrivilegeLevel) (response *app.GetChannelAuthenticationCapabilitiesResponse, err error) {
+func (c *Client) GetChannelAuthenticationCapabilities(ctx context.Context, channelNumber uint8, privilegeLevel types.PrivilegeLevel) (response *app.GetChannelAuthenticationCapabilitiesResponse, err error) {
 	request := &app.GetChannelAuthenticationCapabilitiesRequest{
 		IPMIv20Extended:       true,
 		ChannelNumber:         channelNumber,
@@ -798,7 +798,7 @@ func (c *Client) WarmReset(ctx context.Context) (err error) {
 func (c *Client) GetChannelCipherSuites(ctx context.Context, channelNumber uint8, index uint8) (response *app.GetChannelCipherSuitesResponse, err error) {
 	request := &app.GetChannelCipherSuitesRequest{
 		ChannelNumber: channelNumber,
-		PayloadType:   ipmi.PayloadTypeIPMI,
+		PayloadType:   types.PayloadTypeIPMI,
 		ListIndex:     index,
 	}
 	response = &app.GetChannelCipherSuitesResponse{}
@@ -806,7 +806,7 @@ func (c *Client) GetChannelCipherSuites(ctx context.Context, channelNumber uint8
 	return
 }
 
-func (c *Client) GetAllChannelCipherSuites(ctx context.Context, channelNumber uint8) ([]ipmi.CipherSuiteRecord, error) {
+func (c *Client) GetAllChannelCipherSuites(ctx context.Context, channelNumber uint8) ([]types.CipherSuiteRecord, error) {
 	var index uint8 = 0
 	var cipherSuitesData = make([]byte, 0)
 	for ; index < app.MaxCipherSuiteListIndex; index++ {

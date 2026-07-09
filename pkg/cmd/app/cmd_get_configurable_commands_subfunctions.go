@@ -3,14 +3,14 @@ package app
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 21.6 Get Configurable Command Sub-functions Command
 type GetConfigurableCommandSubfunctionsRequest struct {
 	ChannelNumber uint8
 
-	NetFn ipmi.NetFn
+	NetFn types.NetFn
 	LUN   uint8
 
 	Cmd uint8
@@ -26,8 +26,8 @@ type GetConfigurableCommandSubfunctionsResponse struct {
 	SubfunctionsSupport []bool
 }
 
-func (req *GetConfigurableCommandSubfunctionsRequest) Command() ipmi.Command {
-	return ipmi.CommandGetConfigurableCommandSubfunctions
+func (req *GetConfigurableCommandSubfunctionsRequest) Command() types.Command {
+	return types.CommandGetConfigurableCommandSubfunctions
 }
 
 func (req *GetConfigurableCommandSubfunctionsRequest) Pack() []byte {
@@ -44,7 +44,7 @@ func (req *GetConfigurableCommandSubfunctionsRequest) Pack() []byte {
 	}
 
 	if uint8(req.NetFn) == 0x2e {
-		ipmi.PackUint24L(req.OEMIANA, out, 4)
+		types.PackUint24L(req.OEMIANA, out, 4)
 		return out[0:7]
 	}
 
@@ -53,21 +53,21 @@ func (req *GetConfigurableCommandSubfunctionsRequest) Pack() []byte {
 
 func (res *GetConfigurableCommandSubfunctionsResponse) Unpack(msg []byte) error {
 	if len(msg) < 4 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 4)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 4)
 	}
 
 	supports := make([]bool, 64)
 
 	for i := 0; i < 4; i++ {
 		b := msg[i]
-		supports[i*8+0] = ipmi.IsBit0Set(b)
-		supports[i*8+1] = ipmi.IsBit1Set(b)
-		supports[i*8+2] = ipmi.IsBit2Set(b)
-		supports[i*8+3] = ipmi.IsBit3Set(b)
-		supports[i*8+4] = ipmi.IsBit4Set(b)
-		supports[i*8+5] = ipmi.IsBit5Set(b)
-		supports[i*8+6] = ipmi.IsBit6Set(b)
-		supports[i*8+7] = ipmi.IsBit7Set(b)
+		supports[i*8+0] = types.IsBit0Set(b)
+		supports[i*8+1] = types.IsBit1Set(b)
+		supports[i*8+2] = types.IsBit2Set(b)
+		supports[i*8+3] = types.IsBit3Set(b)
+		supports[i*8+4] = types.IsBit4Set(b)
+		supports[i*8+5] = types.IsBit5Set(b)
+		supports[i*8+6] = types.IsBit6Set(b)
+		supports[i*8+7] = types.IsBit7Set(b)
 	}
 
 	if len(msg) == 4 {
@@ -76,19 +76,19 @@ func (res *GetConfigurableCommandSubfunctionsResponse) Unpack(msg []byte) error 
 	}
 
 	if len(msg) > 4 && len(msg) < 8 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 8)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
 
 	for i := 4; i < 8; i++ {
 		b := msg[i]
-		supports[i*8+0] = ipmi.IsBit0Set(b)
-		supports[i*8+1] = ipmi.IsBit1Set(b)
-		supports[i*8+2] = ipmi.IsBit2Set(b)
-		supports[i*8+3] = ipmi.IsBit3Set(b)
-		supports[i*8+4] = ipmi.IsBit4Set(b)
-		supports[i*8+5] = ipmi.IsBit5Set(b)
-		supports[i*8+6] = ipmi.IsBit6Set(b)
-		supports[i*8+7] = ipmi.IsBit7Set(b)
+		supports[i*8+0] = types.IsBit0Set(b)
+		supports[i*8+1] = types.IsBit1Set(b)
+		supports[i*8+2] = types.IsBit2Set(b)
+		supports[i*8+3] = types.IsBit3Set(b)
+		supports[i*8+4] = types.IsBit4Set(b)
+		supports[i*8+5] = types.IsBit5Set(b)
+		supports[i*8+6] = types.IsBit6Set(b)
+		supports[i*8+7] = types.IsBit7Set(b)
 	}
 
 	res.SubfunctionsSupport = supports[0:64]
@@ -103,7 +103,7 @@ func (*GetConfigurableCommandSubfunctionsResponse) CompletionCodes() map[uint8]s
 func (res *GetConfigurableCommandSubfunctionsResponse) Format() string {
 	out := ""
 	for k, v := range res.SubfunctionsSupport {
-		out += fmt.Sprintf("sub-function %2d : %s\n", k, ipmi.FormatBool(v, "supported", "unsupported"))
+		out += fmt.Sprintf("sub-function %2d : %s\n", k, types.FormatBool(v, "supported", "unsupported"))
 	}
 	return out
 }

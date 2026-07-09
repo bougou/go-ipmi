@@ -3,8 +3,8 @@ package client
 import (
 	"crypto/md5"
 	"fmt"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
 
+	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/bougou/go-ipmi/utils/md2"
 )
 
@@ -17,7 +17,7 @@ type AuthCodeSingleSessionInput struct {
 	Challenge []byte
 }
 
-func (a AuthCodeSingleSessionInput) AuthCode(authType ipmi.AuthType) []byte {
+func (a AuthCodeSingleSessionInput) AuthCode(authType types.AuthType) []byte {
 	password := padBytes(a.Password, 16, 0x00)
 	inputLength := 16 + 4 + len(a.Challenge) + 16
 
@@ -29,14 +29,14 @@ func (a AuthCodeSingleSessionInput) AuthCode(authType ipmi.AuthType) []byte {
 
 	var authCode []byte
 	switch authType {
-	case ipmi.AuthTypePassword:
+	case types.AuthTypePassword:
 		authCode = password
-	case ipmi.AuthTypeMD2:
+	case types.AuthTypeMD2:
 		h := md2.New()
 		h.Write(input)
 		authCode = h.Sum(nil)
 		authCode = authCode[:16]
-	case ipmi.AuthTypeMD5:
+	case types.AuthTypeMD5:
 		c := md5.Sum(input) // can not use md5.New().Sum(input)
 		authCode = c[:]
 	}
@@ -53,7 +53,7 @@ type AuthCodeMultiSessionInput struct {
 	IPMIData   []byte
 }
 
-func (i *AuthCodeMultiSessionInput) AuthCode(authType ipmi.AuthType) []byte {
+func (i *AuthCodeMultiSessionInput) AuthCode(authType types.AuthType) []byte {
 	password := padBytes(i.Password, 16, 0x00)
 	ipmiData := i.IPMIData
 
@@ -80,14 +80,14 @@ func (i *AuthCodeMultiSessionInput) AuthCode(authType ipmi.AuthType) []byte {
 
 	var authCode []byte
 	switch authType {
-	case ipmi.AuthTypePassword:
+	case types.AuthTypePassword:
 		authCode = password
-	case ipmi.AuthTypeMD2:
+	case types.AuthTypeMD2:
 		h := md2.New()
 		h.Write(input)
 		authCode = h.Sum(nil)
 		authCode = authCode[:16]
-	case ipmi.AuthTypeMD5:
+	case types.AuthTypeMD5:
 		c := md5.Sum(input) // can not use md5.New().Sum(input)
 		authCode = c[:]
 	}
@@ -126,12 +126,12 @@ func (c *Client) genAuthCodeForMultiSession(ipmiMsg []byte) []byte {
 // When the HMAC-SHA256-128 and HMAC-MD5-128 Integrity Algorithms are used the resulting AuthCode field is 16-bytes (128 bits).
 func (c *Client) genIntegrityAuthCode(input []byte) ([]byte, error) {
 	switch c.session.v20.integrityAlg {
-	case ipmi.IntegrityAlg_None:
+	case types.IntegrityAlg_None:
 		//  If the Integrity Algorithm is none the AuthCode value is not calculated and
 		// the AuthCode field in the message is not present (zero bytes).
 		return []byte{}, nil
 
-	case ipmi.IntegrityAlg_MD5_128:
+	case types.IntegrityAlg_MD5_128:
 		data := []byte{}
 		data = append(data, []byte(c.Password)[:]...)
 		data = append(data, input...)
@@ -139,14 +139,14 @@ func (c *Client) genIntegrityAuthCode(input []byte) ([]byte, error) {
 		h := md5.Sum(data)
 		return h[:], nil
 
-	case ipmi.IntegrityAlg_HMAC_MD5_128:
+	case types.IntegrityAlg_HMAC_MD5_128:
 		b, err := generate_hmac("md5", input, c.session.v20.k1)
 		if err != nil {
 			return nil, fmt.Errorf("generate hmac failed")
 		}
 		return b[0:16], nil
 
-	case ipmi.IntegrityAlg_HMAC_SHA1_96:
+	case types.IntegrityAlg_HMAC_SHA1_96:
 
 		b, err := generate_hmac("sha1", input, c.session.v20.k1)
 		if err != nil {
@@ -154,7 +154,7 @@ func (c *Client) genIntegrityAuthCode(input []byte) ([]byte, error) {
 		}
 		return b[0:12], nil
 
-	case ipmi.IntegrityAlg_HMAC_SHA256_128:
+	case types.IntegrityAlg_HMAC_SHA256_128:
 		b, err := generate_hmac("sha256", input, c.session.v20.k1)
 		if err != nil {
 			return nil, fmt.Errorf("generate hmac failed")
@@ -279,21 +279,21 @@ func (c *Client) generate_rakp2_authcode() ([]byte, error) {
 	var out = b
 
 	switch c.session.v20.authAlg {
-	case ipmi.AuthAlgRAKP_None:
+	case types.AuthAlg_None:
 		// nothing need to do
-	case ipmi.AuthAlgRAKP_HMAC_MD5:
+	case types.AuthAlg_HMAC_MD5:
 		// need to copy 16 bytes
 		if len(b) < 16 {
 			err = fmt.Errorf("hmac md5 length should be at least 16 bytes")
 		}
 		out = b[0:16]
-	case ipmi.AuthAlgRAKP_HMAC_SHA1:
+	case types.AuthAlg_HMAC_SHA1:
 		// need to copy 20 bytes
 		if len(b) < 20 {
 			err = fmt.Errorf("hmac sha1 length should be at least 20 bytes")
 		}
 		out = b[0:20]
-	case ipmi.AuthAlgRAKP_HMAC_SHA256:
+	case types.AuthAlg_HMAC_SHA256:
 		if len(b) < 32 {
 			err = fmt.Errorf("hmac sha256 length should be at least 32 bytes")
 		}
@@ -363,7 +363,7 @@ func (c *Client) generate_rakp3_authcode() ([]byte, error) {
 // the auth algorithm's RAKP4 truncation (suites 2/3/16/17).
 func (c *Client) generate_rakp4_authcode() ([]byte, error) {
 	// RAKP-none: the Integrity Check Value is absent (spec §13.28.2).
-	if c.session.v20.authAlg == ipmi.AuthAlgRAKP_None {
+	if c.session.v20.authAlg == types.AuthAlg_None {
 		return []byte{}, nil
 	}
 
@@ -391,19 +391,19 @@ func (c *Client) generate_rakp4_authcode() ([]byte, error) {
 	authAlg := c.session.v20.authAlg
 	var out []byte
 	switch authAlg {
-	case ipmi.AuthAlgRAKP_HMAC_SHA1:
+	case types.AuthAlg_HMAC_SHA1:
 		// HMAC-SHA1-96: truncate to 12 bytes.
 		if len(b) < 12 {
 			return nil, fmt.Errorf("rakp4: hmac sha1 length %d too short for SHA1-96 (auth alg 0x%x)", len(b), authAlg)
 		}
 		out = b[0:12]
-	case ipmi.AuthAlgRAKP_HMAC_SHA256:
+	case types.AuthAlg_HMAC_SHA256:
 		// HMAC-SHA256-128: truncate to 16 bytes.
 		if len(b) < 16 {
 			return nil, fmt.Errorf("rakp4: hmac sha256 length %d too short for SHA256-128 (auth alg 0x%x)", len(b), authAlg)
 		}
 		out = b[0:16]
-	case ipmi.AuthAlgRAKP_HMAC_MD5:
+	case types.AuthAlg_HMAC_MD5:
 		// HMAC-MD5-128: 16 bytes.
 		if len(b) < 16 {
 			return nil, fmt.Errorf("rakp4: hmac md5 length %d too short for MD5-128 (auth alg 0x%x)", len(b), authAlg)

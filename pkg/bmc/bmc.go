@@ -10,7 +10,7 @@ import (
 
 	"github.com/bougou/go-ipmi/pkg/clock"
 	"github.com/bougou/go-ipmi/pkg/hal"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // DeviceInfo contains the identification data returned by Get Device ID.
@@ -42,7 +42,7 @@ type BMC struct {
 	// [DefaultCipherSuites] when nil. Each suite must be supported by the
 	// reference server (see [SupportedCipherSuite]); this is validated in
 	// [WithCipherSuites].
-	CipherSuites []ipmi.CipherSuiteID
+	CipherSuites []types.CipherSuiteID
 
 	Users    *UserStore
 	Channels *ChannelStore
@@ -128,7 +128,7 @@ func (b *BMC) V15AuthTypeEnabled(authType V15AuthType) bool {
 // accepts. Each ID must be a suite the reference server implements
 // ([SupportedCipherSuite]); otherwise an error is returned by New and the
 // default suite list is kept. Pass nil/empty to restore [DefaultCipherSuites].
-func WithCipherSuites(ids []ipmi.CipherSuiteID) Option {
+func WithCipherSuites(ids []types.CipherSuiteID) Option {
 	return func(b *BMC) {
 		b.setCipherSuites(ids)
 	}
@@ -136,7 +136,7 @@ func WithCipherSuites(ids []ipmi.CipherSuiteID) Option {
 
 // ResolvedCipherSuites returns the cipher suite list to use for advertisement,
 // falling back to [DefaultCipherSuites] when none was configured.
-func (b *BMC) ResolvedCipherSuites() []ipmi.CipherSuiteID {
+func (b *BMC) ResolvedCipherSuites() []types.CipherSuiteID {
 	if len(b.CipherSuites) > 0 {
 		return b.CipherSuites
 	}
@@ -146,11 +146,11 @@ func (b *BMC) ResolvedCipherSuites() []ipmi.CipherSuiteID {
 // SetCipherSuites replaces the configured cipher suite list. Each ID must be
 // supported by the reference server ([SupportedCipherSuite]); an unsupported
 // ID panics, failing at configuration time rather than at handshake time.
-func (b *BMC) SetCipherSuites(ids []ipmi.CipherSuiteID) {
+func (b *BMC) SetCipherSuites(ids []types.CipherSuiteID) {
 	b.setCipherSuites(ids)
 }
 
-func (b *BMC) setCipherSuites(ids []ipmi.CipherSuiteID) {
+func (b *BMC) setCipherSuites(ids []types.CipherSuiteID) {
 	if len(ids) == 0 {
 		b.CipherSuites = nil
 		return
@@ -186,7 +186,7 @@ func New(info DeviceInfo, guid [16]byte, h hal.HAL, opts ...Option) *BMC {
 // validateCipherSuites panics if any configured cipher suite is not implemented
 // by the reference server. Failing at construction avoids runtime handshake
 // failures from advertising suites we cannot negotiate.
-func validateCipherSuites(ids []ipmi.CipherSuiteID) {
+func validateCipherSuites(ids []types.CipherSuiteID) {
 	for _, id := range ids {
 		if !SupportedCipherSuite(id) {
 			panic(fmt.Sprintf("bmc: cipher suite %d is not implemented by the reference server", id))

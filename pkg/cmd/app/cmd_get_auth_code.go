@@ -6,10 +6,10 @@ import
 //
 // This command is used to send a block of data to the BMC, whereupon the BMC will
 // return a hash of the data together concatenated with the internally stored password for the given channel and user
-ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 
 type GetAuthCodeRequest struct {
-	AuthType ipmi.AuthType
+	AuthType types.AuthType
 
 	ChannelNumber uint8
 
@@ -20,7 +20,7 @@ type GetAuthCodeRequest struct {
 }
 
 type GetAuthCodeResponse struct {
-	ipmi.CompletionCode
+	types.CompletionCode
 
 	// For IPMI v1.5 AuthCode Number:
 	AuthCode [16]byte

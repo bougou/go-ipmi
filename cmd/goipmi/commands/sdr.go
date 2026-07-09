@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	ipmiclient "github.com/bougou/go-ipmi/pkg/client"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -69,7 +69,7 @@ func NewCmdSDRGet() *cobra.Command {
 			}
 			ctx := context.Background()
 
-			var sdr *ipmi.SDR
+			var sdr *types.SDR
 			var err error
 
 			id, err := parseStringToInt64(args[0])
@@ -142,11 +142,11 @@ Sensor Types:
 						return
 					}
 
-					fmt.Println(ipmi.FormatSensors(true, sensors...))
+					fmt.Println(types.FormatSensors(true, sensors...))
 					return
 				}
 
-				sensorType, err := ipmi.SensorTypeFromNameOrNumber(args[0])
+				sensorType, err := types.SensorTypeFromNameOrNumber(args[0])
 				if err != nil {
 					fmt.Printf("invalid sensor type: %s", args[0])
 					return
@@ -158,7 +158,7 @@ Sensor Types:
 					return
 				}
 
-				fmt.Println(ipmi.FormatSensors(true, sensors...))
+				fmt.Println(types.FormatSensors(true, sensors...))
 			}
 		},
 	}
@@ -174,13 +174,13 @@ func NewCmdSDRList() *cobra.Command {
 		Use:   "list [all|full|compact|event|mcloc|fru|generic]",
 		Short: "list",
 		Run: func(cmd *cobra.Command, args []string) {
-			recordTypes := []ipmi.SDRRecordType{}
+			recordTypes := []types.SDRRecordType{}
 
 			isFRU := false
 
 			// default only get Full and Compact SDR
 			if len(args) == 0 {
-				recordTypes = append(recordTypes, ipmi.SDRRecordTypeFullSensor, ipmi.SDRRecordTypeCompactSensor)
+				recordTypes = append(recordTypes, types.SDRRecordTypeFullSensor, types.SDRRecordTypeCompactSensor)
 			}
 
 			if len(args) >= 1 {
@@ -188,18 +188,18 @@ func NewCmdSDRList() *cobra.Command {
 				case "all":
 					// no filter, recordTypes is empty.
 				case "full":
-					recordTypes = append(recordTypes, ipmi.SDRRecordTypeFullSensor)
+					recordTypes = append(recordTypes, types.SDRRecordTypeFullSensor)
 				case "compact":
-					recordTypes = append(recordTypes, ipmi.SDRRecordTypeCompactSensor)
+					recordTypes = append(recordTypes, types.SDRRecordTypeCompactSensor)
 				case "event":
-					recordTypes = append(recordTypes, ipmi.SDRRecordTypeEventOnly)
+					recordTypes = append(recordTypes, types.SDRRecordTypeEventOnly)
 				case "mcloc":
-					recordTypes = append(recordTypes, ipmi.SDRRecordTypeManagementControllerDeviceLocator)
+					recordTypes = append(recordTypes, types.SDRRecordTypeManagementControllerDeviceLocator)
 				case "fru":
-					recordTypes = append(recordTypes, ipmi.SDRRecordTypeFRUDeviceLocator)
+					recordTypes = append(recordTypes, types.SDRRecordTypeFRUDeviceLocator)
 					isFRU = true
 				case "generic":
-					recordTypes = append(recordTypes, ipmi.SDRRecordTypeGenericLocator)
+					recordTypes = append(recordTypes, types.SDRRecordTypeGenericLocator)
 				default:
 					CheckErr(fmt.Errorf("unknown supported record type (%s), usage: %s", args[0], usage))
 					return
@@ -211,11 +211,11 @@ func NewCmdSDRList() *cobra.Command {
 			if streamMode {
 				sdrs := client.GetSDRsStream(ctx, recordTypes...)
 				if isFRU {
-					if err := ipmi.FormatSDRsStream_FRU(sdrs); err != nil {
+					if err := types.FormatSDRsStream_FRU(sdrs); err != nil {
 						CheckErr(fmt.Errorf("FormatSDRsStream_FRU failed, err: %w", err))
 					}
 				} else {
-					if err := ipmi.FormatSDRsStream(sdrs); err != nil {
+					if err := types.FormatSDRsStream(sdrs); err != nil {
 						CheckErr(fmt.Errorf("FormatSDRsStream failed, err: %w", err))
 					}
 				}
@@ -225,9 +225,9 @@ func NewCmdSDRList() *cobra.Command {
 					CheckErr(fmt.Errorf("GetSDRs failed, err: %w", err))
 				}
 				if isFRU {
-					fmt.Println(ipmi.FormatSDRs_FRU(sdrs))
+					fmt.Println(types.FormatSDRs_FRU(sdrs))
 				} else {
-					fmt.Println(ipmi.FormatSDRs(sdrs))
+					fmt.Println(types.FormatSDRs(sdrs))
 				}
 			}
 		},

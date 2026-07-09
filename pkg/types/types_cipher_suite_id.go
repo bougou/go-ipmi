@@ -42,52 +42,52 @@ const (
 )
 
 // getCipherSuiteAlgorithms returns AuthAlg, IntegrityAlg and CryptAlg of the specified cipherSuiteID.
-func GetCipherSuiteAlgorithms(cipherSuiteID CipherSuiteID) (authAlg AuthAlg, integrity IntegrityAlg, encryptionAlg CryptAlg, err error) {
+func GetCipherSuiteAlgorithms(cipherSuiteID CipherSuiteID) (authAlg AuthAlg, integrity IntegrityAlg, encryptionAlg CryptAlg, ok bool) {
 	switch cipherSuiteID {
 	case CipherSuiteID0:
-		return AuthAlgRAKP_None, IntegrityAlg_None, CryptAlg_None, nil
+		return AuthAlg_None, IntegrityAlg_None, CryptAlg_None, true
 	case CipherSuiteID1:
-		return AuthAlgRAKP_HMAC_SHA1, IntegrityAlg_None, CryptAlg_None, nil
+		return AuthAlg_HMAC_SHA1, IntegrityAlg_None, CryptAlg_None, true
 	case CipherSuiteID2:
-		return AuthAlgRAKP_HMAC_SHA1, IntegrityAlg_HMAC_SHA1_96, CryptAlg_None, nil
+		return AuthAlg_HMAC_SHA1, IntegrityAlg_HMAC_SHA1_96, CryptAlg_None, true
 	case CipherSuiteID3:
-		return AuthAlgRAKP_HMAC_SHA1, IntegrityAlg_HMAC_SHA1_96, CryptAlg_AES_CBC_128, nil
+		return AuthAlg_HMAC_SHA1, IntegrityAlg_HMAC_SHA1_96, CryptAlg_AES_CBC_128, true
 	case CipherSuiteID4:
-		return AuthAlgRAKP_HMAC_SHA1, IntegrityAlg_HMAC_SHA1_96, CryptAlg_xRC4_128, nil
+		return AuthAlg_HMAC_SHA1, IntegrityAlg_HMAC_SHA1_96, CryptAlg_xRC4_128, true
 	case CipherSuiteID5:
-		return AuthAlgRAKP_HMAC_SHA1, IntegrityAlg_HMAC_SHA1_96, CryptAlg_xRC4_40, nil
+		return AuthAlg_HMAC_SHA1, IntegrityAlg_HMAC_SHA1_96, CryptAlg_xRC4_40, true
 	case CipherSuiteID6:
-		return AuthAlgRAKP_HMAC_MD5, IntegrityAlg_None, CryptAlg_None, nil
+		return AuthAlg_HMAC_MD5, IntegrityAlg_None, CryptAlg_None, true
 	case CipherSuiteID7:
-		return AuthAlgRAKP_HMAC_MD5, IntegrityAlg_HMAC_MD5_128, CryptAlg_None, nil
+		return AuthAlg_HMAC_MD5, IntegrityAlg_HMAC_MD5_128, CryptAlg_None, true
 	case CipherSuiteID8:
-		return AuthAlgRAKP_HMAC_MD5, IntegrityAlg_HMAC_MD5_128, CryptAlg_AES_CBC_128, nil
+		return AuthAlg_HMAC_MD5, IntegrityAlg_HMAC_MD5_128, CryptAlg_AES_CBC_128, true
 	case CipherSuiteID9:
-		return AuthAlgRAKP_HMAC_MD5, IntegrityAlg_HMAC_MD5_128, CryptAlg_xRC4_128, nil
+		return AuthAlg_HMAC_MD5, IntegrityAlg_HMAC_MD5_128, CryptAlg_xRC4_128, true
 	case CipherSuiteID10:
-		return AuthAlgRAKP_HMAC_MD5, IntegrityAlg_HMAC_MD5_128, CryptAlg_xRC4_40, nil
+		return AuthAlg_HMAC_MD5, IntegrityAlg_HMAC_MD5_128, CryptAlg_xRC4_40, true
 	case CipherSuiteID11:
-		return AuthAlgRAKP_HMAC_MD5, IntegrityAlg_MD5_128, CryptAlg_None, nil
+		return AuthAlg_HMAC_MD5, IntegrityAlg_MD5_128, CryptAlg_None, true
 	case CipherSuiteID12:
-		return AuthAlgRAKP_HMAC_MD5, IntegrityAlg_MD5_128, CryptAlg_AES_CBC_128, nil
+		return AuthAlg_HMAC_MD5, IntegrityAlg_MD5_128, CryptAlg_AES_CBC_128, true
 	case CipherSuiteID13:
-		return AuthAlgRAKP_HMAC_MD5, IntegrityAlg_MD5_128, CryptAlg_xRC4_128, nil
+		return AuthAlg_HMAC_MD5, IntegrityAlg_MD5_128, CryptAlg_xRC4_128, true
 	case CipherSuiteID14:
-		return AuthAlgRAKP_HMAC_MD5, IntegrityAlg_MD5_128, CryptAlg_xRC4_40, nil
+		return AuthAlg_HMAC_MD5, IntegrityAlg_MD5_128, CryptAlg_xRC4_40, true
 	case CipherSuiteID15:
-		return AuthAlgRAKP_HMAC_SHA256, IntegrityAlg_None, CryptAlg_None, nil
+		return AuthAlg_HMAC_SHA256, IntegrityAlg_None, CryptAlg_None, true
 	case CipherSuiteID16:
-		return AuthAlgRAKP_HMAC_SHA256, IntegrityAlg_HMAC_SHA256_128, CryptAlg_None, nil
+		return AuthAlg_HMAC_SHA256, IntegrityAlg_HMAC_SHA256_128, CryptAlg_None, true
 	case CipherSuiteID17:
-		return AuthAlgRAKP_HMAC_SHA256, IntegrityAlg_HMAC_SHA256_128, CryptAlg_AES_CBC_128, nil
+		return AuthAlg_HMAC_SHA256, IntegrityAlg_HMAC_SHA256_128, CryptAlg_AES_CBC_128, true
 	case CipherSuiteID18:
-		return AuthAlgRAKP_HMAC_SHA256, IntegrityAlg_HMAC_SHA256_128, CryptAlg_xRC4_128, nil
+		return AuthAlg_HMAC_SHA256, IntegrityAlg_HMAC_SHA256_128, CryptAlg_xRC4_128, true
 	case CipherSuiteID19:
-		return AuthAlgRAKP_HMAC_SHA256, IntegrityAlg_HMAC_SHA256_128, CryptAlg_xRC4_40, nil
+		return AuthAlg_HMAC_SHA256, IntegrityAlg_HMAC_SHA256_128, CryptAlg_xRC4_40, true
 	case CipherSuiteIDReserved:
-		return 0, 0, 0, nil
+		return 0, 0, 0, false
 	default:
-		return 0, 0, 0, nil
+		return 0, 0, 0, false
 	}
 }
 

@@ -1,7 +1,7 @@
 package storage
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 33.11 Reserve SDR Repository Command
 )
 
@@ -13,8 +13,8 @@ type ReserveSDRRepoResponse struct {
 	ReservationID uint16
 }
 
-func (req *ReserveSDRRepoRequest) Command() ipmi.Command {
-	return ipmi.CommandReserveSDRRepo
+func (req *ReserveSDRRepoRequest) Command() types.Command {
+	return types.CommandReserveSDRRepo
 }
 
 func (req *ReserveSDRRepoRequest) Pack() []byte {
@@ -23,10 +23,10 @@ func (req *ReserveSDRRepoRequest) Pack() []byte {
 
 func (res *ReserveSDRRepoResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
-	res.ReservationID, _, _ = ipmi.UnpackUint16L(msg, 0)
+	res.ReservationID, _, _ = types.UnpackUint16L(msg, 0)
 	return nil
 }
 

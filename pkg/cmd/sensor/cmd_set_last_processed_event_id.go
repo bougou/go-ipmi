@@ -1,7 +1,7 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 30.5 Set Last Processed Event ID Command
 )
 
@@ -16,8 +16,8 @@ type SetLastProcessedEventIdResponse struct {
 	// empty
 }
 
-func (req *SetLastProcessedEventIdRequest) Command() ipmi.Command {
-	return ipmi.CommandSetLastProcessedEventId
+func (req *SetLastProcessedEventIdRequest) Command() types.Command {
+	return types.CommandSetLastProcessedEventId
 }
 
 func (req *SetLastProcessedEventIdRequest) Pack() []byte {
@@ -29,8 +29,8 @@ func (req *SetLastProcessedEventIdRequest) Pack() []byte {
 	if req.ByBMC {
 		b0 = 1
 	}
-	ipmi.PackUint8(b0, out, 0)
-	ipmi.PackUint16L(req.RecordID, out, 1)
+	types.PackUint8(b0, out, 0)
+	types.PackUint16L(req.RecordID, out, 1)
 
 	return out
 }

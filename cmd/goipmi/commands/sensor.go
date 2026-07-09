@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	ipmiclient "github.com/bougou/go-ipmi/pkg/client"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -75,7 +75,7 @@ func NewCmdSensorList() *cobra.Command {
 
 			if streamMode {
 				sensors := client.GetSensorsStream(ctx, filterOptions...)
-				if err := ipmi.FormatSensorsStream(extended, sensors); err != nil {
+				if err := types.FormatSensorsStream(extended, sensors); err != nil {
 					CheckErr(fmt.Errorf("FormatSensorsStream failed, err: %w", err))
 				}
 			} else {
@@ -83,7 +83,7 @@ func NewCmdSensorList() *cobra.Command {
 				if err != nil {
 					CheckErr(fmt.Errorf("GetSensors failed, err: %w", err))
 				}
-				fmt.Println(ipmi.FormatSensors(extended, sensors...))
+				fmt.Println(types.FormatSensors(extended, sensors...))
 			}
 
 		},
@@ -112,7 +112,7 @@ func NewCmdSensorGet() *cobra.Command {
 
 			ctx := context.Background()
 
-			var sensor *ipmi.Sensor
+			var sensor *types.Sensor
 			var err error
 
 			id, err := parseStringToInt64(args[0])

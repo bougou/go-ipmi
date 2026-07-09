@@ -1,7 +1,7 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 22.3 Clear Message Flags Command
 )
 
@@ -17,29 +17,29 @@ type ClearMessageFlagsRequest struct {
 type ClearMessageFlagsResponse struct {
 }
 
-func (req *ClearMessageFlagsRequest) Command() ipmi.Command {
-	return ipmi.CommandClearMessageFlags
+func (req *ClearMessageFlagsRequest) Command() types.Command {
+	return types.CommandClearMessageFlags
 }
 
 func (req *ClearMessageFlagsRequest) Pack() []byte {
 	var b uint8 = 0
 	if req.ClearOEM2 {
-		b = ipmi.SetBit7(b)
+		b = types.SetBit7(b)
 	}
 	if req.ClearOEM1 {
-		b = ipmi.SetBit6(b)
+		b = types.SetBit6(b)
 	}
 	if req.ClearOEM0 {
-		b = ipmi.SetBit5(b)
+		b = types.SetBit5(b)
 	}
 	if req.ClearWatchdogPreTimeoutInterruptFlag {
-		b = ipmi.SetBit3(b)
+		b = types.SetBit3(b)
 	}
 	if req.ClearEventMessageBuffer {
-		b = ipmi.SetBit1(b)
+		b = types.SetBit1(b)
 	}
 	if req.ClearReceiveMessageQueue {
-		b = ipmi.SetBit0(b)
+		b = types.SetBit0(b)
 	}
 
 	return []byte{b}

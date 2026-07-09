@@ -7,7 +7,7 @@ import (
 
 	ipmiclient "github.com/bougou/go-ipmi/pkg/client"
 	ipmiapp "github.com/bougou/go-ipmi/pkg/cmd/app"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/kr/pretty"
 	"github.com/spf13/cobra"
 )
@@ -75,7 +75,7 @@ func NewCmdXGetSDRs() *cobra.Command {
 				}
 				fmt.Printf("GetSDRs succeeded, %d records\n", len(res))
 				if show {
-					fmt.Println(ipmi.FormatSDRs(res))
+					fmt.Println(types.FormatSDRs(res))
 				}
 
 				if loop {
@@ -120,7 +120,7 @@ func NewCmdXGetSensors() *cobra.Command {
 				}
 				fmt.Printf("GetSensors succeeded, %d records\n", len(res))
 				if show {
-					fmt.Println(ipmi.FormatSensors(true, res...))
+					fmt.Println(types.FormatSensors(true, res...))
 				}
 				if loop {
 					goto WAIT
@@ -147,13 +147,13 @@ func NewCmdXGetSensorsFilterFans() *cobra.Command {
 		Short: "get-sensors-filter-fans",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
-			res, err := client.GetSensors(ctx, ipmiclient.SensorFilterOptionIsSensorType(ipmi.SensorTypeFan))
+			res, err := client.GetSensors(ctx, ipmiclient.SensorFilterOptionIsSensorType(types.SensorTypeFan))
 			if err != nil {
 				fmt.Printf("GetSensors failed, err: %s", err)
 				return
 			}
 			fmt.Printf("GetSensors succeeded, %d records\n", len(res))
-			fmt.Println(ipmi.FormatSensors(true, res...))
+			fmt.Println(types.FormatSensors(true, res...))
 		},
 	}
 	return cmd
@@ -177,7 +177,7 @@ func NewCmdXGetDeviceSDRs() *cobra.Command {
 
 			fmt.Printf("GetDeviceSDRs succeeded, %d records\n", len(res))
 			if show {
-				fmt.Println(ipmi.FormatSDRs(res))
+				fmt.Println(types.FormatSDRs(res))
 			}
 		},
 	}
@@ -202,7 +202,7 @@ func NewCmdXGetPayloadActivationStatus() *cobra.Command {
 			}
 
 			ctx := context.Background()
-			res, err := client.GetPayloadActivationStatus(ctx, ipmi.PayloadType(payloadType))
+			res, err := client.GetPayloadActivationStatus(ctx, types.PayloadType(payloadType))
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -228,7 +228,7 @@ func NewCmdXGetSystemGUID() *cobra.Command {
 
 			fmt.Println("\nDetail of GUID\n==============")
 			fmt.Println()
-			fmt.Println(ipmi.FormatGUIDDetails(res.GUID))
+			fmt.Println(types.FormatGUIDDetails(res.GUID))
 		},
 	}
 
@@ -249,7 +249,7 @@ func NewCmdXGetDeviceGUID() *cobra.Command {
 
 			fmt.Println("\nDetail of GUID\n==============")
 			fmt.Println()
-			fmt.Println(ipmi.FormatGUIDDetails(res.GUID))
+			fmt.Println(types.FormatGUIDDetails(res.GUID))
 		},
 	}
 
@@ -295,15 +295,15 @@ func NewCmdXGetLanConfigParamsFor() *cobra.Command {
 
 			ctx := context.Background()
 
-			lanConfigParams := ipmi.LanConfigParams{
-				IP:                        &ipmi.LanConfigParam_IP{},
-				SubnetMask:                &ipmi.LanConfigParam_SubnetMask{},
-				DefaultGatewayIP:          &ipmi.LanConfigParam_DefaultGatewayIP{},
-				IPv6StaticAddresses:       make([]*ipmi.LanConfigParam_IPv6StaticAddress, 0),
-				IPv6DynamicAddresses:      make([]*ipmi.LanConfigParam_IPv6DynamicAddress, 0),
-				IPv6DHCPv6StaticDUIDs:     make([]*ipmi.LanConfigParam_IPv6DHCPv6StaticDUID, 0),
-				AlertDestinationAddresses: make([]*ipmi.LanConfigParam_AlertDestinationAddress, 0),
-				IPv6DynamicRouterInfoMAC:  make([]*ipmi.LanConfigParam_IPv6DynamicRouterInfoMAC, 0),
+			lanConfigParams := types.LanConfigParams{
+				IP:                        &types.LanConfigParam_IP{},
+				SubnetMask:                &types.LanConfigParam_SubnetMask{},
+				DefaultGatewayIP:          &types.LanConfigParam_DefaultGatewayIP{},
+				IPv6StaticAddresses:       make([]*types.LanConfigParam_IPv6StaticAddress, 0),
+				IPv6DynamicAddresses:      make([]*types.LanConfigParam_IPv6DynamicAddress, 0),
+				IPv6DHCPv6StaticDUIDs:     make([]*types.LanConfigParam_IPv6DHCPv6StaticDUID, 0),
+				AlertDestinationAddresses: make([]*types.LanConfigParam_AlertDestinationAddress, 0),
+				IPv6DynamicRouterInfoMAC:  make([]*types.LanConfigParam_IPv6DynamicRouterInfoMAC, 0),
 			}
 
 			if err := client.GetLanConfigParamsFor(ctx, channelNumber, &lanConfigParams); err != nil {
@@ -442,10 +442,10 @@ func NewCmdXGetSystemInfoParamsFor() *cobra.Command {
 		Use: "get-system-info-params-for",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
-			systemInfoParams := &ipmi.SystemInfoParams{
+			systemInfoParams := &types.SystemInfoParams{
 				SetInProgress:          nil,
 				SystemFirmwareVersions: nil,
-				SystemNames:            make([]*ipmi.SystemInfoParam_SystemName, 0),
+				SystemNames:            make([]*types.SystemInfoParam_SystemName, 0),
 			}
 			pretty.Println(systemInfoParams)
 			if err := client.GetSystemInfoParamsFor(ctx, systemInfoParams); err != nil {
@@ -491,7 +491,7 @@ func NewCmdXSetUserAccess() *cobra.Command {
 				EnableIPMIMessaging:  true,
 				ChannelNumber:        0x01,
 				UserID:               0x02,
-				MaxPrivLevel:         uint8(ipmi.PrivilegeLevelAdministrator),
+				MaxPrivLevel:         uint8(types.PrivilegeLevelAdministrator),
 				SessionLimit:         0,
 			}
 			res, err := client.SetUserAccess(ctx, req)

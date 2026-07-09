@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 20.2 Cold Reset Command
 )
 
@@ -12,8 +12,8 @@ type ColdResetRequest struct {
 type ColdResetResponse struct {
 }
 
-func (req *ColdResetRequest) Command() ipmi.Command {
-	return ipmi.CommandColdReset
+func (req *ColdResetRequest) Command() types.Command {
+	return types.CommandColdReset
 }
 
 func (req *ColdResetRequest) Pack() []byte {

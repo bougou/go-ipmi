@@ -1,12 +1,12 @@
 package transport
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 24.3 Suspend/Resume Payload Encryption Command
 type SuspendResumePayloadEncryptionRequest struct {
-	PayloadType     ipmi.PayloadType
+	PayloadType     types.PayloadType
 	PayloadInstance uint8
 	Operation       PayloadEncryptionOperation
 }
@@ -30,8 +30,8 @@ func (req *SuspendResumePayloadEncryptionRequest) Pack() []byte {
 	return out
 }
 
-func (req *SuspendResumePayloadEncryptionRequest) Command() ipmi.Command {
-	return ipmi.CommandSuspendResumePayloadEncryption
+func (req *SuspendResumePayloadEncryptionRequest) Command() types.Command {
+	return types.CommandSuspendResumePayloadEncryption
 }
 
 func (res *SuspendResumePayloadEncryptionResponse) CompletionCodes() map[uint8]string {

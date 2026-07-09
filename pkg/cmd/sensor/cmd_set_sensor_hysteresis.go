@@ -1,7 +1,7 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 35.6 Set Sensor Hysteresis Command
 )
 
@@ -14,16 +14,16 @@ type SetSensorHysteresisRequest struct {
 type SetSensorHysteresisResponse struct {
 }
 
-func (req *SetSensorHysteresisRequest) Command() ipmi.Command {
-	return ipmi.CommandSetSensorHysteresis
+func (req *SetSensorHysteresisRequest) Command() types.Command {
+	return types.CommandSetSensorHysteresis
 }
 
 func (req *SetSensorHysteresisRequest) Pack() []byte {
 	out := make([]byte, 4)
-	ipmi.PackUint8(req.SensorNumber, out, 0)
-	ipmi.PackUint8(0xff, out, 1) // reserved for future "hysteresis mask" definition. Write as FFh
-	ipmi.PackUint8(req.PositiveHysteresis, out, 2)
-	ipmi.PackUint8(req.NegativeHysteresis, out, 3)
+	types.PackUint8(req.SensorNumber, out, 0)
+	types.PackUint8(0xff, out, 1) // reserved for future "hysteresis mask" definition. Write as FFh
+	types.PackUint8(req.PositiveHysteresis, out, 2)
+	types.PackUint8(req.NegativeHysteresis, out, 3)
 
 	return out
 }

@@ -3,7 +3,8 @@ package client
 import (
 	"context"
 	"fmt"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 13.22 RAKP Message 3
@@ -13,7 +14,7 @@ type RAKPMessage3 struct {
 	MessageTag uint8
 
 	// Identifies the status of the previous message.
-	RmcpStatusCode ipmi.RmcpStatusCode
+	RmcpStatusCode types.RmcpStatusCode
 
 	// The Managed System's Session ID for this session, returned by the managed system on the previous RMCP+ Open Session Response message.
 	ManagedSystemSessionID uint32
@@ -27,11 +28,11 @@ type RAKPMessage3 struct {
 }
 
 type RAKPMessage4 struct {
-	authAlg ipmi.AuthAlg
+	authAlg types.AuthAlg
 
 	MessageTag uint8
 
-	RmcpStatusCode ipmi.RmcpStatusCode
+	RmcpStatusCode types.RmcpStatusCode
 
 	MgmtConsoleSessionID uint32
 
@@ -49,8 +50,8 @@ type RAKPMessage4 struct {
 	IntegrityCheckValue []byte
 }
 
-func (req *RAKPMessage3) Command() ipmi.Command {
-	return ipmi.CommandNone
+func (req *RAKPMessage3) Command() types.Command {
+	return types.CommandNone
 }
 
 func (req *RAKPMessage3) Pack() []byte {
@@ -66,26 +67,26 @@ func (req *RAKPMessage3) Pack() []byte {
 func (res *RAKPMessage4) Unpack(msg []byte) error {
 	authCodeLen := 0
 	switch res.authAlg {
-	case ipmi.AuthAlgRAKP_None:
+	case types.AuthAlg_None:
 		// nothing need to do
-	case ipmi.AuthAlgRAKP_HMAC_MD5:
+	case types.AuthAlg_HMAC_MD5:
 		// need to copy 16 bytes
 		authCodeLen = 16
-	case ipmi.AuthAlgRAKP_HMAC_SHA1:
+	case types.AuthAlg_HMAC_SHA1:
 		// need to copy 12 bytes
 		authCodeLen = 12
-	case ipmi.AuthAlgRAKP_HMAC_SHA256:
+	case types.AuthAlg_HMAC_SHA256:
 		authCodeLen = 16
 	default:
 	}
 
 	if len(msg) < 8+authCodeLen {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 8+authCodeLen)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 8+authCodeLen)
 	}
 
 	res.MessageTag, _, _ = unpackUint8(msg, 0)
 	b1, _, _ := unpackUint8(msg, 1)
-	res.RmcpStatusCode = ipmi.RmcpStatusCode(b1)
+	res.RmcpStatusCode = types.RmcpStatusCode(b1)
 	res.MgmtConsoleSessionID, _, _ = unpackUint32L(msg, 4)
 	res.IntegrityCheckValue, _, _ = unpackBytes(msg, 8, authCodeLen)
 	return nil
@@ -131,7 +132,7 @@ func (c *Client) RAKPMessage3(ctx context.Context) (response *RAKPMessage4, err 
 
 	request := &RAKPMessage3{
 		MessageTag:                    0,
-		RmcpStatusCode:                ipmi.RmcpStatusCode(c.session.v20.rakp2ReturnCode),
+		RmcpStatusCode:                types.RmcpStatusCode(c.session.v20.rakp2ReturnCode),
 		ManagedSystemSessionID:        c.session.v20.bmcSessionID,
 		KeyExchangeAuthenticationCode: authCode,
 	}
@@ -139,7 +140,7 @@ func (c *Client) RAKPMessage3(ctx context.Context) (response *RAKPMessage4, err 
 	response = &RAKPMessage4{
 		authAlg: c.session.v20.authAlg,
 	}
-	c.session.v20.state = ipmi.SessionStateRakp3Sent
+	c.session.v20.state = types.SessionStateRakp3Sent
 
 	err = c.Exchange(ctx, request, response)
 	if err != nil {
@@ -150,13 +151,13 @@ func (c *Client) RAKPMessage3(ctx context.Context) (response *RAKPMessage4, err 
 		return nil, fmt.Errorf("validate rakp4 failed, err: %w", err)
 	}
 
-	c.session.v20.state = ipmi.SessionStateActive
+	c.session.v20.state = types.SessionStateActive
 
 	return response, nil
 }
 
 func (c *Client) ValidateRAKP4(ctx context.Context, response *RAKPMessage4) (bool, error) {
-	if response.RmcpStatusCode != ipmi.RmcpStatusCodeNoErrors {
+	if response.RmcpStatusCode != types.RmcpStatusCodeNoErrors {
 		return false, fmt.Errorf("rakp4 status code not ok, %x", response.RmcpStatusCode)
 	}
 	// verify

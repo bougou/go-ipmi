@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 13.2.3 RMCP/ASF Presence Ping Message
@@ -34,13 +34,13 @@ func (req *RmcpPingRequest) Pack() []byte {
 	return nil
 }
 
-func (req *RmcpPingRequest) Command() ipmi.Command {
-	return ipmi.CommandNone
+func (req *RmcpPingRequest) Command() types.Command {
+	return types.CommandNone
 }
 
 func (res *RmcpPingResponse) Unpack(msg []byte) error {
 	if len(msg) < 16 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 16)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 16)
 	}
 	res.OEMIANA, _, _ = unpackUint32L(msg, 0)
 	res.OEMDefined, _, _ = unpackUint32L(msg, 4)

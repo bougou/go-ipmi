@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 27.7 Get Watchdog Timer Command
@@ -15,8 +15,8 @@ func (req *GetWatchdogTimerRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (req *GetWatchdogTimerRequest) Command() ipmi.Command {
-	return ipmi.CommandGetWatchdogTimer
+func (req *GetWatchdogTimerRequest) Command() types.Command {
+	return types.CommandGetWatchdogTimer
 }
 
 type GetWatchdogTimerResponse struct {
@@ -35,11 +35,11 @@ type GetWatchdogTimerResponse struct {
 
 func (res *GetWatchdogTimerResponse) Unpack(msg []byte) error {
 	if len(msg) < 8 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 8)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
 
-	res.DontLog = ipmi.IsBit7Set(msg[0])
-	res.TimerIsStarted = ipmi.IsBit6Set(msg[0])
+	res.DontLog = types.IsBit7Set(msg[0])
+	res.TimerIsStarted = types.IsBit6Set(msg[0])
 	res.TimerUse = TimerUse(0x07 & msg[0])
 
 	res.PreTimeoutInterrupt = PreTimeoutInterrupt((0x70 & msg[1]) >> 4)
@@ -47,8 +47,8 @@ func (res *GetWatchdogTimerResponse) Unpack(msg []byte) error {
 
 	res.PreTimeoutIntervalSec = msg[2]
 	res.ExpirationFlags = msg[3]
-	res.InitialCountdown, _, _ = ipmi.UnpackUint16L(msg, 4)
-	res.PresentCountdown, _, _ = ipmi.UnpackUint16L(msg, 6)
+	res.InitialCountdown, _, _ = types.UnpackUint16L(msg, 4)
+	res.PresentCountdown, _, _ = types.UnpackUint16L(msg, 6)
 	return nil
 }
 
@@ -60,7 +60,7 @@ func (res *GetWatchdogTimerResponse) CompletionCodes() map[uint8]string {
 func (res *GetWatchdogTimerResponse) Format() string {
 	return "" +
 		fmt.Sprintf("Watchdog Timer Use     : %s (%#02x)\n", res.TimerUse, uint8(res.TimerUse)) +
-		fmt.Sprintf("Watchdog Timer Is      : %s\n", ipmi.FormatBool(res.TimerIsStarted, "Started", "Stopped")) +
+		fmt.Sprintf("Watchdog Timer Is      : %s\n", types.FormatBool(res.TimerIsStarted, "Started", "Stopped")) +
 		fmt.Sprintf("Watchdog Timer Actions : %s (%#02x)\n", res.TimeoutAction, uint8(res.TimeoutAction)) +
 		fmt.Sprintf("Pre-timeout interval   : %d seconds\n", res.PreTimeoutIntervalSec) +
 		fmt.Sprintf("Timer Expiration Flags : %#02x\n", res.ExpirationFlags) +

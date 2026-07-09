@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bougou/go-ipmi/pkg/cmd/sensor"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 func (c *Client) SetLastProcessedEventId(ctx context.Context, recordID uint16, byBMC bool) (response *sensor.SetLastProcessedEventIdResponse, err error) {
@@ -59,7 +59,7 @@ func (c *Client) SetEventReceiverDisable(ctx context.Context, lun uint8) (respon
 	return c.SetEventReceiver(ctx, 0xff, lun)
 }
 
-func (c *Client) SetSensorType(ctx context.Context, sensorNumber uint8, sensorType ipmi.SensorType, eventReadingType ipmi.EventReadingType) (response *sensor.SetSensorTypeResponse, err error) {
+func (c *Client) SetSensorType(ctx context.Context, sensorNumber uint8, sensorType types.SensorType, eventReadingType types.EventReadingType) (response *sensor.SetSensorTypeResponse, err error) {
 	request := &sensor.SetSensorTypeRequest{
 		SensorNumber:     sensorNumber,
 		SensorType:       sensorType,
@@ -70,7 +70,7 @@ func (c *Client) SetSensorType(ctx context.Context, sensorNumber uint8, sensorTy
 	return
 }
 
-func (c *Client) SetPEFConfigParam(ctx context.Context, paramSelector ipmi.PEFConfigParamSelector, paramData []byte) (response *sensor.SetPEFConfigParamResponse, err error) {
+func (c *Client) SetPEFConfigParam(ctx context.Context, paramSelector types.PEFConfigParamSelector, paramData []byte) (response *sensor.SetPEFConfigParamResponse, err error) {
 	request := &sensor.SetPEFConfigParamRequest{
 		ParamSelector: paramSelector,
 		ParamData:     paramData,
@@ -222,7 +222,7 @@ func (c *Client) GetSensorEventStatus(ctx context.Context, sensorNumber uint8) (
 	return
 }
 
-func (c *Client) GetPEFConfigParam(ctx context.Context, getRevisionOnly bool, paramSelector ipmi.PEFConfigParamSelector, setSelector uint8, blockSelector uint8) (response *sensor.GetPEFConfigParamResponse, err error) {
+func (c *Client) GetPEFConfigParam(ctx context.Context, getRevisionOnly bool, paramSelector types.PEFConfigParamSelector, setSelector uint8, blockSelector uint8) (response *sensor.GetPEFConfigParamResponse, err error) {
 	request := &sensor.GetPEFConfigParamRequest{
 		GetParamRevisionOnly: getRevisionOnly,
 		ParamSelector:        paramSelector,
@@ -234,8 +234,8 @@ func (c *Client) GetPEFConfigParam(ctx context.Context, getRevisionOnly bool, pa
 	return
 }
 
-func (c *Client) GetPEFConfigParamFor(ctx context.Context, param ipmi.PEFConfigParameter) error {
-	if ipmi.IsNilPEFConfigParameter(param) {
+func (c *Client) GetPEFConfigParamFor(ctx context.Context, param types.PEFConfigParameter) error {
+	if types.IsNilPEFConfigParameter(param) {
 		return nil
 	}
 
@@ -253,24 +253,24 @@ func (c *Client) GetPEFConfigParamFor(ctx context.Context, param ipmi.PEFConfigP
 	return nil
 }
 
-func (c *Client) GetPEFConfigParams(ctx context.Context) (pefConfigParams *ipmi.PEFConfigParams, err error) {
-	pefConfigParams = &ipmi.PEFConfigParams{
-		SetInProgress:       &ipmi.PEFConfigParam_SetInProgress{},
-		Control:             &ipmi.PEFConfigParam_Control{},
-		ActionGlobalControl: &ipmi.PEFConfigParam_ActionGlobalControl{},
-		StartupDelay:        &ipmi.PEFConfigParam_StartupDelay{},
-		AlertStartupDelay:   &ipmi.PEFConfigParam_AlertStartupDelay{},
-		EventFiltersCount:   &ipmi.PEFConfigParam_EventFiltersCount{},
-		EventFilters:        []*ipmi.PEFConfigParam_EventFilter{},
-		EventFiltersData1:   []*ipmi.PEFConfigParam_EventFilterData1{},
-		AlertPoliciesCount:  &ipmi.PEFConfigParam_AlertPoliciesCount{},
-		AlertPolicies:       []*ipmi.PEFConfigParam_AlertPolicy{},
-		SystemGUID:          &ipmi.PEFConfigParam_SystemGUID{},
-		AlertStringsCount:   &ipmi.PEFConfigParam_AlertStringsCount{},
-		AlertStringKeys:     []*ipmi.PEFConfigParam_AlertStringKey{},
-		AlertStrings:        []*ipmi.PEFConfigParam_AlertString{},
-		GroupControlsCount:  &ipmi.PEFConfigParam_GroupControlsCount{},
-		GroupControls:       []*ipmi.PEFConfigParam_GroupControl{},
+func (c *Client) GetPEFConfigParams(ctx context.Context) (pefConfigParams *types.PEFConfigParams, err error) {
+	pefConfigParams = &types.PEFConfigParams{
+		SetInProgress:       &types.PEFConfigParam_SetInProgress{},
+		Control:             &types.PEFConfigParam_Control{},
+		ActionGlobalControl: &types.PEFConfigParam_ActionGlobalControl{},
+		StartupDelay:        &types.PEFConfigParam_StartupDelay{},
+		AlertStartupDelay:   &types.PEFConfigParam_AlertStartupDelay{},
+		EventFiltersCount:   &types.PEFConfigParam_EventFiltersCount{},
+		EventFilters:        []*types.PEFConfigParam_EventFilter{},
+		EventFiltersData1:   []*types.PEFConfigParam_EventFilterData1{},
+		AlertPoliciesCount:  &types.PEFConfigParam_AlertPoliciesCount{},
+		AlertPolicies:       []*types.PEFConfigParam_AlertPolicy{},
+		SystemGUID:          &types.PEFConfigParam_SystemGUID{},
+		AlertStringsCount:   &types.PEFConfigParam_AlertStringsCount{},
+		AlertStringKeys:     []*types.PEFConfigParam_AlertStringKey{},
+		AlertStrings:        []*types.PEFConfigParam_AlertString{},
+		GroupControlsCount:  &types.PEFConfigParam_GroupControlsCount{},
+		GroupControls:       []*types.PEFConfigParam_GroupControl{},
 	}
 
 	if err = c.GetPEFConfigParamsFor(ctx, pefConfigParams); err != nil {
@@ -280,7 +280,7 @@ func (c *Client) GetPEFConfigParams(ctx context.Context) (pefConfigParams *ipmi.
 	return pefConfigParams, nil
 }
 
-func (c *Client) GetPEFConfigParamsFor(ctx context.Context, pefConfigParams *ipmi.PEFConfigParams) error {
+func (c *Client) GetPEFConfigParamsFor(ctx context.Context, pefConfigParams *types.PEFConfigParams) error {
 	if pefConfigParams == nil {
 		return nil
 	}
@@ -325,9 +325,9 @@ func (c *Client) GetPEFConfigParamsFor(ctx context.Context, pefConfigParams *ipm
 
 	if pefConfigParams.EventFilters != nil {
 		if len(pefConfigParams.EventFilters) == 0 && eventFiltersCount > 0 {
-			pefConfigParams.EventFilters = make([]*ipmi.PEFConfigParam_EventFilter, eventFiltersCount)
+			pefConfigParams.EventFilters = make([]*types.PEFConfigParam_EventFilter, eventFiltersCount)
 			for i := uint8(0); i < eventFiltersCount; i++ {
-				pefConfigParams.EventFilters[i] = &ipmi.PEFConfigParam_EventFilter{
+				pefConfigParams.EventFilters[i] = &types.PEFConfigParam_EventFilter{
 					SetSelector: i + 1,
 				}
 			}
@@ -342,9 +342,9 @@ func (c *Client) GetPEFConfigParamsFor(ctx context.Context, pefConfigParams *ipm
 
 	if pefConfigParams.EventFiltersData1 != nil {
 		if len(pefConfigParams.EventFiltersData1) == 0 && eventFiltersCount > 0 {
-			pefConfigParams.EventFiltersData1 = make([]*ipmi.PEFConfigParam_EventFilterData1, eventFiltersCount)
+			pefConfigParams.EventFiltersData1 = make([]*types.PEFConfigParam_EventFilterData1, eventFiltersCount)
 			for i := uint8(0); i < eventFiltersCount; i++ {
-				pefConfigParams.EventFiltersData1[i] = &ipmi.PEFConfigParam_EventFilterData1{
+				pefConfigParams.EventFiltersData1[i] = &types.PEFConfigParam_EventFilterData1{
 					SetSelector: i + 1,
 				}
 			}
@@ -367,9 +367,9 @@ func (c *Client) GetPEFConfigParamsFor(ctx context.Context, pefConfigParams *ipm
 
 	if pefConfigParams.AlertPolicies != nil {
 		if len(pefConfigParams.AlertPolicies) == 0 && alertPoliciesCount > 0 {
-			pefConfigParams.AlertPolicies = make([]*ipmi.PEFConfigParam_AlertPolicy, alertPoliciesCount)
+			pefConfigParams.AlertPolicies = make([]*types.PEFConfigParam_AlertPolicy, alertPoliciesCount)
 			for i := uint8(0); i < alertPoliciesCount; i++ {
-				pefConfigParams.AlertPolicies[i] = &ipmi.PEFConfigParam_AlertPolicy{
+				pefConfigParams.AlertPolicies[i] = &types.PEFConfigParam_AlertPolicy{
 					SetSelector: i + 1,
 				}
 			}
@@ -398,9 +398,9 @@ func (c *Client) GetPEFConfigParamsFor(ctx context.Context, pefConfigParams *ipm
 
 	if pefConfigParams.AlertStringKeys != nil {
 		if len(pefConfigParams.AlertStringKeys) == 0 && alertStringsCount > 0 {
-			pefConfigParams.AlertStringKeys = make([]*ipmi.PEFConfigParam_AlertStringKey, alertStringsCount)
+			pefConfigParams.AlertStringKeys = make([]*types.PEFConfigParam_AlertStringKey, alertStringsCount)
 			for i := uint8(0); i < alertStringsCount; i++ {
-				pefConfigParams.AlertStringKeys[i] = &ipmi.PEFConfigParam_AlertStringKey{
+				pefConfigParams.AlertStringKeys[i] = &types.PEFConfigParam_AlertStringKey{
 					SetSelector: i,
 				}
 			}
@@ -415,9 +415,9 @@ func (c *Client) GetPEFConfigParamsFor(ctx context.Context, pefConfigParams *ipm
 
 	if pefConfigParams.AlertStrings != nil {
 		if len(pefConfigParams.AlertStrings) == 0 && alertStringsCount > 0 {
-			pefConfigParams.AlertStrings = make([]*ipmi.PEFConfigParam_AlertString, alertStringsCount)
+			pefConfigParams.AlertStrings = make([]*types.PEFConfigParam_AlertString, alertStringsCount)
 			for i := uint8(0); i < alertStringsCount; i++ {
-				pefConfigParams.AlertStrings[i] = &ipmi.PEFConfigParam_AlertString{
+				pefConfigParams.AlertStrings[i] = &types.PEFConfigParam_AlertString{
 					SetSelector: i,
 				}
 			}
@@ -440,9 +440,9 @@ func (c *Client) GetPEFConfigParamsFor(ctx context.Context, pefConfigParams *ipm
 
 	if pefConfigParams.GroupControls != nil {
 		if len(pefConfigParams.GroupControls) == 0 && groupControlsCount > 0 {
-			pefConfigParams.GroupControls = make([]*ipmi.PEFConfigParam_GroupControl, groupControlsCount)
+			pefConfigParams.GroupControls = make([]*types.PEFConfigParam_GroupControl, groupControlsCount)
 			for i := uint8(0); i < groupControlsCount; i++ {
-				pefConfigParams.GroupControls[i] = &ipmi.PEFConfigParam_GroupControl{
+				pefConfigParams.GroupControls[i] = &types.PEFConfigParam_GroupControl{
 					SetSelector: i,
 				}
 			}

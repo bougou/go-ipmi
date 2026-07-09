@@ -3,13 +3,13 @@ package dcmi
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // [DCMI specification v1.5]: 6.7.1 Get Thermal Limit Command
 type GetDCMIThermalLimitRequest struct {
-	EntityID       ipmi.EntityID // Entity ID = 37h or 40h (Inlet Temperature)
-	EntityInstance ipmi.EntityInstance
+	EntityID       types.EntityID // Entity ID = 37h or 40h (Inlet Temperature)
+	EntityInstance types.EntityInstance
 }
 
 type GetDCMIThermalLimitResponse struct {
@@ -26,11 +26,11 @@ type GetDCMIThermalLimitResponse struct {
 }
 
 func (req *GetDCMIThermalLimitRequest) Pack() []byte {
-	return []byte{ipmi.GroupExtensionDCMI, byte(req.EntityID), byte(req.EntityInstance)}
+	return []byte{types.GroupExtensionDCMI, byte(req.EntityID), byte(req.EntityInstance)}
 }
 
-func (req *GetDCMIThermalLimitRequest) Command() ipmi.Command {
-	return ipmi.CommandGetDCMIThermalLimit
+func (req *GetDCMIThermalLimitRequest) Command() types.Command {
+	return types.CommandGetDCMIThermalLimit
 }
 
 func (res *GetDCMIThermalLimitResponse) CompletionCodes() map[uint8]string {
@@ -39,19 +39,19 @@ func (res *GetDCMIThermalLimitResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetDCMIThermalLimitResponse) Unpack(msg []byte) error {
 	if len(msg) < 5 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 5)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 5)
 	}
 
-	if err := ipmi.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
+	if err := types.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
 		return err
 	}
 
-	b1, _, _ := ipmi.UnpackUint8(msg, 1)
-	res.ExceptionAction_PowerOffAndLogSEL = ipmi.IsBit6Set(b1)
-	res.ExceptionAction_LogSELOnly = ipmi.IsBit5Set(b1)
+	b1, _, _ := types.UnpackUint8(msg, 1)
+	res.ExceptionAction_PowerOffAndLogSEL = types.IsBit6Set(b1)
+	res.ExceptionAction_LogSELOnly = types.IsBit5Set(b1)
 
-	res.TemperatureLimit, _, _ = ipmi.UnpackUint8(msg, 2)
-	res.ExceptionTimeSec, _, _ = ipmi.UnpackUint16L(msg, 3)
+	res.TemperatureLimit, _, _ = types.UnpackUint8(msg, 2)
+	res.ExceptionTimeSec, _, _ = types.UnpackUint16L(msg, 3)
 
 	return nil
 }
@@ -59,8 +59,8 @@ func (res *GetDCMIThermalLimitResponse) Unpack(msg []byte) error {
 func (res *GetDCMIThermalLimitResponse) Format() string {
 	return "" +
 		"Exception Actions, taken if the Temperature Limit exceeded:\n" +
-		fmt.Sprintf("    Hard Power Off system and log event : %s\n", ipmi.FormatBool(res.ExceptionAction_PowerOffAndLogSEL, "active", "inactive")) +
-		fmt.Sprintf("    Log event to SEL only               : %s\n", ipmi.FormatBool(res.ExceptionAction_LogSELOnly, "active", "inactive")) +
+		fmt.Sprintf("    Hard Power Off system and log event : %s\n", types.FormatBool(res.ExceptionAction_PowerOffAndLogSEL, "active", "inactive")) +
+		fmt.Sprintf("    Log event to SEL only               : %s\n", types.FormatBool(res.ExceptionAction_LogSELOnly, "active", "inactive")) +
 		fmt.Sprintf("    Temperature Limit                   : %d degrees\n", res.TemperatureLimit) +
 		fmt.Sprintf("    Exception Time                      : %d seconds\n", res.ExceptionTimeSec)
 }

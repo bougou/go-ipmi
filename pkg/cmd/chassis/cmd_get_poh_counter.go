@@ -3,7 +3,7 @@ package chassis
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 28.14 Get POH Counter Command
@@ -20,8 +20,8 @@ func (res *GetPOHCounterResponse) Minutes() uint32 {
 	return res.CounterReading * uint32(res.MinutesPerCount)
 }
 
-func (req *GetPOHCounterRequest) Command() ipmi.Command {
-	return ipmi.CommandGetPOHCounter
+func (req *GetPOHCounterRequest) Command() types.Command {
+	return types.CommandGetPOHCounter
 }
 
 func (req *GetPOHCounterRequest) Pack() []byte {
@@ -30,11 +30,11 @@ func (req *GetPOHCounterRequest) Pack() []byte {
 
 func (res *GetPOHCounterResponse) Unpack(msg []byte) error {
 	if len(msg) < 5 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 5)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 5)
 	}
 
-	res.MinutesPerCount, _, _ = ipmi.UnpackUint8(msg, 0)
-	res.CounterReading, _, _ = ipmi.UnpackUint32L(msg, 1)
+	res.MinutesPerCount, _, _ = types.UnpackUint8(msg, 0)
+	res.CounterReading, _, _ = types.UnpackUint32L(msg, 1)
 	return nil
 }
 

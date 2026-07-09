@@ -3,7 +3,7 @@ package storage
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 35.2 Get Device SDR Info Command
@@ -37,37 +37,37 @@ type GetDeviceSDRInfoResponse struct {
 	SensorPopulationChangeIndicator uint32
 }
 
-func (req *GetDeviceSDRInfoRequest) Command() ipmi.Command {
-	return ipmi.CommandGetDeviceSDRInfo
+func (req *GetDeviceSDRInfoRequest) Command() types.Command {
+	return types.CommandGetDeviceSDRInfo
 }
 
 func (req *GetDeviceSDRInfoRequest) Pack() []byte {
 	var b uint8
 	if req.GetSDRCount {
-		b = ipmi.SetBit0(b)
+		b = types.SetBit0(b)
 	}
 	return []byte{b}
 }
 
 func (res *GetDeviceSDRInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
-	res.Count, _, _ = ipmi.UnpackUint8(msg, 0)
-	b, _, _ := ipmi.UnpackUint8(msg, 1)
+	res.Count, _, _ = types.UnpackUint8(msg, 0)
+	b, _, _ := types.UnpackUint8(msg, 1)
 
-	res.DynamicSensorPopulation = ipmi.IsBit7Set(b)
-	res.LUN3HasSensors = ipmi.IsBit3Set(b)
-	res.LUN2HasSensors = ipmi.IsBit2Set(b)
-	res.LUN1HasSensors = ipmi.IsBit1Set(b)
-	res.LUN0HasSensors = ipmi.IsBit0Set(b)
+	res.DynamicSensorPopulation = types.IsBit7Set(b)
+	res.LUN3HasSensors = types.IsBit3Set(b)
+	res.LUN2HasSensors = types.IsBit2Set(b)
+	res.LUN1HasSensors = types.IsBit1Set(b)
+	res.LUN0HasSensors = types.IsBit0Set(b)
 
 	if res.DynamicSensorPopulation {
 		if len(msg) < 6 {
-			return ipmi.ErrUnpackedDataTooShortWith(len(msg), 6)
+			return types.ErrUnpackedDataTooShortWith(len(msg), 6)
 		}
-		res.SensorPopulationChangeIndicator, _, _ = ipmi.UnpackUint32L(msg, 2)
+		res.SensorPopulationChangeIndicator, _, _ = types.UnpackUint32L(msg, 2)
 	}
 
 	return nil
@@ -79,7 +79,7 @@ func (r *GetDeviceSDRInfoResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetDeviceSDRInfoResponse) Format() string {
 	return "" +
-		fmt.Sprintf("Count              : %d (%s)\n", res.Count, ipmi.FormatBool(res.getSDRCount, "SDRs", "Sensors")) +
+		fmt.Sprintf("Count              : %d (%s)\n", res.Count, types.FormatBool(res.getSDRCount, "SDRs", "Sensors")) +
 		fmt.Sprintf("Dynamic Population : %v\n", res.DynamicSensorPopulation) +
 		fmt.Sprintf("LUN 0 has sensors  : %v\n", res.LUN0HasSensors) +
 		fmt.Sprintf("LUN 1 has sensors  : %v\n", res.LUN1HasSensors) +

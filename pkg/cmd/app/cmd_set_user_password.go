@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 22.30 Set User Password Command
 )
 
@@ -31,25 +31,25 @@ type SetUserPasswordResponse struct {
 	// empty
 }
 
-func (req *SetUserPasswordRequest) Command() ipmi.Command {
-	return ipmi.CommandSetUserPassword
+func (req *SetUserPasswordRequest) Command() types.Command {
+	return types.CommandSetUserPassword
 }
 
 func (req *SetUserPasswordRequest) Pack() []byte {
 	out := make([]byte, 2)
 	b := req.UserID & 0x3f
 	if req.Stored20 {
-		b = ipmi.SetBit7(b)
+		b = types.SetBit7(b)
 	}
-	ipmi.PackUint8(b, out, 0)
-	ipmi.PackUint8(uint8(req.Operation)&0x03, out, 1)
+	types.PackUint8(b, out, 0)
+	types.PackUint8(uint8(req.Operation)&0x03, out, 1)
 
 	if req.Operation == PasswordOperationSetPassword || req.Operation == PasswordOperationTestPassword {
 		var passwordStored []byte
 		if req.Stored20 {
-			passwordStored = ipmi.PadBytes(req.Password, 20, 0x00)
+			passwordStored = types.PadBytes(req.Password, 20, 0x00)
 		} else {
-			passwordStored = ipmi.PadBytes(req.Password, 16, 0x00)
+			passwordStored = types.PadBytes(req.Password, 16, 0x00)
 		}
 		out = append(out, passwordStored...)
 	}

@@ -1,7 +1,7 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 22.4 Get Message Flags Command
 )
 
@@ -18,8 +18,8 @@ type GetMessageFlagsResponse struct {
 	ReceiveMessageQueueAvailable        bool // One or more messages ready for reading from Receive Message Queue
 }
 
-func (req *GetMessageFlagsRequest) Command() ipmi.Command {
-	return ipmi.CommandGetMessageFlags
+func (req *GetMessageFlagsRequest) Command() types.Command {
+	return types.CommandGetMessageFlags
 }
 
 func (req *GetMessageFlagsRequest) Pack() []byte {
@@ -28,16 +28,16 @@ func (req *GetMessageFlagsRequest) Pack() []byte {
 
 func (res *GetMessageFlagsResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
-	b, _, _ := ipmi.UnpackUint8(msg, 0)
-	res.OEM2Available = ipmi.IsBit7Set(b)
-	res.OEM1Available = ipmi.IsBit6Set(b)
-	res.OEM0Available = ipmi.IsBit5Set(b)
-	res.WatchdogPreTimeoutInterruptOccurred = ipmi.IsBit3Set(b)
-	res.EventMessageBufferFull = ipmi.IsBit1Set(b)
-	res.ReceiveMessageQueueAvailable = ipmi.IsBit0Set(b)
+	b, _, _ := types.UnpackUint8(msg, 0)
+	res.OEM2Available = types.IsBit7Set(b)
+	res.OEM1Available = types.IsBit6Set(b)
+	res.OEM0Available = types.IsBit5Set(b)
+	res.WatchdogPreTimeoutInterruptOccurred = types.IsBit3Set(b)
+	res.EventMessageBufferFull = types.IsBit1Set(b)
+	res.ReceiveMessageQueueAvailable = types.IsBit0Set(b)
 	return nil
 }
 

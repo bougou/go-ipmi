@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // computeRAKP2AuthCode generates the Key Exchange Authentication Code that the
@@ -25,7 +26,7 @@ import (
 //
 //	ConsoleID(4) || BMCID(4) || ConsoleRand(16) || BMCRand(16) || BMCGUID(16) || Role(1) || UserLen(1) || Username(N)
 func computeRAKP2AuthCode(sess *bmc.Session, b *bmc.BMC) ([]byte, error) {
-	if sess.AuthAlg == bmc.AuthAlgNone {
+	if sess.AuthAlg == types.AuthAlg_None {
 		return nil, nil
 	}
 	username := ""
@@ -53,7 +54,7 @@ func computeRAKP2AuthCode(sess *bmc.Session, b *bmc.BMC) ([]byte, error) {
 //
 //	BMCRand(16) || ConsoleID(4) || Role(1) || UserLen(1) || Username(N)
 func computeRAKP3AuthCode(sess *bmc.Session, b *bmc.BMC) ([]byte, error) {
-	if sess.AuthAlg == bmc.AuthAlgNone {
+	if sess.AuthAlg == types.AuthAlg_None {
 		return nil, nil
 	}
 	username := ""
@@ -94,7 +95,7 @@ func computeRAKP3AuthCode(sess *bmc.Session, b *bmc.BMC) ([]byte, error) {
 // matched the auth algorithm's RAKP4 truncation (suites 2/3/16/17).
 func computeRAKP4AuthCode(sess *bmc.Session, b *bmc.BMC) ([]byte, error) {
 	// RAKP-none: the Integrity Check Value is absent (spec §13.28.2).
-	if sess.AuthAlg == bmc.AuthAlgNone {
+	if sess.AuthAlg == types.AuthAlg_None {
 		return nil, nil
 	}
 	buf := make([]byte, 16+4+16)
@@ -108,11 +109,11 @@ func computeRAKP4AuthCode(sess *bmc.Session, b *bmc.BMC) ([]byte, error) {
 // computeRAKP4ICV computes the RAKP Message 4 Integrity Check Value for the
 // given authentication algorithm, using SIK as the HMAC key and truncating to
 // the length defined by the auth algorithm's RAKP4 ICV (12 / 16 bytes).
-func computeRAKP4ICV(authAlg bmc.AuthAlg, data, key []byte) ([]byte, error) {
+func computeRAKP4ICV(authAlg types.AuthAlg, data, key []byte) ([]byte, error) {
 	switch authAlg {
-	case bmc.AuthAlgHMACSHA1:
+	case types.AuthAlg_HMAC_SHA1:
 		return doHMACSHA1(data, key)[:12], nil // HMAC-SHA1-96
-	case bmc.AuthAlgHMACSHA256:
+	case types.AuthAlg_HMAC_SHA256:
 		return doHMACSHA256(data, key)[:16], nil // HMAC-SHA256-128
 	default:
 		return nil, fmt.Errorf("unsupported auth algorithm for RAKP4 ICV: %d", authAlg)
@@ -194,13 +195,13 @@ func paddedPassword(sess *bmc.Session) []byte {
 // Returns the full-length auth code (RAKP2/RAKP3 use the full digest; SIK/K1/K2
 // derivation also uses the full digest). Supported: RAKP-HMAC-SHA1 (20B) and
 // RAKP-HMAC-SHA256 (32B).
-func computeHMAC(alg bmc.AuthAlg, data, key []byte) ([]byte, error) {
+func computeHMAC(alg types.AuthAlg, data, key []byte) ([]byte, error) {
 	switch alg {
-	case bmc.AuthAlgNone:
+	case types.AuthAlg_None:
 		return nil, nil
-	case bmc.AuthAlgHMACSHA1:
+	case types.AuthAlg_HMAC_SHA1:
 		return doHMACSHA1(data, key), nil
-	case bmc.AuthAlgHMACSHA256:
+	case types.AuthAlg_HMAC_SHA256:
 		return doHMACSHA256(data, key), nil
 	default:
 		return nil, fmt.Errorf("unsupported auth algorithm: %d", alg)
@@ -220,13 +221,13 @@ func doHMACSHA256(data, key []byte) []byte {
 }
 
 // rakp3AuthCodeLen returns the expected length of the auth code in RAKP3.
-func rakp3AuthCodeLen(alg bmc.AuthAlg) int {
+func rakp3AuthCodeLen(alg types.AuthAlg) int {
 	switch alg {
-	case bmc.AuthAlgHMACSHA1:
+	case types.AuthAlg_HMAC_SHA1:
 		return 20
-	case bmc.AuthAlgHMACMD5:
+	case types.AuthAlg_HMAC_MD5:
 		return 16
-	case bmc.AuthAlgHMACSHA256:
+	case types.AuthAlg_HMAC_SHA256:
 		return 32
 	default:
 		return 0

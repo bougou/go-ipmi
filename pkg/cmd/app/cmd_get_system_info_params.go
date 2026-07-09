@@ -3,13 +3,13 @@ package app
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 22.14b Get System Info Parameters Command
 type GetSystemInfoParamRequest struct {
 	GetParamRevisionOnly bool
-	ParamSelector        ipmi.SystemInfoParamSelector
+	ParamSelector        types.SystemInfoParamSelector
 	SetSelector          uint8
 	BlockSelector        uint8
 }
@@ -23,7 +23,7 @@ func (req *GetSystemInfoParamRequest) Pack() []byte {
 	out := make([]byte, 4)
 
 	var b uint8
-	b = ipmi.SetOrClearBit7(b, req.GetParamRevisionOnly)
+	b = types.SetOrClearBit7(b, req.GetParamRevisionOnly)
 	out[0] = b
 
 	out[1] = uint8(req.ParamSelector)
@@ -33,8 +33,8 @@ func (req *GetSystemInfoParamRequest) Pack() []byte {
 	return out
 }
 
-func (req *GetSystemInfoParamRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSystemInfoParam
+func (req *GetSystemInfoParamRequest) Command() types.Command {
+	return types.CommandGetSystemInfoParam
 }
 
 func (res *GetSystemInfoParamResponse) CompletionCodes() map[uint8]string {
@@ -45,12 +45,12 @@ func (res *GetSystemInfoParamResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetSystemInfoParamResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
-	res.ParamRevision, _, _ = ipmi.UnpackUint8(msg, 0)
+	res.ParamRevision, _, _ = types.UnpackUint8(msg, 0)
 	if len(msg) > 1 {
-		res.ParamData, _, _ = ipmi.UnpackBytes(msg, 1, len(msg)-1)
+		res.ParamData, _, _ = types.UnpackBytes(msg, 1, len(msg)-1)
 	}
 
 	return nil

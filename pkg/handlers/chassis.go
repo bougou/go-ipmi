@@ -6,7 +6,7 @@ import (
 
 	"github.com/bougou/go-ipmi/pkg/cmd/chassis"
 	"github.com/bougou/go-ipmi/pkg/hal"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // IPMI Chassis command IDs (spec §28).
@@ -142,7 +142,7 @@ func handleSetSystemBootOptions(ctx context.Context, hctx *HandlerContext, req [
 	}
 	// bit 7 = parameter valid flag (§28.12 byte 1).
 	_ = req[0] & 0x80 // accepted; HAL layer does not persist a lock state.
-	paramSelector := ipmi.BootOptionParamSelector(req[0] & 0x7f)
+	paramSelector := types.BootOptionParamSelector(req[0] & 0x7f)
 	paramData := req[1:]
 
 	ch := hctx.BMC.HAL().Chassis()
@@ -151,22 +151,22 @@ func handleSetSystemBootOptions(ctx context.Context, hctx *HandlerContext, req [
 	}
 
 	switch paramSelector {
-	case ipmi.BootOptionParamSelector_BootInfoAcknowledge:
+	case types.BootOptionParamSelector_BootInfoAcknowledge:
 		// 0 bytes of data → toggling the valid/lock bit only.
 		if len(paramData) == 0 {
 			return nil, CodeOK, nil
 		}
-		var ack ipmi.BootOptionParam_BootInfoAcknowledge
+		var ack types.BootOptionParam_BootInfoAcknowledge
 		if err := ack.Unpack(paramData); err != nil {
 			return nil, CodeRequestDataTruncated, nil
 		}
 		return nil, codeFromHalErr(ch.SetBootInfoAcknowledge(ctx, &ack)), nil
 
-	case ipmi.BootOptionParamSelector_BootFlags:
+	case types.BootOptionParamSelector_BootFlags:
 		if len(paramData) == 0 {
 			return nil, CodeOK, nil
 		}
-		var flags ipmi.BootOptionParam_BootFlags
+		var flags types.BootOptionParam_BootFlags
 		if err := flags.Unpack(paramData); err != nil {
 			return nil, CodeRequestDataTruncated, nil
 		}
@@ -186,7 +186,7 @@ func handleGetSystemBootOptions(ctx context.Context, hctx *HandlerContext, req [
 	if len(req) < 1 {
 		return nil, CodeRequestDataTruncated, nil
 	}
-	paramSelector := ipmi.BootOptionParamSelector(req[0] & 0x7f)
+	paramSelector := types.BootOptionParamSelector(req[0] & 0x7f)
 
 	ch := hctx.BMC.HAL().Chassis()
 	if ch == nil {
@@ -194,7 +194,7 @@ func handleGetSystemBootOptions(ctx context.Context, hctx *HandlerContext, req [
 	}
 
 	switch paramSelector {
-	case ipmi.BootOptionParamSelector_BootInfoAcknowledge:
+	case types.BootOptionParamSelector_BootInfoAcknowledge:
 		ack, err := ch.GetBootInfoAcknowledge(ctx)
 		if err != nil {
 			return nil, codeFromHalErr(err), nil
@@ -205,7 +205,7 @@ func handleGetSystemBootOptions(ctx context.Context, hctx *HandlerContext, req [
 		resp = append(resp, ack.Pack()...)
 		return resp, CodeOK, nil
 
-	case ipmi.BootOptionParamSelector_BootFlags:
+	case types.BootOptionParamSelector_BootFlags:
 		flags, err := ch.GetBootFlags(ctx)
 		if err != nil {
 			return nil, codeFromHalErr(err), nil

@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 21.3 Get Command Support Command
 )
 
@@ -9,7 +9,7 @@ type GetCommandSupportRequest struct {
 	ChannelNumber uint8
 
 	CommandRangeMask CommandRangeMask
-	NetFn            ipmi.NetFn
+	NetFn            types.NetFn
 	LUN              uint8
 
 	CodeForNetFn2C uint8
@@ -28,26 +28,26 @@ const (
 	CommandRangeMask80FF uint8 = 0x01
 )
 
-func (req *GetCommandSupportRequest) Command() ipmi.Command {
-	return ipmi.CommandGetCommandSupport
+func (req *GetCommandSupportRequest) Command() types.Command {
+	return types.CommandGetCommandSupport
 }
 
 func (req *GetCommandSupportRequest) Pack() []byte {
 	out := make([]byte, 6)
-	ipmi.PackUint8(req.ChannelNumber, out, 0)
+	types.PackUint8(req.ChannelNumber, out, 0)
 
 	netfn := (uint8(req.NetFn) & 0x3f) | (uint8(req.CommandRangeMask) << 6)
-	ipmi.PackUint8(netfn, out, 1)
+	types.PackUint8(netfn, out, 1)
 
-	ipmi.PackUint8(req.LUN&0x03, out, 2)
+	types.PackUint8(req.LUN&0x03, out, 2)
 
 	if uint8(req.NetFn) == 0x2c {
-		ipmi.PackUint8(req.CodeForNetFn2C, out, 3)
+		types.PackUint8(req.CodeForNetFn2C, out, 3)
 		return out[0:4]
 	}
 
 	if uint8(req.NetFn) == 0x2e {
-		ipmi.PackUint24L(req.OEMIANA, out, 3)
+		types.PackUint24L(req.OEMIANA, out, 3)
 		return out[0:6]
 	}
 
@@ -56,10 +56,10 @@ func (req *GetCommandSupportRequest) Pack() []byte {
 
 func (res *GetCommandSupportResponse) Unpack(msg []byte) error {
 	if len(msg) < 16 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 16)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 16)
 	}
 
-	res.CommandSupportMask, _, _ = ipmi.UnpackBytes(msg, 0, 16)
+	res.CommandSupportMask, _, _ = types.UnpackBytes(msg, 0, 16)
 	return nil
 }
 

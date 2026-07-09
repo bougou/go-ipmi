@@ -4,16 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // BuildIPMIRequest creates an IPMIRequest for a Command Request, filling in
 // checksum fields.
-func (c *Client) BuildIPMIRequest(ctx context.Context, reqCmd ipmi.Request) (*ipmi.IPMIRequest, error) {
+func (c *Client) BuildIPMIRequest(ctx context.Context, reqCmd types.Request) (*types.IPMIRequest, error) {
 	c.lock()
 	defer c.unlock()
 
-	ipmiReq := &ipmi.IPMIRequest{
+	ipmiReq := &types.IPMIRequest{
 		ResponderAddr: c.responderAddr,
 
 		NetFn:        reqCmd.Command().NetFn,
@@ -47,7 +47,7 @@ func (c *Client) BuildIPMIRequest(ctx context.Context, reqCmd ipmi.Request) (*ip
 	}
 
 	c.session.ipmiSeq += 1
-	if c.session.ipmiSeq > ipmi.IPMIRequesterSequenceMax {
+	if c.session.ipmiSeq > types.IPMIRequesterSequenceMax {
 		c.session.ipmiSeq = 1
 	}
 
@@ -57,7 +57,7 @@ func (c *Client) BuildIPMIRequest(ctx context.Context, reqCmd ipmi.Request) (*ip
 }
 
 // BuildRmcpRequest builds an RMCP packet for the given command request.
-func (c *Client) BuildRmcpRequest(ctx context.Context, reqCmd ipmi.Request) (*ipmi.Rmcp, error) {
+func (c *Client) BuildRmcpRequest(ctx context.Context, reqCmd types.Request) (*types.Rmcp, error) {
 	payloadType, rawPayload, err := c.buildRawPayload(ctx, reqCmd)
 	if err != nil {
 		return nil, fmt.Errorf("buildRawPayload failed, err: %w", err)
@@ -66,11 +66,11 @@ func (c *Client) BuildRmcpRequest(ctx context.Context, reqCmd ipmi.Request) (*ip
 
 	// ASF ping
 	if _, ok := reqCmd.(*RmcpPingRequest); ok {
-		return &ipmi.Rmcp{
-			RmcpHeader: ipmi.NewRmcpHeaderASF(),
-			ASF: &ipmi.ASF{
+		return &types.Rmcp{
+			RmcpHeader: types.NewRmcpHeaderASF(),
+			ASF: &types.ASF{
 				IANA:        4542,
-				MessageType: uint8(ipmi.MessageTypePing),
+				MessageType: uint8(types.MessageTypePing),
 				MessageTag:  0,
 				DataLength:  0,
 				Data:        rawPayload,
@@ -84,7 +84,7 @@ func (c *Client) BuildRmcpRequest(ctx context.Context, reqCmd ipmi.Request) (*ip
 		if err != nil {
 			return nil, fmt.Errorf("genSession20 failed, err: %w", err)
 		}
-		return &ipmi.Rmcp{RmcpHeader: ipmi.NewRmcpHeader(), Session20: session20}, nil
+		return &types.Rmcp{RmcpHeader: types.NewRmcpHeader(), Session20: session20}, nil
 	}
 
 	// IPMI 1.5
@@ -92,12 +92,12 @@ func (c *Client) BuildRmcpRequest(ctx context.Context, reqCmd ipmi.Request) (*ip
 	if err != nil {
 		return nil, fmt.Errorf("genSession15 failed, err: %w", err)
 	}
-	return &ipmi.Rmcp{RmcpHeader: ipmi.NewRmcpHeader(), Session15: session15}, nil
+	return &types.Rmcp{RmcpHeader: types.NewRmcpHeader(), Session15: session15}, nil
 }
 
 // ParseRmcpResponse parses a raw RMCP response message into the given Response.
-func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response ipmi.Response) error {
-	rmcp := &ipmi.Rmcp{}
+func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response types.Response) error {
+	rmcp := &types.Rmcp{}
 	if err := rmcp.Unpack(msg); err != nil {
 		return fmt.Errorf("unpack rmcp failed, err: %w", err)
 	}
@@ -116,7 +116,7 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response ipm
 	if rmcp.Session15 != nil {
 		ipmiPayload := rmcp.Session15.Payload
 
-		ipmiRes := ipmi.IPMIResponse{}
+		ipmiRes := types.IPMIResponse{}
 		if err := ipmiRes.Unpack(ipmiPayload); err != nil {
 			return fmt.Errorf("unpack ipmiRes failed, err: %w", err)
 		}
@@ -124,13 +124,13 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response ipm
 
 		ccode := ipmiRes.CompletionCode
 		if ccode != 0x00 {
-			return ipmi.NewResponseError(
-				ipmi.CompletionCode(ccode),
-				fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, ipmi.StrCC(response, ccode)),
+			return types.NewResponseError(
+				types.CompletionCode(ccode),
+				fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, types.StrCC(response, ccode)),
 			)
 		}
 		if err := response.Unpack(ipmiRes.Data); err != nil {
-			return ipmi.NewResponseError(0x00, fmt.Sprintf("unpack response failed, err: %s", err))
+			return types.NewResponseError(0x00, fmt.Sprintf("unpack response failed, err: %s", err))
 		}
 		return nil
 	}
@@ -140,15 +140,15 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response ipm
 
 		switch sessionHdr.PayloadType {
 		case
-			ipmi.PayloadTypeRmcpOpenSessionResponse,
-			ipmi.PayloadTypeRAKPMessage2,
-			ipmi.PayloadTypeRAKPMessage4:
+			types.PayloadTypeRmcpOpenSessionResponse,
+			types.PayloadTypeRAKPMessage2,
+			types.PayloadTypeRAKPMessage4:
 			if err := response.Unpack(rmcp.Session20.SessionPayload); err != nil {
 				return fmt.Errorf("unpack session setup response failed, err: %w", err)
 			}
 			return nil
 
-		case ipmi.PayloadTypeSOL:
+		case types.PayloadTypeSOL:
 			payload := rmcp.Session20.SessionPayload
 			if sessionHdr.PayloadEncrypted {
 				c.DebugBytes("decrypting SOL payload", payload, 16)
@@ -164,7 +164,7 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response ipm
 			}
 			return nil
 
-		case ipmi.PayloadTypeIPMI:
+		case types.PayloadTypeIPMI:
 			ipmiPayload := rmcp.Session20.SessionPayload
 			if sessionHdr.PayloadEncrypted {
 				c.DebugBytes("decrypting", ipmiPayload, 16)
@@ -176,7 +176,7 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response ipm
 				c.DebugBytes("decrypted", ipmiPayload, 16)
 			}
 
-			ipmiRes := ipmi.IPMIResponse{}
+			ipmiRes := types.IPMIResponse{}
 			if err := ipmiRes.Unpack(ipmiPayload); err != nil {
 				return fmt.Errorf("unpack ipmiRes failed, err: %w", err)
 			}
@@ -184,13 +184,13 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response ipm
 
 			ccode := ipmiRes.CompletionCode
 			if ccode != 0x00 {
-				return ipmi.NewResponseError(
-					ipmi.CompletionCode(ccode),
-					fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, ipmi.StrCC(response, ccode)),
+				return types.NewResponseError(
+					types.CompletionCode(ccode),
+					fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, types.StrCC(response, ccode)),
 				)
 			}
 			if err := response.Unpack(ipmiRes.Data); err != nil {
-				return ipmi.NewResponseError(0x00, fmt.Sprintf("unpack response failed, err: %s", err))
+				return types.NewResponseError(0x00, fmt.Sprintf("unpack response failed, err: %s", err))
 			}
 			return nil
 		}
@@ -199,13 +199,13 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response ipm
 	return fmt.Errorf("not an IPMI response")
 }
 
-func (c *Client) parseIPMIResponseFromRmcp(rmcp *ipmi.Rmcp) (ipmiRes *ipmi.IPMIResponse, err error) {
+func (c *Client) parseIPMIResponseFromRmcp(rmcp *types.Rmcp) (ipmiRes *types.IPMIResponse, err error) {
 	if rmcp.ASF != nil {
 		return nil, fmt.Errorf("not an IPMI response (ASF)")
 	}
 
 	if rmcp.Session15 != nil {
-		ipmiRes := &ipmi.IPMIResponse{}
+		ipmiRes := &types.IPMIResponse{}
 		if err := ipmiRes.Unpack(rmcp.Session15.Payload); err != nil {
 			return nil, fmt.Errorf("unpack ipmi(15) payload failed, err: %w", err)
 		}
@@ -214,7 +214,7 @@ func (c *Client) parseIPMIResponseFromRmcp(rmcp *ipmi.Rmcp) (ipmiRes *ipmi.IPMIR
 
 	if rmcp.Session20 != nil {
 		sessionHdr := rmcp.Session20.SessionHeader20
-		if sessionHdr.PayloadType != ipmi.PayloadTypeIPMI {
+		if sessionHdr.PayloadType != types.PayloadTypeIPMI {
 			return nil, fmt.Errorf("not an IPMI response (%s)", sessionHdr.PayloadType)
 		}
 
@@ -229,7 +229,7 @@ func (c *Client) parseIPMIResponseFromRmcp(rmcp *ipmi.Rmcp) (ipmiRes *ipmi.IPMIR
 			c.DebugBytes("decrypted", ipmiPayload, 16)
 		}
 
-		ipmiRes := &ipmi.IPMIResponse{}
+		ipmiRes := &types.IPMIResponse{}
 		if err := ipmiRes.Unpack(ipmiPayload); err != nil {
 			return nil, fmt.Errorf("unpack ipmi(20) payload failed, err: %w", err)
 		}
@@ -241,14 +241,14 @@ func (c *Client) parseIPMIResponseFromRmcp(rmcp *ipmi.Rmcp) (ipmiRes *ipmi.IPMIR
 
 // findBestCipherSuites queries the BMC for available cipher suites and returns
 // them sorted by preference.
-func (c *Client) findBestCipherSuites(ctx context.Context) []ipmi.CipherSuiteID {
-	cipherSuiteRecords, err := c.GetAllChannelCipherSuites(ctx, ipmi.ChannelNumberSelf)
+func (c *Client) findBestCipherSuites(ctx context.Context) []types.CipherSuiteID {
+	cipherSuiteRecords, err := c.GetAllChannelCipherSuites(ctx, types.ChannelNumberSelf)
 	if err != nil {
-		return ipmi.PreferredCiphers
+		return types.PreferredCiphers
 	}
-	cipherSuiteIDs := make([]ipmi.CipherSuiteID, len(cipherSuiteRecords))
+	cipherSuiteIDs := make([]types.CipherSuiteID, len(cipherSuiteRecords))
 	for i, cipherSuiteRecord := range cipherSuiteRecords {
 		cipherSuiteIDs[i] = cipherSuiteRecord.CipherSuitID
 	}
-	return ipmi.SortCipherSuites(cipherSuiteIDs)
+	return types.SortCipherSuites(cipherSuiteIDs)
 }

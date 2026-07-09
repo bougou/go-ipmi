@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	ipmichassis "github.com/bougou/go-ipmi/pkg/cmd/chassis"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -275,7 +275,7 @@ func NewCmdChassisBootParamGet() *cobra.Command {
 				CheckErr(fmt.Errorf("param %s must be a valid integer in range (0-127), err: %w", paramSelector, err))
 			}
 
-			res, err := client.GetSystemBootOptionsParam(ctx, ipmi.BootOptionParamSelector(i), 0x00, 0x00)
+			res, err := client.GetSystemBootOptionsParam(ctx, types.BootOptionParamSelector(i), 0x00, 0x00)
 			if err != nil {
 				CheckErr(fmt.Errorf("GetSystemBootOptionsParam failed, err: %w", err))
 			}
@@ -305,27 +305,27 @@ func NewCmdChassisBootParamSet() *cobra.Command {
 				return
 			}
 
-			var f = func(bootDevice string) ipmi.BootDeviceSelector {
-				m := map[string]ipmi.BootDeviceSelector{
-					"none":        ipmi.BootDeviceSelectorNoOverride,
-					"force_pxe":   ipmi.BootDeviceSelectorForcePXE,
-					"force_disk":  ipmi.BootDeviceSelectorForceHardDrive,
-					"force_safe":  ipmi.BootDeviceSelectorForceHardDriveSafe,
-					"force_diag":  ipmi.BootDeviceSelectorForceDiagnosticPartition,
-					"force_cdrom": ipmi.BootDeviceSelectorForceCDROM,
-					"force_bios":  ipmi.BootDeviceSelectorForceBIOSSetup,
+			var f = func(bootDevice string) types.BootDeviceSelector {
+				m := map[string]types.BootDeviceSelector{
+					"none":        types.BootDeviceSelectorNoOverride,
+					"force_pxe":   types.BootDeviceSelectorForcePXE,
+					"force_disk":  types.BootDeviceSelectorForceHardDrive,
+					"force_safe":  types.BootDeviceSelectorForceHardDriveSafe,
+					"force_diag":  types.BootDeviceSelectorForceDiagnosticPartition,
+					"force_cdrom": types.BootDeviceSelectorForceCDROM,
+					"force_bios":  types.BootDeviceSelectorForceBIOSSetup,
 				}
 				if s, ok := m[bootDevice]; ok {
 					return s
 				}
-				return ipmi.BootDeviceSelectorNoOverride
+				return types.BootDeviceSelectorNoOverride
 			}
 			bootDeviceSelector := f(args[1])
 
-			param := &ipmi.BootOptionParam_BootFlags{
+			param := &types.BootOptionParam_BootFlags{
 				BootFlagsValid:     true,
 				Persist:            false,
-				BIOSBootType:       ipmi.BIOSBootTypeLegacy,
+				BIOSBootType:       types.BIOSBootTypeLegacy,
 				BootDeviceSelector: bootDeviceSelector,
 			}
 
@@ -378,28 +378,28 @@ bootdev <device> [options=help,...]
 				return
 			}
 
-			var dev ipmi.BootDeviceSelector
+			var dev types.BootDeviceSelector
 			switch args[0] {
 			case "none":
-				dev = ipmi.BootDeviceSelectorNoOverride
+				dev = types.BootDeviceSelectorNoOverride
 			case "pxe":
-				dev = ipmi.BootDeviceSelectorForcePXE
+				dev = types.BootDeviceSelectorForcePXE
 			case "disk":
-				dev = ipmi.BootDeviceSelectorForceHardDrive
+				dev = types.BootDeviceSelectorForceHardDrive
 			case "safe":
-				dev = ipmi.BootDeviceSelectorForceHardDriveSafe
+				dev = types.BootDeviceSelectorForceHardDriveSafe
 			case "diag":
-				dev = ipmi.BootDeviceSelectorForceDiagnosticPartition
+				dev = types.BootDeviceSelectorForceDiagnosticPartition
 			case "cdrom":
-				dev = ipmi.BootDeviceSelectorForceCDROM
+				dev = types.BootDeviceSelectorForceCDROM
 			case "floppy":
-				dev = ipmi.BootDeviceSelectorForceFloppy
+				dev = types.BootDeviceSelectorForceFloppy
 			case "bios":
-				dev = ipmi.BootDeviceSelectorForceBIOSSetup
+				dev = types.BootDeviceSelectorForceBIOSSetup
 			default:
 				return
 			}
-			bootFlags := &ipmi.BootOptionParam_BootFlags{
+			bootFlags := &types.BootOptionParam_BootFlags{
 				BootDeviceSelector: dev,
 			}
 

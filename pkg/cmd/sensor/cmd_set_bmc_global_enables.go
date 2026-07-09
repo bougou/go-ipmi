@@ -1,7 +1,7 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 22.1 Set BMC Global Enables Command
@@ -21,33 +21,33 @@ type SetBMCGlobalEnablesResponse struct {
 	// empty
 }
 
-func (req *SetBMCGlobalEnablesRequest) Command() ipmi.Command {
-	return ipmi.CommandSetBMCGlobalEnables
+func (req *SetBMCGlobalEnablesRequest) Command() types.Command {
+	return types.CommandSetBMCGlobalEnables
 }
 
 func (req *SetBMCGlobalEnablesRequest) Pack() []byte {
 	var b uint8 = 0
 
 	if req.EnableOEM2 {
-		b = ipmi.SetBit7(b)
+		b = types.SetBit7(b)
 	}
 	if req.EnableOEM1 {
-		b = ipmi.SetBit6(b)
+		b = types.SetBit6(b)
 	}
 	if req.EnableOEM0 {
-		b = ipmi.SetBit5(b)
+		b = types.SetBit5(b)
 	}
 	if req.EnableSystemEventLogging {
-		b = ipmi.SetBit3(b)
+		b = types.SetBit3(b)
 	}
 	if req.EnableEventMessageBuffer {
-		b = ipmi.SetBit2(b)
+		b = types.SetBit2(b)
 	}
 	if req.EnableEventMessageBufferFullInterrupt {
-		b = ipmi.SetBit1(b)
+		b = types.SetBit1(b)
 	}
 	if req.EnableReceiveMessageQueueInterrupt {
-		b = ipmi.SetBit0(b)
+		b = types.SetBit0(b)
 	}
 
 	return []byte{b}

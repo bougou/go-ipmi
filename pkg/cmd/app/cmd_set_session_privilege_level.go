@@ -3,12 +3,12 @@ package app
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 22.18 Set Session Privilege Level Command
 type SetSessionPrivilegeLevelRequest struct {
-	PrivilegeLevel ipmi.PrivilegeLevel
+	PrivilegeLevel types.PrivilegeLevel
 }
 
 type SetSessionPrivilegeLevelResponse struct {
@@ -16,19 +16,19 @@ type SetSessionPrivilegeLevelResponse struct {
 	PrivilegeLevel uint8
 }
 
-func (req *SetSessionPrivilegeLevelRequest) Command() ipmi.Command {
-	return ipmi.CommandSetSessionPrivilegeLevel
+func (req *SetSessionPrivilegeLevelRequest) Command() types.Command {
+	return types.CommandSetSessionPrivilegeLevel
 }
 
 func (req *SetSessionPrivilegeLevelRequest) Pack() []byte {
 	var msg = make([]byte, 1)
-	ipmi.PackUint8(uint8(req.PrivilegeLevel), msg, 0)
+	types.PackUint8(uint8(req.PrivilegeLevel), msg, 0)
 	return msg
 }
 
 func (res *SetSessionPrivilegeLevelResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 	res.PrivilegeLevel = msg[0]
 	return nil

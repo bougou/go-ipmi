@@ -1,7 +1,7 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 29.1 Set Event Receiver Command
 )
 
@@ -22,8 +22,8 @@ func (req *SetEventReceiverRequest) Pack() []byte {
 	return []byte{req.SlaveAddress, req.LUN}
 }
 
-func (req *SetEventReceiverRequest) Command() ipmi.Command {
-	return ipmi.CommandSetEventReceiver
+func (req *SetEventReceiverRequest) Command() types.Command {
+	return types.CommandSetEventReceiver
 }
 
 func (res *SetEventReceiverResponse) CompletionCodes() map[uint8]string {

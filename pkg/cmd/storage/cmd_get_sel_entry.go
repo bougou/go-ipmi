@@ -3,7 +3,7 @@ package storage
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 31.5 Get SEL Entry Command
@@ -28,25 +28,25 @@ type GetSELEntryResponse struct {
 	Data         []byte // Record Data, 16 bytes for entire record, at least 1 byte
 }
 
-func (req *GetSELEntryRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSELEntry
+func (req *GetSELEntryRequest) Command() types.Command {
+	return types.CommandGetSELEntry
 }
 
 func (req *GetSELEntryRequest) Pack() []byte {
 	var msg = make([]byte, 6)
-	ipmi.PackUint16L(req.ReservationID, msg, 0)
-	ipmi.PackUint16L(req.RecordID, msg, 2)
-	ipmi.PackUint8(req.Offset, msg, 4)
-	ipmi.PackUint8(req.ReadBytes, msg, 5)
+	types.PackUint16L(req.ReservationID, msg, 0)
+	types.PackUint16L(req.RecordID, msg, 2)
+	types.PackUint8(req.Offset, msg, 4)
+	types.PackUint8(req.ReadBytes, msg, 5)
 	return msg
 }
 
 func (res *GetSELEntryResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
-	res.NextRecordID, _, _ = ipmi.UnpackUint16L(msg, 0)
-	res.Data, _, _ = ipmi.UnpackBytesMost(msg, 2, 16)
+	res.NextRecordID, _, _ = types.UnpackUint16L(msg, 0)
+	res.Data, _, _ = types.UnpackBytesMost(msg, 2, 16)
 	return nil
 }
 

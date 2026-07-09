@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 func TestHandleGetChannelAuthCapsAdvertisesRMCPPlusOnly(t *testing.T) {
@@ -48,7 +48,7 @@ func TestHandleRAKP1RejectsUnauthorizedPrivilege(t *testing.T) {
 		MaxPrivilege: bmc.PrivilegeLevelUser,
 		Enabled:      true,
 	}
-	sess, err := b.Sessions.Allocate(0x01020304, bmc.AuthAlgHMACSHA1, bmc.IntegrityAlgHMACSHA1_96, bmc.CryptAlgAESCBC128)
+	sess, err := b.Sessions.Allocate(0x01020304, types.AuthAlg_HMAC_SHA1, types.IntegrityAlg_HMAC_SHA1_96, types.CryptAlg_AES_CBC_128)
 	if err != nil {
 		t.Fatalf("allocate session: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestHandleRAKP1AcceptsAuthorizedPrivilege(t *testing.T) {
 		MaxPrivilege: bmc.PrivilegeLevelAdministrator,
 		Enabled:      true,
 	}
-	sess, err := b.Sessions.Allocate(0x01020304, bmc.AuthAlgHMACSHA1, bmc.IntegrityAlgHMACSHA1_96, bmc.CryptAlgAESCBC128)
+	sess, err := b.Sessions.Allocate(0x01020304, types.AuthAlg_HMAC_SHA1, types.IntegrityAlg_HMAC_SHA1_96, types.CryptAlg_AES_CBC_128)
 	if err != nil {
 		t.Fatalf("allocate session: %v", err)
 	}
@@ -158,7 +158,7 @@ func TestHandleGetChannelCipherSuites_Default(t *testing.T) {
 
 func TestHandleGetChannelCipherSuites_Custom(t *testing.T) {
 	b := newTestBMC()
-	b.SetCipherSuites([]ipmi.CipherSuiteID{ipmi.CipherSuiteID17})
+	b.SetCipherSuites([]types.CipherSuiteID{types.CipherSuiteID17})
 	hctx := &HandlerContext{BMC: b}
 
 	resp, cc, err := handleGetChannelCipherSuites(context.Background(), hctx, []byte{0x8e, 0x00, 0x00})
@@ -177,7 +177,7 @@ func TestHandleGetChannelCipherSuites_Custom(t *testing.T) {
 func TestHandleOpenSession_AcceptsSHA256(t *testing.T) {
 	b := newTestBMC()
 	payload := openSessionPayload(0x01, 0x04, 0x01020304,
-		uint8(bmc.AuthAlgHMACSHA256), uint8(bmc.IntegrityAlgHMACSHA256_128), uint8(bmc.CryptAlgAESCBC128))
+		uint8(types.AuthAlg_HMAC_SHA256), uint8(types.IntegrityAlg_HMAC_SHA256_128), uint8(types.CryptAlg_AES_CBC_128))
 
 	resp, err := HandleOpenSession(context.Background(), b, payload)
 	if err != nil {
@@ -186,13 +186,13 @@ func TestHandleOpenSession_AcceptsSHA256(t *testing.T) {
 	if len(resp) != 36 || resp[1] != 0x00 {
 		t.Fatalf("want success 36-byte response, got len=%d status=0x%02x", len(resp), safeStatus(resp))
 	}
-	if resp[16] != uint8(bmc.AuthAlgHMACSHA256) {
+	if resp[16] != uint8(types.AuthAlg_HMAC_SHA256) {
 		t.Fatalf("auth alg not echoed: 0x%02x", resp[16])
 	}
-	if resp[24] != uint8(bmc.IntegrityAlgHMACSHA256_128) {
+	if resp[24] != uint8(types.IntegrityAlg_HMAC_SHA256_128) {
 		t.Fatalf("integrity alg not echoed: 0x%02x", resp[24])
 	}
-	if resp[32] != uint8(bmc.CryptAlgAESCBC128) {
+	if resp[32] != uint8(types.CryptAlg_AES_CBC_128) {
 		t.Fatalf("crypt alg not echoed: 0x%02x", resp[32])
 	}
 }
@@ -201,7 +201,7 @@ func TestHandleOpenSession_RejectsUnsupported(t *testing.T) {
 	b := newTestBMC()
 	// MD5 auth (0x02) is not part of any configured suite (default {3,17}).
 	payload := openSessionPayload(0x01, 0x04, 0x01020304,
-		uint8(bmc.AuthAlgHMACMD5), uint8(bmc.IntegrityAlgHMACSHA1_96), uint8(bmc.CryptAlgAESCBC128))
+		uint8(types.AuthAlg_HMAC_MD5), uint8(types.IntegrityAlg_HMAC_SHA1_96), uint8(types.CryptAlg_AES_CBC_128))
 
 	resp, err := HandleOpenSession(context.Background(), b, payload)
 	if err != nil {
@@ -220,15 +220,15 @@ func TestHandleOpenSession_RejectsUnsupported(t *testing.T) {
 func TestHandleOpenSession_RejectsNoneByDefault(t *testing.T) {
 	cases := []struct {
 		name    string
-		auth    bmc.AuthAlg
-		integ   bmc.IntegrityAlg
-		crypt   bmc.CryptAlg
+		auth    types.AuthAlg
+		integ   types.IntegrityAlg
+		crypt   types.CryptAlg
 		wantErr uint8
 	}{
-		{"auth none", bmc.AuthAlgNone, bmc.IntegrityAlgHMACSHA1_96, bmc.CryptAlgAESCBC128, 0x04},
-		{"integrity none", bmc.AuthAlgHMACSHA1, bmc.IntegrityAlgNone, bmc.CryptAlgAESCBC128, 0x05},
-		{"crypt none", bmc.AuthAlgHMACSHA1, bmc.IntegrityAlgHMACSHA1_96, bmc.CryptAlgNone, 0x10},
-		{"all none", bmc.AuthAlgNone, bmc.IntegrityAlgNone, bmc.CryptAlgNone, 0x04},
+		{"auth none", types.AuthAlg_None, types.IntegrityAlg_HMAC_SHA1_96, types.CryptAlg_AES_CBC_128, 0x04},
+		{"integrity none", types.AuthAlg_HMAC_SHA1, types.IntegrityAlg_None, types.CryptAlg_AES_CBC_128, 0x05},
+		{"crypt none", types.AuthAlg_HMAC_SHA1, types.IntegrityAlg_HMAC_SHA1_96, types.CryptAlg_None, 0x10},
+		{"all none", types.AuthAlg_None, types.IntegrityAlg_None, types.CryptAlg_None, 0x04},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -252,10 +252,10 @@ func TestHandleOpenSession_RejectsNoneByDefault(t *testing.T) {
 // unauthenticated sessions; the security choice is the operator's.
 func TestHandleOpenSession_AcceptsNoneWhenSuite0Configured(t *testing.T) {
 	b := newTestBMC()
-	b.SetCipherSuites([]ipmi.CipherSuiteID{ipmi.CipherSuiteID0})
+	b.SetCipherSuites([]types.CipherSuiteID{types.CipherSuiteID0})
 
 	payload := openSessionPayload(0x01, 0x04, 0x01020304,
-		uint8(bmc.AuthAlgNone), uint8(bmc.IntegrityAlgNone), uint8(bmc.CryptAlgNone))
+		uint8(types.AuthAlg_None), uint8(types.IntegrityAlg_None), uint8(types.CryptAlg_None))
 	resp, err := HandleOpenSession(context.Background(), b, payload)
 	if err != nil {
 		t.Fatalf("HandleOpenSession: %v", err)
@@ -271,11 +271,11 @@ func TestHandleOpenSession_AcceptsNoneWhenSuite0Configured(t *testing.T) {
 // and CryptAlgNone from suite 15.
 func TestHandleOpenSession_AcceptsMixedSuites(t *testing.T) {
 	b := newTestBMC()
-	b.SetCipherSuites([]ipmi.CipherSuiteID{ipmi.CipherSuiteID3, ipmi.CipherSuiteID15})
+	b.SetCipherSuites([]types.CipherSuiteID{types.CipherSuiteID3, types.CipherSuiteID15})
 
 	// Suite 15 triple: HMAC-SHA256 auth + None integ + None crypt.
 	payload := openSessionPayload(0x01, 0x04, 0x01020304,
-		uint8(bmc.AuthAlgHMACSHA256), uint8(bmc.IntegrityAlgNone), uint8(bmc.CryptAlgNone))
+		uint8(types.AuthAlg_HMAC_SHA256), uint8(types.IntegrityAlg_None), uint8(types.CryptAlg_None))
 	resp, err := HandleOpenSession(context.Background(), b, payload)
 	if err != nil {
 		t.Fatalf("HandleOpenSession: %v", err)
@@ -294,10 +294,10 @@ func TestHandleOpenSession_AcceptsMixedSuites(t *testing.T) {
 func TestHandleOpenSession_RejectsCrossSuiteRecombination(t *testing.T) {
 	type testCase struct {
 		name       string
-		suites     []ipmi.CipherSuiteID
-		auth       bmc.AuthAlg
-		integ      bmc.IntegrityAlg
-		crypt      bmc.CryptAlg
+		suites     []types.CipherSuiteID
+		auth       types.AuthAlg
+		integ      types.IntegrityAlg
+		crypt      types.CryptAlg
 		wantStatus uint8
 	}
 
@@ -307,10 +307,10 @@ func TestHandleOpenSession_RejectsCrossSuiteRecombination(t *testing.T) {
 			// (SHA1/SHA1-96 from suite 2, AES from suite 17), but no single
 			// configured suite contains the triple.
 			name:       "{2,17} should reject suite 3 (cross-suite SHA1+SHA1-96+AES)",
-			suites:     []ipmi.CipherSuiteID{ipmi.CipherSuiteID2, ipmi.CipherSuiteID17},
-			auth:       bmc.AuthAlgHMACSHA1,
-			integ:      bmc.IntegrityAlgHMACSHA1_96,
-			crypt:      bmc.CryptAlgAESCBC128,
+			suites:     []types.CipherSuiteID{types.CipherSuiteID2, types.CipherSuiteID17},
+			auth:       types.AuthAlg_HMAC_SHA1,
+			integ:      types.IntegrityAlg_HMAC_SHA1_96,
+			crypt:      types.CryptAlg_AES_CBC_128,
 			wantStatus: 0x04,
 		},
 		{
@@ -318,10 +318,10 @@ func TestHandleOpenSession_RejectsCrossSuiteRecombination(t *testing.T) {
 			// is not configured; SHA256/SHA256-128 are from suite 17, None
 			// is from suite 2's crypt.
 			name:       "{2,17} should reject suite 16 (cross-suite SHA256+SHA256-128+None)",
-			suites:     []ipmi.CipherSuiteID{ipmi.CipherSuiteID2, ipmi.CipherSuiteID17},
-			auth:       bmc.AuthAlgHMACSHA256,
-			integ:      bmc.IntegrityAlgHMACSHA256_128,
-			crypt:      bmc.CryptAlgNone,
+			suites:     []types.CipherSuiteID{types.CipherSuiteID2, types.CipherSuiteID17},
+			auth:       types.AuthAlg_HMAC_SHA256,
+			integ:      types.IntegrityAlg_HMAC_SHA256_128,
+			crypt:      types.CryptAlg_None,
 			wantStatus: 0x04,
 		},
 		{
@@ -331,10 +331,10 @@ func TestHandleOpenSession_RejectsCrossSuiteRecombination(t *testing.T) {
 			// integrity check) would be accepted even though it was never
 			// configured. This is the most dangerous recombination.
 			name:       "{3,15} should reject suite 1 (auth bypass SHA1+None+None)",
-			suites:     []ipmi.CipherSuiteID{ipmi.CipherSuiteID3, ipmi.CipherSuiteID15},
-			auth:       bmc.AuthAlgHMACSHA1,
-			integ:      bmc.IntegrityAlgNone,
-			crypt:      bmc.CryptAlgNone,
+			suites:     []types.CipherSuiteID{types.CipherSuiteID3, types.CipherSuiteID15},
+			auth:       types.AuthAlg_HMAC_SHA1,
+			integ:      types.IntegrityAlg_None,
+			crypt:      types.CryptAlg_None,
 			wantStatus: 0x04,
 		},
 	}
@@ -366,19 +366,19 @@ func TestComputeRAKP4AuthCode_UsesAuthAlgorithm(t *testing.T) {
 	b := newTestBMC()
 	cases := []struct {
 		name    string
-		auth    bmc.AuthAlg
-		integ   bmc.IntegrityAlg
+		auth    types.AuthAlg
+		integ   types.IntegrityAlg
 		wantLen int
 	}{
-		{"SHA1 auth + None integ (suite 1)", bmc.AuthAlgHMACSHA1, bmc.IntegrityAlgNone, 12},
-		{"SHA256 auth + None integ (suite 15)", bmc.AuthAlgHMACSHA256, bmc.IntegrityAlgNone, 16},
-		{"SHA1 auth + SHA1-96 integ (suite 3)", bmc.AuthAlgHMACSHA1, bmc.IntegrityAlgHMACSHA1_96, 12},
-		{"SHA256 auth + SHA256-128 integ (suite 17)", bmc.AuthAlgHMACSHA256, bmc.IntegrityAlgHMACSHA256_128, 16},
-		{"None auth + None integ (suite 0)", bmc.AuthAlgNone, bmc.IntegrityAlgNone, 0},
+		{"SHA1 auth + None integ (suite 1)", types.AuthAlg_HMAC_SHA1, types.IntegrityAlg_None, 12},
+		{"SHA256 auth + None integ (suite 15)", types.AuthAlg_HMAC_SHA256, types.IntegrityAlg_None, 16},
+		{"SHA1 auth + SHA1-96 integ (suite 3)", types.AuthAlg_HMAC_SHA1, types.IntegrityAlg_HMAC_SHA1_96, 12},
+		{"SHA256 auth + SHA256-128 integ (suite 17)", types.AuthAlg_HMAC_SHA256, types.IntegrityAlg_HMAC_SHA256_128, 16},
+		{"None auth + None integ (suite 0)", types.AuthAlg_None, types.IntegrityAlg_None, 0},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			sess, err := b.Sessions.Allocate(0x11223344, tc.auth, tc.integ, bmc.CryptAlgNone)
+			sess, err := b.Sessions.Allocate(0x11223344, tc.auth, tc.integ, types.CryptAlg_None)
 			if err != nil {
 				t.Fatalf("allocate session: %v", err)
 			}

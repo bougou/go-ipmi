@@ -3,19 +3,19 @@ package dcmi
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // [DCMI specification v1.5]: 6.7.3 Get Temperature Readings Command
 type GetDCMITemperatureReadingsRequest struct {
-	SensorType          ipmi.SensorType
-	EntityID            ipmi.EntityID
-	EntityInstance      ipmi.EntityInstance
+	SensorType          types.SensorType
+	EntityID            types.EntityID
+	EntityInstance      types.EntityInstance
 	EntityInstanceStart uint8
 }
 
 type GetDCMITemperatureReadingsResponse struct {
-	EntityID ipmi.EntityID
+	EntityID types.EntityID
 
 	TotalEntityInstances     uint8
 	TemperatureReadingsCount uint8
@@ -24,16 +24,16 @@ type GetDCMITemperatureReadingsResponse struct {
 
 type DCMITemperatureReading struct {
 	TemperatureReading int8
-	EntityInstance     ipmi.EntityInstance
-	EntityID           ipmi.EntityID
+	EntityInstance     types.EntityInstance
+	EntityID           types.EntityID
 }
 
 func (req *GetDCMITemperatureReadingsRequest) Pack() []byte {
-	return []byte{ipmi.GroupExtensionDCMI, byte(req.SensorType), byte(req.EntityID), byte(req.EntityInstance), req.EntityInstanceStart}
+	return []byte{types.GroupExtensionDCMI, byte(req.SensorType), byte(req.EntityID), byte(req.EntityInstance), req.EntityInstanceStart}
 }
 
-func (req *GetDCMITemperatureReadingsRequest) Command() ipmi.Command {
-	return ipmi.CommandGetDCMITemperatureReadings
+func (req *GetDCMITemperatureReadingsRequest) Command() types.Command {
+	return types.CommandGetDCMITemperatureReadings
 }
 
 func (res *GetDCMITemperatureReadingsResponse) CompletionCodes() map[uint8]string {
@@ -44,10 +44,10 @@ func (res *GetDCMITemperatureReadingsResponse) CompletionCodes() map[uint8]strin
 
 func (res *GetDCMITemperatureReadingsResponse) Unpack(msg []byte) error {
 	if len(msg) < 3 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 3)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 3)
 	}
 
-	if err := ipmi.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
+	if err := types.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
 		return err
 	}
 
@@ -55,7 +55,7 @@ func (res *GetDCMITemperatureReadingsResponse) Unpack(msg []byte) error {
 	res.TemperatureReadingsCount = msg[2]
 
 	if len(msg) < 3+int(res.TemperatureReadingsCount)*2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 3+int(res.TemperatureReadingsCount)*2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 3+int(res.TemperatureReadingsCount)*2)
 	}
 
 	tempReadings := make([]DCMITemperatureReading, 0)
@@ -65,7 +65,7 @@ func (res *GetDCMITemperatureReadingsResponse) Unpack(msg []byte) error {
 		v := msg[3+i*2]
 		r.TemperatureReading = int8(v)
 
-		r.EntityInstance = ipmi.EntityInstance(msg[3+i*2+1])
+		r.EntityInstance = types.EntityInstance(msg[3+i*2+1])
 		r.EntityID = res.EntityID
 
 		tempReadings = append(tempReadings, r)
@@ -100,5 +100,5 @@ func FormatDCMITemperatureReadings(readings []DCMITemperatureReading) string {
 		"Temp. Readings",
 	}
 
-	return ipmi.RenderTable(headers, rows)
+	return types.RenderTable(headers, rows)
 }

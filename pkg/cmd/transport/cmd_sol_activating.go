@@ -1,7 +1,7 @@
 package transport
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 26.1 SOL Activating Command
 )
 
@@ -15,16 +15,16 @@ type SOLActivatingRequest struct {
 type SOLActivatingResponse struct {
 }
 
-func (req *SOLActivatingRequest) Command() ipmi.Command {
-	return ipmi.CommandSOLActivating
+func (req *SOLActivatingRequest) Command() types.Command {
+	return types.CommandSOLActivating
 }
 
 func (req *SOLActivatingRequest) Pack() []byte {
 	out := make([]byte, 4)
-	ipmi.PackUint8(req.SessionState, out, 0)
-	ipmi.PackUint8(req.PayloadInstance, out, 1)
-	ipmi.PackUint8(req.FormatVersionMajor, out, 2)
-	ipmi.PackUint8(req.FormatVersionMinor, out, 3)
+	types.PackUint8(req.SessionState, out, 0)
+	types.PackUint8(req.PayloadInstance, out, 1)
+	types.PackUint8(req.FormatVersionMajor, out, 2)
+	types.PackUint8(req.FormatVersionMinor, out, 3)
 	return out
 }
 

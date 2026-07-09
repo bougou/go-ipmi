@@ -1,7 +1,7 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 30.8 PET Acknowledge Command
 	// This message is used to acknowledge a Platform Event Trap (PET) alert.
 )
@@ -12,7 +12,7 @@ type PETAcknowledgeRequest struct {
 	EventSourceType uint8
 	SensorDevice    uint8
 	SensorNumber    uint8
-	EventData       ipmi.EventData
+	EventData       types.EventData
 }
 
 type PETAcknowledgeResponse struct {
@@ -22,8 +22,8 @@ type PETAcknowledgeResponse struct {
 func (req *PETAcknowledgeRequest) Pack() []byte {
 	out := make([]byte, 12)
 
-	ipmi.PackUint16L(req.SequenceNumber, out, 0)
-	ipmi.PackUint32L(req.LocalTimestamp, out, 2)
+	types.PackUint16L(req.SequenceNumber, out, 0)
+	types.PackUint32L(req.LocalTimestamp, out, 2)
 	out[6] = req.EventSourceType
 	out[7] = req.SensorDevice
 	out[8] = req.SensorNumber
@@ -36,11 +36,11 @@ func (req *PETAcknowledgeRequest) Pack() []byte {
 
 func (req *PETAcknowledgeRequest) Unpack(data []byte) error {
 	if len(data) < 12 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(data), 12)
+		return types.ErrUnpackedDataTooShortWith(len(data), 12)
 	}
 
-	req.SequenceNumber, _, _ = ipmi.UnpackUint16L(data, 0)
-	req.LocalTimestamp, _, _ = ipmi.UnpackUint32L(data, 2)
+	req.SequenceNumber, _, _ = types.UnpackUint16L(data, 0)
+	req.LocalTimestamp, _, _ = types.UnpackUint32L(data, 2)
 	req.EventSourceType = data[6]
 	req.SensorDevice = data[7]
 	req.SensorNumber = data[8]
@@ -51,8 +51,8 @@ func (req *PETAcknowledgeRequest) Unpack(data []byte) error {
 	return nil
 }
 
-func (req *PETAcknowledgeRequest) Command() ipmi.Command {
-	return ipmi.CommandPETAcknowledge
+func (req *PETAcknowledgeRequest) Command() types.Command {
+	return types.CommandPETAcknowledge
 }
 
 func (res *PETAcknowledgeResponse) CompletionCodes() map[uint8]string {

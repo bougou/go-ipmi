@@ -1,7 +1,7 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 22.2 Get BMC Global Enables Command
 )
 
@@ -20,8 +20,8 @@ type GetBMCGlobalEnablesResponse struct {
 	ReceiveMessageQueueInterruptEnabled    bool
 }
 
-func (req *GetBMCGlobalEnablesRequest) Command() ipmi.Command {
-	return ipmi.CommandGetBMCGlobalEnables
+func (req *GetBMCGlobalEnablesRequest) Command() types.Command {
+	return types.CommandGetBMCGlobalEnables
 }
 
 func (req *GetBMCGlobalEnablesRequest) Pack() []byte {
@@ -30,17 +30,17 @@ func (req *GetBMCGlobalEnablesRequest) Pack() []byte {
 
 func (res *GetBMCGlobalEnablesResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
-	b, _, _ := ipmi.UnpackUint8(msg, 0)
-	res.OEM2Enabled = ipmi.IsBit7Set(b)
-	res.OEM1Enabled = ipmi.IsBit6Set(b)
-	res.OEM0Enabled = ipmi.IsBit5Set(b)
-	res.SystemEventLoggingEnabled = ipmi.IsBit3Set(b)
-	res.EventMessageBufferEnabled = ipmi.IsBit2Set(b)
-	res.EventMessageBufferFullInterruptEnabled = ipmi.IsBit1Set(b)
-	res.ReceiveMessageQueueInterruptEnabled = ipmi.IsBit0Set(b)
+	b, _, _ := types.UnpackUint8(msg, 0)
+	res.OEM2Enabled = types.IsBit7Set(b)
+	res.OEM1Enabled = types.IsBit6Set(b)
+	res.OEM0Enabled = types.IsBit5Set(b)
+	res.SystemEventLoggingEnabled = types.IsBit3Set(b)
+	res.EventMessageBufferEnabled = types.IsBit2Set(b)
+	res.EventMessageBufferFullInterruptEnabled = types.IsBit1Set(b)
+	res.ReceiveMessageQueueInterruptEnabled = types.IsBit0Set(b)
 	return nil
 }
 

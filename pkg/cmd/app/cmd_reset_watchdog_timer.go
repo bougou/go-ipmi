@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 27.5 Reset Watchdog Timer Command
 )
 
@@ -16,8 +16,8 @@ func (req *ResetWatchdogTimerRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (req *ResetWatchdogTimerRequest) Command() ipmi.Command {
-	return ipmi.CommandResetWatchdogTimer
+func (req *ResetWatchdogTimerRequest) Command() types.Command {
+	return types.CommandResetWatchdogTimer
 }
 
 func (res *ResetWatchdogTimerResponse) Unpack(msg []byte) error {

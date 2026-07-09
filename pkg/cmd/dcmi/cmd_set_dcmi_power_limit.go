@@ -1,7 +1,7 @@
 package dcmi
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// The Set Power Limit command sets the power limit parameters on the system.
 	// The power limit defines a threshold which, if exceeded for a configurable amount of time,
 	// will trigger a system power off and/or event logging action.
@@ -14,7 +14,7 @@ import (
 )
 
 type SetDCMIPowerLimitRequest struct {
-	ExceptionAction ipmi.DCMIExceptionAction
+	ExceptionAction types.DCMIExceptionAction
 	// Power Limit Requested in Watts
 	PowerLimitRequested uint16
 	// Maximum time taken to limit the power after the platform power has reached
@@ -30,17 +30,17 @@ type SetDCMIPowerLimitResponse struct {
 func (req *SetDCMIPowerLimitRequest) Pack() []byte {
 	out := make([]byte, 15)
 
-	ipmi.PackUint8(ipmi.GroupExtensionDCMI, out, 0)
-	ipmi.PackUint8(uint8(req.ExceptionAction), out, 4)
-	ipmi.PackUint16L(req.PowerLimitRequested, out, 5)
-	ipmi.PackUint32L(req.CorrectionTimeLimitMilliSec, out, 7)
-	ipmi.PackUint16L(req.StatisticsSamplingPeriodSec, out, 13)
+	types.PackUint8(types.GroupExtensionDCMI, out, 0)
+	types.PackUint8(uint8(req.ExceptionAction), out, 4)
+	types.PackUint16L(req.PowerLimitRequested, out, 5)
+	types.PackUint32L(req.CorrectionTimeLimitMilliSec, out, 7)
+	types.PackUint16L(req.StatisticsSamplingPeriodSec, out, 13)
 
 	return out
 }
 
-func (req *SetDCMIPowerLimitRequest) Command() ipmi.Command {
-	return ipmi.CommandSetDCMIPowerLimit
+func (req *SetDCMIPowerLimitRequest) Command() types.Command {
+	return types.CommandSetDCMIPowerLimit
 }
 
 func (res *SetDCMIPowerLimitResponse) CompletionCodes() map[uint8]string {
@@ -53,10 +53,10 @@ func (res *SetDCMIPowerLimitResponse) CompletionCodes() map[uint8]string {
 
 func (res *SetDCMIPowerLimitResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 
-	if err := ipmi.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
+	if err := types.CheckDCMIGroupExenstionMatch(msg[0]); err != nil {
 		return err
 	}
 

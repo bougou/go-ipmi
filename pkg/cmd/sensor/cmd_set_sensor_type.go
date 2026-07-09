@@ -1,29 +1,29 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 35.15 Set Sensor Type Command
 )
 
 type SetSensorTypeRequest struct {
 	SensorNumber     uint8
-	SensorType       ipmi.SensorType
-	EventReadingType ipmi.EventReadingType
+	SensorType       types.SensorType
+	EventReadingType types.EventReadingType
 }
 
 type SetSensorTypeResponse struct {
 	// empty
 }
 
-func (req *SetSensorTypeRequest) Command() ipmi.Command {
-	return ipmi.CommandSetSensorType
+func (req *SetSensorTypeRequest) Command() types.Command {
+	return types.CommandSetSensorType
 }
 
 func (req *SetSensorTypeRequest) Pack() []byte {
 	out := make([]byte, 3)
-	ipmi.PackUint8(req.SensorNumber, out, 0)
-	ipmi.PackUint8(uint8(req.SensorType), out, 1)
-	ipmi.PackUint8(uint8(req.EventReadingType), out, 2)
+	types.PackUint8(req.SensorNumber, out, 0)
+	types.PackUint8(uint8(req.SensorType), out, 1)
+	types.PackUint8(uint8(req.EventReadingType), out, 2)
 	return out
 }
 

@@ -2,15 +2,15 @@ package client
 
 import (
 	"github.com/bougou/go-ipmi/pkg/cmd/app"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"testing"
 )
 
 func Test_ActivateSessionAuthCode(t *testing.T) {
 	tests := []struct {
 		name           string
-		commandRequest ipmi.Request
-		ipmiRequest    *ipmi.IPMIRequest
+		commandRequest types.Request
+		ipmiRequest    *types.IPMIRequest
 		input          *AuthCodeMultiSessionInput
 		expect         []byte
 	}{
@@ -22,10 +22,10 @@ func Test_ActivateSessionAuthCode(t *testing.T) {
 				Challenge:                     [16]byte{0x82, 0x8f, 0xa9, 0xbf, 0x25, 0x51, 0x6b, 0x2a, 0xf5, 0xf8, 0xfb, 0x3f, 0x37, 0xae, 0x6e, 0x69},
 				InitialOutboundSequenceNumber: 0xa2605e12,
 			},
-			ipmiRequest: &ipmi.IPMIRequest{
+			ipmiRequest: &types.IPMIRequest{
 				ResponderAddr:     0x20,
 				ResponderLUN:      0x0,
-				NetFn:             ipmi.NetFnAppRequest,
+				NetFn:             types.NetFnAppRequest,
 				RequesterAddr:     0x81,
 				RequesterLUN:      0x0,
 				RequesterSequence: 0x03,
@@ -43,16 +43,16 @@ func Test_ActivateSessionAuthCode(t *testing.T) {
 		{
 			name: "test2",
 			commandRequest: &app.SetSessionPrivilegeLevelRequest{
-				PrivilegeLevel: ipmi.PrivilegeLevelAdministrator,
+				PrivilegeLevel: types.PrivilegeLevelAdministrator,
 			},
-			ipmiRequest: &ipmi.IPMIRequest{
+			ipmiRequest: &types.IPMIRequest{
 				ResponderAddr:     0x20,
 				ResponderLUN:      0x0,
-				NetFn:             ipmi.CommandSetSessionPrivilegeLevel.NetFn,
+				NetFn:             types.CommandSetSessionPrivilegeLevel.NetFn,
 				RequesterAddr:     0x81,
 				RequesterLUN:      0x0,
 				RequesterSequence: 0x04,
-				Command:           ipmi.CommandSetSessionPrivilegeLevel.ID,
+				Command:           types.CommandSetSessionPrivilegeLevel.ID,
 			},
 			input: &AuthCodeMultiSessionInput{
 				// cSpell:disable
@@ -75,7 +75,7 @@ func Test_ActivateSessionAuthCode(t *testing.T) {
 
 		tt.input.IPMIData = ipmiData
 
-		got := tt.input.AuthCode(ipmi.AuthTypeMD5)
+		got := tt.input.AuthCode(types.AuthTypeMD5)
 		expected := tt.expect
 
 		if !isByteSliceEqual(got, expected) {

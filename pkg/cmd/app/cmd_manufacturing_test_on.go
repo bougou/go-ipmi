@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 20.4 20.5 Manufacturing Test On Command
 )
 
@@ -13,8 +13,8 @@ type ManufacturingTestOnResponse struct {
 	// empty
 }
 
-func (req *ManufacturingTestOnRequest) Command() ipmi.Command {
-	return ipmi.CommandManufacturingTestOn
+func (req *ManufacturingTestOnRequest) Command() types.Command {
+	return types.CommandManufacturingTestOn
 }
 
 func (req *ManufacturingTestOnRequest) Pack() []byte {

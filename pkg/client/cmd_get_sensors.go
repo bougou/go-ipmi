@@ -3,24 +3,24 @@ package client
 import (
 	"context"
 	"fmt"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"iter"
 	"strings"
 )
 
-type SensorFilterOption func(sensor *ipmi.Sensor) bool
+type SensorFilterOption func(sensor *types.Sensor) bool
 
-func SensorFilterOptionIsThreshold(sensor *ipmi.Sensor) bool {
+func SensorFilterOptionIsThreshold(sensor *types.Sensor) bool {
 	return sensor.IsThreshold()
 }
 
-func SensorFilterOptionIsReadingValid(sensor *ipmi.Sensor) bool {
+func SensorFilterOptionIsReadingValid(sensor *types.Sensor) bool {
 	return sensor.IsReadingValid()
 }
 
 // Sensor is matched if the sensor type of the sensor is one of the given sensor types.
-func SensorFilterOptionIsSensorType(sensorTypes ...ipmi.SensorType) func(sensor *ipmi.Sensor) bool {
-	return func(sensor *ipmi.Sensor) bool {
+func SensorFilterOptionIsSensorType(sensorTypes ...types.SensorType) func(sensor *types.Sensor) bool {
+	return func(sensor *types.Sensor) bool {
 		for _, sensorType := range sensorTypes {
 			if sensor.SensorType == sensorType {
 				return true
@@ -40,16 +40,16 @@ func SensorFilterOptionIsSensorType(sensorTypes ...ipmi.SensorType) func(sensor 
 // Example usage:
 //
 //	// Get all fan sensors
-//	sensors, err := client.GetSensors(ctx, ipmi.SensorFilterOptionIsSensorType(ipmi.SensorTypeFan))
+//	sensors, err := client.GetSensors(ctx, types.SensorFilterOptionIsSensorType(types.SensorTypeFan))
 //
 //	// Get all temperature sensors with valid readings
 //	sensors, err := client.GetSensors(ctx,
-//	    ipmi.SensorFilterOptionIsSensorType(ipmi.SensorTypeTemperature),
-//	    ipmi.SensorFilterOptionIsReadingValid)
-func (c *Client) GetSensors(ctx context.Context, filterOptions ...SensorFilterOption) ([]*ipmi.Sensor, error) {
-	var out = make([]*ipmi.Sensor, 0)
+//	    types.SensorFilterOptionIsSensorType(types.SensorTypeTemperature),
+//	    types.SensorFilterOptionIsReadingValid)
+func (c *Client) GetSensors(ctx context.Context, filterOptions ...SensorFilterOption) ([]*types.Sensor, error) {
+	var out = make([]*types.Sensor, 0)
 
-	sdrs, err := c.GetSDRs(ctx, ipmi.SDRRecordTypeFullSensor, ipmi.SDRRecordTypeCompactSensor)
+	sdrs, err := c.GetSDRs(ctx, types.SDRRecordTypeFullSensor, types.SDRRecordTypeCompactSensor)
 	if err != nil {
 		return nil, fmt.Errorf("GetSDRs failed, err: %w", err)
 	}
@@ -87,12 +87,12 @@ func (c *Client) GetSensors(ctx context.Context, filterOptions ...SensorFilterOp
 //
 //	// Get sensors that are either temperature or voltage sensors
 //	sensors, err := client.GetSensorsAny(ctx,
-//	    ipmi.SensorFilterOptionIsSensorType(ipmi.SensorTypeTemperature),
-//	    ipmi.SensorFilterOptionIsSensorType(ipmi.SensorTypeVoltage))
-func (c *Client) GetSensorsAny(ctx context.Context, filterOptions ...SensorFilterOption) ([]*ipmi.Sensor, error) {
-	var out = make([]*ipmi.Sensor, 0)
+//	    types.SensorFilterOptionIsSensorType(types.SensorTypeTemperature),
+//	    types.SensorFilterOptionIsSensorType(types.SensorTypeVoltage))
+func (c *Client) GetSensorsAny(ctx context.Context, filterOptions ...SensorFilterOption) ([]*types.Sensor, error) {
+	var out = make([]*types.Sensor, 0)
 
-	sdrs, err := c.GetSDRs(ctx, ipmi.SDRRecordTypeFullSensor, ipmi.SDRRecordTypeCompactSensor)
+	sdrs, err := c.GetSDRs(ctx, types.SDRRecordTypeFullSensor, types.SDRRecordTypeCompactSensor)
 	if err != nil {
 		return nil, fmt.Errorf("GetSDRs failed, err: %w", err)
 	}
@@ -120,9 +120,9 @@ func (c *Client) GetSensorsAny(ctx context.Context, filterOptions ...SensorFilte
 }
 
 // GetSensorsStream behaves like GetSensors, but returns an iterator of sensors instead of a slice.
-func (c *Client) GetSensorsStream(ctx context.Context, filterOptions ...SensorFilterOption) iter.Seq[*ipmi.Result[ipmi.Sensor]] {
-	return func(yield func(*ipmi.Result[ipmi.Sensor]) bool) {
-		sdrs := c.GetSDRsStream(ctx, ipmi.SDRRecordTypeFullSensor, ipmi.SDRRecordTypeCompactSensor)
+func (c *Client) GetSensorsStream(ctx context.Context, filterOptions ...SensorFilterOption) iter.Seq[*types.Result[types.Sensor]] {
+	return func(yield func(*types.Result[types.Sensor]) bool) {
+		sdrs := c.GetSDRsStream(ctx, types.SDRRecordTypeFullSensor, types.SDRRecordTypeCompactSensor)
 
 		for result := range sdrs {
 			select {
@@ -134,7 +134,7 @@ func (c *Client) GetSensorsStream(ctx context.Context, filterOptions ...SensorFi
 				}
 
 				if result.Err != nil {
-					yield(&ipmi.Result[ipmi.Sensor]{Err: result.Err})
+					yield(&types.Result[types.Sensor]{Err: result.Err})
 					return
 				}
 
@@ -145,7 +145,7 @@ func (c *Client) GetSensorsStream(ctx context.Context, filterOptions ...SensorFi
 
 				sensor, err := c.sdrToSensor(ctx, sdr)
 				if err != nil {
-					yield(&ipmi.Result[ipmi.Sensor]{Err: fmt.Errorf("sdrToSensor failed, err: %w", err)})
+					yield(&types.Result[types.Sensor]{Err: fmt.Errorf("sdrToSensor failed, err: %w", err)})
 					return
 				}
 
@@ -158,7 +158,7 @@ func (c *Client) GetSensorsStream(ctx context.Context, filterOptions ...SensorFi
 				}
 
 				if choose {
-					if !yield(&ipmi.Result[ipmi.Sensor]{Ok: sensor}) {
+					if !yield(&types.Result[types.Sensor]{Ok: sensor}) {
 						return
 					}
 				}
@@ -168,9 +168,9 @@ func (c *Client) GetSensorsStream(ctx context.Context, filterOptions ...SensorFi
 }
 
 // GetSensorsAnyStream behaves like GetSensorsAny, but returns an iterator of sensors instead of a slice.
-func (c *Client) GetSensorsAnyStream(ctx context.Context, filterOptions ...SensorFilterOption) iter.Seq[*ipmi.Result[ipmi.Sensor]] {
-	return func(yield func(*ipmi.Result[ipmi.Sensor]) bool) {
-		sdrs := c.GetSDRsStream(ctx, ipmi.SDRRecordTypeFullSensor, ipmi.SDRRecordTypeCompactSensor)
+func (c *Client) GetSensorsAnyStream(ctx context.Context, filterOptions ...SensorFilterOption) iter.Seq[*types.Result[types.Sensor]] {
+	return func(yield func(*types.Result[types.Sensor]) bool) {
+		sdrs := c.GetSDRsStream(ctx, types.SDRRecordTypeFullSensor, types.SDRRecordTypeCompactSensor)
 		for result := range sdrs {
 			select {
 			case <-ctx.Done():
@@ -181,7 +181,7 @@ func (c *Client) GetSensorsAnyStream(ctx context.Context, filterOptions ...Senso
 				}
 
 				if result.Err != nil {
-					yield(&ipmi.Result[ipmi.Sensor]{Err: result.Err})
+					yield(&types.Result[types.Sensor]{Err: result.Err})
 					return
 				}
 
@@ -192,7 +192,7 @@ func (c *Client) GetSensorsAnyStream(ctx context.Context, filterOptions ...Senso
 
 				sensor, err := c.sdrToSensor(ctx, sdr)
 				if err != nil {
-					yield(&ipmi.Result[ipmi.Sensor]{Err: fmt.Errorf("sdrToSensor failed, err: %w", err)})
+					yield(&types.Result[types.Sensor]{Err: fmt.Errorf("sdrToSensor failed, err: %w", err)})
 					return
 				}
 
@@ -205,7 +205,7 @@ func (c *Client) GetSensorsAnyStream(ctx context.Context, filterOptions ...Senso
 				}
 
 				if choose {
-					if !yield(&ipmi.Result[ipmi.Sensor]{Ok: sensor}) {
+					if !yield(&types.Result[types.Sensor]{Ok: sensor}) {
 						return
 					}
 				}
@@ -215,7 +215,7 @@ func (c *Client) GetSensorsAnyStream(ctx context.Context, filterOptions ...Senso
 }
 
 // GetSensorByID returns the sensor with current reading and status by specified sensor number.
-func (c *Client) GetSensorByID(ctx context.Context, sensorNumber uint8) (*ipmi.Sensor, error) {
+func (c *Client) GetSensorByID(ctx context.Context, sensorNumber uint8) (*types.Sensor, error) {
 	sdr, err := c.GetSDRBySensorID(ctx, sensorNumber)
 	if err != nil {
 		return nil, fmt.Errorf("GetSDRBySensorID failed, err: %w", err)
@@ -232,7 +232,7 @@ func (c *Client) GetSensorByID(ctx context.Context, sensorNumber uint8) (*ipmi.S
 }
 
 // GetSensorByName returns the sensor with current reading and status by specified sensor name.
-func (c *Client) GetSensorByName(ctx context.Context, sensorName string) (*ipmi.Sensor, error) {
+func (c *Client) GetSensorByName(ctx context.Context, sensorName string) (*types.Sensor, error) {
 	sdr, err := c.GetSDRBySensorName(ctx, sensorName)
 	if err != nil {
 		return nil, fmt.Errorf("GetSDRBySensorName failed, err: %w", err)
@@ -263,18 +263,18 @@ func (c *Client) GetSensorByName(ctx context.Context, sensorName string) (*ipmi.
 //
 // The function handles both Full and Compact SDR record types, populating
 // the appropriate fields based on the record type.
-func (c *Client) sdrToSensor(ctx context.Context, sdr *ipmi.SDR) (*ipmi.Sensor, error) {
+func (c *Client) sdrToSensor(ctx context.Context, sdr *types.SDR) (*types.Sensor, error) {
 	if sdr == nil {
 		return nil, fmt.Errorf("nil sdr parameter")
 	}
 
-	sensor := &ipmi.Sensor{
+	sensor := &types.Sensor{
 		SDRRecordType:    sdr.RecordHeader.RecordType,
 		HasAnalogReading: sdr.HasAnalogReading(),
 	}
 
 	switch sdr.RecordHeader.RecordType {
-	case ipmi.SDRRecordTypeFullSensor:
+	case types.SDRRecordTypeFullSensor:
 		sensor.GeneratorID = sdr.Full.GeneratorID
 		sensor.Number = uint8(sdr.Full.SensorNumber)
 		sensor.Name = strings.TrimSpace(string(sdr.Full.IDStringBytes))
@@ -289,7 +289,7 @@ func (c *Client) sdrToSensor(ctx context.Context, sdr *ipmi.SDR) (*ipmi.Sensor, 
 		sensor.Threshold.LinearizationFunc = sdr.Full.LinearizationFunc
 		sensor.Threshold.ReadingFactors = sdr.Full.ReadingFactors
 
-	case ipmi.SDRRecordTypeCompactSensor:
+	case types.SDRRecordTypeCompactSensor:
 		sensor.GeneratorID = sdr.Compact.GeneratorID
 		sensor.Number = uint8(sdr.Compact.SensorNumber)
 		sensor.Name = strings.TrimSpace(string(sdr.Compact.IDStringBytes))
@@ -345,13 +345,13 @@ func (c *Client) sdrToSensor(ctx context.Context, sdr *ipmi.SDR) (*ipmi.Sensor, 
 	return sensor, nil
 }
 
-func (c *Client) fillSensorReading(ctx context.Context, sensor *ipmi.Sensor) error {
+func (c *Client) fillSensorReading(ctx context.Context, sensor *types.Sensor) error {
 	c.Debug("try to fill sensor reading for sensor", sensor.Number)
 
 	readingRes, err := c.GetSensorReading(ctx, sensor.Number)
 	c.Debug("GetSensorReading response", readingRes.Format())
 
-	if isErrOfCompletionCodes(err, uint8(ipmi.CompletionCodeRequestedDataNotPresent)) {
+	if isErrOfCompletionCodes(err, uint8(types.CompletionCodeRequestedDataNotPresent)) {
 		c.Debugf("GetSensorReading for sensor %#02x failed, err: %s", sensor.Number, err)
 		sensor.NotPresent = true
 		return nil
@@ -376,7 +376,7 @@ func (c *Client) fillSensorReading(ctx context.Context, sensor *ipmi.Sensor) err
 }
 
 // fillSensorDiscrete retrieves and fills extra sensor attributes for given discrete sensor.
-func (c *Client) fillSensorDiscrete(ctx context.Context, sensor *ipmi.Sensor) error {
+func (c *Client) fillSensorDiscrete(ctx context.Context, sensor *types.Sensor) error {
 	statusRes, err := c.GetSensorEventStatus(ctx, sensor.Number)
 	if _canIgnoreSensorErr(err) != nil {
 		return fmt.Errorf("GetSensorEventStatus for sensor %#02x failed, err: %w", sensor.Number, err)
@@ -386,8 +386,8 @@ func (c *Client) fillSensorDiscrete(ctx context.Context, sensor *ipmi.Sensor) er
 }
 
 // fillSensorThreshold retrieves and fills sensor attributes for given threshold sensor.
-func (c *Client) fillSensorThreshold(ctx context.Context, sensor *ipmi.Sensor) error {
-	if sensor.SDRRecordType != ipmi.SDRRecordTypeFullSensor {
+func (c *Client) fillSensorThreshold(ctx context.Context, sensor *types.Sensor) error {
+	if sensor.SDRRecordType != types.SDRRecordTypeFullSensor {
 		return nil
 	}
 
@@ -440,9 +440,9 @@ func _canIgnoreSensorErr(err error) error {
 	canIgnore := buildCanIgnoreFn(
 		// the following completion codes CAN be ignored,
 		// it normally means the sensor device does not exist or the sensor device does not recognize the IPMI command
-		uint8(ipmi.CompletionCodeRequestedDataNotPresent),
-		uint8(ipmi.CompletionCodeIllegalCommand),
-		uint8(ipmi.CompletionCodeInvalidCommand),
+		uint8(types.CompletionCodeRequestedDataNotPresent),
+		uint8(types.CompletionCodeIllegalCommand),
+		uint8(types.CompletionCodeInvalidCommand),
 	)
 
 	return canIgnore(err)

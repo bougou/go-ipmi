@@ -1,7 +1,7 @@
 package chassis
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 28.6 Set Front Panel Enables
 	// 定位
 )
@@ -22,23 +22,23 @@ func (req *SetFrontPanelEnablesRequest) Pack() []byte {
 
 	var b uint8 = 0
 	if req.DisableSleepButton {
-		b = ipmi.SetBit3(b)
+		b = types.SetBit3(b)
 	}
 	if req.DisableDiagnosticButton {
-		b = ipmi.SetBit2(b)
+		b = types.SetBit2(b)
 	}
 	if req.DisableResetButton {
-		b = ipmi.SetBit1(b)
+		b = types.SetBit1(b)
 	}
 	if req.DisablePoweroffButton {
-		b = ipmi.SetBit0(b)
+		b = types.SetBit0(b)
 	}
-	ipmi.PackUint8(b, out, 0)
+	types.PackUint8(b, out, 0)
 	return out
 }
 
-func (req *SetFrontPanelEnablesRequest) Command() ipmi.Command {
-	return ipmi.CommandSetFrontPanelEnables
+func (req *SetFrontPanelEnablesRequest) Command() types.Command {
+	return types.CommandSetFrontPanelEnables
 }
 
 func (res *SetFrontPanelEnablesResponse) CompletionCodes() map[uint8]string {

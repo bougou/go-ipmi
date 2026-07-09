@@ -3,7 +3,7 @@ package storage
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 33.10 Get SDR Repository Allocation Info Command
@@ -23,19 +23,19 @@ func (req *GetSDRRepoAllocInfoRequest) Pack() []byte {
 	return nil
 }
 
-func (req *GetSDRRepoAllocInfoRequest) Command() ipmi.Command {
-	return ipmi.CommandGetSDRRepoAllocInfo
+func (req *GetSDRRepoAllocInfoRequest) Command() types.Command {
+	return types.CommandGetSDRRepoAllocInfo
 }
 
 func (res *GetSDRRepoAllocInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 9 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 9)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 9)
 	}
-	res.PossibleAllocUnits, _, _ = ipmi.UnpackUint16L(msg, 0)
-	res.AllocUnitsSize, _, _ = ipmi.UnpackUint16L(msg, 2)
-	res.FreeAllocUnits, _, _ = ipmi.UnpackUint16L(msg, 4)
-	res.LargestFreeBlock, _, _ = ipmi.UnpackUint16L(msg, 6)
-	res.MaximumRecordSize, _, _ = ipmi.UnpackUint8(msg, 8)
+	res.PossibleAllocUnits, _, _ = types.UnpackUint16L(msg, 0)
+	res.AllocUnitsSize, _, _ = types.UnpackUint16L(msg, 2)
+	res.FreeAllocUnits, _, _ = types.UnpackUint16L(msg, 4)
+	res.LargestFreeBlock, _, _ = types.UnpackUint16L(msg, 6)
+	res.MaximumRecordSize, _, _ = types.UnpackUint8(msg, 8)
 	return nil
 }
 

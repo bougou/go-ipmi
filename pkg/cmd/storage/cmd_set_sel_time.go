@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 31.11 Set SEL Time Command
@@ -17,12 +17,12 @@ type SetSELTimeResponse struct {
 
 func (req *SetSELTimeRequest) Pack() []byte {
 	var out = make([]byte, 4)
-	ipmi.PackUint32L(uint32(req.Time.Unix()), out, 0)
+	types.PackUint32L(uint32(req.Time.Unix()), out, 0)
 	return out
 }
 
-func (req *SetSELTimeRequest) Command() ipmi.Command {
-	return ipmi.CommandSetSELTime
+func (req *SetSELTimeRequest) Command() types.Command {
+	return types.CommandSetSELTime
 }
 
 func (res *SetSELTimeResponse) Unpack(msg []byte) error {

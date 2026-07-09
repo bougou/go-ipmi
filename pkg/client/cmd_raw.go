@@ -3,12 +3,12 @@ package client
 import (
 	"context"
 	"fmt"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"strings"
 )
 
 type CommandRawRequest struct {
-	NetFn ipmi.NetFn
+	NetFn types.NetFn
 	Cmd   uint8
 	Data  []byte
 	Name  string
@@ -18,8 +18,8 @@ type CommandRawResponse struct {
 	Response []byte
 }
 
-func (req *CommandRawRequest) Command() ipmi.Command {
-	return ipmi.Command{ID: req.Cmd, NetFn: req.NetFn, Name: req.Name}
+func (req *CommandRawRequest) Command() types.Command {
+	return types.Command{ID: req.Cmd, NetFn: req.NetFn, Name: req.Name}
 }
 
 func (req *CommandRawRequest) Pack() []byte {
@@ -52,7 +52,7 @@ func (res *CommandRawResponse) Format() string {
 	return fmt.Sprintf("raw.Response = %s", hexString)
 }
 
-func (c *Client) RawCommand(ctx context.Context, netFn ipmi.NetFn, cmd uint8, data []byte, name string) (response *CommandRawResponse, err error) {
+func (c *Client) RawCommand(ctx context.Context, netFn types.NetFn, cmd uint8, data []byte, name string) (response *CommandRawResponse, err error) {
 	request := &CommandRawRequest{
 		NetFn: netFn,
 		Cmd:   cmd,

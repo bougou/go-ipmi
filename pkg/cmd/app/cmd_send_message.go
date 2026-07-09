@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 22.7 Send Message Command
 )
 
@@ -30,8 +30,8 @@ type SendMessageResponse struct {
 	Data []byte
 }
 
-func (req SendMessageRequest) Command() ipmi.Command {
-	return ipmi.CommandSendMessage
+func (req SendMessageRequest) Command() types.Command {
+	return types.CommandSendMessage
 }
 
 func (req *SendMessageRequest) Pack() []byte {
@@ -39,21 +39,21 @@ func (req *SendMessageRequest) Pack() []byte {
 
 	var b uint8 = req.ChannelNumber
 	if req.Authenticated {
-		b = ipmi.SetBit4(b)
+		b = types.SetBit4(b)
 	}
 	if req.Encrypted {
-		b = ipmi.SetBit5(b)
+		b = types.SetBit5(b)
 	}
 	b |= (req.TrackMask << 6)
 
-	ipmi.PackUint8(b, out, 0)
-	ipmi.PackBytes(req.MessageData, out, 1)
+	types.PackUint8(b, out, 0)
+	types.PackBytes(req.MessageData, out, 1)
 
 	return out
 }
 
 func (res *SendMessageResponse) Unpack(msg []byte) error {
-	res.Data, _, _ = ipmi.UnpackBytes(msg, 0, len(msg))
+	res.Data, _, _ = types.UnpackBytes(msg, 0, len(msg))
 	return nil
 }
 

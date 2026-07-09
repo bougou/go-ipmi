@@ -1,13 +1,13 @@
 package transport
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 23.1 Set LAN Configuration Parameters Command
 type SetLanConfigParamRequest struct {
 	ChannelNumber uint8
-	ParamSelector ipmi.LanConfigParamSelector
+	ParamSelector types.LanConfigParamSelector
 	ParamData     []byte
 }
 
@@ -18,15 +18,15 @@ type SetLanConfigParamResponse struct {
 func (req *SetLanConfigParamRequest) Pack() []byte {
 	out := make([]byte, 2+len(req.ParamData))
 
-	ipmi.PackUint8(req.ChannelNumber, out, 0)
-	ipmi.PackUint8(uint8(req.ParamSelector), out, 1)
-	ipmi.PackBytes(req.ParamData, out, 2)
+	types.PackUint8(req.ChannelNumber, out, 0)
+	types.PackUint8(uint8(req.ParamSelector), out, 1)
+	types.PackBytes(req.ParamData, out, 2)
 
 	return out
 }
 
-func (req *SetLanConfigParamRequest) Command() ipmi.Command {
-	return ipmi.CommandSetLanConfigParam
+func (req *SetLanConfigParamRequest) Command() types.Command {
+	return types.CommandSetLanConfigParam
 }
 
 func (res *SetLanConfigParamResponse) CompletionCodes() map[uint8]string {

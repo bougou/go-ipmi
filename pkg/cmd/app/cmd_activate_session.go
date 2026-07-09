@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 22.17
@@ -13,7 +13,7 @@ type ActivateSessionRequest struct {
 	// (See 6.12.4, Per-Message and User Level Authentication Disables, for more information.)
 	//
 	// This value must match with the Authentication Type used in the Get Session Challenge request for the session. In addition, for multi-session channels this value must also match the authentication type used in the Session Header.
-	AuthTypeForSession ipmi.AuthType
+	AuthTypeForSession types.AuthType
 
 	// Maximum privilege level requested. Indicates the highest privilege level that
 	// may be requested for this session. This privilege level must be less than
@@ -34,7 +34,7 @@ type ActivateSessionRequest struct {
 	// 4h = Administrator level
 	// 5h = OEM Proprietary level
 	// all other = reserved
-	MaxPrivilegeLevel ipmi.PrivilegeLevel
+	MaxPrivilegeLevel types.PrivilegeLevel
 
 	// For multi-session channels: (e.g. LAN channel):
 	// Challenge String data from corresponding Get Session Challenge response.
@@ -54,20 +54,20 @@ type ActivateSessionRequest struct {
 
 func (req *ActivateSessionRequest) Pack() []byte {
 	out := make([]byte, 22)
-	ipmi.PackUint8(uint8(req.AuthTypeForSession), out, 0)
-	ipmi.PackUint8(uint8(req.MaxPrivilegeLevel), out, 1)
-	ipmi.PackBytes(req.Challenge[:], out, 2)
-	ipmi.PackUint32L(req.InitialOutboundSequenceNumber, out, 18)
+	types.PackUint8(uint8(req.AuthTypeForSession), out, 0)
+	types.PackUint8(uint8(req.MaxPrivilegeLevel), out, 1)
+	types.PackBytes(req.Challenge[:], out, 2)
+	types.PackUint32L(req.InitialOutboundSequenceNumber, out, 18)
 	return out
 }
 
-func (req *ActivateSessionRequest) Command() ipmi.Command {
-	return ipmi.CommandActivateSession
+func (req *ActivateSessionRequest) Command() types.Command {
+	return types.CommandActivateSession
 }
 
 type ActivateSessionResponse struct {
 	// Authentication Type for remainder of session
-	AuthType ipmi.AuthType
+	AuthType types.AuthType
 
 	// use this for remainder of session.
 	// While atypical, the BMC is allowed to change the Session ID from the one that passed in the request.
@@ -93,11 +93,11 @@ type ActivateSessionResponse struct {
 
 func (res *ActivateSessionResponse) Unpack(data []byte) error {
 	if len(data) < 10 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(data), 10)
+		return types.ErrUnpackedDataTooShortWith(len(data), 10)
 	}
-	res.AuthType = ipmi.AuthType(data[0])
-	res.SessionID, _, _ = ipmi.UnpackUint32L(data, 1)
-	res.InitialInboundSequenceNumber, _, _ = ipmi.UnpackUint32L(data, 5)
+	res.AuthType = types.AuthType(data[0])
+	res.SessionID, _, _ = types.UnpackUint32L(data, 1)
+	res.InitialInboundSequenceNumber, _, _ = types.UnpackUint32L(data, 5)
 	res.MaxPrivilegeLevel = data[9]
 	return nil
 }

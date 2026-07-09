@@ -1,28 +1,28 @@
 package transport
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 26.2 Set SOL Configuration Parameters Command
 type SetSOLConfigParamRequest struct {
 	ChannelNumber uint8
-	ParamSelector ipmi.SOLConfigParamSelector
+	ParamSelector types.SOLConfigParamSelector
 	ParamData     []byte
 }
 
 type SetSOLConfigParamResponse struct {
 }
 
-func (req *SetSOLConfigParamRequest) Command() ipmi.Command {
-	return ipmi.CommandSetSOLConfigParam
+func (req *SetSOLConfigParamRequest) Command() types.Command {
+	return types.CommandSetSOLConfigParam
 }
 
 func (req *SetSOLConfigParamRequest) Pack() []byte {
 	out := make([]byte, 2+len(req.ParamData))
-	ipmi.PackUint8(req.ChannelNumber, out, 0)
-	ipmi.PackUint8(uint8(req.ParamSelector), out, 1)
-	ipmi.PackBytes(req.ParamData, out, 2)
+	types.PackUint8(req.ChannelNumber, out, 0)
+	types.PackUint8(uint8(req.ParamSelector), out, 1)
+	types.PackBytes(req.ParamData, out, 2)
 	return out
 }
 

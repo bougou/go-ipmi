@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bougou/go-ipmi/pkg/cmd/transport"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 func (c *Client) GetIPStatistics(ctx context.Context, channelNumber uint8, clearAllStatistics bool) (response *transport.GetIPStatisticsResponse, err error) {
@@ -33,7 +33,7 @@ func (c *Client) GetChannelPayloadSupport(ctx context.Context, channelNumber uin
 	return
 }
 
-func (c *Client) GetPayloadActivationStatus(ctx context.Context, payloadType ipmi.PayloadType) (response *transport.GetPayloadActivationStatusResponse, err error) {
+func (c *Client) GetPayloadActivationStatus(ctx context.Context, payloadType types.PayloadType) (response *transport.GetPayloadActivationStatusResponse, err error) {
 	request := &transport.GetPayloadActivationStatusRequest{
 		PayloadType: payloadType,
 	}
@@ -54,7 +54,7 @@ func (c *Client) SuspendARPs(ctx context.Context, channelNumber uint8, suspendAR
 	return
 }
 
-func (c *Client) GetSOLConfigParam(ctx context.Context, channelNumber uint8, paramSelector ipmi.SOLConfigParamSelector, setSelector, blockSelector uint8) (response *transport.GetSOLConfigParamResponse, err error) {
+func (c *Client) GetSOLConfigParam(ctx context.Context, channelNumber uint8, paramSelector types.SOLConfigParamSelector, setSelector, blockSelector uint8) (response *transport.GetSOLConfigParamResponse, err error) {
 	request := &transport.GetSOLConfigParamRequest{
 		ChannelNumber: channelNumber,
 		ParamSelector: paramSelector,
@@ -66,8 +66,8 @@ func (c *Client) GetSOLConfigParam(ctx context.Context, channelNumber uint8, par
 	return
 }
 
-func (c *Client) GetSOLConfigParamFor(ctx context.Context, channelNumber uint8, param ipmi.SOLConfigParameter) error {
-	if ipmi.IsNilSOLConfigParameter(param) {
+func (c *Client) GetSOLConfigParamFor(ctx context.Context, channelNumber uint8, param types.SOLConfigParameter) error {
+	if types.IsNilSOLConfigParameter(param) {
 		return nil
 	}
 	paramSelector, setSelector, blockSelector := param.SOLConfigParameter()
@@ -84,17 +84,17 @@ func (c *Client) GetSOLConfigParamFor(ctx context.Context, channelNumber uint8, 
 	return nil
 }
 
-func (c *Client) GetSOLConfigParams(ctx context.Context, channelNumber uint8) (*ipmi.SOLConfigParams, error) {
-	solConfigParams := &ipmi.SOLConfigParams{
-		SetInProgress:      &ipmi.SOLConfigParam_SetInProgress{},
-		SOLEnable:          &ipmi.SOLConfigParam_SOLEnable{},
-		SOLAuthentication:  &ipmi.SOLConfigParam_SOLAuthentication{},
-		Character:          &ipmi.SOLConfigParam_Character{},
-		SOLRetry:           &ipmi.SOLConfigParam_SOLRetry{},
-		NonVolatileBitRate: &ipmi.SOLConfigParam_NonVolatileBitRate{},
-		VolatileBitRate:    &ipmi.SOLConfigParam_VolatileBitRate{},
-		PayloadChannel:     &ipmi.SOLConfigParam_PayloadChannel{},
-		PayloadPort:        &ipmi.SOLConfigParam_PayloadPort{},
+func (c *Client) GetSOLConfigParams(ctx context.Context, channelNumber uint8) (*types.SOLConfigParams, error) {
+	solConfigParams := &types.SOLConfigParams{
+		SetInProgress:      &types.SOLConfigParam_SetInProgress{},
+		SOLEnable:          &types.SOLConfigParam_SOLEnable{},
+		SOLAuthentication:  &types.SOLConfigParam_SOLAuthentication{},
+		Character:          &types.SOLConfigParam_Character{},
+		SOLRetry:           &types.SOLConfigParam_SOLRetry{},
+		NonVolatileBitRate: &types.SOLConfigParam_NonVolatileBitRate{},
+		VolatileBitRate:    &types.SOLConfigParam_VolatileBitRate{},
+		PayloadChannel:     &types.SOLConfigParam_PayloadChannel{},
+		PayloadPort:        &types.SOLConfigParam_PayloadPort{},
 	}
 
 	if err := c.GetSOLConfigParamsFor(ctx, channelNumber, solConfigParams); err != nil {
@@ -104,7 +104,7 @@ func (c *Client) GetSOLConfigParams(ctx context.Context, channelNumber uint8) (*
 	return solConfigParams, nil
 }
 
-func (c *Client) GetSOLConfigParamsFor(ctx context.Context, channelNumber uint8, solConfigParams *ipmi.SOLConfigParams) error {
+func (c *Client) GetSOLConfigParamsFor(ctx context.Context, channelNumber uint8, solConfigParams *types.SOLConfigParams) error {
 	if solConfigParams == nil {
 		return nil
 	}
@@ -166,7 +166,7 @@ func (c *Client) GetSOLConfigParamsFor(ctx context.Context, channelNumber uint8,
 	return nil
 }
 
-func (c *Client) GetChannelPayloadVersion(ctx context.Context, channelNumber uint8, payloadType ipmi.PayloadType) (response *transport.GetChannelPayloadVersionResponse, err error) {
+func (c *Client) GetChannelPayloadVersion(ctx context.Context, channelNumber uint8, payloadType types.PayloadType) (response *transport.GetChannelPayloadVersionResponse, err error) {
 	request := &transport.GetChannelPayloadVersionRequest{
 		ChannelNumber: channelNumber,
 		PayloadType:   payloadType,
@@ -188,7 +188,7 @@ func (c *Client) SetChannelSecurityKeys(ctx context.Context, request *transport.
 	return
 }
 
-func (c *Client) SuspendResumePayloadEncryption(ctx context.Context, payloadType ipmi.PayloadType, payloadInstance uint8, operation transport.PayloadEncryptionOperation) (response *transport.SuspendResumePayloadEncryptionResponse, err error) {
+func (c *Client) SuspendResumePayloadEncryption(ctx context.Context, payloadType types.PayloadType, payloadInstance uint8, operation transport.PayloadEncryptionOperation) (response *transport.SuspendResumePayloadEncryptionResponse, err error) {
 	request := &transport.SuspendResumePayloadEncryptionRequest{
 		PayloadType:     payloadType,
 		PayloadInstance: payloadInstance,
@@ -199,7 +199,7 @@ func (c *Client) SuspendResumePayloadEncryption(ctx context.Context, payloadType
 	return
 }
 
-func (c *Client) GetPayloadInstanceInfo(ctx context.Context, payloadType ipmi.PayloadType, payloadInstance uint8) (response *transport.GetPayloadInstanceInfoResponse, err error) {
+func (c *Client) GetPayloadInstanceInfo(ctx context.Context, payloadType types.PayloadType, payloadInstance uint8) (response *transport.GetPayloadInstanceInfoResponse, err error) {
 	request := &transport.GetPayloadInstanceInfoRequest{
 		PayloadType:     payloadType,
 		PayloadInstance: payloadInstance,
@@ -216,7 +216,7 @@ func (c *Client) SOLActivating(ctx context.Context, request *transport.SOLActiva
 	return
 }
 
-func (c *Client) SetSOLConfigParam(ctx context.Context, channelNumber uint8, paramSelector ipmi.SOLConfigParamSelector, paramData []byte) (response *transport.SetSOLConfigParamResponse, err error) {
+func (c *Client) SetSOLConfigParam(ctx context.Context, channelNumber uint8, paramSelector types.SOLConfigParamSelector, paramData []byte) (response *transport.SetSOLConfigParamResponse, err error) {
 	request := &transport.SetSOLConfigParamRequest{
 		ChannelNumber: channelNumber,
 		ParamSelector: paramSelector,
@@ -227,8 +227,8 @@ func (c *Client) SetSOLConfigParam(ctx context.Context, channelNumber uint8, par
 	return
 }
 
-func (c *Client) SetSOLConfigParamFor(ctx context.Context, channelNumber uint8, param ipmi.SOLConfigParameter) error {
-	if ipmi.IsNilSOLConfigParameter(param) {
+func (c *Client) SetSOLConfigParamFor(ctx context.Context, channelNumber uint8, param types.SOLConfigParameter) error {
+	if types.IsNilSOLConfigParameter(param) {
 		return fmt.Errorf("param is nil")
 	}
 
@@ -249,7 +249,7 @@ func (c *Client) DeactivatePayload(ctx context.Context, request *transport.Deact
 	return
 }
 
-func (c *Client) GetLanConfigParam(ctx context.Context, channelNumber uint8, paramSelector ipmi.LanConfigParamSelector, setSelector uint8, blockSelector uint8) (response *transport.GetLanConfigParamResponse, err error) {
+func (c *Client) GetLanConfigParam(ctx context.Context, channelNumber uint8, paramSelector types.LanConfigParamSelector, setSelector uint8, blockSelector uint8) (response *transport.GetLanConfigParamResponse, err error) {
 	request := &transport.GetLanConfigParamRequest{
 		ChannelNumber: channelNumber,
 		ParamSelector: paramSelector,
@@ -264,8 +264,8 @@ func (c *Client) GetLanConfigParam(ctx context.Context, channelNumber uint8, par
 // GetLanConfigParamFor get the lan config for a specific parameter.
 //
 // The param is a pointer to a struct that implements the LanConfigParameter interface.
-func (c *Client) GetLanConfigParamFor(ctx context.Context, channelNumber uint8, param ipmi.LanConfigParameter) error {
-	if ipmi.IsNilLanConfigParameter(param) {
+func (c *Client) GetLanConfigParamFor(ctx context.Context, channelNumber uint8, param types.LanConfigParameter) error {
+	if types.IsNilLanConfigParameter(param) {
 		return nil
 	}
 
@@ -286,7 +286,7 @@ func (c *Client) GetLanConfigParamFor(ctx context.Context, channelNumber uint8, 
 	return nil
 }
 
-func (c *Client) GetLanConfig(ctx context.Context, channelNumber uint8) (*ipmi.LanConfig, error) {
+func (c *Client) GetLanConfig(ctx context.Context, channelNumber uint8) (*types.LanConfig, error) {
 	lanConfigParams, err := c.GetLanConfigParams(ctx, channelNumber)
 	if err != nil {
 		return nil, fmt.Errorf("GetLanConfigParams failed, err: %w", err)
@@ -295,33 +295,33 @@ func (c *Client) GetLanConfig(ctx context.Context, channelNumber uint8) (*ipmi.L
 	return lanConfigParams.ToLanConfig(), nil
 }
 
-func (c *Client) GetLanConfigParams(ctx context.Context, channelNumber uint8) (*ipmi.LanConfigParams, error) {
-	lanConfigParams := &ipmi.LanConfigParams{
-		SetInProgress:         &ipmi.LanConfigParam_SetInProgress{},
-		AuthTypeSupport:       &ipmi.LanConfigParam_AuthTypeSupport{},
-		AuthTypeEnables:       &ipmi.LanConfigParam_AuthTypeEnables{},
-		IP:                    &ipmi.LanConfigParam_IP{},
-		IPSource:              &ipmi.LanConfigParam_IPSource{},
-		MAC:                   &ipmi.LanConfigParam_MAC{},
-		SubnetMask:            &ipmi.LanConfigParam_SubnetMask{},
-		IPv4HeaderParams:      &ipmi.LanConfigParam_IPv4HeaderParams{},
-		PrimaryRMCPPort:       &ipmi.LanConfigParam_PrimaryRMCPPort{},
-		SecondaryRMCPPort:     &ipmi.LanConfigParam_SecondaryRMCPPort{},
-		ARPControl:            &ipmi.LanConfigParam_ARPControl{},
-		GratuitousARPInterval: &ipmi.LanConfigParam_GratuitousARPInterval{},
-		DefaultGatewayIP:      &ipmi.LanConfigParam_DefaultGatewayIP{},
-		DefaultGatewayMAC:     &ipmi.LanConfigParam_DefaultGatewayMAC{},
-		BackupGatewayIP:       &ipmi.LanConfigParam_BackupGatewayIP{},
-		BackupGatewayMAC:      &ipmi.LanConfigParam_BackupGatewayMAC{},
-		CommunityString:       &ipmi.LanConfigParam_CommunityString{},
+func (c *Client) GetLanConfigParams(ctx context.Context, channelNumber uint8) (*types.LanConfigParams, error) {
+	lanConfigParams := &types.LanConfigParams{
+		SetInProgress:         &types.LanConfigParam_SetInProgress{},
+		AuthTypeSupport:       &types.LanConfigParam_AuthTypeSupport{},
+		AuthTypeEnables:       &types.LanConfigParam_AuthTypeEnables{},
+		IP:                    &types.LanConfigParam_IP{},
+		IPSource:              &types.LanConfigParam_IPSource{},
+		MAC:                   &types.LanConfigParam_MAC{},
+		SubnetMask:            &types.LanConfigParam_SubnetMask{},
+		IPv4HeaderParams:      &types.LanConfigParam_IPv4HeaderParams{},
+		PrimaryRMCPPort:       &types.LanConfigParam_PrimaryRMCPPort{},
+		SecondaryRMCPPort:     &types.LanConfigParam_SecondaryRMCPPort{},
+		ARPControl:            &types.LanConfigParam_ARPControl{},
+		GratuitousARPInterval: &types.LanConfigParam_GratuitousARPInterval{},
+		DefaultGatewayIP:      &types.LanConfigParam_DefaultGatewayIP{},
+		DefaultGatewayMAC:     &types.LanConfigParam_DefaultGatewayMAC{},
+		BackupGatewayIP:       &types.LanConfigParam_BackupGatewayIP{},
+		BackupGatewayMAC:      &types.LanConfigParam_BackupGatewayMAC{},
+		CommunityString:       &types.LanConfigParam_CommunityString{},
 
-		VLANID:                &ipmi.LanConfigParam_VLANID{},
-		VLANPriority:          &ipmi.LanConfigParam_VLANPriority{},
-		CipherSuitesSupport:   &ipmi.LanConfigParam_CipherSuitesSupport{},
-		CipherSuitesID:        &ipmi.LanConfigParam_CipherSuitesID{},
-		CipherSuitesPrivLevel: &ipmi.LanConfigParam_CipherSuitesPrivLevel{},
-		AlertDestinationVLANs: make([]*ipmi.LanConfigParam_AlertDestinationVLAN, 0),
-		BadPasswordThreshold:  &ipmi.LanConfigParam_BadPasswordThreshold{},
+		VLANID:                &types.LanConfigParam_VLANID{},
+		VLANPriority:          &types.LanConfigParam_VLANPriority{},
+		CipherSuitesSupport:   &types.LanConfigParam_CipherSuitesSupport{},
+		CipherSuitesID:        &types.LanConfigParam_CipherSuitesID{},
+		CipherSuitesPrivLevel: &types.LanConfigParam_CipherSuitesPrivLevel{},
+		AlertDestinationVLANs: make([]*types.LanConfigParam_AlertDestinationVLAN, 0),
+		BadPasswordThreshold:  &types.LanConfigParam_BadPasswordThreshold{},
 	}
 
 	if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfigParams); err != nil {
@@ -331,66 +331,66 @@ func (c *Client) GetLanConfigParams(ctx context.Context, channelNumber uint8) (*
 	return lanConfigParams, nil
 }
 
-func (c *Client) GetLanConfigParamsFull(ctx context.Context, channelNumber uint8) (*ipmi.LanConfigParams, error) {
-	lanConfigParams := &ipmi.LanConfigParams{
-		SetInProgress:                     &ipmi.LanConfigParam_SetInProgress{},
-		AuthTypeSupport:                   &ipmi.LanConfigParam_AuthTypeSupport{},
-		AuthTypeEnables:                   &ipmi.LanConfigParam_AuthTypeEnables{},
-		IP:                                &ipmi.LanConfigParam_IP{},
-		IPSource:                          &ipmi.LanConfigParam_IPSource{},
-		MAC:                               &ipmi.LanConfigParam_MAC{},
-		SubnetMask:                        &ipmi.LanConfigParam_SubnetMask{},
-		IPv4HeaderParams:                  &ipmi.LanConfigParam_IPv4HeaderParams{},
-		PrimaryRMCPPort:                   &ipmi.LanConfigParam_PrimaryRMCPPort{},
-		SecondaryRMCPPort:                 &ipmi.LanConfigParam_SecondaryRMCPPort{},
-		ARPControl:                        &ipmi.LanConfigParam_ARPControl{},
-		GratuitousARPInterval:             &ipmi.LanConfigParam_GratuitousARPInterval{},
-		DefaultGatewayIP:                  &ipmi.LanConfigParam_DefaultGatewayIP{},
-		DefaultGatewayMAC:                 &ipmi.LanConfigParam_DefaultGatewayMAC{},
-		BackupGatewayIP:                   &ipmi.LanConfigParam_BackupGatewayIP{},
-		BackupGatewayMAC:                  &ipmi.LanConfigParam_BackupGatewayMAC{},
-		CommunityString:                   &ipmi.LanConfigParam_CommunityString{},
-		AlertDestinationsCount:            &ipmi.LanConfigParam_AlertDestinationsCount{},
-		AlertDestinationTypes:             make([]*ipmi.LanConfigParam_AlertDestinationType, 0),
-		AlertDestinationAddresses:         make([]*ipmi.LanConfigParam_AlertDestinationAddress, 0),
-		VLANID:                            &ipmi.LanConfigParam_VLANID{},
-		VLANPriority:                      &ipmi.LanConfigParam_VLANPriority{},
-		CipherSuitesSupport:               &ipmi.LanConfigParam_CipherSuitesSupport{},
-		CipherSuitesID:                    &ipmi.LanConfigParam_CipherSuitesID{},
-		CipherSuitesPrivLevel:             &ipmi.LanConfigParam_CipherSuitesPrivLevel{},
-		AlertDestinationVLANs:             make([]*ipmi.LanConfigParam_AlertDestinationVLAN, 0),
-		BadPasswordThreshold:              &ipmi.LanConfigParam_BadPasswordThreshold{},
-		IPv6Support:                       &ipmi.LanConfigParam_IPv6Support{},
-		IPv6Enables:                       &ipmi.LanConfigParam_IPv6Enables{},
-		IPv6StaticTrafficClass:            &ipmi.LanConfigParam_IPv6StaticTrafficClass{},
-		IPv6StaticHopLimit:                &ipmi.LanConfigParam_IPv6StaticHopLimit{},
-		IPv6FlowLabel:                     &ipmi.LanConfigParam_IPv6FlowLabel{},
-		IPv6Status:                        &ipmi.LanConfigParam_IPv6Status{},
-		IPv6StaticAddresses:               make([]*ipmi.LanConfigParam_IPv6StaticAddress, 0),
-		IPv6DHCPv6StaticDUIDCount:         &ipmi.LanConfigParam_IPv6DHCPv6StaticDUIDCount{},
-		IPv6DHCPv6StaticDUIDs:             make([]*ipmi.LanConfigParam_IPv6DHCPv6StaticDUID, 0),
-		IPv6DynamicAddresses:              make([]*ipmi.LanConfigParam_IPv6DynamicAddress, 0),
-		IPv6DHCPv6DynamicDUIDCount:        &ipmi.LanConfigParam_IPv6DHCPv6DynamicDUIDCount{},
-		IPv6DHCPv6DynamicDUIDs:            make([]*ipmi.LanConfigParam_IPv6DHCPv6DynamicDUID, 0),
-		IPv6DHCPv6TimingConfigSupport:     &ipmi.LanConfigParam_IPv6DHCPv6TimingConfigSupport{},
-		IPv6DHCPv6TimingConfig:            make([]*ipmi.LanConfigParam_IPv6DHCPv6TimingConfig, 0),
-		IPv6RouterAddressConfigControl:    &ipmi.LanConfigParam_IPv6RouterAddressConfigControl{},
-		IPv6StaticRouter1IP:               &ipmi.LanConfigParam_IPv6StaticRouter1IP{},
-		IPv6StaticRouter1MAC:              &ipmi.LanConfigParam_IPv6StaticRouter1MAC{},
-		IPv6StaticRouter1PrefixLength:     &ipmi.LanConfigParam_IPv6StaticRouter1PrefixLength{},
-		IPv6StaticRouter1PrefixValue:      &ipmi.LanConfigParam_IPv6StaticRouter1PrefixValue{},
-		IPv6StaticRouter2IP:               &ipmi.LanConfigParam_IPv6StaticRouter2IP{},
-		IPv6StaticRouter2MAC:              &ipmi.LanConfigParam_IPv6StaticRouter2MAC{},
-		IPv6StaticRouter2PrefixLength:     &ipmi.LanConfigParam_IPv6StaticRouter2PrefixLength{},
-		IPv6StaticRouter2PrefixValue:      &ipmi.LanConfigParam_IPv6StaticRouter2PrefixValue{},
-		IPv6DynamicRouterInfoSets:         &ipmi.LanConfigParam_IPv6DynamicRouterInfoSets{},
-		IPv6DynamicRouterInfoIP:           make([]*ipmi.LanConfigParam_IPv6DynamicRouterInfoIP, 0),
-		IPv6DynamicRouterInfoMAC:          make([]*ipmi.LanConfigParam_IPv6DynamicRouterInfoMAC, 0),
-		IPv6DynamicRouterInfoPrefixLength: make([]*ipmi.LanConfigParam_IPv6DynamicRouterInfoPrefixLength, 0),
-		IPv6DynamicRouterInfoPrefixValue:  make([]*ipmi.LanConfigParam_IPv6DynamicRouterInfoPrefixValue, 0),
-		IPv6DynamicRouterReceivedHopLimit: &ipmi.LanConfigParam_IPv6DynamicRouterReceivedHopLimit{},
-		IPv6NDSLAACTimingConfigSupport:    &ipmi.LanConfigParam_IPv6NDSLAACTimingConfigSupport{},
-		IPv6NDSLAACTimingConfig:           make([]*ipmi.LanConfigParam_IPv6NDSLAACTimingConfig, 0),
+func (c *Client) GetLanConfigParamsFull(ctx context.Context, channelNumber uint8) (*types.LanConfigParams, error) {
+	lanConfigParams := &types.LanConfigParams{
+		SetInProgress:                     &types.LanConfigParam_SetInProgress{},
+		AuthTypeSupport:                   &types.LanConfigParam_AuthTypeSupport{},
+		AuthTypeEnables:                   &types.LanConfigParam_AuthTypeEnables{},
+		IP:                                &types.LanConfigParam_IP{},
+		IPSource:                          &types.LanConfigParam_IPSource{},
+		MAC:                               &types.LanConfigParam_MAC{},
+		SubnetMask:                        &types.LanConfigParam_SubnetMask{},
+		IPv4HeaderParams:                  &types.LanConfigParam_IPv4HeaderParams{},
+		PrimaryRMCPPort:                   &types.LanConfigParam_PrimaryRMCPPort{},
+		SecondaryRMCPPort:                 &types.LanConfigParam_SecondaryRMCPPort{},
+		ARPControl:                        &types.LanConfigParam_ARPControl{},
+		GratuitousARPInterval:             &types.LanConfigParam_GratuitousARPInterval{},
+		DefaultGatewayIP:                  &types.LanConfigParam_DefaultGatewayIP{},
+		DefaultGatewayMAC:                 &types.LanConfigParam_DefaultGatewayMAC{},
+		BackupGatewayIP:                   &types.LanConfigParam_BackupGatewayIP{},
+		BackupGatewayMAC:                  &types.LanConfigParam_BackupGatewayMAC{},
+		CommunityString:                   &types.LanConfigParam_CommunityString{},
+		AlertDestinationsCount:            &types.LanConfigParam_AlertDestinationsCount{},
+		AlertDestinationTypes:             make([]*types.LanConfigParam_AlertDestinationType, 0),
+		AlertDestinationAddresses:         make([]*types.LanConfigParam_AlertDestinationAddress, 0),
+		VLANID:                            &types.LanConfigParam_VLANID{},
+		VLANPriority:                      &types.LanConfigParam_VLANPriority{},
+		CipherSuitesSupport:               &types.LanConfigParam_CipherSuitesSupport{},
+		CipherSuitesID:                    &types.LanConfigParam_CipherSuitesID{},
+		CipherSuitesPrivLevel:             &types.LanConfigParam_CipherSuitesPrivLevel{},
+		AlertDestinationVLANs:             make([]*types.LanConfigParam_AlertDestinationVLAN, 0),
+		BadPasswordThreshold:              &types.LanConfigParam_BadPasswordThreshold{},
+		IPv6Support:                       &types.LanConfigParam_IPv6Support{},
+		IPv6Enables:                       &types.LanConfigParam_IPv6Enables{},
+		IPv6StaticTrafficClass:            &types.LanConfigParam_IPv6StaticTrafficClass{},
+		IPv6StaticHopLimit:                &types.LanConfigParam_IPv6StaticHopLimit{},
+		IPv6FlowLabel:                     &types.LanConfigParam_IPv6FlowLabel{},
+		IPv6Status:                        &types.LanConfigParam_IPv6Status{},
+		IPv6StaticAddresses:               make([]*types.LanConfigParam_IPv6StaticAddress, 0),
+		IPv6DHCPv6StaticDUIDCount:         &types.LanConfigParam_IPv6DHCPv6StaticDUIDCount{},
+		IPv6DHCPv6StaticDUIDs:             make([]*types.LanConfigParam_IPv6DHCPv6StaticDUID, 0),
+		IPv6DynamicAddresses:              make([]*types.LanConfigParam_IPv6DynamicAddress, 0),
+		IPv6DHCPv6DynamicDUIDCount:        &types.LanConfigParam_IPv6DHCPv6DynamicDUIDCount{},
+		IPv6DHCPv6DynamicDUIDs:            make([]*types.LanConfigParam_IPv6DHCPv6DynamicDUID, 0),
+		IPv6DHCPv6TimingConfigSupport:     &types.LanConfigParam_IPv6DHCPv6TimingConfigSupport{},
+		IPv6DHCPv6TimingConfig:            make([]*types.LanConfigParam_IPv6DHCPv6TimingConfig, 0),
+		IPv6RouterAddressConfigControl:    &types.LanConfigParam_IPv6RouterAddressConfigControl{},
+		IPv6StaticRouter1IP:               &types.LanConfigParam_IPv6StaticRouter1IP{},
+		IPv6StaticRouter1MAC:              &types.LanConfigParam_IPv6StaticRouter1MAC{},
+		IPv6StaticRouter1PrefixLength:     &types.LanConfigParam_IPv6StaticRouter1PrefixLength{},
+		IPv6StaticRouter1PrefixValue:      &types.LanConfigParam_IPv6StaticRouter1PrefixValue{},
+		IPv6StaticRouter2IP:               &types.LanConfigParam_IPv6StaticRouter2IP{},
+		IPv6StaticRouter2MAC:              &types.LanConfigParam_IPv6StaticRouter2MAC{},
+		IPv6StaticRouter2PrefixLength:     &types.LanConfigParam_IPv6StaticRouter2PrefixLength{},
+		IPv6StaticRouter2PrefixValue:      &types.LanConfigParam_IPv6StaticRouter2PrefixValue{},
+		IPv6DynamicRouterInfoSets:         &types.LanConfigParam_IPv6DynamicRouterInfoSets{},
+		IPv6DynamicRouterInfoIP:           make([]*types.LanConfigParam_IPv6DynamicRouterInfoIP, 0),
+		IPv6DynamicRouterInfoMAC:          make([]*types.LanConfigParam_IPv6DynamicRouterInfoMAC, 0),
+		IPv6DynamicRouterInfoPrefixLength: make([]*types.LanConfigParam_IPv6DynamicRouterInfoPrefixLength, 0),
+		IPv6DynamicRouterInfoPrefixValue:  make([]*types.LanConfigParam_IPv6DynamicRouterInfoPrefixValue, 0),
+		IPv6DynamicRouterReceivedHopLimit: &types.LanConfigParam_IPv6DynamicRouterReceivedHopLimit{},
+		IPv6NDSLAACTimingConfigSupport:    &types.LanConfigParam_IPv6NDSLAACTimingConfigSupport{},
+		IPv6NDSLAACTimingConfig:           make([]*types.LanConfigParam_IPv6NDSLAACTimingConfig, 0),
 	}
 
 	if err := c.GetLanConfigParamsFor(ctx, channelNumber, lanConfigParams); err != nil {
@@ -402,7 +402,7 @@ func (c *Client) GetLanConfigParamsFull(ctx context.Context, channelNumber uint8
 
 // GetLanConfigParamsFor get the lan config params.
 // You can initialize specific fields of LanConfigParams struct, which indicates to only get params for those fields.
-func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8, lanConfigParams *ipmi.LanConfigParams) error {
+func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8, lanConfigParams *types.LanConfigParams) error {
 	if lanConfigParams == nil {
 		return nil
 	}
@@ -486,7 +486,7 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	if lanConfigParams.AlertDestinationTypes != nil {
 		param := lanConfigParams.AlertDestinationsCount
 		if param == nil {
-			param = &ipmi.LanConfigParam_AlertDestinationsCount{}
+			param = &types.LanConfigParam_AlertDestinationsCount{}
 			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
 				return err
 			}
@@ -495,9 +495,9 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 
 		if len(lanConfigParams.AlertDestinationTypes) == 0 && alertDestinationsCount > 0 {
 			count := alertDestinationsCount + 1
-			lanConfigParams.AlertDestinationTypes = make([]*ipmi.LanConfigParam_AlertDestinationType, count)
+			lanConfigParams.AlertDestinationTypes = make([]*types.LanConfigParam_AlertDestinationType, count)
 			for i := uint8(0); i < count; i++ {
-				lanConfigParams.AlertDestinationTypes[i] = &ipmi.LanConfigParam_AlertDestinationType{
+				lanConfigParams.AlertDestinationTypes[i] = &types.LanConfigParam_AlertDestinationType{
 					SetSelector: i,
 				}
 			}
@@ -513,7 +513,7 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	if lanConfigParams.AlertDestinationAddresses != nil {
 		param := lanConfigParams.AlertDestinationsCount
 		if param == nil {
-			param = &ipmi.LanConfigParam_AlertDestinationsCount{}
+			param = &types.LanConfigParam_AlertDestinationsCount{}
 			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
 				return err
 			}
@@ -522,9 +522,9 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 
 		if len(lanConfigParams.AlertDestinationAddresses) == 0 && alertDestinationsCount > 0 {
 			count := alertDestinationsCount + 1
-			lanConfigParams.AlertDestinationAddresses = make([]*ipmi.LanConfigParam_AlertDestinationAddress, count)
+			lanConfigParams.AlertDestinationAddresses = make([]*types.LanConfigParam_AlertDestinationAddress, count)
 			for i := uint8(0); i < count; i++ {
-				lanConfigParams.AlertDestinationAddresses[i] = &ipmi.LanConfigParam_AlertDestinationAddress{
+				lanConfigParams.AlertDestinationAddresses[i] = &types.LanConfigParam_AlertDestinationAddress{
 					SetSelector: i,
 				}
 			}
@@ -560,7 +560,7 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	if lanConfigParams.AlertDestinationVLANs != nil {
 		param := lanConfigParams.AlertDestinationsCount
 		if param == nil {
-			param = &ipmi.LanConfigParam_AlertDestinationsCount{}
+			param = &types.LanConfigParam_AlertDestinationsCount{}
 			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
 				return err
 			}
@@ -570,9 +570,9 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 		if len(lanConfigParams.AlertDestinationVLANs) == 0 && alertDestinationsCount > 0 {
 			count := alertDestinationsCount + 1
 
-			lanConfigParams.AlertDestinationVLANs = make([]*ipmi.LanConfigParam_AlertDestinationVLAN, count)
+			lanConfigParams.AlertDestinationVLANs = make([]*types.LanConfigParam_AlertDestinationVLAN, count)
 			for i := uint8(0); i < count; i++ {
-				lanConfigParams.AlertDestinationVLANs[i] = &ipmi.LanConfigParam_AlertDestinationVLAN{
+				lanConfigParams.AlertDestinationVLANs[i] = &types.LanConfigParam_AlertDestinationVLAN{
 					SetSelector: i,
 				}
 			}
@@ -616,7 +616,7 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	if lanConfigParams.IPv6StaticAddresses != nil {
 		param := lanConfigParams.IPv6Status
 		if param == nil {
-			param = &ipmi.LanConfigParam_IPv6Status{}
+			param = &types.LanConfigParam_IPv6Status{}
 			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
 				return err
 			}
@@ -625,9 +625,9 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 
 		if len(lanConfigParams.IPv6StaticAddresses) == 0 && ipv6StaticAddressMax > 0 {
 			count := ipv6StaticAddressMax
-			lanConfigParams.IPv6StaticAddresses = make([]*ipmi.LanConfigParam_IPv6StaticAddress, count)
+			lanConfigParams.IPv6StaticAddresses = make([]*types.LanConfigParam_IPv6StaticAddress, count)
 			for i := uint8(0); i < count; i++ {
-				lanConfigParams.IPv6StaticAddresses[i] = &ipmi.LanConfigParam_IPv6StaticAddress{
+				lanConfigParams.IPv6StaticAddresses[i] = &types.LanConfigParam_IPv6StaticAddress{
 					SetSelector: i,
 				}
 			}
@@ -647,7 +647,7 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	if lanConfigParams.IPv6DHCPv6StaticDUIDs != nil {
 		ipv6Status := lanConfigParams.IPv6DHCPv6StaticDUIDCount
 		if ipv6Status == nil {
-			ipv6Status = &ipmi.LanConfigParam_IPv6DHCPv6StaticDUIDCount{}
+			ipv6Status = &types.LanConfigParam_IPv6DHCPv6StaticDUIDCount{}
 			if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6Status); canIgnore(err) != nil {
 				return err
 			}
@@ -656,9 +656,9 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 
 		if len(lanConfigParams.IPv6DHCPv6StaticDUIDs) == 0 && ipv6DHCPv6StaticDUIDCount > 0 {
 			count := ipv6DHCPv6StaticDUIDCount
-			lanConfigParams.IPv6DHCPv6StaticDUIDs = make([]*ipmi.LanConfigParam_IPv6DHCPv6StaticDUID, count)
+			lanConfigParams.IPv6DHCPv6StaticDUIDs = make([]*types.LanConfigParam_IPv6DHCPv6StaticDUID, count)
 			for i := uint8(0); i < count; i++ {
-				lanConfigParams.IPv6DHCPv6StaticDUIDs[i] = &ipmi.LanConfigParam_IPv6DHCPv6StaticDUID{
+				lanConfigParams.IPv6DHCPv6StaticDUIDs[i] = &types.LanConfigParam_IPv6DHCPv6StaticDUID{
 					SetSelector: i,
 				}
 			}
@@ -674,7 +674,7 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	if lanConfigParams.IPv6DynamicAddresses != nil {
 		ipv6Status := lanConfigParams.IPv6Status
 		if ipv6Status == nil {
-			ipv6Status = &ipmi.LanConfigParam_IPv6Status{}
+			ipv6Status = &types.LanConfigParam_IPv6Status{}
 			if err := c.GetLanConfigParamFor(ctx, channelNumber, ipv6Status); canIgnore(err) != nil {
 				return err
 			}
@@ -683,9 +683,9 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 
 		if len(lanConfigParams.IPv6DynamicAddresses) == 0 && ipv6DynamicAddressMax > 0 {
 			count := ipv6DynamicAddressMax
-			lanConfigParams.IPv6DynamicAddresses = make([]*ipmi.LanConfigParam_IPv6DynamicAddress, count)
+			lanConfigParams.IPv6DynamicAddresses = make([]*types.LanConfigParam_IPv6DynamicAddress, count)
 			for i := uint8(0); i < count; i++ {
-				lanConfigParams.IPv6DynamicAddresses[i] = &ipmi.LanConfigParam_IPv6DynamicAddress{
+				lanConfigParams.IPv6DynamicAddresses[i] = &types.LanConfigParam_IPv6DynamicAddress{
 					SetSelector: i,
 				}
 			}
@@ -705,7 +705,7 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	if lanConfigParams.IPv6DHCPv6DynamicDUIDs != nil {
 		param := lanConfigParams.IPv6DHCPv6DynamicDUIDCount
 		if param == nil {
-			param = &ipmi.LanConfigParam_IPv6DHCPv6DynamicDUIDCount{}
+			param = &types.LanConfigParam_IPv6DHCPv6DynamicDUIDCount{}
 			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
 				return err
 			}
@@ -768,7 +768,7 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	if lanConfigParams.IPv6DynamicRouterInfoIP != nil {
 		param := lanConfigParams.IPv6DynamicRouterInfoSets
 		if param == nil {
-			param = &ipmi.LanConfigParam_IPv6DynamicRouterInfoSets{}
+			param = &types.LanConfigParam_IPv6DynamicRouterInfoSets{}
 			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
 				return err
 			}
@@ -777,9 +777,9 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 
 		if len(lanConfigParams.IPv6DynamicRouterInfoIP) == 0 && ipv6DynamicRouterInfoCount > 0 {
 			count := ipv6DynamicRouterInfoCount
-			lanConfigParams.IPv6DynamicRouterInfoIP = make([]*ipmi.LanConfigParam_IPv6DynamicRouterInfoIP, count)
+			lanConfigParams.IPv6DynamicRouterInfoIP = make([]*types.LanConfigParam_IPv6DynamicRouterInfoIP, count)
 			for i := uint8(0); i < count; i++ {
-				lanConfigParams.IPv6DynamicRouterInfoIP[i] = &ipmi.LanConfigParam_IPv6DynamicRouterInfoIP{
+				lanConfigParams.IPv6DynamicRouterInfoIP[i] = &types.LanConfigParam_IPv6DynamicRouterInfoIP{
 					SetSelector: i,
 				}
 			}
@@ -795,7 +795,7 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	if lanConfigParams.IPv6DynamicRouterInfoMAC != nil {
 		param := lanConfigParams.IPv6DynamicRouterInfoSets
 		if param == nil {
-			param = &ipmi.LanConfigParam_IPv6DynamicRouterInfoSets{}
+			param = &types.LanConfigParam_IPv6DynamicRouterInfoSets{}
 			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
 				return err
 			}
@@ -804,9 +804,9 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 
 		if len(lanConfigParams.IPv6DynamicRouterInfoMAC) == 0 && ipv6DynamicRouterInfoCount > 0 {
 			count := ipv6DynamicRouterInfoCount
-			lanConfigParams.IPv6DynamicRouterInfoMAC = make([]*ipmi.LanConfigParam_IPv6DynamicRouterInfoMAC, count)
+			lanConfigParams.IPv6DynamicRouterInfoMAC = make([]*types.LanConfigParam_IPv6DynamicRouterInfoMAC, count)
 			for i := uint8(0); i < count; i++ {
-				lanConfigParams.IPv6DynamicRouterInfoMAC[i] = &ipmi.LanConfigParam_IPv6DynamicRouterInfoMAC{
+				lanConfigParams.IPv6DynamicRouterInfoMAC[i] = &types.LanConfigParam_IPv6DynamicRouterInfoMAC{
 					SetSelector: i,
 				}
 			}
@@ -822,7 +822,7 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	if lanConfigParams.IPv6DynamicRouterInfoPrefixLength != nil {
 		param := lanConfigParams.IPv6DynamicRouterInfoSets
 		if param == nil {
-			param = &ipmi.LanConfigParam_IPv6DynamicRouterInfoSets{}
+			param = &types.LanConfigParam_IPv6DynamicRouterInfoSets{}
 			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
 				return err
 			}
@@ -831,9 +831,9 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 
 		if len(lanConfigParams.IPv6DynamicRouterInfoPrefixLength) == 0 && ipv6DynamicRouterInfoCount > 0 {
 			count := ipv6DynamicRouterInfoCount
-			lanConfigParams.IPv6DynamicRouterInfoPrefixLength = make([]*ipmi.LanConfigParam_IPv6DynamicRouterInfoPrefixLength, count)
+			lanConfigParams.IPv6DynamicRouterInfoPrefixLength = make([]*types.LanConfigParam_IPv6DynamicRouterInfoPrefixLength, count)
 			for i := uint8(0); i < count; i++ {
-				lanConfigParams.IPv6DynamicRouterInfoPrefixLength[i] = &ipmi.LanConfigParam_IPv6DynamicRouterInfoPrefixLength{
+				lanConfigParams.IPv6DynamicRouterInfoPrefixLength[i] = &types.LanConfigParam_IPv6DynamicRouterInfoPrefixLength{
 					SetSelector: i,
 				}
 			}
@@ -849,7 +849,7 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	if lanConfigParams.IPv6DynamicRouterInfoPrefixValue != nil {
 		param := lanConfigParams.IPv6DynamicRouterInfoSets
 		if param == nil {
-			param = &ipmi.LanConfigParam_IPv6DynamicRouterInfoSets{}
+			param = &types.LanConfigParam_IPv6DynamicRouterInfoSets{}
 			if err := c.GetLanConfigParamFor(ctx, channelNumber, param); canIgnore(err) != nil {
 				return err
 			}
@@ -858,9 +858,9 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 
 		if len(lanConfigParams.IPv6DynamicRouterInfoPrefixValue) == 0 && ipv6DynamicRouterInfoCount > 0 {
 			count := ipv6DynamicRouterInfoCount
-			lanConfigParams.IPv6DynamicRouterInfoPrefixValue = make([]*ipmi.LanConfigParam_IPv6DynamicRouterInfoPrefixValue, count)
+			lanConfigParams.IPv6DynamicRouterInfoPrefixValue = make([]*types.LanConfigParam_IPv6DynamicRouterInfoPrefixValue, count)
 			for i := uint8(0); i < count; i++ {
-				lanConfigParams.IPv6DynamicRouterInfoPrefixValue[i] = &ipmi.LanConfigParam_IPv6DynamicRouterInfoPrefixValue{
+				lanConfigParams.IPv6DynamicRouterInfoPrefixValue[i] = &types.LanConfigParam_IPv6DynamicRouterInfoPrefixValue{
 					SetSelector: i,
 				}
 			}
@@ -887,7 +887,7 @@ func (c *Client) GetLanConfigParamsFor(ctx context.Context, channelNumber uint8,
 	return nil
 }
 
-func (c *Client) SetLanConfigParam(ctx context.Context, channelNumber uint8, paramSelector ipmi.LanConfigParamSelector, configData []byte) (response *transport.SetLanConfigParamResponse, err error) {
+func (c *Client) SetLanConfigParam(ctx context.Context, channelNumber uint8, paramSelector types.LanConfigParamSelector, configData []byte) (response *transport.SetLanConfigParamResponse, err error) {
 	request := &transport.SetLanConfigParamRequest{
 		ChannelNumber: channelNumber,
 		ParamSelector: paramSelector,
@@ -898,7 +898,7 @@ func (c *Client) SetLanConfigParam(ctx context.Context, channelNumber uint8, par
 	return
 }
 
-func (c *Client) SetLanConfigParamFor(ctx context.Context, channelNumber uint8, param ipmi.LanConfigParameter) error {
+func (c *Client) SetLanConfigParamFor(ctx context.Context, channelNumber uint8, param types.LanConfigParameter) error {
 	paramSelector, _, _ := param.LanConfigParameter()
 	c.DebugBytes(fmt.Sprintf(">> Set param data for (%s[%d]) ", paramSelector.String(), paramSelector), param.Pack(), 8)
 

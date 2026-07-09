@@ -3,7 +3,7 @@ package sensor
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 30.2 Arm PEF Postpone Timer Command
@@ -32,8 +32,8 @@ type ArmPEFPostponeTimerResponse struct {
 	PresentValue uint8
 }
 
-func (req *ArmPEFPostponeTimerRequest) Command() ipmi.Command {
-	return ipmi.CommandArmPEFPostponeTimer
+func (req *ArmPEFPostponeTimerRequest) Command() types.Command {
+	return types.CommandArmPEFPostponeTimer
 }
 
 func (req *ArmPEFPostponeTimerRequest) Pack() []byte {
@@ -43,7 +43,7 @@ func (req *ArmPEFPostponeTimerRequest) Pack() []byte {
 
 func (res *ArmPEFPostponeTimerResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShort
+		return types.ErrUnpackedDataTooShort
 	}
 
 	res.PresentValue = msg[0]

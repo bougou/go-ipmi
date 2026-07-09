@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 24.6 Set User Payload Access Command
@@ -42,20 +42,20 @@ func (req *SetUserPayloadAccessRequest) Pack() []byte {
 	out[1] = b1
 
 	var b2 uint8
-	b2 = ipmi.SetOrClearBit1(b2, req.PayloadTypeSOL)
+	b2 = types.SetOrClearBit1(b2, req.PayloadTypeSOL)
 	out[2] = b2
 
 	out[3] = 0
 
 	var b4 uint8
-	b4 = ipmi.SetOrClearBit7(b4, req.PayloadTypeOEM7)
-	b4 = ipmi.SetOrClearBit6(b4, req.PayloadTypeOEM6)
-	b4 = ipmi.SetOrClearBit5(b4, req.PayloadTypeOEM5)
-	b4 = ipmi.SetOrClearBit4(b4, req.PayloadTypeOEM4)
-	b4 = ipmi.SetOrClearBit3(b4, req.PayloadTypeOEM3)
-	b4 = ipmi.SetOrClearBit2(b4, req.PayloadTypeOEM2)
-	b4 = ipmi.SetOrClearBit1(b4, req.PayloadTypeOEM1)
-	b4 = ipmi.SetOrClearBit0(b4, req.PayloadTypeOEM0)
+	b4 = types.SetOrClearBit7(b4, req.PayloadTypeOEM7)
+	b4 = types.SetOrClearBit6(b4, req.PayloadTypeOEM6)
+	b4 = types.SetOrClearBit5(b4, req.PayloadTypeOEM5)
+	b4 = types.SetOrClearBit4(b4, req.PayloadTypeOEM4)
+	b4 = types.SetOrClearBit3(b4, req.PayloadTypeOEM3)
+	b4 = types.SetOrClearBit2(b4, req.PayloadTypeOEM2)
+	b4 = types.SetOrClearBit1(b4, req.PayloadTypeOEM1)
+	b4 = types.SetOrClearBit0(b4, req.PayloadTypeOEM0)
 	out[4] = b4
 
 	out[5] = 0
@@ -63,8 +63,8 @@ func (req *SetUserPayloadAccessRequest) Pack() []byte {
 	return out
 }
 
-func (req *SetUserPayloadAccessRequest) Command() ipmi.Command {
-	return ipmi.CommandSetUserPayloadAccess
+func (req *SetUserPayloadAccessRequest) Command() types.Command {
+	return types.CommandSetUserPayloadAccess
 }
 
 func (res *SetUserPayloadAccessResponse) CompletionCodes() map[uint8]string {

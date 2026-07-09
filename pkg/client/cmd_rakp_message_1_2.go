@@ -3,7 +3,8 @@ package client
 import (
 	"context"
 	"fmt"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 const IPMI_MAX_USER_NAME_LENGTH = 16
@@ -24,7 +25,7 @@ type RAKPMessage1 struct {
 	// 0b = Username/Privilege lookup.
 	// 1b = Name-only lookup.
 	NameOnlyLookup                 bool
-	RequestedMaximumPrivilegeLevel ipmi.PrivilegeLevel
+	RequestedMaximumPrivilegeLevel types.PrivilegeLevel
 
 	UsernameLength uint8
 	Username       []byte
@@ -34,7 +35,7 @@ type RAKPMessage2 struct {
 	// authAlg describes the authentication algorithm was agreed upon in
 	// the open session request/response phase.
 	// We need to know that here so that we know how many bytes (if any) to read from the packet for KeyExchangeAuthenticationCode
-	authAlg ipmi.AuthAlg
+	authAlg types.AuthAlg
 
 	MessageTag uint8
 
@@ -52,7 +53,7 @@ type RAKPMessage2 struct {
 	// Note that the remote console must change the Message Tag value to ensure the BMC sees the message as a new message and not as a retry.
 	//
 	// See Table 13-15, RMCP+ and RAKP Message Status Codes for the status codes defined for this message.
-	RmcpStatusCode ipmi.RmcpStatusCode
+	RmcpStatusCode types.RmcpStatusCode
 
 	// The Remote Console Session ID specified by the RMCP+ Open Session Request message associated with this response.
 	RemoteConsoleSessionID uint32
@@ -73,8 +74,8 @@ type RAKPMessage2 struct {
 	KeyExchangeAuthenticationCode []byte
 }
 
-func (req *RAKPMessage1) Command() ipmi.Command {
-	return ipmi.CommandNone
+func (req *RAKPMessage1) Command() types.Command {
+	return types.CommandNone
 }
 
 func (r *RAKPMessage1) Pack() []byte {
@@ -105,21 +106,21 @@ func (r *RAKPMessage1) Role() uint8 {
 func (res *RAKPMessage2) Unpack(msg []byte) error {
 	// If RAKPMessage1 failed to be validated, the returned RAKPMessage2 only holds 8 bytes.
 	if len(msg) < 8 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 8)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
 
 	res.MessageTag = msg[0]
-	res.RmcpStatusCode = ipmi.RmcpStatusCode(msg[1])
+	res.RmcpStatusCode = types.RmcpStatusCode(msg[1])
 	// 2 bytes reserved
 	res.RemoteConsoleSessionID, _, _ = unpackUint32L(msg, 4)
 
 	// Now we can check whether RmcpStatusCode indicates error
-	if res.RmcpStatusCode != ipmi.RmcpStatusCodeNoErrors {
+	if res.RmcpStatusCode != types.RmcpStatusCodeNoErrors {
 		return fmt.Errorf("the return status of rakp2 has error: %v", res.RmcpStatusCode)
 	}
 
 	if len(msg) < 40 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 40)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 40)
 	}
 
 	res.ManagedSystemRandomNumber = array16(msg[8:24])
@@ -127,13 +128,13 @@ func (res *RAKPMessage2) Unpack(msg []byte) error {
 
 	var authCodeLen int = 0
 	switch res.authAlg {
-	case ipmi.AuthAlgRAKP_None:
+	case types.AuthAlg_None:
 		break
-	case ipmi.AuthAlgRAKP_HMAC_MD5:
+	case types.AuthAlg_HMAC_MD5:
 		authCodeLen = 16
-	case ipmi.AuthAlgRAKP_HMAC_SHA1:
+	case types.AuthAlg_HMAC_SHA1:
 		authCodeLen = 20
-	case ipmi.AuthAlgRAKP_HMAC_SHA256:
+	case types.AuthAlg_HMAC_SHA256:
 		authCodeLen = 32
 	}
 	if len(msg) < 40+authCodeLen {
@@ -194,7 +195,7 @@ func (c *Client) RAKPMessage1(ctx context.Context) (response *RAKPMessage2, err 
 	response = &RAKPMessage2{
 		authAlg: c.session.v20.authAlg,
 	}
-	c.session.v20.state = ipmi.SessionStateRakp1Sent
+	c.session.v20.state = types.SessionStateRakp1Sent
 
 	err = c.Exchange(ctx, request, response)
 	if err != nil {
@@ -211,7 +212,7 @@ func (c *Client) RAKPMessage1(ctx context.Context) (response *RAKPMessage2, err 
 		return
 	}
 
-	c.session.v20.state = ipmi.SessionStateRakp2Received
+	c.session.v20.state = types.SessionStateRakp2Received
 
 	return
 }

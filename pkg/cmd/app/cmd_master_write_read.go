@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 22.11 Master Write-Read Command
 )
 
@@ -31,8 +31,8 @@ type MasterWriteReadResponse struct {
 	Data []byte
 }
 
-func (req *MasterWriteReadRequest) Command() ipmi.Command {
-	return ipmi.CommandMasterWriteRead
+func (req *MasterWriteReadRequest) Command() types.Command {
+	return types.CommandMasterWriteRead
 }
 
 func (req *MasterWriteReadRequest) Pack() []byte {
@@ -41,18 +41,18 @@ func (req *MasterWriteReadRequest) Pack() []byte {
 	var b uint8 = req.ChannelNumber << 4
 	b |= (req.BusID << 1) & 0x0e
 	if req.BusTypeIsPrivate {
-		b = ipmi.SetBit0(b)
+		b = types.SetBit0(b)
 	}
-	ipmi.PackUint8(b, out, 0)
-	ipmi.PackUint8(req.SlaveAddress, out, 1)
-	ipmi.PackUint8(req.ReadCount, out, 2)
-	ipmi.PackBytes(req.Data, out, 3)
+	types.PackUint8(b, out, 0)
+	types.PackUint8(req.SlaveAddress, out, 1)
+	types.PackUint8(req.ReadCount, out, 2)
+	types.PackBytes(req.Data, out, 3)
 
 	return out
 }
 
 func (res *MasterWriteReadResponse) Unpack(msg []byte) error {
-	res.Data, _, _ = ipmi.UnpackBytes(msg, 0, len(msg))
+	res.Data, _, _ = types.UnpackBytes(msg, 0, len(msg))
 	return nil
 }
 

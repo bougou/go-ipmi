@@ -1,7 +1,7 @@
 package chassis
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 type ChassisControl uint8
@@ -25,7 +25,7 @@ type ChassisControlResponse struct {
 
 func (req *ChassisControlRequest) Pack() []byte {
 	out := make([]byte, 1)
-	ipmi.PackUint8(uint8(req.ChassisControl), out, 0)
+	types.PackUint8(uint8(req.ChassisControl), out, 0)
 	return out
 }
 
@@ -33,14 +33,14 @@ func (req *ChassisControlRequest) Pack() []byte {
 // lower nibble is the action. Upper nibble is reserved and ignored.
 func (req *ChassisControlRequest) Unpack(msg []byte) error {
 	if len(msg) < 1 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 1)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
 	}
 	req.ChassisControl = ChassisControl(msg[0] & 0x0F)
 	return nil
 }
 
-func (req *ChassisControlRequest) Command() ipmi.Command {
-	return ipmi.CommandChassisControl
+func (req *ChassisControlRequest) Command() types.Command {
+	return types.CommandChassisControl
 }
 
 func (res *ChassisControlResponse) CompletionCodes() map[uint8]string {

@@ -3,36 +3,36 @@ package app
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 22.23 Get Channel Access Command
 type GetChannelAccessRequest struct {
 	ChannelNumber uint8
 
-	AccessOption ipmi.ChannelAccessOption
+	AccessOption types.ChannelAccessOption
 }
 
 type GetChannelAccessResponse struct {
 	PEFAlertingDisabled   bool
 	PerMsgAuthDisabled    bool
 	UserLevelAuthDisabled bool
-	AccessMode            ipmi.ChannelAccessMode
+	AccessMode            types.ChannelAccessMode
 
-	MaxPrivilegeLevel ipmi.PrivilegeLevel
+	MaxPrivilegeLevel types.PrivilegeLevel
 }
 
 func (req *GetChannelAccessRequest) Pack() []byte {
 	out := make([]byte, 2)
 
-	ipmi.PackUint8(req.ChannelNumber, out, 0)
-	ipmi.PackUint8(uint8(req.AccessOption)<<6, out, 1)
+	types.PackUint8(req.ChannelNumber, out, 0)
+	types.PackUint8(uint8(req.AccessOption)<<6, out, 1)
 
 	return out
 }
 
-func (req *GetChannelAccessRequest) Command() ipmi.Command {
-	return ipmi.CommandGetChannelAccess
+func (req *GetChannelAccessRequest) Command() types.Command {
+	return types.CommandGetChannelAccess
 }
 
 func (res *GetChannelAccessResponse) CompletionCodes() map[uint8]string {
@@ -44,26 +44,26 @@ func (res *GetChannelAccessResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetChannelAccessResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
-	b0, _, _ := ipmi.UnpackUint8(msg, 0)
-	res.PEFAlertingDisabled = ipmi.IsBit5Set(b0)
-	res.PerMsgAuthDisabled = ipmi.IsBit4Set(b0)
-	res.UserLevelAuthDisabled = ipmi.IsBit3Set(b0)
-	res.AccessMode = ipmi.ChannelAccessMode(b0 & 0x07)
+	b0, _, _ := types.UnpackUint8(msg, 0)
+	res.PEFAlertingDisabled = types.IsBit5Set(b0)
+	res.PerMsgAuthDisabled = types.IsBit4Set(b0)
+	res.UserLevelAuthDisabled = types.IsBit3Set(b0)
+	res.AccessMode = types.ChannelAccessMode(b0 & 0x07)
 
-	b1, _, _ := ipmi.UnpackUint8(msg, 1)
-	res.MaxPrivilegeLevel = ipmi.PrivilegeLevel(b1 & 0x0f)
+	b1, _, _ := types.UnpackUint8(msg, 1)
+	res.MaxPrivilegeLevel = types.PrivilegeLevel(b1 & 0x0f)
 
 	return nil
 }
 
 func (res *GetChannelAccessResponse) Format() string {
 	return "" +
-		fmt.Sprintf("    Alerting            : %s\n", ipmi.FormatBool(res.PEFAlertingDisabled, "disabled", "enabled")) +
-		fmt.Sprintf("    Per-message Auth    : %s\n", ipmi.FormatBool(res.PerMsgAuthDisabled, "disabled", "enabled")) +
-		fmt.Sprintf("    User Level Auth     : %s\n", ipmi.FormatBool(res.UserLevelAuthDisabled, "disabled", "enabled")) +
+		fmt.Sprintf("    Alerting            : %s\n", types.FormatBool(res.PEFAlertingDisabled, "disabled", "enabled")) +
+		fmt.Sprintf("    Per-message Auth    : %s\n", types.FormatBool(res.PerMsgAuthDisabled, "disabled", "enabled")) +
+		fmt.Sprintf("    User Level Auth     : %s\n", types.FormatBool(res.UserLevelAuthDisabled, "disabled", "enabled")) +
 		fmt.Sprintf("    Access Mode         : %s\n", res.AccessMode) +
 		fmt.Sprintf("    Max Privilege Level : %s\n", res.MaxPrivilegeLevel.String())
 }

@@ -3,7 +3,7 @@ package sensor
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 30.1 Get PEF Capabilities Command
@@ -26,8 +26,8 @@ type GetPEFCapabilitiesResponse struct {
 	EventFilterTableEntries uint8
 }
 
-func (req *GetPEFCapabilitiesRequest) Command() ipmi.Command {
-	return ipmi.CommandGetPEFCapabilities
+func (req *GetPEFCapabilitiesRequest) Command() types.Command {
+	return types.CommandGetPEFCapabilities
 }
 
 func (req *GetPEFCapabilitiesRequest) Pack() []byte {
@@ -37,19 +37,19 @@ func (req *GetPEFCapabilitiesRequest) Pack() []byte {
 
 func (res *GetPEFCapabilitiesResponse) Unpack(msg []byte) error {
 	if len(msg) < 3 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 3)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 3)
 	}
 
 	res.PEFVersion = msg[0]
 
 	b1 := msg[1]
-	res.SupportOEMEventFilter = ipmi.IsBit7Set(b1)
-	res.SupportDiagnosticInterrupt = ipmi.IsBit5Set(b1)
-	res.SupportOEMAction = ipmi.IsBit4Set(b1)
-	res.SupportPowerCycle = ipmi.IsBit3Set(b1)
-	res.SupportReset = ipmi.IsBit2Set(b1)
-	res.SupportPowerDown = ipmi.IsBit1Set(b1)
-	res.SupportAlert = ipmi.IsBit0Set(b1)
+	res.SupportOEMEventFilter = types.IsBit7Set(b1)
+	res.SupportDiagnosticInterrupt = types.IsBit5Set(b1)
+	res.SupportOEMAction = types.IsBit4Set(b1)
+	res.SupportPowerCycle = types.IsBit3Set(b1)
+	res.SupportReset = types.IsBit2Set(b1)
+	res.SupportPowerDown = types.IsBit1Set(b1)
+	res.SupportAlert = types.IsBit0Set(b1)
 
 	res.EventFilterTableEntries = msg[2]
 
@@ -64,11 +64,11 @@ func (res *GetPEFCapabilitiesResponse) Format() string {
 	return "" +
 		fmt.Sprintf("PEF Version                  : %#2x\n", res.PEFVersion) +
 		fmt.Sprintf("Event Filter Table Entries   : %d\n", res.EventFilterTableEntries) +
-		fmt.Sprintf("Support OEM Event Filtering  : %s\n", ipmi.FormatBool(res.SupportOEMEventFilter, "supported", "not-supported")) +
-		fmt.Sprintf("Support Diagnostic Interrupt : %s\n", ipmi.FormatBool(res.SupportDiagnosticInterrupt, "supported", "not-supported")) +
-		fmt.Sprintf("Support OEM Action           : %s\n", ipmi.FormatBool(res.SupportOEMAction, "supported", "not-supported")) +
-		fmt.Sprintf("Support Power Cycle          : %s\n", ipmi.FormatBool(res.SupportPowerCycle, "supported", "not-supported")) +
-		fmt.Sprintf("Support Reset                : %s\n", ipmi.FormatBool(res.SupportReset, "supported", "not-supported")) +
-		fmt.Sprintf("Support Power Down           : %s\n", ipmi.FormatBool(res.SupportPowerDown, "supported", "not-supported")) +
-		fmt.Sprintf("Support Alert                : %s\n", ipmi.FormatBool(res.SupportAlert, "supported", "not-supported"))
+		fmt.Sprintf("Support OEM Event Filtering  : %s\n", types.FormatBool(res.SupportOEMEventFilter, "supported", "not-supported")) +
+		fmt.Sprintf("Support Diagnostic Interrupt : %s\n", types.FormatBool(res.SupportDiagnosticInterrupt, "supported", "not-supported")) +
+		fmt.Sprintf("Support OEM Action           : %s\n", types.FormatBool(res.SupportOEMAction, "supported", "not-supported")) +
+		fmt.Sprintf("Support Power Cycle          : %s\n", types.FormatBool(res.SupportPowerCycle, "supported", "not-supported")) +
+		fmt.Sprintf("Support Reset                : %s\n", types.FormatBool(res.SupportReset, "supported", "not-supported")) +
+		fmt.Sprintf("Support Power Down           : %s\n", types.FormatBool(res.SupportPowerDown, "supported", "not-supported")) +
+		fmt.Sprintf("Support Alert                : %s\n", types.FormatBool(res.SupportAlert, "supported", "not-supported"))
 }

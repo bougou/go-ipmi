@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -70,11 +70,11 @@ func NewCmdSELGet() *cobra.Command {
 				CheckErr(fmt.Errorf("GetSELEntry failed, err: %w", err))
 			}
 
-			sel, err := ipmi.ParseSEL(selEntryRes.Data)
+			sel, err := types.ParseSEL(selEntryRes.Data)
 			if err != nil {
 				CheckErr(fmt.Errorf("ParseSEL failed, err: %w", err))
 			}
-			fmt.Println(ipmi.FormatSELs([]*ipmi.SEL{sel}, nil))
+			fmt.Println(types.FormatSELs([]*types.SEL{sel}, nil))
 		},
 	}
 	return cmd
@@ -90,7 +90,7 @@ func NewCmdSELList() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := context.Background()
 
-			var sdrsMap ipmi.SDRMapBySensorNumber
+			var sdrsMap types.SDRMapBySensorNumber
 			var err error
 			if extended {
 				sdrsMap, err = client.GetSDRsMap(ctx)
@@ -101,7 +101,7 @@ func NewCmdSELList() *cobra.Command {
 
 			if streamMode {
 				selEntries := client.GetSELEntriesStream(ctx, 0)
-				if err := ipmi.FormatSELsStream(selEntries, sdrsMap); err != nil {
+				if err := types.FormatSELsStream(selEntries, sdrsMap); err != nil {
 					CheckErr(fmt.Errorf("FormatSELsStream failed, err: %w", err))
 				}
 			} else {
@@ -109,7 +109,7 @@ func NewCmdSELList() *cobra.Command {
 				if err != nil {
 					CheckErr(fmt.Errorf("GetSELEntries failed, err: %w", err))
 				}
-				fmt.Println(ipmi.FormatSELs(selEntries, sdrsMap))
+				fmt.Println(types.FormatSELs(selEntries, sdrsMap))
 			}
 		},
 	}

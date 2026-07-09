@@ -3,7 +3,7 @@ package chassis
 import (
 	"fmt"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 20.7 Get ACPI Power State Command
@@ -20,8 +20,8 @@ func (req *GetACPIPowerStateRequest) Pack() []byte {
 	return nil
 }
 
-func (req *GetACPIPowerStateRequest) Command() ipmi.Command {
-	return ipmi.CommandGetACPIPowerState
+func (req *GetACPIPowerStateRequest) Command() types.Command {
+	return types.CommandGetACPIPowerState
 }
 
 func (res *GetACPIPowerStateResponse) CompletionCodes() map[uint8]string {
@@ -30,12 +30,12 @@ func (res *GetACPIPowerStateResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetACPIPowerStateResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 2)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
 	}
 
-	b1, _, _ := ipmi.UnpackUint8(msg, 0)
+	b1, _, _ := types.UnpackUint8(msg, 0)
 	res.SystemPowerState = SystemPowerState(b1 & 0x7f)
-	b2, _, _ := ipmi.UnpackUint8(msg, 1)
+	b2, _, _ := types.UnpackUint8(msg, 1)
 	res.DevicePowerState = DevicePowerState(b2 & 0x7f)
 	return nil
 }

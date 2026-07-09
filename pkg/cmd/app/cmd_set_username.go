@@ -1,7 +1,7 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 22.28 Set User Name Command
 )
 
@@ -20,16 +20,16 @@ type SetUsernameRequest struct {
 type SetUsernameResponse struct {
 }
 
-func (req *SetUsernameRequest) Command() ipmi.Command {
-	return ipmi.CommandSetUsername
+func (req *SetUsernameRequest) Command() types.Command {
+	return types.CommandSetUsername
 }
 
 func (req *SetUsernameRequest) Pack() []byte {
 	out := make([]byte, 17)
-	ipmi.PackUint8(req.UserID, out, 0)
+	types.PackUint8(req.UserID, out, 0)
 
-	username := ipmi.PadBytes(req.Username, 16, 0x00)
-	ipmi.PackBytes(username, out, 1)
+	username := types.PadBytes(req.Username, 16, 0x00)
+	types.PackBytes(username, out, 1)
 	return out
 }
 

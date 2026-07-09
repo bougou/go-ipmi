@@ -1,7 +1,7 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 22.8 Read Event Message Buffer Command
 )
 
@@ -14,8 +14,8 @@ type ReadEventMessageBufferResponse struct {
 	MessageData [16]byte
 }
 
-func (req ReadEventMessageBufferRequest) Command() ipmi.Command {
-	return ipmi.CommandReadEventMessageBuffer
+func (req ReadEventMessageBufferRequest) Command() types.Command {
+	return types.CommandReadEventMessageBuffer
 }
 
 func (req *ReadEventMessageBufferRequest) Pack() []byte {
@@ -24,11 +24,11 @@ func (req *ReadEventMessageBufferRequest) Pack() []byte {
 
 func (res *ReadEventMessageBufferResponse) Unpack(msg []byte) error {
 	if len(msg) < 16 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 16)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 16)
 	}
 
-	b, _, _ := ipmi.UnpackBytes(msg, 0, 16)
-	res.MessageData = ipmi.Array16(b)
+	b, _, _ := types.UnpackBytes(msg, 0, 16)
+	res.MessageData = types.Array16(b)
 	return nil
 }
 

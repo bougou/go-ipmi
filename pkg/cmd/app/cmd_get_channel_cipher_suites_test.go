@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // TestParseCipherSuitesData_VariableLengthRecords exercises tag-delimited
@@ -15,30 +15,30 @@ func TestParseCipherSuitesData_VariableLengthRecords(t *testing.T) {
 	cases := []struct {
 		name string
 		data []byte
-		want []ipmi.CipherSuiteRecord
+		want []types.CipherSuiteRecord
 	}{
 		{
 			// Suite 1 alone: auth only (RAKP-HMAC-SHA1), no integ, no crypt.
 			name: "suite1_only",
 			data: []byte{0xC0, 0x01, 0x01},
-			want: []ipmi.CipherSuiteRecord{
-				{StartOfRecord: 0xC0, CipherSuitID: ipmi.CipherSuiteID1, AuthAlg: 0x01},
+			want: []types.CipherSuiteRecord{
+				{StartOfRecord: 0xC0, CipherSuitID: types.CipherSuiteID1, AuthAlg: 0x01},
 			},
 		},
 		{
 			// Suite 15 alone: auth only (RAKP-HMAC-SHA256), no integ, no crypt.
 			name: "suite15_only",
 			data: []byte{0xC0, 0x0F, 0x03},
-			want: []ipmi.CipherSuiteRecord{
-				{StartOfRecord: 0xC0, CipherSuitID: ipmi.CipherSuiteID15, AuthAlg: 0x03},
+			want: []types.CipherSuiteRecord{
+				{StartOfRecord: 0xC0, CipherSuitID: types.CipherSuiteID15, AuthAlg: 0x03},
 			},
 		},
 		{
 			// Full 5-byte record (suite 3): auth + integ + crypt.
 			name: "suite3_only",
 			data: []byte{0xC0, 0x03, 0x01, 0x41, 0x81},
-			want: []ipmi.CipherSuiteRecord{
-				{StartOfRecord: 0xC0, CipherSuitID: ipmi.CipherSuiteID3, AuthAlg: 0x01, IntegrityAlgs: []uint8{0x01}, CryptAlgs: []uint8{0x01}},
+			want: []types.CipherSuiteRecord{
+				{StartOfRecord: 0xC0, CipherSuitID: types.CipherSuiteID3, AuthAlg: 0x01, IntegrityAlgs: []uint8{0x01}, CryptAlgs: []uint8{0x01}},
 			},
 		},
 		{
@@ -49,9 +49,9 @@ func TestParseCipherSuitesData_VariableLengthRecords(t *testing.T) {
 				0xC0, 0x03, 0x01, 0x41, 0x81, // suite 3
 				0xC0, 0x01, 0x01, // suite 1 (short, last)
 			},
-			want: []ipmi.CipherSuiteRecord{
-				{StartOfRecord: 0xC0, CipherSuitID: ipmi.CipherSuiteID3, AuthAlg: 0x01, IntegrityAlgs: []uint8{0x01}, CryptAlgs: []uint8{0x01}},
-				{StartOfRecord: 0xC0, CipherSuitID: ipmi.CipherSuiteID1, AuthAlg: 0x01},
+			want: []types.CipherSuiteRecord{
+				{StartOfRecord: 0xC0, CipherSuitID: types.CipherSuiteID3, AuthAlg: 0x01, IntegrityAlgs: []uint8{0x01}, CryptAlgs: []uint8{0x01}},
+				{StartOfRecord: 0xC0, CipherSuitID: types.CipherSuiteID1, AuthAlg: 0x01},
 			},
 		},
 		{
@@ -61,9 +61,9 @@ func TestParseCipherSuitesData_VariableLengthRecords(t *testing.T) {
 				0xC0, 0x01, 0x01, // suite 1 (short, first)
 				0xC0, 0x03, 0x01, 0x41, 0x81, // suite 3
 			},
-			want: []ipmi.CipherSuiteRecord{
-				{StartOfRecord: 0xC0, CipherSuitID: ipmi.CipherSuiteID1, AuthAlg: 0x01},
-				{StartOfRecord: 0xC0, CipherSuitID: ipmi.CipherSuiteID3, AuthAlg: 0x01, IntegrityAlgs: []uint8{0x01}, CryptAlgs: []uint8{0x01}},
+			want: []types.CipherSuiteRecord{
+				{StartOfRecord: 0xC0, CipherSuitID: types.CipherSuiteID1, AuthAlg: 0x01},
+				{StartOfRecord: 0xC0, CipherSuitID: types.CipherSuiteID3, AuthAlg: 0x01, IntegrityAlgs: []uint8{0x01}, CryptAlgs: []uint8{0x01}},
 			},
 		},
 		{
@@ -77,13 +77,13 @@ func TestParseCipherSuitesData_VariableLengthRecords(t *testing.T) {
 				0xC0, 0x03, 0x01, 0x41, 0x81, // 3
 				0xC0, 0x11, 0x03, 0x44, 0x81, // 17
 			},
-			want: []ipmi.CipherSuiteRecord{
-				{StartOfRecord: 0xC0, CipherSuitID: ipmi.CipherSuiteID1, AuthAlg: 0x01},
-				{StartOfRecord: 0xC0, CipherSuitID: ipmi.CipherSuiteID2, AuthAlg: 0x01, IntegrityAlgs: []uint8{0x01}},
-				{StartOfRecord: 0xC0, CipherSuitID: ipmi.CipherSuiteID15, AuthAlg: 0x03},
-				{StartOfRecord: 0xC0, CipherSuitID: ipmi.CipherSuiteID16, AuthAlg: 0x03, IntegrityAlgs: []uint8{0x04}},
-				{StartOfRecord: 0xC0, CipherSuitID: ipmi.CipherSuiteID3, AuthAlg: 0x01, IntegrityAlgs: []uint8{0x01}, CryptAlgs: []uint8{0x01}},
-				{StartOfRecord: 0xC0, CipherSuitID: ipmi.CipherSuiteID17, AuthAlg: 0x03, IntegrityAlgs: []uint8{0x04}, CryptAlgs: []uint8{0x01}},
+			want: []types.CipherSuiteRecord{
+				{StartOfRecord: 0xC0, CipherSuitID: types.CipherSuiteID1, AuthAlg: 0x01},
+				{StartOfRecord: 0xC0, CipherSuitID: types.CipherSuiteID2, AuthAlg: 0x01, IntegrityAlgs: []uint8{0x01}},
+				{StartOfRecord: 0xC0, CipherSuitID: types.CipherSuiteID15, AuthAlg: 0x03},
+				{StartOfRecord: 0xC0, CipherSuitID: types.CipherSuiteID16, AuthAlg: 0x03, IntegrityAlgs: []uint8{0x04}},
+				{StartOfRecord: 0xC0, CipherSuitID: types.CipherSuiteID3, AuthAlg: 0x01, IntegrityAlgs: []uint8{0x01}, CryptAlgs: []uint8{0x01}},
+				{StartOfRecord: 0xC0, CipherSuitID: types.CipherSuiteID17, AuthAlg: 0x03, IntegrityAlgs: []uint8{0x04}, CryptAlgs: []uint8{0x01}},
 			},
 		},
 	}
@@ -106,7 +106,7 @@ func TestParseCipherSuitesData_VariableLengthRecords(t *testing.T) {
 	}
 }
 
-func cipherSuiteRecordEqual(a, b ipmi.CipherSuiteRecord) bool {
+func cipherSuiteRecordEqual(a, b types.CipherSuiteRecord) bool {
 	if a.StartOfRecord != b.StartOfRecord || a.CipherSuitID != b.CipherSuitID {
 		return false
 	}

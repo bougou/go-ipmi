@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/bougou/go-ipmi/pkg/cmd/app"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 // see: 13.14 IPMI v1.5 LAN Session Activation, 13.15 IPMI v2.0/RMCP+ Session Activation
 type session struct {
 	// filled after GetChannelAuthenticationCapabilities
-	authType ipmi.AuthType
+	authType types.AuthType
 	ipmiSeq  uint8
 	v20      v20
 	v15      v15
@@ -52,24 +52,24 @@ type v15 struct {
 
 type v20 struct {
 	// specific to IPMI v2 / RMCP+ sessions
-	state    ipmi.SessionState
+	state    types.SessionState
 	sequence uint32 // session sequence number
 
 	// the cipher suite used during OpenSessionRequest
-	cipherSuiteID ipmi.CipherSuiteID
+	cipherSuiteID types.CipherSuiteID
 
-	customSuiteIDs []ipmi.CipherSuiteID
+	customSuiteIDs []types.CipherSuiteID
 
 	// filled by RmcpOpenSessionRequest
-	requestedAuthAlg      ipmi.AuthAlg
-	requestedIntegrityAlg ipmi.IntegrityAlg
-	requestedEncryptAlg   ipmi.CryptAlg
+	requestedAuthAlg      types.AuthAlg
+	requestedIntegrityAlg types.IntegrityAlg
+	requestedEncryptAlg   types.CryptAlg
 
 	// filled by RmcpOpenSessionResponse
 	// RMCP Open Session is used for exchanging session ids
-	authAlg      ipmi.AuthAlg
-	integrityAlg ipmi.IntegrityAlg
-	cryptAlg     ipmi.CryptAlg
+	authAlg      types.AuthAlg
+	integrityAlg types.IntegrityAlg
+	cryptAlg     types.CryptAlg
 
 	role             uint8 // whole byte of privilege level in RAKP1, will be used for computing authcode of rakp2, rakp3
 	consoleSessionID uint32
@@ -103,31 +103,31 @@ type v20 struct {
 
 // buildRawPayload returns the PayloadType and the raw payload bytes for Command Request.
 // Most command requests are of IPMI PayloadType, but some requests like RAKP messages are not.
-func (c *Client) buildRawPayload(ctx context.Context, reqCmd ipmi.Request) (ipmi.PayloadType, []byte, error) {
-	var payloadType ipmi.PayloadType
+func (c *Client) buildRawPayload(ctx context.Context, reqCmd types.Request) (types.PayloadType, []byte, error) {
+	var payloadType types.PayloadType
 	if _, ok := reqCmd.(*OpenSessionRequest); ok {
-		payloadType = ipmi.PayloadTypeRmcpOpenSessionRequest
+		payloadType = types.PayloadTypeRmcpOpenSessionRequest
 	} else if _, ok := reqCmd.(*RAKPMessage1); ok {
-		payloadType = ipmi.PayloadTypeRAKPMessage1
+		payloadType = types.PayloadTypeRAKPMessage1
 	} else if _, ok := reqCmd.(*RAKPMessage3); ok {
-		payloadType = ipmi.PayloadTypeRAKPMessage3
-	} else if _, ok := reqCmd.(*ipmi.SOLPayloadRequest); ok {
-		payloadType = ipmi.PayloadTypeSOL
+		payloadType = types.PayloadTypeRAKPMessage3
+	} else if _, ok := reqCmd.(*types.SOLPayloadRequest); ok {
+		payloadType = types.PayloadTypeSOL
 	} else {
-		payloadType = ipmi.PayloadTypeIPMI
+		payloadType = types.PayloadTypeIPMI
 	}
 
 	var rawPayload []byte
 	switch payloadType {
-	case ipmi.PayloadTypeRmcpOpenSessionRequest, ipmi.PayloadTypeRAKPMessage1, ipmi.PayloadTypeRAKPMessage3:
+	case types.PayloadTypeRmcpOpenSessionRequest, types.PayloadTypeRAKPMessage1, types.PayloadTypeRAKPMessage3:
 		// Session Setup Payload Types
 
 		rawPayload = reqCmd.Pack()
 
-	case ipmi.PayloadTypeSOL:
+	case types.PayloadTypeSOL:
 		rawPayload = reqCmd.Pack()
 
-	case ipmi.PayloadTypeIPMI:
+	case types.PayloadTypeIPMI:
 		// Standard Payload Types
 		ipmiReq, err := c.BuildIPMIRequest(ctx, reqCmd)
 		if err != nil {
@@ -144,9 +144,9 @@ func (c *Client) buildRawPayload(ctx context.Context, reqCmd ipmi.Request) (ipmi
 // isIPMIPayloadLANRequest reports whether buildRawPayload uses PayloadTypeIPMI for this request.
 // Session-setup and SOL payloads are excluded; those are not paired by IPMB rqSeq + command like
 // standard IPMI commands.
-func isIPMIPayloadLANRequest(req ipmi.Request) bool {
+func isIPMIPayloadLANRequest(req types.Request) bool {
 	switch req.(type) {
-	case *OpenSessionRequest, *RAKPMessage1, *RAKPMessage3, *ipmi.SOLPayloadRequest, *RmcpPingRequest:
+	case *OpenSessionRequest, *RAKPMessage1, *RAKPMessage3, *types.SOLPayloadRequest, *RmcpPingRequest:
 		return false
 	default:
 		return true
@@ -156,7 +156,7 @@ func isIPMIPayloadLANRequest(req ipmi.Request) bool {
 // tryMatchIPMILANResponse returns true if recv is an RMCP+ (or v1.5) packet whose IPMI payload
 // matches the pending request identified by rqSeq and command.
 func (c *Client) tryMatchIPMILANResponse(recv []byte, wantSeq, wantCmd uint8) (bool, error) {
-	rmcp := &ipmi.Rmcp{}
+	rmcp := &types.Rmcp{}
 	if err := rmcp.Unpack(recv); err != nil {
 		return false, nil
 	}
@@ -167,7 +167,7 @@ func (c *Client) tryMatchIPMILANResponse(recv []byte, wantSeq, wantCmd uint8) (b
 	return ipmiRes.RequesterSequence == wantSeq && ipmiRes.Command == wantCmd, nil
 }
 
-func (c *Client) exchangeLAN(ctx context.Context, request ipmi.Request, response ipmi.Response) error {
+func (c *Client) exchangeLAN(ctx context.Context, request types.Request, response types.Response) error {
 	c.Debug(">> Command Request", request)
 
 	var wantSeq, wantCmd uint8
@@ -278,11 +278,11 @@ func wrapExchangeLANError(attempts int, applyIPMIMatch bool, wantSeq, wantCmd ui
 func (c *Client) Connect15(ctx context.Context) error {
 	var (
 		err           error
-		channelNumber uint8 = ipmi.ChannelNumberSelf
+		channelNumber uint8 = types.ChannelNumberSelf
 	)
 
-	if c.maxPrivilegeLevel == ipmi.PrivilegeLevelUnspecified {
-		c.maxPrivilegeLevel = ipmi.PrivilegeLevelAdministrator
+	if c.maxPrivilegeLevel == types.PrivilegeLevelUnspecified {
+		c.maxPrivilegeLevel = types.PrivilegeLevelAdministrator
 	}
 
 	_, err = c.GetChannelAuthenticationCapabilities(ctx, channelNumber, c.maxPrivilegeLevel)
@@ -319,11 +319,11 @@ func (c *Client) Connect15(ctx context.Context) error {
 func (c *Client) Connect20(ctx context.Context) error {
 	var (
 		err           error
-		channelNumber uint8 = ipmi.ChannelNumberSelf
+		channelNumber uint8 = types.ChannelNumberSelf
 	)
 
-	if c.maxPrivilegeLevel == ipmi.PrivilegeLevelUnspecified {
-		c.maxPrivilegeLevel = ipmi.PrivilegeLevelAdministrator
+	if c.maxPrivilegeLevel == types.PrivilegeLevelUnspecified {
+		c.maxPrivilegeLevel = types.PrivilegeLevelAdministrator
 	}
 
 	// Per IPMI 2.0 spec §13.15, the initial Get Channel Authentication
@@ -338,16 +338,16 @@ func (c *Client) Connect20(ctx context.Context) error {
 		return fmt.Errorf("cmd: Get Channel Authentication Capabilities failed, err: %w", err)
 	}
 
-	var tryCiphers []ipmi.CipherSuiteID
+	var tryCiphers []types.CipherSuiteID
 
-	c.session.v20.customSuiteIDs = slices.DeleteFunc(c.session.v20.customSuiteIDs, func(id ipmi.CipherSuiteID) bool {
-		return id == ipmi.CipherSuiteIDReserved
+	c.session.v20.customSuiteIDs = slices.DeleteFunc(c.session.v20.customSuiteIDs, func(id types.CipherSuiteID) bool {
+		return id == types.CipherSuiteIDReserved
 	})
 	if len(c.session.v20.customSuiteIDs) > 0 {
 		tryCiphers = c.session.v20.customSuiteIDs
-	} else if c.session.v20.cipherSuiteID != ipmi.CipherSuiteIDReserved {
+	} else if c.session.v20.cipherSuiteID != types.CipherSuiteIDReserved {
 		// client explicitly specified a cipher suite to use
-		tryCiphers = []ipmi.CipherSuiteID{c.session.v20.cipherSuiteID}
+		tryCiphers = []types.CipherSuiteID{c.session.v20.cipherSuiteID}
 	} else {
 		tryCiphers = c.findBestCipherSuites(ctx)
 	}
@@ -409,9 +409,9 @@ func (c *Client) ConnectAuto(ctx context.Context) error {
 	var (
 		err error
 
-		channelNumber uint8 = ipmi.ChannelNumberSelf
+		channelNumber uint8 = types.ChannelNumberSelf
 
-		privilegeLevel ipmi.PrivilegeLevel = ipmi.PrivilegeLevelAdministrator
+		privilegeLevel types.PrivilegeLevel = types.PrivilegeLevelAdministrator
 	)
 
 	// force use IPMI v1.5 first

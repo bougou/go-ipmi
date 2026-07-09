@@ -1,7 +1,7 @@
 package chassis
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 20.6 Set ACPI Power State Command
 )
 
@@ -96,19 +96,19 @@ func (req *SetACPIPowerStateRequest) Pack() []byte {
 	if req.SetSystemPowerState {
 		b1 |= 0x80
 	}
-	ipmi.PackUint8(b1, out, 0)
+	types.PackUint8(b1, out, 0)
 
 	var b2 = uint8(req.DevicePowerState)
 	if req.SetDevicePowerState {
 		b2 |= 0x80
 	}
-	ipmi.PackUint8(b2, out, 1)
+	types.PackUint8(b2, out, 1)
 
 	return out
 }
 
-func (req *SetACPIPowerStateRequest) Command() ipmi.Command {
-	return ipmi.CommandSetACPIPowerState
+func (req *SetACPIPowerStateRequest) Command() types.Command {
+	return types.CommandSetACPIPowerState
 }
 
 func (res *SetACPIPowerStateResponse) CompletionCodes() map[uint8]string {

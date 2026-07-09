@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/bougou/go-ipmi/pkg/cmd/storage"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 func (c *Client) ReserveSDRRepo(ctx context.Context) (response *storage.ReserveSDRRepoResponse, err error) {
@@ -57,8 +57,8 @@ func (c *Client) GetDeviceSDR(ctx context.Context, recordID uint16) (response *s
 	response = &storage.GetDeviceSDRResponse{}
 	err = c.Exchange(ctx, request, response)
 
-	if respErr, ok := ipmi.IsResponseError(err); ok {
-		if respErr.CompletionCode() == ipmi.CompletionCodeCannotReturnRequestedDataBytes {
+	if respErr, ok := types.IsResponseError(err); ok {
+		if respErr.CompletionCode() == types.CompletionCodeCannotReturnRequestedDataBytes {
 			return c.getDeviceSDR(ctx, recordID)
 		}
 	}
@@ -91,10 +91,10 @@ func (c *Client) getDeviceSDR(ctx context.Context, recordID uint16) (response *s
 		}
 
 		if readOffset == 0 {
-			if len(response.RecordData) < ipmi.SDRRecordHeaderSize {
-				return nil, fmt.Errorf("too short record data for SDR header (%d/%d)", len(response.RecordData), ipmi.SDRRecordHeaderSize)
+			if len(response.RecordData) < types.SDRRecordHeaderSize {
+				return nil, fmt.Errorf("too short record data for SDR header (%d/%d)", len(response.RecordData), types.SDRRecordHeaderSize)
 			}
-			dataLength = response.RecordData[4] + uint8(ipmi.SDRRecordHeaderSize)
+			dataLength = response.RecordData[4] + uint8(types.SDRRecordHeaderSize)
 			data = make([]byte, dataLength)
 		}
 
@@ -126,7 +126,7 @@ func (c *Client) getDeviceSDR(ctx context.Context, recordID uint16) (response *s
 	}, nil
 }
 
-func (c *Client) GetDeviceSDRBySensorID(ctx context.Context, sensorNumber uint8) (*ipmi.SDR, error) {
+func (c *Client) GetDeviceSDRBySensorID(ctx context.Context, sensorNumber uint8) (*types.SDR, error) {
 
 	var recordID uint16 = 0
 	for {
@@ -135,7 +135,7 @@ func (c *Client) GetDeviceSDRBySensorID(ctx context.Context, sensorNumber uint8)
 			return nil, fmt.Errorf("GetDeviceSDR for recordID (%#0x) failed, err: %w", recordID, err)
 		}
 
-		sdr, err := ipmi.ParseSDR(res.RecordData, res.NextRecordID)
+		sdr, err := types.ParseSDR(res.RecordData, res.NextRecordID)
 		if err != nil {
 			return nil, fmt.Errorf("ParseSDR for recordID (%#0x) failed, err: %w", recordID, err)
 		}
@@ -152,8 +152,8 @@ func (c *Client) GetDeviceSDRBySensorID(ctx context.Context, sensorNumber uint8)
 	return nil, fmt.Errorf("not found SDR for sensor id (%#0x)", sensorNumber)
 }
 
-func (c *Client) GetDeviceSDRs(ctx context.Context, recordTypes ...ipmi.SDRRecordType) ([]*ipmi.SDR, error) {
-	var out = make([]*ipmi.SDR, 0)
+func (c *Client) GetDeviceSDRs(ctx context.Context, recordTypes ...types.SDRRecordType) ([]*types.SDR, error) {
+	var out = make([]*types.SDR, 0)
 	var recordID uint16 = 0
 	for {
 		res, err := c.GetDeviceSDR(ctx, recordID)
@@ -161,7 +161,7 @@ func (c *Client) GetDeviceSDRs(ctx context.Context, recordTypes ...ipmi.SDRRecor
 			return nil, fmt.Errorf("GetDeviceSDR for recordID (%#0x) failed, err: %w", recordID, err)
 		}
 
-		sdr, err := ipmi.ParseSDR(res.RecordData, res.NextRecordID)
+		sdr, err := types.ParseSDR(res.RecordData, res.NextRecordID)
 		if err != nil {
 			return nil, fmt.Errorf("ParseSDR for recordID (%#0x) failed, err: %w", recordID, err)
 		}
@@ -243,7 +243,7 @@ func (c *Client) tryReadFRUData(ctx context.Context, deviceID uint8, readOffset 
 			return res, nil
 		}
 
-		if respErr, ok := ipmi.IsResponseError(err); ok {
+		if respErr, ok := types.IsResponseError(err); ok {
 			cc := respErr.CompletionCode()
 			if storage.ReadFRUDataLength2Big(cc) {
 				readCount -= 1
@@ -274,12 +274,12 @@ func (c *Client) GetSELEntry(ctx context.Context, reservationID uint16, recordID
 
 // GetSELEntries return all SEL records starting from the specified recordID.
 // Pass 0 means retrieve all SEL entries starting from the first record.
-func (c *Client) GetSELEntries(ctx context.Context, startRecordID uint16) ([]*ipmi.SEL, error) {
+func (c *Client) GetSELEntries(ctx context.Context, startRecordID uint16) ([]*types.SEL, error) {
 	if _, err := c.GetSELInfo(ctx); err != nil {
 		return nil, fmt.Errorf("GetSELInfo failed, err: %w", err)
 	}
 
-	var out = make([]*ipmi.SEL, 0)
+	var out = make([]*types.SEL, 0)
 	var recordID uint16 = startRecordID
 	for {
 		selEntry, err := c.GetSELEntry(ctx, 0, recordID)
@@ -288,7 +288,7 @@ func (c *Client) GetSELEntries(ctx context.Context, startRecordID uint16) ([]*ip
 		}
 		c.DebugBytes("sel entry record data", selEntry.Data, 16)
 
-		sel, err := ipmi.ParseSEL(selEntry.Data)
+		sel, err := types.ParseSEL(selEntry.Data)
 		if err != nil {
 			return nil, fmt.Errorf("unpackSEL record failed, err: %w", err)
 		}
@@ -303,8 +303,8 @@ func (c *Client) GetSELEntries(ctx context.Context, startRecordID uint16) ([]*ip
 	return out, nil
 }
 
-func (c *Client) GetSELEntriesStream(ctx context.Context, startRecordID uint16) iter.Seq[*ipmi.Result[ipmi.SEL]] {
-	return func(yield func(*ipmi.Result[ipmi.SEL]) bool) {
+func (c *Client) GetSELEntriesStream(ctx context.Context, startRecordID uint16) iter.Seq[*types.Result[types.SEL]] {
+	return func(yield func(*types.Result[types.SEL]) bool) {
 		var recordID uint16 = startRecordID
 
 	loop:
@@ -314,23 +314,23 @@ func (c *Client) GetSELEntriesStream(ctx context.Context, startRecordID uint16) 
 				return
 			default:
 				if _, err := c.GetSELInfo(ctx); err != nil {
-					yield(&ipmi.Result[ipmi.SEL]{Err: err})
+					yield(&types.Result[types.SEL]{Err: err})
 					return
 				}
 
 				selEntry, err := c.GetSELEntry(ctx, 0, recordID)
 				if err != nil {
-					yield(&ipmi.Result[ipmi.SEL]{Err: err})
+					yield(&types.Result[types.SEL]{Err: err})
 					return
 				}
 
-				sel, err := ipmi.ParseSEL(selEntry.Data)
+				sel, err := types.ParseSEL(selEntry.Data)
 				if err != nil {
-					yield(&ipmi.Result[ipmi.SEL]{Err: err})
+					yield(&types.Result[types.SEL]{Err: err})
 					return
 				}
 
-				if !yield(&ipmi.Result[ipmi.SEL]{Ok: sel}) {
+				if !yield(&types.Result[types.SEL]{Ok: sel}) {
 					return
 				}
 
@@ -387,7 +387,7 @@ func (c *Client) ReserveSEL(ctx context.Context) (response *storage.ReserveSELRe
 	return
 }
 
-func (c *Client) AddSELEntry(ctx context.Context, sel *ipmi.SEL) (response *storage.AddSELEntryResponse, err error) {
+func (c *Client) AddSELEntry(ctx context.Context, sel *types.SEL) (response *storage.AddSELEntryResponse, err error) {
 	request := &storage.AddSELEntryRequest{
 		SEL: sel,
 	}
@@ -449,8 +449,8 @@ func (c *Client) GetSDR(ctx context.Context, recordID uint16) (response *storage
 	response = &storage.GetSDRResponse{}
 	err = c.Exchange(ctx, request, response)
 
-	if respErr, ok := ipmi.IsResponseError(err); ok {
-		if respErr.CompletionCode() == ipmi.CompletionCodeCannotReturnRequestedDataBytes {
+	if respErr, ok := types.IsResponseError(err); ok {
+		if respErr.CompletionCode() == types.CompletionCodeCannotReturnRequestedDataBytes {
 			return c.getSDR(ctx, recordID)
 		}
 	}
@@ -458,13 +458,13 @@ func (c *Client) GetSDR(ctx context.Context, recordID uint16) (response *storage
 	return
 }
 
-func (c *Client) GetSDREnhanced(ctx context.Context, recordID uint16) (*ipmi.SDR, error) {
+func (c *Client) GetSDREnhanced(ctx context.Context, recordID uint16) (*types.SDR, error) {
 	res, err := c.GetSDR(ctx, recordID)
 	if err != nil {
 		return nil, fmt.Errorf("GetSDR failed for recordID (%#02x), err: %w", recordID, err)
 	}
 
-	sdr, err := ipmi.ParseSDR(res.RecordData, res.NextRecordID)
+	sdr, err := types.ParseSDR(res.RecordData, res.NextRecordID)
 	if err != nil {
 		return nil, fmt.Errorf("ParseSDR failed, err: %w", err)
 	}
@@ -500,10 +500,10 @@ func (c *Client) getSDR(ctx context.Context, recordID uint16) (response *storage
 		}
 
 		if readOffset == 0 {
-			if len(response.RecordData) < ipmi.SDRRecordHeaderSize {
-				return nil, fmt.Errorf("too short record data for SDR header (%d/%d)", len(response.RecordData), ipmi.SDRRecordHeaderSize)
+			if len(response.RecordData) < types.SDRRecordHeaderSize {
+				return nil, fmt.Errorf("too short record data for SDR header (%d/%d)", len(response.RecordData), types.SDRRecordHeaderSize)
 			}
-			dataLength = response.RecordData[4] + uint8(ipmi.SDRRecordHeaderSize)
+			dataLength = response.RecordData[4] + uint8(types.SDRRecordHeaderSize)
 			data = make([]byte, dataLength)
 		}
 
@@ -535,21 +535,21 @@ func (c *Client) getSDR(ctx context.Context, recordID uint16) (response *storage
 	}, nil
 }
 
-func (c *Client) GetSDRBySensorID(ctx context.Context, sensorNumber uint8) (*ipmi.SDR, error) {
+func (c *Client) GetSDRBySensorID(ctx context.Context, sensorNumber uint8) (*types.SDR, error) {
 	var recordID uint16 = 0
 	for {
 		res, err := c.GetSDR(ctx, recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSDR failed for recordID (%#02x), err: %w", recordID, err)
 		}
-		sdr, err := ipmi.ParseSDR(res.RecordData, res.NextRecordID)
+		sdr, err := types.ParseSDR(res.RecordData, res.NextRecordID)
 		if err != nil {
 			return nil, fmt.Errorf("ParseSDR failed, err: %w", err)
 		}
 
 		recordType := sdr.RecordHeader.RecordType
 
-		if uint8(sdr.SensorNumber()) != sensorNumber || (recordType != ipmi.SDRRecordTypeFullSensor && recordType != ipmi.SDRRecordTypeCompactSensor && recordType != ipmi.SDRRecordTypeEventOnly) {
+		if uint8(sdr.SensorNumber()) != sensorNumber || (recordType != types.SDRRecordTypeFullSensor && recordType != types.SDRRecordTypeCompactSensor && recordType != types.SDRRecordTypeEventOnly) {
 			recordID = sdr.NextRecordID
 			if recordID == 0xffff {
 				break
@@ -566,21 +566,21 @@ func (c *Client) GetSDRBySensorID(ctx context.Context, sensorNumber uint8) (*ipm
 	return nil, fmt.Errorf("not found SDR for sensor id (%#0x)", sensorNumber)
 }
 
-func (c *Client) GetSDRBySensorName(ctx context.Context, sensorName string) (*ipmi.SDR, error) {
+func (c *Client) GetSDRBySensorName(ctx context.Context, sensorName string) (*types.SDR, error) {
 	var recordID uint16 = 0
 	for {
 		res, err := c.GetSDR(ctx, recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSDR failed for recordID (%#02x), err: %w", recordID, err)
 		}
-		sdr, err := ipmi.ParseSDR(res.RecordData, res.NextRecordID)
+		sdr, err := types.ParseSDR(res.RecordData, res.NextRecordID)
 		if err != nil {
 			return nil, fmt.Errorf("ParseSDR failed, err: %w", err)
 		}
 
 		recordType := sdr.RecordHeader.RecordType
 
-		if sdr.SensorName() != sensorName || (recordType != ipmi.SDRRecordTypeFullSensor && recordType != ipmi.SDRRecordTypeCompactSensor && recordType != ipmi.SDRRecordTypeEventOnly) {
+		if sdr.SensorName() != sensorName || (recordType != types.SDRRecordTypeFullSensor && recordType != types.SDRRecordTypeCompactSensor && recordType != types.SDRRecordTypeEventOnly) {
 			recordID = sdr.NextRecordID
 			if recordID == 0xffff {
 				break
@@ -600,9 +600,9 @@ func (c *Client) GetSDRBySensorName(ctx context.Context, sensorName string) (*ip
 // GetSDRs fetches the SDR records with the specified RecordTypes.
 // The parameter is a slice of SDRRecordType used as filter.
 // Empty means to get all SDR records.
-func (c *Client) GetSDRs(ctx context.Context, recordTypes ...ipmi.SDRRecordType) ([]*ipmi.SDR, error) {
+func (c *Client) GetSDRs(ctx context.Context, recordTypes ...types.SDRRecordType) ([]*types.SDR, error) {
 	var recordID uint16 = 0
-	var out = make([]*ipmi.SDR, 0)
+	var out = make([]*types.SDR, 0)
 	for {
 		sdr, err := c.GetSDREnhanced(ctx, recordID)
 		if err != nil {
@@ -633,8 +633,8 @@ func (c *Client) GetSDRs(ctx context.Context, recordTypes ...ipmi.SDRRecordType)
 	return out, nil
 }
 
-func (c *Client) GetSDRsStream(ctx context.Context, recordTypes ...ipmi.SDRRecordType) iter.Seq[*ipmi.Result[ipmi.SDR]] {
-	return func(yield func(*ipmi.Result[ipmi.SDR]) bool) {
+func (c *Client) GetSDRsStream(ctx context.Context, recordTypes ...types.SDRRecordType) iter.Seq[*types.Result[types.SDR]] {
+	return func(yield func(*types.Result[types.SDR]) bool) {
 		var recordID uint16 = 0
 
 	loop:
@@ -645,7 +645,7 @@ func (c *Client) GetSDRsStream(ctx context.Context, recordTypes ...ipmi.SDRRecor
 			default:
 				sdr, err := c.GetSDREnhanced(ctx, recordID)
 				if err != nil {
-					yield(&ipmi.Result[ipmi.SDR]{Err: err})
+					yield(&types.Result[types.SDR]{Err: err})
 					return
 				}
 
@@ -654,14 +654,14 @@ func (c *Client) GetSDRsStream(ctx context.Context, recordTypes ...ipmi.SDRRecor
 				}
 
 				if len(recordTypes) == 0 {
-					if !yield(&ipmi.Result[ipmi.SDR]{Ok: sdr}) {
+					if !yield(&types.Result[types.SDR]{Ok: sdr}) {
 						return
 					}
 				}
 
 				for _, v := range recordTypes {
 					if sdr.RecordHeader.RecordType == v {
-						if !yield(&ipmi.Result[ipmi.SDR]{Ok: sdr}) {
+						if !yield(&types.Result[types.SDR]{Ok: sdr}) {
 							return
 						}
 						break
@@ -680,8 +680,8 @@ func (c *Client) GetSDRsStream(ctx context.Context, recordTypes ...ipmi.SDRRecor
 // GetSDRsMap returns all Full/Compact SDRs grouped by GeneratorID and SensorNumber.
 // The sensor name can only be got from SDR record.
 // So use this method to construct a map from which you can get sensor name.
-func (c *Client) GetSDRsMap(ctx context.Context) (ipmi.SDRMapBySensorNumber, error) {
-	var out = make(map[ipmi.GeneratorID]map[ipmi.SensorNumber]*ipmi.SDR)
+func (c *Client) GetSDRsMap(ctx context.Context) (types.SDRMapBySensorNumber, error) {
+	var out = make(map[types.GeneratorID]map[types.SensorNumber]*types.SDR)
 
 	var recordID uint16 = 0
 	for {
@@ -690,22 +690,22 @@ func (c *Client) GetSDRsMap(ctx context.Context) (ipmi.SDRMapBySensorNumber, err
 			return nil, fmt.Errorf("GetSDR for recordID (%#0x) failed, err: %w", recordID, err)
 		}
 
-		var generatorID ipmi.GeneratorID
-		var sensorNumber ipmi.SensorNumber
+		var generatorID types.GeneratorID
+		var sensorNumber types.SensorNumber
 
 		recordType := sdr.RecordHeader.RecordType
 		switch recordType {
-		case ipmi.SDRRecordTypeFullSensor:
+		case types.SDRRecordTypeFullSensor:
 			generatorID = sdr.Full.GeneratorID
 			sensorNumber = sdr.Full.SensorNumber
-		case ipmi.SDRRecordTypeCompactSensor:
+		case types.SDRRecordTypeCompactSensor:
 			generatorID = sdr.Compact.GeneratorID
 			sensorNumber = sdr.Compact.SensorNumber
 		}
 
-		if recordType == ipmi.SDRRecordTypeFullSensor || recordType == ipmi.SDRRecordTypeCompactSensor {
+		if recordType == types.SDRRecordTypeFullSensor || recordType == types.SDRRecordTypeCompactSensor {
 			if _, ok := out[generatorID]; !ok {
-				out[generatorID] = make(map[ipmi.SensorNumber]*ipmi.SDR)
+				out[generatorID] = make(map[types.SensorNumber]*types.SDR)
 			}
 			out[generatorID][sensorNumber] = sdr
 		}
@@ -720,12 +720,12 @@ func (c *Client) GetSDRsMap(ctx context.Context) (ipmi.SDRMapBySensorNumber, err
 }
 
 // enhanceSDR fills live sensor reading data into a Full or Compact SDR record.
-func (c *Client) enhanceSDR(ctx context.Context, sdr *ipmi.SDR) error {
+func (c *Client) enhanceSDR(ctx context.Context, sdr *types.SDR) error {
 	if sdr == nil {
 		return nil
 	}
-	if sdr.RecordHeader.RecordType != ipmi.SDRRecordTypeFullSensor &&
-		sdr.RecordHeader.RecordType != ipmi.SDRRecordTypeCompactSensor {
+	if sdr.RecordHeader.RecordType != types.SDRRecordTypeFullSensor &&
+		sdr.RecordHeader.RecordType != types.SDRRecordTypeCompactSensor {
 		return nil
 	}
 	sensor, err := c.sdrToSensor(ctx, sdr)
@@ -733,10 +733,10 @@ func (c *Client) enhanceSDR(ctx context.Context, sdr *ipmi.SDR) error {
 		return fmt.Errorf("sdrToSensor failed, err: %w", err)
 	}
 	switch sdr.RecordHeader.RecordType {
-	case ipmi.SDRRecordTypeFullSensor:
+	case types.SDRRecordTypeFullSensor:
 		sdr.Full.SensorValue = sensor.Value
 		sdr.Full.SensorStatus = sensor.Status()
-	case ipmi.SDRRecordTypeCompactSensor:
+	case types.SDRRecordTypeCompactSensor:
 		sdr.Compact.SensorValue = sensor.Value
 		sdr.Compact.SensorStatus = sensor.Status()
 	}

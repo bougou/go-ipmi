@@ -3,7 +3,7 @@ package app
 import (
 	"bytes"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // 22.29 Get User Name Command
@@ -16,8 +16,8 @@ type GetUsernameResponse struct {
 	Username string
 }
 
-func (req *GetUsernameRequest) Command() ipmi.Command {
-	return ipmi.CommandGetUsername
+func (req *GetUsernameRequest) Command() types.Command {
+	return types.CommandGetUsername
 }
 
 func (req *GetUsernameRequest) Pack() []byte {
@@ -30,9 +30,9 @@ func (res *GetUsernameResponse) CompletionCodes() map[uint8]string {
 
 func (res *GetUsernameResponse) Unpack(msg []byte) error {
 	if len(msg) < 16 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 16)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 16)
 	}
-	username, _, _ := ipmi.UnpackBytes(msg, 0, 16)
+	username, _, _ := types.UnpackBytes(msg, 0, 16)
 	res.Username = string(bytes.TrimRight(username, "\x00"))
 	return nil
 }

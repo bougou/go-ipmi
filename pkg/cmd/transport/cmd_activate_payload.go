@@ -1,12 +1,12 @@
 package transport
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 24.1 Activate Payload Command
 )
 
 type ActivatePayloadRequest struct {
-	PayloadType     ipmi.PayloadType
+	PayloadType     types.PayloadType
 	PayloadInstance uint8
 
 	EnableEncryption     bool
@@ -49,8 +49,8 @@ type ActivatePayloadResponse struct {
 	PayloadVLANID  uint16
 }
 
-func (req ActivatePayloadRequest) Command() ipmi.Command {
-	return ipmi.CommandActivatePayload
+func (req ActivatePayloadRequest) Command() types.Command {
+	return types.CommandActivatePayload
 }
 
 func (req *ActivatePayloadRequest) Pack() []byte {
@@ -61,10 +61,10 @@ func (req *ActivatePayloadRequest) Pack() []byte {
 
 	var b2 uint8
 	b2 = (uint8(req.SharedSerialAlertBehavior) & 0x03) << 2
-	b2 = ipmi.SetOrClearBit7(b2, req.EnableEncryption)
-	b2 = ipmi.SetOrClearBit6(b2, req.EnableAuthentication)
-	b2 = ipmi.SetOrClearBit5(b2, req.EnableTestMode)
-	b2 = ipmi.SetOrClearBit1(b2, req.SOLStartupHandshake)
+	b2 = types.SetOrClearBit7(b2, req.EnableEncryption)
+	b2 = types.SetOrClearBit6(b2, req.EnableAuthentication)
+	b2 = types.SetOrClearBit5(b2, req.EnableTestMode)
+	b2 = types.SetOrClearBit1(b2, req.SOLStartupHandshake)
 	out[2] = b2
 
 	out[3] = 0
@@ -76,15 +76,15 @@ func (req *ActivatePayloadRequest) Pack() []byte {
 
 func (res *ActivatePayloadResponse) Unpack(msg []byte) error {
 	if len(msg) < 12 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 12)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 12)
 	}
 
-	res.TestModeEnabled = ipmi.IsBit0Set(msg[0])
+	res.TestModeEnabled = types.IsBit0Set(msg[0])
 
-	res.InboundPayloadSize, _, _ = ipmi.UnpackUint16L(msg, 4)
-	res.OutboundPayloadSize, _, _ = ipmi.UnpackUint16L(msg, 6)
-	res.PayloadUDPPort, _, _ = ipmi.UnpackUint16L(msg, 8)
-	res.PayloadVLANID, _, _ = ipmi.UnpackUint16L(msg, 10)
+	res.InboundPayloadSize, _, _ = types.UnpackUint16L(msg, 4)
+	res.OutboundPayloadSize, _, _ = types.UnpackUint16L(msg, 6)
+	res.PayloadUDPPort, _, _ = types.UnpackUint16L(msg, 8)
+	res.PayloadVLANID, _, _ = types.UnpackUint16L(msg, 10)
 
 	return nil
 }

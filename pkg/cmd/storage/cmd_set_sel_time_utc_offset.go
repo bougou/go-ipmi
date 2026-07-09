@@ -1,7 +1,7 @@
 package storage
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 	// 31.11a Set SEL Time UTC Offset
 )
 
@@ -17,14 +17,14 @@ type SetSELTimeUTCOffsetResponse struct {
 func (req *SetSELTimeUTCOffsetRequest) Pack() []byte {
 	out := make([]byte, 2)
 
-	a := ipmi.TwoSComplementEncode(int32(req.MinutesOffset), 16)
-	ipmi.PackUint16L(uint16(a), out, 0)
+	a := types.TwoSComplementEncode(int32(req.MinutesOffset), 16)
+	types.PackUint16L(uint16(a), out, 0)
 
 	return out
 }
 
-func (req *SetSELTimeUTCOffsetRequest) Command() ipmi.Command {
-	return ipmi.CommandSetSELTimeUTCOffset
+func (req *SetSELTimeUTCOffsetRequest) Command() types.Command {
+	return types.CommandSetSELTimeUTCOffset
 }
 
 func (res *SetSELTimeUTCOffsetResponse) Unpack(msg []byte) error {

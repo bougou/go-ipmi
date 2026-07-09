@@ -3,7 +3,7 @@ package chassis
 import (
 	"testing"
 
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 func TestGetChassisStatusResponse_PackUnpackRoundTrip(t *testing.T) {
@@ -110,5 +110,5 @@ func TestChassisControlRequest_Unpack(t *testing.T) {
 		t.Fatalf("round-trip: want %v, got %v", orig.ChassisControl, round.ChassisControl)
 	}
 	// Touch ipmi to keep the import meaningful for future helper-based cases.
-	_ = ipmi.CommandChassisControl
+	_ = types.CommandChassisControl
 }

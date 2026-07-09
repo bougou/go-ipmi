@@ -1,13 +1,13 @@
 package app
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 type GetCommandSubfunctionEnablesRequest struct {
 	ChannelNumber uint8
 
-	NetFn ipmi.NetFn
+	NetFn types.NetFn
 	LUN   uint8
 	Cmd   uint8
 
@@ -19,25 +19,25 @@ type GetCommandSubfunctionEnablesResponse struct {
 	SubfunctionEnables []bool
 }
 
-func (req *GetCommandSubfunctionEnablesRequest) Command() ipmi.Command {
-	return ipmi.CommandGetCommandSubfunctionEnables
+func (req *GetCommandSubfunctionEnablesRequest) Command() types.Command {
+	return types.CommandGetCommandSubfunctionEnables
 }
 
 func (req *GetCommandSubfunctionEnablesRequest) Pack() []byte {
 	out := make([]byte, 7)
-	ipmi.PackUint8(req.ChannelNumber, out, 0)
+	types.PackUint8(req.ChannelNumber, out, 0)
 
-	ipmi.PackUint8(uint8(req.NetFn)&0x3f, out, 1)
-	ipmi.PackUint8(req.LUN&0x03, out, 2)
-	ipmi.PackUint8(req.Cmd, out, 3)
+	types.PackUint8(uint8(req.NetFn)&0x3f, out, 1)
+	types.PackUint8(req.LUN&0x03, out, 2)
+	types.PackUint8(req.Cmd, out, 3)
 
 	if uint8(req.NetFn) == 0x2c {
-		ipmi.PackUint8(req.CodeForNetFn2C, out, 4)
+		types.PackUint8(req.CodeForNetFn2C, out, 4)
 		return out[0:5]
 	}
 
 	if uint8(req.NetFn) == 0x2e {
-		ipmi.PackUint24L(req.OEMIANA, out, 4)
+		types.PackUint24L(req.OEMIANA, out, 4)
 		return out[0:7]
 	}
 
@@ -46,11 +46,11 @@ func (req *GetCommandSubfunctionEnablesRequest) Pack() []byte {
 
 func (res *GetCommandSubfunctionEnablesResponse) Unpack(msg []byte) error {
 	if len(msg) < 4 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 4)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 4)
 	}
 
 	if len(msg) > 4 && len(msg) < 8 {
-		return ipmi.ErrUnpackedDataTooShortWith(len(msg), 8)
+		return types.ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
 
 	var enables []bool
@@ -65,14 +65,14 @@ func (res *GetCommandSubfunctionEnablesResponse) Unpack(msg []byte) error {
 
 	for i := 0; i < bytesLen; i++ {
 		b := msg[i]
-		enables[i*8+0] = ipmi.IsBit0Set(b)
-		enables[i*8+1] = ipmi.IsBit1Set(b)
-		enables[i*8+2] = ipmi.IsBit2Set(b)
-		enables[i*8+3] = ipmi.IsBit3Set(b)
-		enables[i*8+4] = ipmi.IsBit4Set(b)
-		enables[i*8+5] = ipmi.IsBit5Set(b)
-		enables[i*8+6] = ipmi.IsBit6Set(b)
-		enables[i*8+7] = ipmi.IsBit7Set(b)
+		enables[i*8+0] = types.IsBit0Set(b)
+		enables[i*8+1] = types.IsBit1Set(b)
+		enables[i*8+2] = types.IsBit2Set(b)
+		enables[i*8+3] = types.IsBit3Set(b)
+		enables[i*8+4] = types.IsBit4Set(b)
+		enables[i*8+5] = types.IsBit5Set(b)
+		enables[i*8+6] = types.IsBit6Set(b)
+		enables[i*8+7] = types.IsBit7Set(b)
 	}
 
 	res.SubfunctionEnables = enables

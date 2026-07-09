@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 
 	"golang.org/x/net/proxy"
 	"sync"
@@ -41,7 +41,7 @@ type Client struct {
 
 	debug bool
 
-	maxPrivilegeLevel ipmi.PrivilegeLevel
+	maxPrivilegeLevel types.PrivilegeLevel
 
 	responderAddr uint8
 	responderLUN  uint8
@@ -71,7 +71,7 @@ type Client struct {
 }
 
 func NewOpenClient() (*Client, error) {
-	myAddr := ipmi.BMC_SA
+	myAddr := types.BMC_SA
 
 	return &Client{
 		Interface:  InterfaceOpen,
@@ -113,19 +113,19 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 		timeout:    time.Second * time.Duration(DefaultLanplusTimeoutSec),
 		retryCount: DefaultLanplusRetries,
 
-		maxPrivilegeLevel: ipmi.PrivilegeLevelUnspecified,
+		maxPrivilegeLevel: types.PrivilegeLevelUnspecified,
 
-		responderAddr: ipmi.BMC_SA,
-		responderLUN:  uint8(ipmi.IPMB_LUN_BMC),
-		requesterAddr: ipmi.RemoteConsole_SWID,
+		responderAddr: types.BMC_SA,
+		responderLUN:  uint8(types.IPMB_LUN_BMC),
+		requesterAddr: types.RemoteConsole_SWID,
 		requesterLUN:  0x00,
 
 		session: &session{
 			// IPMI Request Sequence, start from 1
 			ipmiSeq: 1,
 			v20: v20{
-				state:         ipmi.SessionStatePreSession,
-				cipherSuiteID: ipmi.CipherSuiteIDReserved,
+				state:         types.SessionStatePreSession,
+				cipherSuiteID: types.CipherSuiteIDReserved,
 			},
 			v15: v15{
 				active: false,
@@ -187,7 +187,7 @@ func (c *Client) WithBufferSize(bufferSize int) *Client {
 // WithCipherSuiteID sets one or more custom cipher suite which is used during OpenSession command.
 // It is only valid for client with IPMI lanplus interface.
 // For the custom cipherSuiteID to take effect, you must call WithCipherSuiteID before calling Connect method.
-func (c *Client) WithCipherSuiteID(cipherSuiteID ...ipmi.CipherSuiteID) *Client {
+func (c *Client) WithCipherSuiteID(cipherSuiteID ...types.CipherSuiteID) *Client {
 	if c.session != nil {
 		if len(cipherSuiteID) > 1 {
 			c.session.v20.customSuiteIDs = cipherSuiteID
@@ -199,7 +199,7 @@ func (c *Client) WithCipherSuiteID(cipherSuiteID ...ipmi.CipherSuiteID) *Client 
 }
 
 // WithMaxPrivilegeLevel sets a specified session privilege level to use.
-func (c *Client) WithMaxPrivilegeLevel(privilegeLevel ipmi.PrivilegeLevel) *Client {
+func (c *Client) WithMaxPrivilegeLevel(privilegeLevel types.PrivilegeLevel) *Client {
 	c.maxPrivilegeLevel = privilegeLevel
 	return c
 }
@@ -213,7 +213,7 @@ func (c *Client) WithRequesterAddr(requesterAddr, requesterLUN uint8) {
 	c.requesterLUN = requesterLUN
 }
 
-func (c *Client) SessionPrivilegeLevel() ipmi.PrivilegeLevel {
+func (c *Client) SessionPrivilegeLevel() types.PrivilegeLevel {
 	return c.maxPrivilegeLevel
 }
 
@@ -265,8 +265,8 @@ func (c *Client) Close(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) Exchange(ctx context.Context, request ipmi.Request, response ipmi.Response) error {
-	if _, ok := request.(*ipmi.SOLPayloadRequest); ok && c.Interface != InterfaceLanplus {
+func (c *Client) Exchange(ctx context.Context, request types.Request, response types.Response) error {
+	if _, ok := request.(*types.SOLPayloadRequest); ok && c.Interface != InterfaceLanplus {
 		return fmt.Errorf("SOL payload exchange requires lanplus interface")
 	}
 

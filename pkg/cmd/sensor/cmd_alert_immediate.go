@@ -1,7 +1,7 @@
 package sensor
 
 import (
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 type AlertImmediateOperation uint8
@@ -35,12 +35,12 @@ type AlertImmediateRequest struct {
 
 	GeneratorID  uint8
 	EvMRev       uint8
-	SensorType   ipmi.SensorType
-	SensorNumber ipmi.SensorNumber
+	SensorType   types.SensorType
+	SensorNumber types.SensorNumber
 
-	EventDir         ipmi.EventDir
-	EventReadingType ipmi.EventReadingType
-	EventData        ipmi.EventData
+	EventDir         types.EventDir
+	EventReadingType types.EventReadingType
+	EventData        types.EventData
 }
 
 type AlertImmediateResponse struct {
@@ -52,8 +52,8 @@ func (req *AlertImmediateRequest) Pack() []byte {
 	return out
 }
 
-func (req *AlertImmediateRequest) Command() ipmi.Command {
-	return ipmi.CommandAlertImmediate
+func (req *AlertImmediateRequest) Command() types.Command {
+	return types.CommandAlertImmediate
 }
 
 func (res *AlertImmediateResponse) CompletionCodes() map[uint8]string {
