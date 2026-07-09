@@ -1,26 +1,13 @@
 package bmc
 
-// CipherSuiteID identifies an IPMI 2.0 RMCP+ cipher suite (spec §22.15.2).
-//
-// The bmc package mirrors this type (rather than importing pkg/types) to keep
-// its dependency surface minimal, consistent with the existing AuthAlg /
-// IntegrityAlg / CryptAlg mirrors in session.go.
-type CipherSuiteID uint8
-
-const (
-	CipherSuiteID0  CipherSuiteID = 0  // RAKP-None + Integrity-None + Confidentiality-None (unauthenticated, unencrypted)
-	CipherSuiteID1  CipherSuiteID = 1  // RAKP-HMAC-SHA1 + Integrity-None + Confidentiality-None
-	CipherSuiteID2  CipherSuiteID = 2  // RAKP-HMAC-SHA1 + HMAC-SHA1-96 + Confidentiality-None
-	CipherSuiteID3  CipherSuiteID = 3  // RAKP-HMAC-SHA1 + HMAC-SHA1-96 + AES-CBC-128 (spec-mandatory)
-	CipherSuiteID15 CipherSuiteID = 15 // RAKP-HMAC-SHA256 + Integrity-None + Confidentiality-None
-	CipherSuiteID16 CipherSuiteID = 16 // RAKP-HMAC-SHA256 + HMAC-SHA256-128 + Confidentiality-None
-	CipherSuiteID17 CipherSuiteID = 17 // RAKP-HMAC-SHA256 + HMAC-SHA256-128 + AES-CBC-128
+import (
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
 )
 
 // DefaultCipherSuites is the cipher suite set advertised when no explicit
 // configuration is provided. It contains the spec-mandatory suite 3 plus the
 // recommended SHA256 suite 17.
-var DefaultCipherSuites = []CipherSuiteID{CipherSuiteID3, CipherSuiteID17}
+var DefaultCipherSuites = []ipmi.CipherSuiteID{ipmi.CipherSuiteID3, ipmi.CipherSuiteID17}
 
 // CipherSuiteAlgorithms expands a cipher suite ID into its auth / integrity /
 // confidentiality algorithm codes (spec §22.15.2). ok is false for IDs whose
@@ -30,21 +17,21 @@ var DefaultCipherSuites = []CipherSuiteID{CipherSuiteID3, CipherSuiteID17}
 // it disables RAKP authentication entirely, so the session is established
 // without any password verification. Operators who want this must add it
 // explicitly via [WithCipherSuites] / [BMC.SetCipherSuites].
-func CipherSuiteAlgorithms(id CipherSuiteID) (auth AuthAlg, integ IntegrityAlg, crypt CryptAlg, ok bool) {
+func CipherSuiteAlgorithms(id ipmi.CipherSuiteID) (auth AuthAlg, integ IntegrityAlg, crypt CryptAlg, ok bool) {
 	switch id {
-	case CipherSuiteID0:
+	case ipmi.CipherSuiteID0:
 		return AuthAlgNone, IntegrityAlgNone, CryptAlgNone, true
-	case CipherSuiteID1:
+	case ipmi.CipherSuiteID1:
 		return AuthAlgHMACSHA1, IntegrityAlgNone, CryptAlgNone, true
-	case CipherSuiteID2:
+	case ipmi.CipherSuiteID2:
 		return AuthAlgHMACSHA1, IntegrityAlgHMACSHA1_96, CryptAlgNone, true
-	case CipherSuiteID3:
+	case ipmi.CipherSuiteID3:
 		return AuthAlgHMACSHA1, IntegrityAlgHMACSHA1_96, CryptAlgAESCBC128, true
-	case CipherSuiteID15:
+	case ipmi.CipherSuiteID15:
 		return AuthAlgHMACSHA256, IntegrityAlgNone, CryptAlgNone, true
-	case CipherSuiteID16:
+	case ipmi.CipherSuiteID16:
 		return AuthAlgHMACSHA256, IntegrityAlgHMACSHA256_128, CryptAlgNone, true
-	case CipherSuiteID17:
+	case ipmi.CipherSuiteID17:
 		return AuthAlgHMACSHA256, IntegrityAlgHMACSHA256_128, CryptAlgAESCBC128, true
 	default:
 		return 0, 0, 0, false
@@ -76,7 +63,7 @@ func serverImplementedAlgorithms(auth AuthAlg, integ IntegrityAlg, crypt CryptAl
 // algorithm in the named cipher suite. Configuring an unsupported suite would
 // cause a runtime handshake failure, so callers validate with this before
 // installing a cipher suite list.
-func SupportedCipherSuite(id CipherSuiteID) bool {
+func SupportedCipherSuite(id ipmi.CipherSuiteID) bool {
 	auth, integ, crypt, ok := CipherSuiteAlgorithms(id)
 	if !ok {
 		return false

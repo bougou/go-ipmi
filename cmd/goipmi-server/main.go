@@ -20,6 +20,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/hal/mock"
 	"github.com/bougou/go-ipmi/pkg/server"
 	"github.com/bougou/go-ipmi/pkg/transport/udp"
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
 )
 
 func main() {
@@ -117,9 +118,9 @@ func run() error {
 // GOIPMI_SERVER_CIPHER_SUITES env var and validates each against the reference
 // server's supported set. Returns a descriptive error for bad input rather than
 // letting bmc.SetCipherSuites panic.
-func parseCipherSuites(raw string) ([]bmc.CipherSuiteID, error) {
+func parseCipherSuites(raw string) ([]ipmi.CipherSuiteID, error) {
 	parts := strings.Split(raw, ",")
-	ids := make([]bmc.CipherSuiteID, 0, len(parts))
+	ids := make([]ipmi.CipherSuiteID, 0, len(parts))
 	for _, p := range parts {
 		p = strings.TrimSpace(p)
 		if p == "" {
@@ -129,7 +130,7 @@ func parseCipherSuites(raw string) ([]bmc.CipherSuiteID, error) {
 		if err != nil || n < 0 || n > 255 {
 			return nil, fmt.Errorf("invalid cipher suite id %q: expected an integer 0..255", p)
 		}
-		id := bmc.CipherSuiteID(n)
+		id := ipmi.CipherSuiteID(n)
 		if !bmc.SupportedCipherSuite(id) {
 			return nil, fmt.Errorf("cipher suite %d is not implemented by the reference server", id)
 		}

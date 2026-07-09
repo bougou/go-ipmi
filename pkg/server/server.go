@@ -76,7 +76,7 @@ func WithServerBufferSize(n int) ServerOption {
 // and accepts. Each ID must be a suite the reference server implements
 // (validated by [bmc.BMC.SetCipherSuites]); passing an unsupported suite
 // panics. Use this to advertise only a subset, e.g. only suite 17.
-func WithCipherSuites(ids []bmc.CipherSuiteID) ServerOption {
+func WithCipherSuites(ids []ipmi.CipherSuiteID) ServerOption {
 	return func(s *Server) {
 		if s.bmc != nil {
 			s.bmc.SetCipherSuites(ids)

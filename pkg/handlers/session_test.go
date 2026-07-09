@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
+	ipmi "github.com/bougou/go-ipmi/pkg/types"
 )
 
 func TestHandleGetChannelAuthCapsAdvertisesRMCPPlusOnly(t *testing.T) {
@@ -153,7 +154,7 @@ func TestHandleGetChannelCipherSuites_Default(t *testing.T) {
 
 func TestHandleGetChannelCipherSuites_Custom(t *testing.T) {
 	b := newTestBMC()
-	b.SetCipherSuites([]bmc.CipherSuiteID{bmc.CipherSuiteID17})
+	b.SetCipherSuites([]ipmi.CipherSuiteID{ipmi.CipherSuiteID17})
 	hctx := &HandlerContext{BMC: b}
 
 	resp, cc, err := handleGetChannelCipherSuites(context.Background(), hctx, []byte{0x8e, 0x00, 0x00})
@@ -247,7 +248,7 @@ func TestHandleOpenSession_RejectsNoneByDefault(t *testing.T) {
 // unauthenticated sessions; the security choice is the operator's.
 func TestHandleOpenSession_AcceptsNoneWhenSuite0Configured(t *testing.T) {
 	b := newTestBMC()
-	b.SetCipherSuites([]bmc.CipherSuiteID{bmc.CipherSuiteID0})
+	b.SetCipherSuites([]ipmi.CipherSuiteID{ipmi.CipherSuiteID0})
 
 	payload := openSessionPayload(0x01, 0x04, 0x01020304,
 		uint8(bmc.AuthAlgNone), uint8(bmc.IntegrityAlgNone), uint8(bmc.CryptAlgNone))
@@ -266,7 +267,7 @@ func TestHandleOpenSession_AcceptsNoneWhenSuite0Configured(t *testing.T) {
 // and CryptAlgNone from suite 15.
 func TestHandleOpenSession_AcceptsMixedSuites(t *testing.T) {
 	b := newTestBMC()
-	b.SetCipherSuites([]bmc.CipherSuiteID{bmc.CipherSuiteID3, bmc.CipherSuiteID15})
+	b.SetCipherSuites([]ipmi.CipherSuiteID{ipmi.CipherSuiteID3, ipmi.CipherSuiteID15})
 
 	// Suite 15 triple: HMAC-SHA256 auth + None integ + None crypt.
 	payload := openSessionPayload(0x01, 0x04, 0x01020304,
@@ -289,7 +290,7 @@ func TestHandleOpenSession_AcceptsMixedSuites(t *testing.T) {
 func TestHandleOpenSession_RejectsCrossSuiteRecombination(t *testing.T) {
 	type testCase struct {
 		name       string
-		suites     []bmc.CipherSuiteID
+		suites     []ipmi.CipherSuiteID
 		auth       bmc.AuthAlg
 		integ      bmc.IntegrityAlg
 		crypt      bmc.CryptAlg
@@ -302,7 +303,7 @@ func TestHandleOpenSession_RejectsCrossSuiteRecombination(t *testing.T) {
 			// (SHA1/SHA1-96 from suite 2, AES from suite 17), but no single
 			// configured suite contains the triple.
 			name:       "{2,17} should reject suite 3 (cross-suite SHA1+SHA1-96+AES)",
-			suites:     []bmc.CipherSuiteID{bmc.CipherSuiteID2, bmc.CipherSuiteID17},
+			suites:     []ipmi.CipherSuiteID{ipmi.CipherSuiteID2, ipmi.CipherSuiteID17},
 			auth:       bmc.AuthAlgHMACSHA1,
 			integ:      bmc.IntegrityAlgHMACSHA1_96,
 			crypt:      bmc.CryptAlgAESCBC128,
@@ -313,7 +314,7 @@ func TestHandleOpenSession_RejectsCrossSuiteRecombination(t *testing.T) {
 			// is not configured; SHA256/SHA256-128 are from suite 17, None
 			// is from suite 2's crypt.
 			name:       "{2,17} should reject suite 16 (cross-suite SHA256+SHA256-128+None)",
-			suites:     []bmc.CipherSuiteID{bmc.CipherSuiteID2, bmc.CipherSuiteID17},
+			suites:     []ipmi.CipherSuiteID{ipmi.CipherSuiteID2, ipmi.CipherSuiteID17},
 			auth:       bmc.AuthAlgHMACSHA256,
 			integ:      bmc.IntegrityAlgHMACSHA256_128,
 			crypt:      bmc.CryptAlgNone,
@@ -326,7 +327,7 @@ func TestHandleOpenSession_RejectsCrossSuiteRecombination(t *testing.T) {
 			// integrity check) would be accepted even though it was never
 			// configured. This is the most dangerous recombination.
 			name:       "{3,15} should reject suite 1 (auth bypass SHA1+None+None)",
-			suites:     []bmc.CipherSuiteID{bmc.CipherSuiteID3, bmc.CipherSuiteID15},
+			suites:     []ipmi.CipherSuiteID{ipmi.CipherSuiteID3, ipmi.CipherSuiteID15},
 			auth:       bmc.AuthAlgHMACSHA1,
 			integ:      bmc.IntegrityAlgNone,
 			crypt:      bmc.CryptAlgNone,
