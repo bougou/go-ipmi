@@ -222,19 +222,25 @@ func handleGetSystemBootOptions(ctx context.Context, hctx *HandlerContext, req [
 }
 
 // codeFromErr maps a HAL error to a completion code.
+// If err carries a [CompletionCode] (e.g. HAL returns [CodeNodeBusy] directly),
+// that code is extracted; otherwise the error is mapped to [CodeUnspecifiedError].
 func codeFromErr(err error) CompletionCode {
 	if err == nil {
 		return CodeOK
 	}
+	var cc CompletionCode
+	if errors.As(err, &cc) {
+		return cc
+	}
 	return CodeUnspecifiedError
 }
 
-// codeFromHalErr maps a HAL error to a completion code, translating
-// [hal.ErrNotSupported] to [CodeBootParamNotSupported] so callers can distinguish
-// "parameter not supported by this BMC" from a generic failure.
+// codeFromHalErr maps a HAL error to a completion code.
+// It delegates to [codeFromErr] and additionally maps [hal.ErrNotSupported]
+// to [CodeBootParamNotSupported].
 func codeFromHalErr(err error) CompletionCode {
-	if err == nil {
-		return CodeOK
+	if cc := codeFromErr(err); cc != CodeUnspecifiedError {
+		return cc
 	}
 	if errors.Is(err, hal.ErrNotSupported) {
 		return CodeBootParamNotSupported
