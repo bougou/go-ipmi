@@ -467,6 +467,67 @@ func parseSDRFullSensor(data []byte, sdr *SDR) error {
 	return nil
 }
 
+// Pack encodes a Type 01h Full Sensor record per §43.1.
+func (s *SDRFull) Pack(recordID uint16) []byte {
+	body := make([]byte, 48)
+	PackUint16L(uint16(s.GeneratorID), body, 0)
+	body[2] = uint8(s.SensorNumber)
+	body[3] = uint8(s.SensorEntityID)
+	body[4] = packEntityInstanceByte(s.SensorEntityInstance, s.SensorEntityIsLogical)
+	body[5] = packSensorInitializationByte(s.SensorInitialization)
+	body[6] = packSensorCapabilitiesByte(s.SensorCapabilities)
+	body[7] = uint8(s.SensorType)
+	body[8] = uint8(s.SensorEventReadingType)
+
+	PackUint16L(packMaskAssertLower(s.Mask), body, 9)
+	PackUint16L(packMaskDeassertUpper(s.Mask), body, 11)
+	PackUint16L(packMaskReading(s.Mask), body, 13)
+
+	b20, b21, b22 := packSensorUnitByte(s.SensorUnit)
+	body[15] = b20
+	body[16] = b21
+	body[17] = b22
+
+	b23, b24, b25, b26, b27, b28, b29 := packReadingFactorsBytes(s.ReadingFactors, s.LinearizationFunc, s.SensorDirection)
+	body[18] = b23
+	body[19] = b24
+	body[20] = b25
+	body[21] = b26
+	body[22] = b27
+	body[23] = b28
+	body[24] = b29
+
+	var b30 uint8
+	if s.NominalReadingSpecified {
+		b30 = SetBit0(b30)
+	}
+	if s.NormalMaxSpecified {
+		b30 = SetBit1(b30)
+	}
+	if s.NormalMinSpecified {
+		b30 = SetBit2(b30)
+	}
+	body[25] = b30
+
+	body[26] = s.NominalReadingRaw
+	body[27] = s.NormalMaxRaw
+	body[28] = s.NormalMinRaw
+	body[29] = s.SensorMaxReadingRaw
+	body[30] = s.SensorMinReadingRaw
+	body[31] = s.UNR_Raw
+	body[32] = s.UCR_Raw
+	body[33] = s.UNC_Raw
+	body[34] = s.LNR_Raw
+	body[35] = s.LCR_Raw
+	body[36] = s.LNC_Raw
+	body[37] = s.PositiveHysteresisRaw
+	body[38] = s.NegativeHysteresisRaw
+
+	id := packIDField(s.IDStringTypeLength, s.IDStringBytes)
+	body = append(body[:42], id...)
+	return packSDRWire(recordID, SDRRecordTypeFullSensor, body)
+}
+
 func (full *SDRFull) HasAnalogReading() bool {
 	// Todo, logic is not clear.
 	/*
