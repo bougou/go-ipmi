@@ -233,3 +233,33 @@ func parseSDRCompactSensor(data []byte, sdr *SDR) error {
 	s.IDStringBytes, _, _ = UnpackBytes(data, minSize, idStrLen)
 	return nil
 }
+
+// Pack encodes a Type 02h Compact Sensor record per §43.2.
+func (s *SDRCompact) Pack(recordID uint16) []byte {
+	body := make([]byte, 32)
+	PackUint16L(uint16(s.GeneratorID), body, 0)
+	body[2] = uint8(s.SensorNumber)
+	body[3] = uint8(s.SensorEntityID)
+	body[4] = packEntityInstanceByte(s.SensorEntityInstance, s.SensorEntityIsLogical)
+	body[5] = packSensorInitializationByte(s.SensorInitialization)
+	body[6] = packSensorCapabilitiesByte(s.SensorCapabilities)
+	body[7] = uint8(s.SensorType)
+	body[8] = uint8(s.SensorEventReadingType)
+
+	PackUint16L(packMaskAssertLower(s.Mask), body, 9)
+	PackUint16L(packMaskDeassertUpper(s.Mask), body, 11)
+	PackUint16L(packMaskReading(s.Mask), body, 13)
+
+	b20, b21, b22 := packSensorUnitByte(s.SensorUnit)
+	body[15] = b20
+	body[16] = b21
+	body[17] = b22
+	body[18] = s.SensorDirection
+	body[19] = s.EntityInstanceSharing
+	body[20] = s.PositiveHysteresisRaw
+	body[21] = s.NegativeHysteresisRaw
+
+	id := packIDField(s.IDStringTypeLength, s.IDStringBytes)
+	body = append(body[:26], id...)
+	return packSDRWire(recordID, SDRRecordTypeCompactSensor, body)
+}

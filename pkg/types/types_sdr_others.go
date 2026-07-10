@@ -106,6 +106,28 @@ func parseSDREventOnly(data []byte, sdr *SDR) error {
 	return nil
 }
 
+// Pack encodes a Type 03h Event-only Sensor record per §43.3.
+func (s *SDREventOnly) Pack(recordID uint16) []byte {
+	body := make([]byte, 16)
+	PackUint16L(uint16(s.GeneratorID), body, 0)
+	body[2] = uint8(s.SensorNumber)
+	body[3] = uint8(s.SensorEntityID)
+	body[4] = packEntityInstanceByte(s.SensorEntityInstance, s.SensorEntityIsLogical)
+	body[5] = uint8(s.SensorType)
+	body[6] = uint8(s.SensorEventReadingType)
+	body[7] = s.SensorDirection
+	body[8] = s.IDStringInstanceModifierType
+	body[9] = s.ShareCount
+	if s.EntityInstanceSharing {
+		body[10] = SetBit7(body[10])
+	}
+	body[10] |= s.IDStringInstanceModifierOffset & 0x7f
+
+	id := packIDField(s.IDStringTypeLength, s.IDStringBytes)
+	body = append(body[:11], id...)
+	return packSDRWire(recordID, SDRRecordTypeEventOnly, body)
+}
+
 // 43.4 SDR Type 08h - Entity Association Record
 type SDREntityAssociation struct {
 	//
@@ -173,6 +195,34 @@ func parseSDREntityAssociation(data []byte, sdr *SDR) error {
 	s.ContainedEntity4Instance, _, _ = UnpackUint8(data, 15)
 
 	return nil
+}
+
+// Pack encodes a Type 08h Entity Association record per §43.4.
+func (s *SDREntityAssociation) Pack(recordID uint16) []byte {
+	var flag uint8
+	if s.ContainedEntitiesAsRange {
+		flag = SetBit7(flag)
+	}
+	if s.LinkedEntityAssociationExist {
+		flag = SetBit6(flag)
+	}
+	if s.PresenceSensorAlwaysAccessible {
+		flag = SetBit5(flag)
+	}
+	body := []byte{
+		s.ContainerEntityID,
+		s.ContainerEntityInstance,
+		flag,
+		s.ContainedEntity1ID,
+		s.ContainedEntity1Instance,
+		s.ContainedEntity2ID,
+		s.ContainedEntity2Instance,
+		s.ContainedEntity3ID,
+		s.ContainedEntity3Instance,
+		s.ContainedEntity4ID,
+		s.ContainedEntity4Instance,
+	}
+	return packSDRWire(recordID, SDRRecordTypeEntityAssociation, body)
 }
 
 // 43.5 SDR Type 09h - Device-relative Entity Association Record
@@ -270,6 +320,48 @@ func parseSDRDeviceRelativeEntityAssociation(data []byte, sdr *SDR) error {
 	return nil
 }
 
+// Pack encodes a Type 09h Device-relative Entity Association record per §43.5.
+func (s *SDRDeviceRelative) Pack(recordID uint16) []byte {
+	body := make([]byte, 32)
+	body[0] = s.ContainerEntityID
+	body[1] = s.ContainerEntityInstance
+	body[2] = s.ContainerEntityDeviceAddress
+	body[3] = s.ContainerEntityDeviceChannel
+
+	var flag uint8
+	if s.ContainedEntitiesAsRange {
+		flag = SetBit7(flag)
+	}
+	if s.LinkedEntityAssociationExist {
+		flag = SetBit6(flag)
+	}
+	if s.PresenceSensorAlwaysAccessible {
+		flag = SetBit5(flag)
+	}
+	body[4] = flag
+
+	body[5] = s.ContainedEntity1DeviceAddress
+	body[6] = s.ContainedEntity1DeviceChannel
+	body[7] = s.ContainedEntity1ID
+	body[8] = s.ContainedEntity1Instance
+
+	body[9] = s.ContainedEntity2DeviceAddress
+	body[10] = s.ContainedEntity2DeviceChannel
+	body[11] = s.ContainedEntity2ID
+	body[12] = s.ContainedEntity2Instance
+
+	body[13] = s.ContainedEntity3DeviceAddress
+	body[14] = s.ContainedEntity3DeviceChannel
+	body[15] = s.ContainedEntity3ID
+	body[16] = s.ContainedEntity3Instance
+
+	body[17] = s.ContainedEntity4DeviceAddress
+	body[18] = s.ContainedEntity4DeviceChannel
+	body[19] = s.ContainedEntity4ID
+	body[20] = s.ContainedEntity4Instance
+	return packSDRWire(recordID, SDRRecordTypeDeviceRelativeEntityAssociation, body)
+}
+
 // 43.7 SDR Type 10h - Generic Device Locator Record
 // This record is used to store the location and type information for devices
 // on the IPMB or management controller private busses that are neither
@@ -341,6 +433,24 @@ func parseSDRGenericLocator(data []byte, sdr *SDR) error {
 	}
 	s.DeviceIDString, _, _ = UnpackBytes(data, minSize, idStrLen)
 	return nil
+}
+
+// Pack encodes a Type 10h Generic Device Locator record per §43.7.
+func (s *SDRGenericDeviceLocator) Pack(recordID uint16) []byte {
+	body := make([]byte, 16)
+	body[0] = s.DeviceAccessAddress
+	ch := s.ChannelNumber
+	body[1] = (s.DeviceSlaveAddress & 0xfe) | (ch>>3)&0x01
+	body[2] = (ch&0x07)<<5 | (s.AccessLUN&0x03)<<3 | (s.PrivateBusID & 0x07)
+	body[3] = s.AddressSpan
+	body[5] = s.DeviceType
+	body[6] = s.DeviceTypeModifier
+	body[7] = s.EntityID
+	body[8] = s.EntityInstance
+
+	id := packIDField(s.DeviceIDTypeLength, s.DeviceIDString)
+	body = append(body[:10], id...)
+	return packSDRWire(recordID, SDRRecordTypeGenericLocator, body)
 }
 
 // 43.8 SDR Type 11h - FRU Device Locator Record
@@ -472,6 +582,30 @@ func parseSDRFRUDeviceLocator(data []byte, sdr *SDR) error {
 	return nil
 }
 
+// Pack encodes a Type 11h FRU Device Locator record per §43.8.
+func (s *SDRFRUDeviceLocator) Pack(recordID uint16) []byte {
+	body := make([]byte, 16)
+	body[0] = s.DeviceAccessAddress
+	body[1] = s.FRUDeviceID_SlaveAddress
+
+	var b8 uint8
+	if s.IsLogicalFRUDevice {
+		b8 = SetBit7(b8)
+	}
+	b8 |= (s.AccessLUN & 0x03) << 3
+	b8 |= s.PrivateBusID & 0x07
+	body[2] = b8
+	body[3] = (s.ChannelNumber & 0x0f) << 4
+	body[5] = uint8(s.DeviceType)
+	body[6] = s.DeviceTypeModifier
+	body[7] = s.FRUEntityID
+	body[8] = s.FRUEntityInstance
+
+	id := packIDField(s.DeviceIDTypeLength, s.DeviceIDBytes)
+	body = append(body[:10], id...)
+	return packSDRWire(recordID, SDRRecordTypeFRUDeviceLocator, body)
+}
+
 // 43.9 SDR Type 12h - Management Controller Device Locator Record
 type SDRMgmtControllerDeviceLocator struct {
 	//
@@ -553,6 +687,62 @@ func parseSDRManagementControllerDeviceLocator(data []byte, sdr *SDR) error {
 	return nil
 }
 
+// Pack encodes a Type 12h MC Device Locator record per §43.9.
+func (s *SDRMgmtControllerDeviceLocator) Pack(recordID uint16) []byte {
+	body := make([]byte, 16)
+	body[0] = s.DeviceSlaveAddress
+	body[1] = s.ChannelNumber
+
+	var init uint8
+	if s.ACPISystemPowerStateNotificationRequired {
+		init = SetBit7(init)
+	}
+	if s.ACPIDevicePowerStateNotificationRequired {
+		init = SetBit6(init)
+	}
+	if s.ControllerLogsInitializationAgentErrors {
+		init = SetBit3(init)
+	}
+	if s.LogInitializationAgentErrors {
+		init = SetBit2(init)
+	}
+	body[2] = init
+
+	var caps uint8
+	if s.DeviceCap_ChassisDevice {
+		caps = SetBit7(caps)
+	}
+	if s.DeviceCap_Bridge {
+		caps = SetBit6(caps)
+	}
+	if s.DeviceCap_IPMBEventGenerator {
+		caps = SetBit5(caps)
+	}
+	if s.DeviceCap_IPMBEventReceiver {
+		caps = SetBit4(caps)
+	}
+	if s.DeviceCap_FRUInventoryDevice {
+		caps = SetBit3(caps)
+	}
+	if s.DeviceCap_SELDevice {
+		caps = SetBit2(caps)
+	}
+	if s.DeviceCap_SDRRepoDevice {
+		caps = SetBit1(caps)
+	}
+	if s.DeviceCap_SensorDevice {
+		caps = SetBit0(caps)
+	}
+	body[3] = caps
+
+	body[7] = s.EntityID
+	body[8] = s.EntityInstance
+
+	id := packIDField(s.DeviceIDTypeLength, s.DeviceIDBytes)
+	body = append(body[:10], id...)
+	return packSDRWire(recordID, SDRRecordTypeManagementControllerDeviceLocator, body)
+}
+
 // 43.10 SDR Type 13h - Management Controller Confirmation Record
 type SDRMgmtControllerConfirmation struct {
 	//
@@ -617,6 +807,21 @@ func parseSDRManagementControllerConfirmation(data []byte, sdr *SDR) error {
 	return nil
 }
 
+// Pack encodes a Type 13h MC Confirmation record per §43.10.
+func (s *SDRMgmtControllerConfirmation) Pack(recordID uint16) []byte {
+	body := make([]byte, 32)
+	body[0] = s.DeviceSlaveAddress
+	body[1] = s.DeviceID
+	body[2] = (s.ChannelNumber&0x0f)<<4 | (s.DeviceRevision & 0x0f)
+	body[3] = s.FirmwareMajorRevision & 0x7f
+	body[4] = s.FirmwareMinorRevision
+	body[5] = (s.MinorIPMIVersion << 4) | (s.MajorIPMIVersion & 0x0f)
+	PackUint24L(s.ManufacturerID, body, 6)
+	PackUint16L(s.ProductID, body, 9)
+	copy(body[11:], s.DeviceGUID)
+	return packSDRWire(recordID, SDRRecordTypeManagementControllerConfirmation, body)
+}
+
 // 43.11 SDR Type 14h - BMC Message Channel Info Record
 type SDRBMCChannelInfo struct {
 	//
@@ -679,6 +884,22 @@ func parseSDRBMCMessageChannelInfo(data []byte, sdr *SDR) error {
 	return nil
 }
 
+// Pack encodes a Type 14h BMC Message Channel Info record per §43.11.
+func (s *SDRBMCChannelInfo) Pack(recordID uint16) []byte {
+	body := make([]byte, 11)
+	body[0] = packChannelInfo(s.Channel0)
+	body[1] = packChannelInfo(s.Channel1)
+	body[2] = packChannelInfo(s.Channel2)
+	body[3] = packChannelInfo(s.Channel3)
+	body[4] = packChannelInfo(s.Channel4)
+	body[5] = packChannelInfo(s.Channel5)
+	body[6] = packChannelInfo(s.Channel6)
+	body[7] = packChannelInfo(s.Channel7)
+	body[8] = s.MessagingInterruptType
+	body[9] = s.EventMessageBufferInterruptType
+	return packSDRWire(recordID, SDRRecordTypeBMCMessageChannelInfo, body)
+}
+
 // 43.12 SDR Type C0h - OEM Record
 type SDROEM struct {
 	//
@@ -707,6 +928,14 @@ func parseSDROEM(data []byte, sdr *SDR) error {
 	s.ManufacturerID, _, _ = UnpackUint24L(data, 5)
 	s.OEMData, _, _ = UnpackBytesMost(data, 8, SDROEMMaxSize-8)
 	return nil
+}
+
+// Pack encodes a Type C0h OEM record per §43.12.
+func (s *SDROEM) Pack(recordID uint16) []byte {
+	body := make([]byte, 3+len(s.OEMData))
+	PackUint24L(s.ManufacturerID, body, 0)
+	copy(body[3:], s.OEMData)
+	return packSDRWire(recordID, SDRRecordTypeOEM, body)
 }
 
 // 43.6 SDR Type 0Ah:0Fh - Reserved Records
