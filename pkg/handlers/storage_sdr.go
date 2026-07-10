@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 
+	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/cmd/storage"
 )
 
@@ -13,7 +14,10 @@ func handleGetSDRRepoInfo(ctx context.Context, hctx *HandlerContext, req []byte)
 	}
 	_ = req
 
-	repo := newSDRRepository(sdr, hctx.BMC.Clock())
+	repo := hctx.BMC.SDRRepository()
+	if repo == nil {
+		return nil, CodeUnspecifiedError, nil
+	}
 	info, err := repo.Info(ctx)
 	if err != nil {
 		return nil, codeFromErr(err), err
@@ -28,7 +32,10 @@ func handleGetSDRRepoAllocInfo(ctx context.Context, hctx *HandlerContext, req []
 	}
 	_ = req
 
-	repo := newSDRRepository(sdr, hctx.BMC.Clock())
+	repo := hctx.BMC.SDRRepository()
+	if repo == nil {
+		return nil, CodeUnspecifiedError, nil
+	}
 	info, err := repo.AllocInfo(ctx)
 	if err != nil {
 		return nil, codeFromErr(err), err
@@ -67,10 +74,13 @@ func handleGetSDR(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte
 		}
 	}
 
-	repo := newSDRRepository(sdr, hctx.BMC.Clock())
+	repo := hctx.BMC.SDRRepository()
+	if repo == nil {
+		return nil, CodeUnspecifiedError, nil
+	}
 	record, nextID, err := repo.GetRecord(ctx, typed.RecordID)
 	if err != nil {
-		if isStorageMissing(err) {
+		if bmc.StorageMissing(err) {
 			return nil, CodeRequestedRecordNotPresent, nil
 		}
 		return nil, codeFromErr(err), err
@@ -92,7 +102,8 @@ func handleGetSDR(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte
 		return nil, CodeCannotReturnRequestedDataBytes, nil
 	}
 
-	chunk := record[typed.ReadOffset : typed.ReadOffset+uint8(want)]
+	start := int(typed.ReadOffset)
+	chunk := record[start : start+want]
 	resp := &storage.GetSDRResponse{
 		NextRecordID: nextID,
 		RecordData:   chunk,

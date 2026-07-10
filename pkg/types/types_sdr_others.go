@@ -95,6 +95,19 @@ func parseSDREventOnly(data []byte, sdr *SDR) error {
 	eventReadingType, _, _ := UnpackUint8(data, 11)
 	s.SensorEventReadingType = EventReadingType(eventReadingType)
 
+	b12, _, _ := UnpackUint8(data, 12)
+	s.SensorDirection = b12
+
+	b13, _, _ := UnpackUint8(data, 13)
+	s.IDStringInstanceModifierType = b13
+
+	b14, _, _ := UnpackUint8(data, 14)
+	s.ShareCount = b14
+
+	b15, _, _ := UnpackUint8(data, 15)
+	s.EntityInstanceSharing = IsBit7Set(b15)
+	s.IDStringInstanceModifierOffset = b15 & 0x7f
+
 	typeLength, _, _ := UnpackUint8(data, 16)
 	s.IDStringTypeLength = TypeLength(typeLength)
 
@@ -322,7 +335,7 @@ func parseSDRDeviceRelativeEntityAssociation(data []byte, sdr *SDR) error {
 
 // Pack encodes a Type 09h Device-relative Entity Association record per §43.5.
 func (s *SDRDeviceRelative) Pack(recordID uint16) []byte {
-	body := make([]byte, 32)
+	body := make([]byte, 27) // 5 header + 27 body = 32 total (§43.5)
 	body[0] = s.ContainerEntityID
 	body[1] = s.ContainerEntityInstance
 	body[2] = s.ContainerEntityDeviceAddress
@@ -410,11 +423,11 @@ func parseSDRGenericLocator(data []byte, sdr *SDR) error {
 	s.DeviceAccessAddress, _, _ = UnpackUint8(data, 5)
 
 	b, _, _ := UnpackUint8(data, 6)
-	s.DeviceSlaveAddress = b
-
 	c, _, _ := UnpackUint8(data, 7)
-	s.ChannelNumber = ((b & 0x01) << 4) | (c >> 5)
-	s.AccessLUN = (c & 0x1f) >> 3
+	// Table 43-6: body[1] bit 0 = channel ms-bit, body[2] bits 7:5 = channel ls-3 bits.
+	s.DeviceSlaveAddress = b & 0xfe
+	s.ChannelNumber = ((b & 0x01) << 3) | ((c & 0xE0) >> 5)
+	s.AccessLUN = (c & 0x18) >> 3
 	s.PrivateBusID = (c & 0x07)
 
 	s.AddressSpan, _, _ = UnpackUint8(data, 8)
@@ -440,8 +453,9 @@ func (s *SDRGenericDeviceLocator) Pack(recordID uint16) []byte {
 	body := make([]byte, 16)
 	body[0] = s.DeviceAccessAddress
 	ch := s.ChannelNumber
-	body[1] = (s.DeviceSlaveAddress & 0xfe) | (ch>>3)&0x01
-	body[2] = (ch&0x07)<<5 | (s.AccessLUN&0x03)<<3 | (s.PrivateBusID & 0x07)
+	// Table 43-6: body[1] bit 0 = channel ms-bit, body[2] bits 7:5 = channel ls-3 bits.
+	body[1] = (s.DeviceSlaveAddress & 0xfe) | ((ch >> 3) & 0x01)
+	body[2] = ((ch & 0x07) << 5) | (s.AccessLUN&0x03)<<3 | (s.PrivateBusID & 0x07)
 	body[3] = s.AddressSpan
 	body[5] = s.DeviceType
 	body[6] = s.DeviceTypeModifier
@@ -809,7 +823,7 @@ func parseSDRManagementControllerConfirmation(data []byte, sdr *SDR) error {
 
 // Pack encodes a Type 13h MC Confirmation record per §43.10.
 func (s *SDRMgmtControllerConfirmation) Pack(recordID uint16) []byte {
-	body := make([]byte, 32)
+	body := make([]byte, 27) // 5 header + 27 body = 32 total (§43.10)
 	body[0] = s.DeviceSlaveAddress
 	body[1] = s.DeviceID
 	body[2] = (s.ChannelNumber&0x0f)<<4 | (s.DeviceRevision & 0x0f)

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 
+	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/cmd/storage"
 	"github.com/bougou/go-ipmi/pkg/hal"
 )
@@ -20,7 +21,7 @@ func handleGetFRUInventoryAreaInfo(ctx context.Context, hctx *HandlerContext, re
 
 	data, err := fru.Read(ctx, typed.FRUDeviceID)
 	if err != nil {
-		if isStorageMissing(err) {
+		if bmc.StorageMissing(err) {
 			return nil, CodeRequestedRecordNotPresent, nil
 		}
 		return nil, codeFromErr(err), err
@@ -46,7 +47,7 @@ func handleReadFRUData(ctx context.Context, hctx *HandlerContext, req []byte) ([
 
 	data, err := fru.Read(ctx, typed.FRUDeviceID)
 	if err != nil {
-		if isStorageMissing(err) {
+		if bmc.StorageMissing(err) {
 			return nil, CodeRequestedRecordNotPresent, nil
 		}
 		return nil, codeFromErr(err), err

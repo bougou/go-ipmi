@@ -45,6 +45,7 @@ func (res *GetSDRRepoInfoResponse) Pack() []byte {
 	types.PackUint8(res.SDRVersion, out, 0)
 	types.PackUint16L(res.RecordCount, out, 1)
 	types.PackUint16L(res.FreeSpaceBytes, out, 3)
+	// LS-byte-first unsigned 32-bit Unix timestamp per §33.9; wraps at 2106-02-07.
 	types.PackUint32L(uint32(res.MostRecentAdditionTime.Unix()), out, 5)
 	types.PackUint32L(uint32(res.MostRecentEraseTime.Unix()), out, 9)
 	var b uint8

@@ -204,17 +204,15 @@ type FRUInternalUseArea struct {
 }
 
 // Unpack decodes an Internal Use Area per FRU/9.
+// msg is the full area slice bounded by common-header offsets; byte 0 is the
+// format version and bytes 1..end are implementation-specific data.
 func (a *FRUInternalUseArea) Unpack(msg []byte) error {
-	if len(msg) < 8 {
+	if len(msg) < 8 || len(msg)%8 != 0 {
 		return ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
-	areaLen := int(msg[1]) * 8
-	if areaLen < 8 || len(msg) < areaLen {
-		return ErrUnpackedDataTooShortWith(len(msg), areaLen)
-	}
 	a.FormatVersion = msg[0]
-	if areaLen > 2 {
-		a.Data = append([]byte{}, msg[2:areaLen-1]...)
+	if len(msg) > 1 {
+		a.Data = append([]byte{}, msg[1:]...)
 	}
 	return nil
 }
@@ -225,8 +223,11 @@ func (a *FRUInternalUseArea) Pack() []byte {
 	if ver == 0 {
 		ver = FRUFormatVersion
 	}
-	body := append([]byte{ver, 0}, a.Data...)
-	return finalizeFRURawArea(body, nil)
+	body := append([]byte{ver}, a.Data...)
+	for len(body)%8 != 0 {
+		body = append(body, 0)
+	}
+	return body
 }
 
 // FRUChassisInfoArea is used to hold Serial Number, Part Number, and other
@@ -694,7 +695,7 @@ func (r *FRUMultiRecord) Pack() []byte {
 	out[2] = uint8(len(data))
 	copy(out[5:], data)
 	out[3] = fruPackChecksum(data)
-	out[4] = fruPackChecksum(out[0:3])
+	out[4] = fruPackChecksum(out[0:4])
 	return out
 }
 

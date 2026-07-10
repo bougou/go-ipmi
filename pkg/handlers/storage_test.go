@@ -24,8 +24,9 @@ func newTestBMCWithStorage(t *testing.T) (*bmc.BMC, *mock.HAL) {
 	return bmc.New(info, guid, m, bmc.WithClock(clock.Real)), m
 }
 
-func testFRUBytes() []byte {
-	return types.PackFRU(types.FRUPackConfig{
+func testFRUBytes(t *testing.T) []byte {
+	t.Helper()
+	data, err := types.PackFRU(types.FRUPackConfig{
 		Product: &types.FRUPackProduct{
 			Manufacturer: "Acme",
 			Name:         "TestBMC",
@@ -33,11 +34,15 @@ func testFRUBytes() []byte {
 			Serial:       "SN-001",
 		},
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return data
 }
 
 func TestHandleGetFRUInventoryAreaInfo(t *testing.T) {
 	b, m := newTestBMCWithStorage(t)
-	fru := testFRUBytes()
+	fru := testFRUBytes(t)
 	_ = m.Storage().FRU().Write(context.Background(), 0, fru)
 
 	hctx := &HandlerContext{BMC: b}
@@ -56,7 +61,7 @@ func TestHandleGetFRUInventoryAreaInfo(t *testing.T) {
 
 func TestHandleReadFRUData_RoundTrip(t *testing.T) {
 	b, m := newTestBMCWithStorage(t)
-	fru := testFRUBytes()
+	fru := testFRUBytes(t)
 	_ = m.Storage().FRU().Write(context.Background(), 0, fru)
 
 	req := (&storage.ReadFRUDataRequest{FRUDeviceID: 0, ReadOffset: 0, ReadCount: 32}).Pack()
@@ -179,7 +184,7 @@ func TestHandleGetSDRRepoInfo(t *testing.T) {
 
 func TestHandleGetDeviceID_StorageBits(t *testing.T) {
 	b, m := newTestBMCWithStorage(t)
-	_ = m.Storage().FRU().Write(context.Background(), 0, testFRUBytes())
+	_ = m.Storage().FRU().Write(context.Background(), 0, testFRUBytes(t))
 	_ = m.Storage().SDR().Write(context.Background(), 1, []byte{0x01, 0x00, types.SDRCommandSetVersion, 0x02, 0x01, 0x00})
 
 	hctx := &HandlerContext{BMC: b}
@@ -215,7 +220,7 @@ func TestStorageHandlers_NilHAL(t *testing.T) {
 }
 
 func TestSeedFRU_ClientParse(t *testing.T) {
-	data := types.PackFRU(types.FRUPackConfig{
+	data, err := types.PackFRU(types.FRUPackConfig{
 		Chassis: &types.FRUPackChassis{Type: 0x17},
 		Board: &types.FRUPackBoard{
 			Mfg:     "Acme",
@@ -226,6 +231,9 @@ func TestSeedFRU_ClientParse(t *testing.T) {
 			Name:         "Product-A",
 		},
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	hdr := &types.FRUCommonHeader{}
 	if err := hdr.Unpack(data[:types.FRUCommonHeaderSize]); err != nil {
 		t.Fatal(err)
