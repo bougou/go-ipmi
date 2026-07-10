@@ -24,6 +24,25 @@ func (req *GetFRUInventoryAreaInfoRequest) Pack() []byte {
 	return []byte{req.FRUDeviceID}
 }
 
+func (req *GetFRUInventoryAreaInfoRequest) Unpack(msg []byte) error {
+	if len(msg) < 1 {
+		return types.ErrUnpackedDataTooShortWith(len(msg), 1)
+	}
+	req.FRUDeviceID, _, _ = types.UnpackUint8(msg, 0)
+	return nil
+}
+
+func (res *GetFRUInventoryAreaInfoResponse) Pack() []byte {
+	out := make([]byte, 3)
+	types.PackUint16L(res.AreaSizeBytes, out, 0)
+	var b uint8
+	if res.DeviceAccessedByWords {
+		b = types.SetBit0(b)
+	}
+	types.PackUint8(b, out, 2)
+	return out
+}
+
 func (res *GetFRUInventoryAreaInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 3 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 3)

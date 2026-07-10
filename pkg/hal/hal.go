@@ -30,7 +30,7 @@ type HAL interface {
 	Chassis() ChassisHAL
 	// Sensors returns the sensor reading interface, or nil.
 	Sensors() SensorHAL
-	// Storage returns persistent key-value storage used for SEL/SDR/FRU, or nil.
+	// Storage returns FRU/SDR blob stores for Storage NetFn handlers, or nil.
 	Storage() StorageHAL
 	// Network returns BMC NIC configuration, or nil.
 	Network() NetworkHAL
@@ -95,20 +95,6 @@ type SensorHAL interface {
 	ReadRaw(ctx context.Context, sensorID uint8) (uint8, error)
 	// List returns all sensors available on the hardware.
 	List(ctx context.Context) ([]SensorDescriptor, error)
-}
-
-// StorageHAL provides namespace-isolated key-value persistence.
-//
-// The server uses the following namespaces:
-//   - "sel"    – System Event Log entries (key = decimal record ID)
-//   - "sdr"    – SDR records (key = decimal record ID)
-//   - "fru"    – FRU inventory (key = decimal device ID)
-//   - "config" – BMC configuration (key = parameter name)
-type StorageHAL interface {
-	Read(ctx context.Context, namespace, key string) ([]byte, error)
-	Write(ctx context.Context, namespace, key string, data []byte) error
-	Delete(ctx context.Context, namespace, key string) error
-	Keys(ctx context.Context, namespace string) ([]string, error)
 }
 
 // IPConfig holds the BMC network interface configuration.

@@ -7,6 +7,10 @@ import (
 
 const SDRRecordHeaderSize int = 5
 
+// SDRCommandSetVersion is the SDR command-set version returned by Get SDR
+// Repository Info (§33.9) and stored in SDR record headers (§43).
+const SDRCommandSetVersion uint8 = 0x51
+
 // 43. Sensor Data Record Formats
 // SDRRecordType is a number representing the type of the record.
 type SDRRecordType uint8

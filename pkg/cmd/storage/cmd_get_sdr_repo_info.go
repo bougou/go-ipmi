@@ -40,6 +40,39 @@ func (req *GetSDRRepoInfoRequest) Command() types.Command {
 	return types.CommandGetSDRRepoInfo
 }
 
+func (res *GetSDRRepoInfoResponse) Pack() []byte {
+	out := make([]byte, 14)
+	types.PackUint8(res.SDRVersion, out, 0)
+	types.PackUint16L(res.RecordCount, out, 1)
+	types.PackUint16L(res.FreeSpaceBytes, out, 3)
+	types.PackUint32L(uint32(res.MostRecentAdditionTime.Unix()), out, 5)
+	types.PackUint32L(uint32(res.MostRecentEraseTime.Unix()), out, 9)
+	var b uint8
+	if res.SDROperationSupport.Overflow {
+		b = types.SetBit7(b)
+	}
+	if res.SDROperationSupport.SupportModalSDRRepoUpdate {
+		b = types.SetBit6(b)
+	}
+	if res.SDROperationSupport.SupportNonModalSDRRepoUpdate {
+		b = types.SetBit5(b)
+	}
+	if res.SDROperationSupport.SupportDeleteSDR {
+		b = types.SetBit3(b)
+	}
+	if res.SDROperationSupport.SupportPartialAddSDR {
+		b = types.SetBit2(b)
+	}
+	if res.SDROperationSupport.SupportReserveSDRRepo {
+		b = types.SetBit1(b)
+	}
+	if res.SDROperationSupport.SupportGetSDRRepoAllocInfo {
+		b = types.SetBit0(b)
+	}
+	types.PackUint8(b, out, 13)
+	return out
+}
+
 func (res *GetSDRRepoInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 14 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 14)

@@ -28,8 +28,28 @@ func (req *GetSDRRequest) Pack() []byte {
 	return msg
 }
 
+func (req *GetSDRRequest) Unpack(msg []byte) error {
+	if len(msg) < 6 {
+		return types.ErrUnpackedDataTooShortWith(len(msg), 6)
+	}
+	req.ReservationID, _, _ = types.UnpackUint16L(msg, 0)
+	req.RecordID, _, _ = types.UnpackUint16L(msg, 2)
+	req.ReadOffset, _, _ = types.UnpackUint8(msg, 4)
+	req.ReadBytes, _, _ = types.UnpackUint8(msg, 5)
+	return nil
+}
+
 func (req *GetSDRRequest) Command() types.Command {
 	return types.CommandGetSDR
+}
+
+func (res *GetSDRResponse) Pack() []byte {
+	out := make([]byte, 2+len(res.RecordData))
+	types.PackUint16L(res.NextRecordID, out, 0)
+	if len(res.RecordData) > 0 {
+		types.PackBytes(res.RecordData, out, 2)
+	}
+	return out
 }
 
 func (res *GetSDRResponse) Unpack(msg []byte) error {

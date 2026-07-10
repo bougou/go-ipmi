@@ -55,6 +55,9 @@ type BMC struct {
 	// v15Disabled disables IPMI v1.5 LAN sessions when true.
 	v15Disabled bool
 
+	// SDRRepo tracks SDR repository reservation state (§33.11).
+	SDRRepo *SDRRepoStore
+
 	hal   hal.HAL
 	clock clock.Clock
 }
@@ -173,6 +176,7 @@ func New(info DeviceInfo, guid [16]byte, h hal.HAL, opts ...Option) *BMC {
 		Channels:    NewChannelStore(),
 		Sessions:    NewSessionStore(clock.Real),
 		V15Sessions: NewV15SessionStore(clock.Real),
+		SDRRepo:     NewSDRRepoStore(),
 	}
 	for _, o := range opts {
 		o(b)

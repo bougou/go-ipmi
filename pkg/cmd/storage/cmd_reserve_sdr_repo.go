@@ -21,6 +21,12 @@ func (req *ReserveSDRRepoRequest) Pack() []byte {
 	return []byte{}
 }
 
+func (res *ReserveSDRRepoResponse) Pack() []byte {
+	out := make([]byte, 2)
+	types.PackUint16L(res.ReservationID, out, 0)
+	return out
+}
+
 func (res *ReserveSDRRepoResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 2)
