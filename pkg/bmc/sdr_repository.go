@@ -1,8 +1,7 @@
-package handlers
+package bmc
 
 import (
 	"context"
-	"errors"
 
 	"github.com/bougou/go-ipmi/pkg/clock"
 	"github.com/bougou/go-ipmi/pkg/cmd/storage"
@@ -13,37 +12,47 @@ import (
 const defaultSDRRepoSize = 64 * 1024
 
 // SDRRepository reads SDR records from [hal.SDRStore] and implements
-// repository semantics for Storage NetFn handlers.
+// repository semantics for Storage NetFn handlers (§33).
 type SDRRepository struct {
 	store hal.SDRStore
 	clk   clock.Clock
 }
 
-func newSDRRepository(store hal.SDRStore, clk clock.Clock) *SDRRepository {
+// NewSDRRepository returns a repository backed by store.
+func NewSDRRepository(store hal.SDRStore, clk clock.Clock) *SDRRepository {
 	if clk == nil {
 		clk = clock.Real
 	}
 	return &SDRRepository{store: store, clk: clk}
 }
 
+// RecordIDs returns the sorted list of stored record IDs.
 func (r *SDRRepository) RecordIDs(ctx context.Context) ([]uint16, error) {
 	return r.store.RecordIDs(ctx)
 }
 
 func (r *SDRRepository) usedBytes(ctx context.Context) (int, error) {
+	total, _, err := r.scanRecords(ctx)
+	return total, err
+}
+
+// scanRecords returns the total size across all records and the largest single record size.
+func (r *SDRRepository) scanRecords(ctx context.Context) (total, maxRec int, err error) {
 	ids, err := r.RecordIDs(ctx)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
-	total := 0
 	for _, id := range ids {
 		rec, err := r.store.Read(ctx, id)
 		if err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 		total += len(rec)
+		if len(rec) > maxRec {
+			maxRec = len(rec)
+		}
 	}
-	return total, nil
+	return total, maxRec, nil
 }
 
 // GetRecord returns the wire record and next Record ID for repository traversal.
@@ -85,6 +94,7 @@ func (r *SDRRepository) GetRecord(ctx context.Context, recordID uint16) (record 
 	return record, nextID, nil
 }
 
+// Info returns the SDR Repository Info response per §33.9.
 func (r *SDRRepository) Info(ctx context.Context) (*storage.GetSDRRepoInfoResponse, error) {
 	ids, err := r.RecordIDs(ctx)
 	if err != nil {
@@ -112,8 +122,9 @@ func (r *SDRRepository) Info(ctx context.Context) (*storage.GetSDRRepoInfoRespon
 	}, nil
 }
 
+// AllocInfo returns the SDR Repository Alloc Info response per §33.10.
 func (r *SDRRepository) AllocInfo(ctx context.Context) (*storage.GetSDRRepoAllocInfoResponse, error) {
-	used, err := r.usedBytes(ctx)
+	used, maxRec, err := r.scanRecords(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -124,15 +135,23 @@ func (r *SDRRepository) AllocInfo(ctx context.Context) (*storage.GetSDRRepoAlloc
 	if freeUnits < 0 {
 		freeUnits = 0
 	}
+	if maxRec > 255 {
+		maxRec = 255
+	}
+	maxRecSize := uint8(maxRec)
+	if maxRecSize < 64 {
+		maxRecSize = 64
+	}
 	return &storage.GetSDRRepoAllocInfoResponse{
 		PossibleAllocUnits: uint16(totalUnits),
 		AllocUnitsSize:     unitSize,
 		FreeAllocUnits:     uint16(freeUnits),
 		LargestFreeBlock:   uint16(freeUnits),
-		MaximumRecordSize:  64,
+		MaximumRecordSize:  maxRecSize,
 	}, nil
 }
 
-func isStorageMissing(err error) bool {
-	return errors.Is(err, hal.ErrNotSupported)
+// StorageMissing reports whether err indicates the backing store is absent.
+func StorageMissing(err error) bool {
+	return err == hal.ErrNotSupported
 }

@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 )
 
@@ -59,6 +60,151 @@ func TestPackCompactSensor_ParseRoundTrip(t *testing.T) {
 		t.Fatalf("type: got %v", sdr.RecordHeader.RecordType)
 	}
 	assertPackSDRRoundTrip(t, raw)
+}
+
+// TestGenericDeviceLocatorChannelNumber verifies channel encoding per IPMI
+// Table 43-6 (SDR Type 10h):
+//
+//	body[1] bit 0   = channel ms-bit (bit 3 of the 4-bit channel number)
+//	body[2] bits 7:5 = channel ls-3 bits (bits 2:0 of the channel number)
+func TestGenericDeviceLocatorChannelNumber(t *testing.T) {
+	const slaveAddr = uint8(0x50) // 7-bit slave in bits 7:1
+
+	for ch := uint8(0); ch < 16; ch++ {
+		t.Run(fmt.Sprintf("channel_%d", ch), func(t *testing.T) {
+			loc := &SDRGenericDeviceLocator{
+				DeviceAccessAddress: 0x00,
+				DeviceSlaveAddress:  slaveAddr,
+				ChannelNumber:       ch,
+				AccessLUN:           0x02,
+				PrivateBusID:        0x03,
+				DeviceType:          0x10,
+				EntityID:            0x07,
+				EntityInstance:      1,
+				DeviceIDTypeLength:  TypeLength(0xC0 | 3),
+				DeviceIDString:      []byte("DEV"),
+			}
+			raw := loc.Pack(0x0050)
+
+			parsed := &SDR{}
+			if err := parseSDRGenericLocator(raw, parsed); err != nil {
+				t.Fatalf("parse: %v", err)
+			}
+			if got := parsed.GenericDeviceLocator.ChannelNumber; got != ch {
+				t.Fatalf("round-trip: want %d got %d", ch, got)
+			}
+
+			body := raw[5:] // skip 5-byte SDR header
+			msBit := body[1] & 0x01
+			ls3 := (body[2] >> 5) & 0x07
+			wantMS := (ch >> 3) & 0x01
+			wantLS3 := ch & 0x07
+			if msBit != wantMS || ls3 != wantLS3 {
+				t.Fatalf("wire mismatch: ms-bit=%d ls-3=%d, want ms=%d ls-3=%d (body[1]=%#02x body[2]=%#02x)",
+					msBit, ls3, wantMS, wantLS3, body[1], body[2])
+			}
+			if decoded := (msBit << 3) | ls3; decoded != ch {
+				t.Fatalf("wire decode %d != channel %d", decoded, ch)
+			}
+
+			assertPackSDRRoundTrip(t, raw)
+		})
+	}
+
+	// Golden wire bytes per Table 43-6 (LUN=0, PrivateBusID=0).
+	golden := []struct {
+		ch       uint8
+		wantBody [2]byte // body[1], body[2]
+	}{
+		{5, [2]byte{0x50, 0xA0}},
+		{8, [2]byte{0x51, 0x00}},
+		{9, [2]byte{0x51, 0x20}},
+	}
+	for _, tc := range golden {
+		t.Run(fmt.Sprintf("golden_%d", tc.ch), func(t *testing.T) {
+			raw := (&SDRGenericDeviceLocator{
+				DeviceSlaveAddress: slaveAddr,
+				ChannelNumber:      tc.ch,
+				DeviceType:         0x10,
+				EntityID:           0x07,
+				DeviceIDTypeLength: TypeLength(0xC0 | 3),
+				DeviceIDString:     []byte("DEV"),
+			}).Pack(0x0050)
+			body := raw[5:]
+			if body[1] != tc.wantBody[0] || body[2] != tc.wantBody[1] {
+				t.Fatalf("channel %d: body[1:3]=%#02x %#02x, want %#02x %#02x",
+					tc.ch, body[1], body[2], tc.wantBody[0], tc.wantBody[1])
+			}
+		})
+	}
+}
+
+func TestEventOnlySharingFieldsRoundTrip(t *testing.T) {
+	raw := (&SDREventOnly{
+		GeneratorID:                    0x0020,
+		SensorNumber:                   0x02,
+		SensorEntityID:                 0x07,
+		SensorType:                     SensorTypeFan,
+		SensorEventReadingType:         EventReadingTypeThreshold,
+		SensorDirection:                0x02,
+		IDStringInstanceModifierType:   0x01,
+		ShareCount:                     3,
+		EntityInstanceSharing:          true,
+		IDStringInstanceModifierOffset: 0x15,
+		IDStringTypeLength:             TypeLength(0xC0 | 3),
+		IDStringBytes:                  []byte("Fan"),
+	}).Pack(0x20)
+
+	assertPackSDRRoundTrip(t, raw)
+
+	sdr, err := ParseSDR(raw, 0xffff)
+	if err != nil {
+		t.Fatalf("ParseSDR: %v", err)
+	}
+	eo := sdr.EventOnly
+	if eo.SensorDirection != 0x02 {
+		t.Fatalf("SensorDirection: want 0x02 got %#02x", eo.SensorDirection)
+	}
+	if eo.IDStringInstanceModifierType != 0x01 {
+		t.Fatalf("IDStringInstanceModifierType: want 0x01 got %#02x", eo.IDStringInstanceModifierType)
+	}
+	if eo.ShareCount != 3 {
+		t.Fatalf("ShareCount: want 3 got %d", eo.ShareCount)
+	}
+	if !eo.EntityInstanceSharing {
+		t.Fatal("EntityInstanceSharing: want true")
+	}
+	if eo.IDStringInstanceModifierOffset != 0x15 {
+		t.Fatalf("IDStringInstanceModifierOffset: want 0x15 got %#02x", eo.IDStringInstanceModifierOffset)
+	}
+}
+
+func TestGenericDeviceLocatorSlaveAddressStripsChannelBit(t *testing.T) {
+	const slaveAddr = uint8(0x50)
+	raw := (&SDRGenericDeviceLocator{
+		DeviceSlaveAddress: slaveAddr,
+		ChannelNumber:      9, // sets bit 0 in body[1]
+		DeviceType:         0x10,
+		EntityID:           0x07,
+		DeviceIDTypeLength: TypeLength(0xC0 | 3),
+		DeviceIDString:     []byte("DEV"),
+	}).Pack(0x0050)
+
+	body := raw[5:]
+	if body[1]&0x01 != 1 {
+		t.Fatalf("wire body[1] bit 0 should be set for channel 9, got %#02x", body[1])
+	}
+
+	sdr := &SDR{}
+	if err := parseSDRGenericLocator(raw, sdr); err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if got := sdr.GenericDeviceLocator.DeviceSlaveAddress; got != slaveAddr {
+		t.Fatalf("DeviceSlaveAddress: want %#02x (channel bit stripped), got %#02x", slaveAddr, got)
+	}
+	if got := sdr.GenericDeviceLocator.ChannelNumber; got != 9 {
+		t.Fatalf("ChannelNumber: want 9 got %d", got)
+	}
 }
 
 func TestPackSDR_AllRecordTypes(t *testing.T) {

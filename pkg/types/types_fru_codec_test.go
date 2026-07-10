@@ -21,13 +21,16 @@ func assertPackFRURoundTrip(t *testing.T, raw []byte) {
 }
 
 func TestPackFRU_ProductOnly(t *testing.T) {
-	data := PackFRU(FRUPackConfig{
+	data, err := PackFRU(FRUPackConfig{
 		Product: &FRUPackProduct{
 			Manufacturer: "Acme",
 			Name:         "TestBMC",
 			Version:      "1.0",
 		},
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(data) < int(FRUCommonHeaderSize) {
 		t.Fatalf("FRU too short: %d", len(data))
 	}
@@ -45,19 +48,90 @@ func TestPackFRU_ProductOnly(t *testing.T) {
 }
 
 func TestPackFRU_MultiArea(t *testing.T) {
-	data := PackFRU(FRUPackConfig{
+	data, err := PackFRU(FRUPackConfig{
 		Chassis: &FRUPackChassis{Type: 0x17},
 		Product: &FRUPackProduct{
 			Manufacturer: "Acme",
 			Name:         "TestBMC",
 		},
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	hdr := &FRUCommonHeader{}
 	if err := hdr.Unpack(data[:FRUCommonHeaderSize]); err != nil {
 		t.Fatal(err)
 	}
 	if hdr.ChassisOffset8B == 0 || hdr.ProductOffset8B == 0 {
 		t.Fatalf("expected chassis and product areas: %+v", hdr)
+	}
+	assertPackFRURoundTrip(t, data)
+}
+
+func TestFRUMultiRecord_HeaderChecksum(t *testing.T) {
+	rec := &FRUMultiRecord{
+		RecordType:    FRURecordType(0x00),
+		FormatVersion: 0,
+		RecordData:    bytes.Repeat([]byte{0x11}, 22),
+	}
+	wire := rec.Pack()
+	if len(wire) != 5+22 {
+		t.Fatalf("wire len: got %d want %d", len(wire), 5+22)
+	}
+	sum := 0
+	for _, b := range wire[:5] {
+		sum = (sum + int(b)) % 256
+	}
+	if sum != 0 {
+		t.Fatalf("header checksum invalid: sum=%d wire=% x", sum, wire[:5])
+	}
+	// FRU spec Table 17-2 example: bytes [0,0,22,9,225] sum to zero mod 256.
+	spec := []byte{0, 0, 22, 9, 225}
+	sum = 0
+	for _, b := range spec {
+		sum = (sum + int(b)) % 256
+	}
+	if sum != 0 {
+		t.Fatalf("spec example header sum: %d", sum)
+	}
+}
+
+func TestPackFRU_InternalUseArea(t *testing.T) {
+	// First data byte 0x02 must not be interpreted as a length field (FRU §9).
+	data, err := PackFRUInventory(&FRU{
+		CommonHeader: &FRUCommonHeader{FormatVersion: FRUFormatVersion},
+		InternalUseArea: &FRUInternalUseArea{
+			Data: []byte{0x02, 0xAA, 0xBB, 0xCC},
+		},
+		ProductInfoArea: &FRUProductInfoArea{
+			FormatVersion:          FRUFormatVersion,
+			ManufacturerTypeLength: fruASCIITypeLength([]byte("Acme")),
+			Manufacturer:           []byte("Acme"),
+			NameTypeLength:         fruASCIITypeLength([]byte("BMC")),
+			Name:                   []byte("BMC"),
+			PartModelTypeLength:    TypeLength(0xC0),
+			VersionTypeLength:      TypeLength(0xC0),
+			SerialNumberTypeLength: TypeLength(0xC0),
+			AssetTagTypeLength:     TypeLength(0xC0),
+			FRUFileIDTypeLength:    TypeLength(0xC0),
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed, err := ParseFRU(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if parsed.InternalUseArea == nil {
+		t.Fatal("missing internal use area")
+	}
+	wantData := []byte{0x02, 0xAA, 0xBB, 0xCC, 0, 0, 0} // padded to 8 bytes after format version
+	if !bytes.Equal(parsed.InternalUseArea.Data, wantData) {
+		t.Fatalf("internal data: got % x want % x", parsed.InternalUseArea.Data, wantData)
+	}
+	if parsed.InternalUseArea.FormatVersion != FRUFormatVersion {
+		t.Fatalf("format version: got %#02x", parsed.InternalUseArea.FormatVersion)
 	}
 	assertPackFRURoundTrip(t, data)
 }

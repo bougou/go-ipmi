@@ -106,18 +106,25 @@ func seedReferenceStorage(ctx context.Context, h hal.HAL) {
 		return
 	}
 	if fru := store.FRU(); fru != nil {
-		_ = fru.Write(ctx, 0, types.PackFRU(types.FRUPackConfig{
+		fruData, err := types.PackFRU(types.FRUPackConfig{
 			Product: &types.FRUPackProduct{
 				Manufacturer: "go-ipmi",
 				Name:         "reference-bmc",
 				Version:      "1.0",
 				Serial:       "e2e",
 			},
-		}))
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "goipmi-server: seed reference FRU pack: %v\n", err)
+		} else if err := fru.Write(ctx, 0, fruData); err != nil {
+			fmt.Fprintf(os.Stderr, "goipmi-server: seed reference FRU: %v\n", err)
+		}
 	}
 	if sdr := store.SDR(); sdr != nil {
-		_ = sdr.Write(ctx, 1, types.PackMCLocator(types.MCLocatorPackOpts{
+		if err := sdr.Write(ctx, 1, types.PackMCLocator(types.MCLocatorPackOpts{
 			RecordID: 1,
-		}))
+		})); err != nil {
+			fmt.Fprintf(os.Stderr, "goipmi-server: seed reference SDR: %v\n", err)
+		}
 	}
 }

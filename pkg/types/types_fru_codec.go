@@ -39,11 +39,14 @@ func ParseFRU(data []byte) (*FRU, error) {
 		return data[off : off+areaLen], nil
 	}
 
-	if b, err := sliceArea(hdr.InternalOffset8B); err != nil {
-		return nil, fmt.Errorf("parse fru internal area: %w", err)
-	} else if b != nil {
+	if hdr.InternalOffset8B > 0 {
+		end, err := fruAreaEnd(data, hdr, hdr.InternalOffset8B)
+		if err != nil {
+			return nil, fmt.Errorf("parse fru internal area: %w", err)
+		}
+		off := int(hdr.InternalOffset8B) * 8
 		area := &FRUInternalUseArea{}
-		if err := area.Unpack(b); err != nil {
+		if err := area.Unpack(data[off:end]); err != nil {
 			return nil, fmt.Errorf("parse fru internal area: %w", err)
 		}
 		fru.InternalUseArea = area
@@ -198,16 +201,43 @@ func finalizeFRUArea(body []byte, unused []byte) []byte {
 	return padded
 }
 
-func finalizeFRURawArea(body []byte, unused []byte) []byte {
-	return finalizeFRUArea(body, unused)
-}
-
 func fruPackChecksum(data []byte) uint8 {
 	sum := 0
 	for _, b := range data {
 		sum = (sum + int(b)) % 256
 	}
 	return uint8(-sum)
+}
+
+// fruAreaEnd returns the byte offset where the area at start8B ends, bounded by
+// the next present area offset in the common header (FRU §8, §9).
+func fruAreaEnd(data []byte, hdr *FRUCommonHeader, start8B uint8) (int, error) {
+	off := int(start8B) * 8
+	if off >= len(data) {
+		return 0, fmt.Errorf("area at offset %#x: beyond data", off)
+	}
+	end := len(data)
+	for _, next8B := range []uint8{
+		hdr.ChassisOffset8B,
+		hdr.BoardOffset8B,
+		hdr.ProductOffset8B,
+		hdr.MultiRecordsOffset8B,
+	} {
+		if next8B > start8B {
+			candidate := int(next8B) * 8
+			if candidate < end {
+				end = candidate
+			}
+		}
+	}
+	size := end - off
+	if size < 8 {
+		return 0, fmt.Errorf("area at offset %#x: size %d below minimum 8", off, size)
+	}
+	if size%8 != 0 {
+		return 0, fmt.Errorf("area at offset %#x: size %d not multiple of 8", off, size)
+	}
+	return end, nil
 }
 
 func appendFRUArea(out []byte, cursor *uint16, offsetField *uint8, data []byte) []byte {

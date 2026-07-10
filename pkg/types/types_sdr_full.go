@@ -382,9 +382,9 @@ func parseSDRFullSensor(data []byte, sdr *SDR) error {
 	s.SensorEventReadingType = EventReadingType(eventReadingType)
 
 	mask := Mask{}
-	b14, _, _ := UnpackUint16(data, 14)
-	b16, _, _ := UnpackUint16(data, 16)
-	b18, _, _ := UnpackUint16(data, 18)
+	b14, _, _ := UnpackUint16L(data, 14)
+	b16, _, _ := UnpackUint16L(data, 16)
+	b18, _, _ := UnpackUint16L(data, 18)
 	mask.ParseAssertLower(b14)
 	mask.ParseDeassertUpper(b16)
 	mask.ParseReading(b18)

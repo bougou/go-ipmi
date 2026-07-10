@@ -35,7 +35,7 @@ type FRUPackProduct struct {
 }
 
 // PackFRU serialises a FRU inventory area per Platform Management FRU v1.0.
-func PackFRU(cfg FRUPackConfig) []byte {
+func PackFRU(cfg FRUPackConfig) ([]byte, error) {
 	fru := &FRU{CommonHeader: &FRUCommonHeader{FormatVersion: FRUFormatVersion}}
 
 	if cfg.Chassis != nil {
@@ -84,9 +84,5 @@ func PackFRU(cfg FRUPackConfig) []byte {
 		}
 	}
 
-	out, err := PackFRUInventory(fru)
-	if err != nil {
-		return nil
-	}
-	return out
+	return PackFRUInventory(fru)
 }

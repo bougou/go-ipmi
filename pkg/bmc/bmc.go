@@ -7,6 +7,7 @@ package bmc
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/bougou/go-ipmi/pkg/clock"
 	"github.com/bougou/go-ipmi/pkg/hal"
@@ -57,6 +58,9 @@ type BMC struct {
 
 	// SDRRepo tracks SDR repository reservation state (§33.11).
 	SDRRepo *SDRRepoStore
+	// sdrRepo is the lazily-initialised SDR record repository cache (§33).
+	sdrRepo     *SDRRepository
+	sdrRepoOnce sync.Once
 
 	hal   hal.HAL
 	clock clock.Clock
@@ -203,3 +207,19 @@ func (b *BMC) HAL() hal.HAL { return b.hal }
 
 // Clock returns the time source used by this BMC.
 func (b *BMC) Clock() clock.Clock { return b.clock }
+
+// SDRRepository returns the cached SDR record repository, or nil when
+// the backing HAL provides no SDR storage.
+func (b *BMC) SDRRepository() *SDRRepository {
+	b.sdrRepoOnce.Do(func() {
+		if b.hal == nil {
+			return
+		}
+		store := b.hal.Storage()
+		if store == nil || store.SDR() == nil {
+			return
+		}
+		b.sdrRepo = NewSDRRepository(store.SDR(), b.clock)
+	})
+	return b.sdrRepo
+}
