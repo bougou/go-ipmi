@@ -39,13 +39,23 @@ func RegisterAppHandlers(r *Registry) {
 // Response format follows Table 20-2 of the IPMI 2.0 spec.
 func handleGetDeviceID(ctx context.Context, hctx *HandlerContext, _ []byte) ([]byte, CompletionCode, error) {
 	info := hctx.BMC.Info
+	deviceRev := info.DeviceRevision & 0x0F
+	additional := info.AdditionalDeviceSupport
+	if store := storageHAL(hctx); store != nil {
+		if hasSDRRecords(ctx, store) {
+			additional |= 0x02 // bit 1: SDR Repository Device (Table 20-2)
+		}
+		if hasFRUDevice(ctx, store, 0) {
+			additional |= 0x08 // bit 3: FRU Inventory Device (Table 20-2)
+		}
+	}
 	resp := make([]byte, 11)
 	resp[0] = info.DeviceID
-	resp[1] = info.DeviceRevision & 0x0F // bits 3:0 only; bit 7 = SDR present (set separately)
-	resp[2] = info.FirmwareMajor & 0x7F  // bits 6:0; bit 7 = update in progress
-	resp[3] = info.FirmwareMinor         // BCD
-	resp[4] = info.IPMIVersion           // 0x20 for IPMI 2.0
-	resp[5] = info.AdditionalDeviceSupport
+	resp[1] = deviceRev
+	resp[2] = info.FirmwareMajor & 0x7F // bits 6:0; bit 7 = update in progress
+	resp[3] = info.FirmwareMinor        // BCD
+	resp[4] = info.IPMIVersion          // 0x20 for IPMI 2.0
+	resp[5] = additional
 	// Manufacturer ID: 3 bytes LS-first (bits 23:0)
 	mid := info.ManufacturerID
 	resp[6] = uint8(mid)

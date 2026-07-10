@@ -27,6 +27,16 @@ func (req *GetSDRRepoAllocInfoRequest) Command() types.Command {
 	return types.CommandGetSDRRepoAllocInfo
 }
 
+func (res *GetSDRRepoAllocInfoResponse) Pack() []byte {
+	out := make([]byte, 9)
+	types.PackUint16L(res.PossibleAllocUnits, out, 0)
+	types.PackUint16L(res.AllocUnitsSize, out, 2)
+	types.PackUint16L(res.FreeAllocUnits, out, 4)
+	types.PackUint16L(res.LargestFreeBlock, out, 6)
+	types.PackUint8(res.MaximumRecordSize, out, 8)
+	return out
+}
+
 func (res *GetSDRRepoAllocInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 9 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 9)

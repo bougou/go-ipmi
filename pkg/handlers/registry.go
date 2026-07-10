@@ -32,6 +32,10 @@ const (
 	CodeRequestDataTruncated CompletionCode = 0xC6 // C6h: Request data truncated.
 	CodeRequestDataInvalid   CompletionCode = 0xCC // CCh: Invalid data field in Request.
 
+	CodeReservationCanceled            CompletionCode = 0xC5 // C5h: Reservation canceled or invalid ID (§5.2 Table 5-2).
+	CodeCannotReturnRequestedDataBytes CompletionCode = 0xCA // CAh: Cannot return number of requested data bytes (§5.2 Table 5-2).
+	CodeRequestedRecordNotPresent      CompletionCode = 0xCB // CBh: Requested sensor, data, or record not present (§5.2 Table 5-2).
+
 	CodeInsufficientPrivilege CompletionCode = 0xD4 // D4h: Insufficient privilege level or security restriction.
 	CodeNotSupportedInState   CompletionCode = 0xD5 // D5h: Command not supported in present state.
 

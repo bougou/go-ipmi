@@ -122,4 +122,10 @@ e2e_run_test "lanplus chassis bootdev pxe" run_ipmitool \
 	-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lanplus \
 	chassis bootdev pxe || ((failures++)) || true
 
+e2e_run_storage_cases_lanplus failures run_ipmitool \
+	-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lanplus
+
+e2e_run_storage_cases_lan failures run_ipmitool \
+	-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lan -A MD5
+
 e2e_report "Server E2E" "${failures}"

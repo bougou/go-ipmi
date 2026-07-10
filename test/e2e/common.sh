@@ -60,6 +60,26 @@ e2e_run_chassis_cases_lan() {
 	e2e_run_test "lan chassis power off" "$@" chassis power off || ((_fail++)) || true
 }
 
+# Run FRU/SDR read cases over IPMI v2.0 (ipmitool -I lanplus).
+e2e_run_storage_cases_lanplus() {
+	local -n _fail="${1:?failures counter variable name required}"
+	shift
+	e2e_run_test "lanplus fru print 0" "$@" fru print 0 || ((_fail++)) || true
+	e2e_run_test "lanplus fru list" "$@" fru list || ((_fail++)) || true
+	e2e_run_test "lanplus sdr info" "$@" sdr info || ((_fail++)) || true
+	e2e_run_test "lanplus sdr list" "$@" sdr list || ((_fail++)) || true
+}
+
+# Run FRU/SDR read cases over IPMI v1.5 (ipmitool -I lan -A MD5).
+e2e_run_storage_cases_lan() {
+	local -n _fail="${1:?failures counter variable name required}"
+	shift
+	e2e_run_test "lan fru print 0" "$@" fru print 0 || ((_fail++)) || true
+	e2e_run_test "lan fru list" "$@" fru list || ((_fail++)) || true
+	e2e_run_test "lan sdr info" "$@" sdr info || ((_fail++)) || true
+	e2e_run_test "lan sdr list" "$@" sdr list || ((_fail++)) || true
+}
+
 e2e_report() {
 	local suite="$1"
 	local failures="$2"

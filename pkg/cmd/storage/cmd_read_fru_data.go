@@ -30,6 +30,25 @@ func (req *ReadFRUDataRequest) Pack() []byte {
 	return out
 }
 
+func (req *ReadFRUDataRequest) Unpack(msg []byte) error {
+	if len(msg) < 4 {
+		return types.ErrUnpackedDataTooShortWith(len(msg), 4)
+	}
+	req.FRUDeviceID, _, _ = types.UnpackUint8(msg, 0)
+	req.ReadOffset, _, _ = types.UnpackUint16L(msg, 1)
+	req.ReadCount, _, _ = types.UnpackUint8(msg, 3)
+	return nil
+}
+
+func (res *ReadFRUDataResponse) Pack() []byte {
+	out := make([]byte, 1+len(res.Data))
+	types.PackUint8(res.CountReturned, out, 0)
+	if len(res.Data) > 0 {
+		types.PackBytes(res.Data, out, 1)
+	}
+	return out
+}
+
 func (res *ReadFRUDataResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 1)

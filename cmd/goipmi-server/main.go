@@ -24,9 +24,11 @@ import (
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/clock"
+	"github.com/bougou/go-ipmi/pkg/hal"
 	"github.com/bougou/go-ipmi/pkg/hal/mock"
 	"github.com/bougou/go-ipmi/pkg/server"
 	"github.com/bougou/go-ipmi/pkg/transport/udp"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 func main() {
@@ -55,7 +57,10 @@ func run() error {
 	var guid [16]byte
 	copy(guid[:], "go-ipmi-e2e\x00\x00\x00\x00")
 
-	b := bmc.New(info, guid, mock.New(), bmc.WithClock(clock.Real))
+	halImpl := mock.New()
+	seedReferenceStorage(context.Background(), halImpl)
+
+	b := bmc.New(info, guid, halImpl, bmc.WithClock(clock.Real))
 	applyRuntimeConfig(b, cfg)
 
 	user, err := b.Users.Add(2, cfg.User)
@@ -93,4 +98,26 @@ func run() error {
 	}
 	fmt.Println("goipmi-server: stopped")
 	return nil
+}
+
+func seedReferenceStorage(ctx context.Context, h hal.HAL) {
+	store := h.Storage()
+	if store == nil {
+		return
+	}
+	if fru := store.FRU(); fru != nil {
+		_ = fru.Write(ctx, 0, types.PackFRU(types.FRUPackConfig{
+			Product: &types.FRUPackProduct{
+				Manufacturer: "go-ipmi",
+				Name:         "reference-bmc",
+				Version:      "1.0",
+				Serial:       "e2e",
+			},
+		}))
+	}
+	if sdr := store.SDR(); sdr != nil {
+		_ = sdr.Write(ctx, 1, types.PackMCLocator(types.MCLocatorPackOpts{
+			RecordID: 1,
+		}))
+	}
 }

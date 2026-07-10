@@ -116,6 +116,7 @@ func NewServer(b *bmc.BMC, conn transport.PacketConn, opts ...ServerOption) *Ser
 	handlers.RegisterAppHandlers(reg)
 	handlers.RegisterSessionHandlers(reg)
 	handlers.RegisterChassisHandlers(reg)
+	handlers.RegisterStorageHandlers(reg)
 
 	s := &Server{
 		bmc:     b,

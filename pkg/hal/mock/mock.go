@@ -31,7 +31,7 @@ func New() *HAL {
 	return &HAL{
 		chassis: &Chassis{},
 		sensors: &Sensors{},
-		storage: &Storage{data: map[string]map[string][]byte{}},
+		storage: &Storage{},
 		network: &Network{},
 		gpio:    &GPIO{levels: map[string]bool{}, watchers: map[string][]func(bool){}},
 		i2c:     &I2C{},
@@ -193,62 +193,6 @@ func (s *Sensors) List(_ context.Context) ([]hal.SensorDescriptor, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.Descs, nil
-}
-
-// --- Storage ---
-
-// Storage is the mock [hal.StorageHAL]; it stores data in a plain map.
-type Storage struct {
-	mu   sync.RWMutex
-	data map[string]map[string][]byte
-}
-
-func (s *Storage) ns(namespace string) map[string][]byte {
-	m, ok := s.data[namespace]
-	if !ok {
-		m = map[string][]byte{}
-		s.data[namespace] = m
-	}
-	return m
-}
-
-func (s *Storage) Read(_ context.Context, ns, key string) ([]byte, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	v, ok := s.data[ns][key]
-	if !ok {
-		return nil, hal.ErrNotSupported
-	}
-	cp := make([]byte, len(v))
-	copy(cp, v)
-	return cp, nil
-}
-
-func (s *Storage) Write(_ context.Context, ns, key string, data []byte) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	cp := make([]byte, len(data))
-	copy(cp, data)
-	s.ns(ns)[key] = cp
-	return nil
-}
-
-func (s *Storage) Delete(_ context.Context, ns, key string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	delete(s.ns(ns), key)
-	return nil
-}
-
-func (s *Storage) Keys(_ context.Context, ns string) ([]string, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	m := s.data[ns]
-	out := make([]string, 0, len(m))
-	for k := range m {
-		out = append(out, k)
-	}
-	return out, nil
 }
 
 // --- Network ---
