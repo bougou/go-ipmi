@@ -124,6 +124,7 @@ func handleChassisIdentify(ctx context.Context, hctx *HandlerContext, req []byte
 
 // handleSetSystemBootOptions implements Set System Boot Options (Chassis 0x08,
 // spec §28.12 Table 28-12).  Supported parameter selectors:
+//   - 0x03: BMC boot flag valid bit clearing (accepted as no-op)
 //   - 0x04: Boot Info Acknowledge (§28.14 Table 28-14 param #4)
 //   - 0x05: Boot Flags (§28.14 Table 28-14 param #5)
 //
@@ -171,6 +172,18 @@ func handleSetSystemBootOptions(ctx context.Context, hctx *HandlerContext, req [
 			return nil, CodeRequestDataTruncated, nil
 		}
 		return nil, codeFromHalErr(ch.SetBootFlags(ctx, &flags)), nil
+
+	case types.BootOptionParamSelector_BMCBootFlagValidBitClear:
+		// Parameter #3 (§28.14 Table 28-14) suppresses the conditions under
+		// which the BMC auto-clears the boot flags valid bit: the 60-second
+		// Chassis Control timeout (bit 3), plus resets/power cycles caused by
+		// PEF, watchdog timeout, pushbutton/soft-reset, or power-button/wake
+		// events (bits 4/2/1/0). The reference BMC never auto-clears the valid
+		// bit under any of these conditions, so every "don't clear" request is
+		// trivially satisfied. Accept it instead of returning 80h — clients
+		// that disable the timeout before setting boot flags abort on an
+		// error completion code.
+		return nil, CodeOK, nil
 
 	default:
 		// Per spec Table 28-12: unimplemented parameter → 80h.
