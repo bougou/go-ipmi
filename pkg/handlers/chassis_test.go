@@ -156,6 +156,35 @@ func TestHandleSetSystemBootOptions_BootFlags(t *testing.T) {
 	}
 }
 
+// TestHandleSetSystemBootOptions_BootFlagValidBitClear asserts parameter #3
+// "BMC boot flag valid bit clearing" (§28.14 Table 28-14) is accepted as a
+// no-op for any payload shape: 0x08 suppresses only the 60-second timeout,
+// 0x1f suppresses every condition, and an empty payload toggles no bits.
+// The reference BMC never auto-clears the valid bit, so CodeOK is the
+// truthful answer and the request must not reach the HAL.
+func TestHandleSetSystemBootOptions_BootFlagValidBitClear(t *testing.T) {
+	m := mock.New()
+	b := newTestBMCWithMock(m)
+	ch := b.HAL().Chassis().(*mock.Chassis)
+	hctx := &HandlerContext{BMC: b}
+
+	selector := byte(types.BootOptionParamSelector_BMCBootFlagValidBitClear)
+	for _, req := range [][]byte{
+		{selector, 0x08},
+		{selector, 0x1f},
+		{selector},
+		{0x80 | selector, 0x08}, // mark-invalid bit accepted
+	} {
+		_, cc, err := handleSetSystemBootOptions(context.Background(), hctx, req)
+		if err != nil || cc != CodeOK {
+			t.Fatalf("req=%x: want CodeOK, got cc=%d err=%v", req, cc, err)
+		}
+	}
+	if ch.BootFlags != nil {
+		t.Fatalf("no HAL side effect expected, HAL received %+v", ch.BootFlags)
+	}
+}
+
 func TestHandleGetSystemBootOptions_BootFlags(t *testing.T) {
 	m := mock.New()
 	b := newTestBMCWithMock(m)

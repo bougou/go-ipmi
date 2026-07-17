@@ -100,4 +100,23 @@ e2e_run_chassis_cases_lanplus failures run_ipmitool \
 e2e_run_chassis_cases_lan failures run_ipmitool \
 	-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lan -A MD5
 
+# Set System Boot Options param #3 (spec Table 28-14, BMC boot flag valid bit
+# clearing) must be accepted as a no-op: the reference BMC never auto-clears
+# the boot flags valid bit, so "don't clear" requests are trivially satisfied.
+# Clients such as OpenStack Ironic send raw 0x00 0x08 0x03 0x08 before every
+# set_boot_device and abort on an 80h completion code.
+e2e_run_test "lanplus boot flag valid bit clearing (param 3)" run_ipmitool \
+	-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lanplus \
+	raw 0x00 0x08 0x03 0x08 || ((failures++)) || true
+
+e2e_run_test "lan boot flag valid bit clearing (param 3)" run_ipmitool \
+	-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lan -A MD5 \
+	raw 0x00 0x08 0x03 0x08 || ((failures++)) || true
+
+# The follow-up step of the client sequence above: after disabling the 60s
+# timeout, set the boot device (param #5).
+e2e_run_test "lanplus chassis bootdev pxe" run_ipmitool \
+	-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lanplus \
+	chassis bootdev pxe || ((failures++)) || true
+
 e2e_report "Server E2E" "${failures}"
