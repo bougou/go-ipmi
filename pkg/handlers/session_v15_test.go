@@ -152,6 +152,16 @@ func TestV15SessionActivationFlow(t *testing.T) {
 	if got.OutboundSeq != 0x01020304 {
 		t.Fatalf("outbound seq: want 0x01020304, got 0x%08x", got.OutboundSeq)
 	}
+	returnedInbound := binary.LittleEndian.Uint32(activateResp[5:9])
+	if returnedInbound == 0 {
+		t.Fatal("Activate Session must return a non-zero starting inbound seq")
+	}
+	if got.InboundSeq != returnedInbound-1 {
+		t.Fatalf("InboundSeq high-water: want 0x%08x (returned-1), got 0x%08x", returnedInbound-1, got.InboundSeq)
+	}
+	if !bmc.V15InboundSeqValid(got, returnedInbound) {
+		t.Fatalf("returned inbound seq 0x%08x must be acceptable as the first console packet", returnedInbound)
+	}
 }
 
 func TestActivateSessionRejectsChallengeMismatch(t *testing.T) {

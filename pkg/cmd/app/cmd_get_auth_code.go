@@ -1,13 +1,11 @@
 package app
 
-import
+import "github.com/bougou/go-ipmi/pkg/types"
 
-// see 22.21
-//
-// This command is used to send a block of data to the BMC, whereupon the BMC will
-// return a hash of the data together concatenated with the internally stored password for the given channel and user
-	"github.com/bougou/go-ipmi/pkg/types"
-
+// GetAuthCodeRequest sends a block of data to the BMC, whereupon the BMC will
+// return a hash of the data together concatenated with the internally stored
+// password for the given channel and user.
+// See 22.21.
 type GetAuthCodeRequest struct {
 	AuthType types.AuthType
 

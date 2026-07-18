@@ -113,6 +113,8 @@ echo ""
 echo "========================================"
 echo " IPMI v1.5 / RMCP (-I lan)"
 echo "========================================"
-e2e_run_chassis_cases failures "${GOIPMI_BASE[@]}" -I lan
+# -R 0: goipmi additional-retries; exercise Activate→first-packet against a
+# third-party simulator without retransmission masking timeouts.
+e2e_run_chassis_cases failures "${GOIPMI_BASE[@]}" -I lan -R 0
 
 e2e_report "Client E2E" "${failures}"

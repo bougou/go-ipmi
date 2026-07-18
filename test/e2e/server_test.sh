@@ -97,8 +97,11 @@ failures=0
 e2e_run_chassis_cases_lanplus failures run_ipmitool \
 	-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lanplus
 
+# -R 1: single attempt (ipmitool ignores -R 0). First authenticated packet
+# after Activate Session must succeed immediately (starting inbound seq N).
+# Default retries hide the ~2s stall when that packet is dropped.
 e2e_run_chassis_cases_lan failures run_ipmitool \
-	-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lan -A MD5
+	-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lan -A MD5 -R 1
 
 # Set System Boot Options param #3 (spec Table 28-14, BMC boot flag valid bit
 # clearing) must be accepted as a no-op: the reference BMC never auto-clears
@@ -110,7 +113,7 @@ e2e_run_test "lanplus boot flag valid bit clearing (param 3)" run_ipmitool \
 	raw 0x00 0x08 0x03 0x08 || ((failures++)) || true
 
 e2e_run_test "lan boot flag valid bit clearing (param 3)" run_ipmitool \
-	-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lan -A MD5 \
+	-H 127.0.0.1 -p "${GOIPMI_SERVER_PORT}" -U "${GOIPMI_USER}" -P "${GOIPMI_PASS}" -I lan -A MD5 -R 1 \
 	raw 0x00 0x08 0x03 0x08 || ((failures++)) || true
 
 # The follow-up step of the client sequence above: after disabling the 60s
