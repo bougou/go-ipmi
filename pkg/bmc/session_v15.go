@@ -202,6 +202,14 @@ func (s *V15SessionStore) CountActiveSessionsWithMaxPrivilegeAtLeast(min Privile
 // Activate transitions a pending session to active with a new permanent ID.
 // maxPrivilege is the requested ceiling; initial privilege is USER per §18.16
 // (Callback when max is Callback).
+//
+// inboundSeq is the Activate Session response "Session inbound sequence number"
+// (spec §18.15 / §6.12.9): the starting sequence the remote console must use on
+// its first authenticated packet. InboundSeq on the session tracks the highest
+// sequence already accepted, so it is seeded to inboundSeq-1 (wrapping) with an
+// empty receive bitmap — otherwise the first packet (seq == inboundSeq) is
+// rejected as a duplicate and clients such as ipmitool stall for a full LAN
+// timeout before retrying with inboundSeq+1.
 func (s *V15SessionStore) Activate(pending *V15Session, permanentID, inboundSeq, outboundSeq uint32, maxPrivilege PrivilegeLevel) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -226,7 +234,11 @@ func (s *V15SessionStore) Activate(pending *V15Session, permanentID, inboundSeq,
 
 	pending.SessionID = permanentID
 	pending.State = V15SessionStateActive
-	pending.InboundSeq = inboundSeq
+	// Seq 0 is reserved for pre-session; never advertise/seed it as a start.
+	if inboundSeq == 0 {
+		inboundSeq = 1
+	}
+	pending.InboundSeq = inboundSeq - 1
 	pending.InboundRcvd = 0
 	pending.OutboundSeq = outboundSeq
 	pending.PrivilegeLevel = initialPriv
@@ -358,10 +370,18 @@ func V15InboundSeqValid(sess *V15Session, seq uint32) bool {
 }
 
 // NextOutboundSeq returns the sequence number for the current outbound message
-// and advances the counter for the next one.
+// and advances the counter for the next one. Sequence 0 is reserved for
+// pre-session packets and is skipped on wrap (§6.12.9).
 func (sess *V15Session) NextOutboundSeq() uint32 {
+	if sess.OutboundSeq == 0 {
+		sess.OutboundSeq = 1
+	}
 	seq := sess.OutboundSeq
 	sess.OutboundSeq++
+	// fix overflow
+	if sess.OutboundSeq == 0 {
+		sess.OutboundSeq = 1
+	}
 	return seq
 }
 

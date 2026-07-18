@@ -64,7 +64,9 @@ failures=0
 e2e_run_chassis_cases_lanplus failures \
 	"${GOIPMI}" -H 127.0.0.1 -p "${PORT}" -U "${USER}" -P "${PASS}" -I lanplus
 
+# -R 0: goipmi retryCount is additional retries (0 = one attempt). Unlike
+# ipmitool, -R 1 here would still allow one retransmission and hide the bug.
 e2e_run_chassis_cases_lan failures \
-	"${GOIPMI}" -H 127.0.0.1 -p "${PORT}" -U "${USER}" -P "${PASS}" -I lan
+	"${GOIPMI}" -H 127.0.0.1 -p "${PORT}" -U "${USER}" -P "${PASS}" -I lan -R 0
 
 e2e_report "Self E2E" "${failures}"

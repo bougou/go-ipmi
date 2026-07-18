@@ -683,9 +683,22 @@ func (c *Client) ActivateSession(ctx context.Context) (response *app.ActivateSes
 
 	c.session.v15.sessionID = response.SessionID
 
-	c.session.v15.inSeq = response.InitialInboundSequenceNumber
+	// Seed to N-1 so the pre-increment in genSession15 emits N on the first
+	// post-Activate request (spec §18.15 / §6.12.9).
+	c.session.v15.inSeq = v15SeedInSeq(response.InitialInboundSequenceNumber)
 
 	return
+}
+
+// v15SeedInSeq returns the inSeq high-water to store after Activate so the
+// next pre-increment emits starting. Seq 0 is reserved; a non-compliant BMC
+// returning 0 is remapped to 1 (same as GenerateInboundSeq) so the first
+// packet is 1 rather than wrapping through 0xffffffff to 0.
+func v15SeedInSeq(starting uint32) uint32 {
+	if starting == 0 {
+		starting = 1
+	}
+	return starting - 1
 }
 
 func (c *Client) CloseSession(ctx context.Context, request *app.CloseSessionRequest) (response *app.CloseSessionResponse, err error) {

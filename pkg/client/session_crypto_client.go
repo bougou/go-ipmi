@@ -25,7 +25,12 @@ func (c *Client) genSession15(rawPayload []byte) (*types.Session15, error) {
 	}
 
 	if c.session.v15.active {
-		c.session.v15.inSeq += 1
+		c.session.v15.inSeq++
+		// Spec reserves sequence 0 for pre-session packets; skip on wrap
+		// (same as ipmitool lan.c).
+		if c.session.v15.inSeq == 0 {
+			c.session.v15.inSeq = 1
+		}
 		sessionHeader.Sequence = c.session.v15.inSeq
 	}
 

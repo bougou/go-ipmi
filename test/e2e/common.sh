@@ -43,7 +43,15 @@ e2e_run_chassis_cases_lanplus() {
 	e2e_run_test "lanplus chassis power off" "$@" chassis power off || ((_fail++)) || true
 }
 
-# Run chassis cases over IPMI v1.5 (ipmitool -I lan -A MD5).
+# Run chassis cases over IPMI v1.5 (ipmitool -I lan -A MD5 / goipmi -I lan).
+#
+# Pass a no-retransmit retry count so the first post-Activate packet must
+# succeed on the first attempt. The flag value differs by client:
+#   ipmitool: -R 1  (total attempts; -R 0 is ignored and remapped to 4)
+#   goipmi:   -R 0  (additional retries; 0 means one attempt only)
+# With default retries, an Activate inbound-seq off-by-one (server rejects
+# starting seq N, client retries with N+1 after ~2s) still eventually passes
+# and hides the stall that ipmitool users see.
 e2e_run_chassis_cases_lan() {
 	local -n _fail="${1:?failures counter variable name required}"
 	shift
