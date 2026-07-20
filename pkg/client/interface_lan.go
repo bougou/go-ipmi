@@ -159,13 +159,23 @@ func isIPMIPayloadLANRequest(req types.Request) bool {
 func (c *Client) tryMatchIPMILANResponse(recv []byte, wantSeq, wantCmd uint8) (bool, error) {
 	rmcp := &types.Rmcp{}
 	if err := rmcp.Unpack(recv); err != nil {
+		c.DebugfYellow("drop recv: rmcp unpack failed: %s\n", err)
+		c.DebugBytes("dropped recv (rmcp unpack failed)", recv, 16)
 		return false, nil
 	}
 	ipmiRes, err := c.parseIPMIResponseFromRmcp(rmcp)
 	if err != nil {
+		c.DebugfYellow("drop recv: parseIPMIResponseFromRmcp failed: %s\n", err)
+		c.DebugBytes("dropped recv (ipmi unpack failed)", recv, 16)
 		return false, nil
 	}
-	return ipmiRes.RequesterSequence == wantSeq && ipmiRes.Command == wantCmd, nil
+	if ipmiRes.RequesterSequence != wantSeq || ipmiRes.Command != wantCmd {
+		c.DebugfYellow("drop recv: mismatch (got rqSeq %#02x cmd %#02x, want rqSeq %#02x cmd %#02x)\n",
+			ipmiRes.RequesterSequence, ipmiRes.Command, wantSeq, wantCmd)
+		c.DebugBytes("dropped recv (rqSeq/cmd mismatch)", recv, 16)
+		return false, nil
+	}
+	return true, nil
 }
 
 func (c *Client) exchangeLAN(ctx context.Context, request types.Request, response types.Response) error {

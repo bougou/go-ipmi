@@ -687,6 +687,14 @@ func (c *Client) ActivateSession(ctx context.Context) (response *app.ActivateSes
 	// post-Activate request (spec §18.15 / §6.12.9).
 	c.session.v15.inSeq = v15SeedInSeq(response.InitialInboundSequenceNumber)
 
+	// Spec §22.17: the AuthType in the Activate Session response is the auth
+	// type the BMC wants used for the remainder of the session — it may
+	// differ from what we requested (some BMCs, e.g. ASUS, return None even
+	// when the session was activated with MD5). Adopt it so subsequent
+	// packets are framed with the AuthType the BMC expects; otherwise it
+	// silently drops them. Matches ipmitool behaviour.
+	c.session.authType = response.AuthType
+
 	return
 }
 
