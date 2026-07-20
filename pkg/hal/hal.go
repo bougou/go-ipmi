@@ -11,7 +11,7 @@
 // The only concrete Go packages used in the interface signatures are from the
 // standard library and only primitives (context, error, []byte, basic types).
 // This makes it possible to implement HAL for:
-//   - Linux via sysfs / hwmon / i2c-dev / libgpiod (see pkg/hal/linux)
+//   - Linux via sysfs / hwmon / i2c-dev / libgpiod (not yet implemented in-tree)
 //   - Bare-metal Go / TinyGo with direct MMIO or SPI/I2C drivers
 //   - Simulation / test via pkg/hal/mock
 //   - Bridges to existing daemon APIs (e.g. OpenBMC D-Bus)

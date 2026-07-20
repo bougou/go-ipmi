@@ -6,11 +6,11 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 22.17
+// v1.5§18.15 / v2.0§22.17 Activate Session Command
 type ActivateSessionRequest struct {
 	// Authentication Type for session.
 	// The selected type will be used for session activation and for all subsequent authenticated packets under the session, unless "Per-message Authentication" or "User Level Authentication" are disabled.
-	// (See 6.12.4, Per-Message and User Level Authentication Disables, for more information.)
+	// (See v1.5§6.11.4 / v2.0§6.12.4, Per-Message and User Level Authentication Disables, for more information.)
 	//
 	// This value must match with the Authentication Type used in the Get Session Challenge request for the session. In addition, for multi-session channels this value must also match the authentication type used in the Session Header.
 	AuthTypeForSession types.AuthType
@@ -40,7 +40,7 @@ type ActivateSessionRequest struct {
 	// Challenge String data from corresponding Get Session Challenge response.
 	//
 	// For single-session channels that lack session header (e.g. serial/modem in Basic Mode):
-	// Clear text password or AuthCode. See 22.17.1, AuthCode Algorithms.
+	// Clear text password or AuthCode. See v1.5§18.15.1 / v2.0§22.17.1, AuthCode Algorithms.
 	Challenge [16]byte // uint16
 
 	// Initial Outbound Sequence Number = Starting sequence number that remote console wants used for messages from the BMC. (LS byte first). Must be non-null in order to establish a session. 0000_0000h = reserved. Can be any random value.
@@ -121,17 +121,3 @@ func (*ActivateSessionResponse) CompletionCodes() map[uint8]string {
 func (res *ActivateSessionResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
-
-// ActivateSession is only used for IPMI v1.5
-
-// the outbound session sequence number is set by the remote console and can be any random value.
-
-// The Activate Session packet is typically authenticated.
-// We set session to active here to indicate this request should be authenticated
-// but if ActivateSession Command failed, we should set session active to false
-
-// to use for the remainder of the session
-// Todo, validate the SessionID
-
-// The remote console must increment the inbound session sequence number
-// by one (1) for each subsequent message it sends to the BMC

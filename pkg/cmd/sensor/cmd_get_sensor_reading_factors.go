@@ -6,7 +6,8 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 35.5 Get Sensor Reading Factors Command
+// 35.5 Get Sensor Reading Factors Command. Returns Sensor Reading Factors fields
+// for the specified reading value on the specified sensor.
 type GetSensorReadingFactorsRequest struct {
 	SensorNumber uint8
 	Reading      uint8
@@ -78,5 +79,3 @@ func (res *GetSensorReadingFactorsResponse) Format() string {
 		fmt.Sprintf("Accuracy    : %d\n", res.Accuracy) +
 		fmt.Sprintf("AccuracyExp : %d\n", res.Accuracy_Exp)
 }
-
-// This command returns the Sensor Reading Factors fields for the specified reading value on the specified sensor.

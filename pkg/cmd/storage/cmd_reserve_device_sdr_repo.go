@@ -2,9 +2,9 @@ package storage
 
 import (
 	"github.com/bougou/go-ipmi/pkg/types"
-	// 35.4 Reserve Device SDR Repository Command
 )
 
+// 35.4 Reserve Device SDR Repository Command. Obtains a Reservation ID.
 type ReserveDeviceSDRRepoRequest struct {
 	// empty
 }
@@ -37,5 +37,3 @@ func (r *ReserveDeviceSDRRepoResponse) CompletionCodes() map[uint8]string {
 func (res *ReserveDeviceSDRRepoResponse) Format() string {
 	return ""
 }
-
-// This command is used to obtain a Reservation ID.

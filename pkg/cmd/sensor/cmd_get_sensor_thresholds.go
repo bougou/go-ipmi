@@ -6,7 +6,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 35.9 Get Sensor Thresholds Command
+// 35.9 Get Sensor Thresholds Command. Retrieves thresholds for the given sensor.
 type GetSensorThresholdsRequest struct {
 	SensorNumber uint8
 }
@@ -74,5 +74,3 @@ func (res *GetSensorThresholdsResponse) Format() string {
 		fmt.Sprintf("LCR Readable : %v%s\n", res.LCR_Readable, types.FormatBool(res.LCR_Readable, fmt.Sprintf(", raw: %#02x", res.LCR_Raw), "")) +
 		fmt.Sprintf("LNC Readable : %v%s\n", res.LNC_Readable, types.FormatBool(res.LNC_Readable, fmt.Sprintf(", raw: %#02x", res.LNC_Raw), ""))
 }
-
-// This command retrieves the threshold for the given sensor.

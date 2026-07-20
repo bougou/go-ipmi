@@ -44,7 +44,7 @@ type PEFEventFilter struct {
 
 	// Used to select an alerting policy set from the Alert Policy Table.
 	// The Alert Policy Table holds different policies that configure the order in which different alert destinations and alerting media are tried.
-	//   [6:4] - group control selector (1-based). Selects entry from group control table. (see [ICMB)
+	//   [6:4] - group control selector (1-based). Selects entry from group control table (see PEF Group Control Table, §17.8).
 	GroupControlSelector uint8
 	//   [3:0] - policy number. Value is "don't care" if (ActionAlert=false) Alert is not selected in the Event Filter Action.
 	AlertPolicyNumber uint8

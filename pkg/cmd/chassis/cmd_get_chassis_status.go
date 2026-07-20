@@ -101,7 +101,7 @@ func (req *GetChassisStatusRequest) Pack() []byte {
 }
 
 // Pack serialises the response per the bit layout in §28.2 Table 28-3, the
-// inverse of [Unpack]. Byte 3 (front-panel button disables) is always emitted
+// inverse of [GetChassisStatusResponse.Unpack]. Byte 3 (front-panel button disables) is always emitted
 // per spec: "Return as 00h if the panel button disable function is not supported."
 func (res *GetChassisStatusResponse) Pack() []byte {
 	var b0 uint8

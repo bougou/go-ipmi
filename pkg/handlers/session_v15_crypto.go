@@ -9,7 +9,7 @@ import (
 )
 
 // genV15AuthCode computes the IPMI v1.5 multi-session AuthCode per spec
-// §18.15.1 Figure 18-1. Must match client [client.AuthCodeMultiSessionInput].
+// v1.5§18.15.1 Figure 18-1 / v2.0§22.17.1 Figure 22-1. Must match client [pkg/client.AuthCodeMultiSessionInput].
 func GenV15AuthCode(password []byte, authType bmc.V15AuthType, sessionID uint32, ipmiData []byte, sessionSeq uint32) []byte {
 	padded := padV15Password(password)
 	inputLen := 16 + 4 + len(ipmiData) + 4 + 16

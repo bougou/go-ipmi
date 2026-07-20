@@ -6,8 +6,12 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 13.14
-// 22.13
+// 22.13 Get Channel Authentication Capabilities. Retrieves capability information
+// about the channel the message is delivered over, or for a particular channel,
+// including authentication algorithm support for the given privilege level. Sent
+// in unauthenticated (clear) format. When activating a session, the privilege
+// level here is normally the same Requested Maximum Privilege used in Activate
+// Session.
 type GetChannelAuthenticationCapabilitiesRequest struct {
 	// [7]
 	// - 1b = get IPMI v2.0+ extended data.
@@ -15,7 +19,7 @@ type GetChannelAuthenticationCapabilitiesRequest struct {
 	// (e.g. a serial channel), then the Response data should return with bit [5] of byte 4 = 0b, byte 5 should return 01h,
 	//
 	// - 0b = Backward compatible with IPMI v1.5. Response data only returns
-	// bytes 1:9, bit [7] of byte 3 (Authentication Type Support) and bit [5] of byte 4 returns as 0b, bit [5] of byte byte 5 returns 00h.
+	// bytes 1:9, bit [7] of byte 3 (Authentication Type Support) and bit [5] of byte 4 returns as 0b, bit [5] of byte 5 returns 00h.
 	// [6:4] - reserved
 	IPMIv20Extended bool
 	// [3:0] - channel number.
@@ -169,13 +173,3 @@ func (res *GetChannelAuthenticationCapabilitiesResponse) ChooseAuthType() types.
 func (res *GetChannelAuthenticationCapabilitiesResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
-
-// GetChannelAuthenticationCapabilities is used to retrieve capability information
-// about the channel that the message is delivered over, or for a particular channel.
-// The command returns the authentication algorithm support for the given privilege level.
-//
-// This command is sent in unauthenticated (clear) format.
-//
-// When activating a session, the privilege level passed in this command will
-// normally be the same Requested Maximum Privilege level that will be used
-// for a subsequent Activate Session command.

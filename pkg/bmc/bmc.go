@@ -1,7 +1,7 @@
 // Package bmc holds the runtime state of a Baseboard Management Controller.
 //
 // Nothing in this package does I/O; it is pure in-memory state backed by the
-// abstractions in pkg/hal.  The server layer (server.go) wires transport,
+// abstractions in pkg/hal.  The server layer (pkg/server) wires transport,
 // clock, and HAL together with this state to produce a working BMC.
 package bmc
 

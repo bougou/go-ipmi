@@ -2,9 +2,10 @@ package chassis
 
 import (
 	"github.com/bougou/go-ipmi/pkg/types"
-	// 20.6 Set ACPI Power State Command
 )
 
+// 20.6 Set ACPI Power State Command. Allows system software to report the present
+// ACPI power state to a controller.
 type SetACPIPowerStateRequest struct {
 	SetSystemPowerState bool // false means don't change system power state
 	SystemPowerState    SystemPowerState
@@ -122,5 +123,3 @@ func (res *SetACPIPowerStateResponse) Unpack(msg []byte) error {
 func (res *SetACPIPowerStateResponse) Format() string {
 	return ""
 }
-
-// This command is provided to allow system software to tell a controller the present ACPI power state of the system.

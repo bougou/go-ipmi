@@ -869,7 +869,7 @@ func (t ManagementAccessSubRecordType) String() string {
 		0x03: "System Ping Address",
 
 		// ComponentMgmtURL []byte
-		// A clear description of this FRU. (same asDMI "DMTF|Field Replaceable Unit|002 - Description")
+		// A clear description of this FRU. (same as DMI "DMTF|Field Replaceable Unit|002 - Description")
 		0x04: "Component Management URL",
 
 		// ComponentName []byte

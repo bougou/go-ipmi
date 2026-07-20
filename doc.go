@@ -6,7 +6,9 @@
 //   - [github.com/bougou/go-ipmi/pkg/types] — protocol types, constants, and
 //     wire-format helpers shared by client and server.
 //   - [github.com/bougou/go-ipmi/pkg/client] — IPMI client (LAN, LAN+, open,
-//     ipmitool) and all command request/response types.
+//     ipmitool).
+//   - github.com/bougou/go-ipmi/pkg/cmd/* — per-command request/response types
+//     grouped by netFn (app, chassis, sensor, storage, transport, dcmi, oem).
 //   - [github.com/bougou/go-ipmi/pkg/server] — IPMI BMC server (RMCP+,
 //     handler registry, session management).
 //   - [github.com/bougou/go-ipmi/pkg/bmc] — BMC in-memory state (users,

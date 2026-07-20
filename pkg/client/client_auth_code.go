@@ -8,7 +8,7 @@ import (
 	"github.com/bougou/go-ipmi/utils/md2"
 )
 
-// 22.17.1 AuthCode Algorithms
+// v1.5§18.15.1 / v2.0§22.17.1 AuthCode Algorithms
 // Single Session AuthCode carried in IPMI message data for Activate Session Command
 // to fill ActiveSessionRequest.Challenge
 type AuthCodeSingleSessionInput struct {
@@ -44,7 +44,7 @@ func (a AuthCodeSingleSessionInput) AuthCode(authType types.AuthType) []byte {
 	return authCode[:16]
 }
 
-// 22.17.1 AuthCode Algorithms
+// v1.5§18.15.1 / v2.0§22.17.1 AuthCode Algorithms
 // Multi-Session AuthCode carried in session header for all authenticated packets
 type AuthCodeMultiSessionInput struct {
 	Password   string
@@ -108,7 +108,7 @@ func (c *Client) genAuthCodeForSingleSession() []byte {
 }
 
 // only be used for ActivateSession (IPMI v1.5)
-// see 22.17.1 AuthCode Algorithms
+// see v1.5§18.15.1 / v2.0§22.17.1 AuthCode Algorithms
 func (c *Client) genAuthCodeForMultiSession(ipmiMsg []byte) []byte {
 	input := &AuthCodeMultiSessionInput{
 		Password:   c.Password,
@@ -306,7 +306,7 @@ func (c *Client) generate_rakp2_authcode() ([]byte, error) {
 	return out, err
 }
 
-// 22.17.1 AuthCode Algorithms
+// v1.5§18.15.1 / v2.0§22.17.1 AuthCode Algorithms
 func (c *Client) generate_rakp3_authcode() ([]byte, error) {
 
 	// The auth code is an HMAC generated with the following content

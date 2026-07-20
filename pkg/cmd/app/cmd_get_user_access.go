@@ -6,7 +6,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 22.27 Get User Access Command
+// v1.5§18.24 / v2.0§22.27 Get User Access Command
 type GetUserAccessRequest struct {
 	ChannelNumber uint8
 	UserID        uint8

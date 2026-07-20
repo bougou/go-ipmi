@@ -41,7 +41,7 @@ type v15 struct {
 	// Sequence number that BMC wants remote console to use for subsequent messages
 	// in the session (Activate Session response "Session inbound sequence number").
 	// Seeded to N-1 after Activate so the pre-increment on send emits N first
-	// (spec §18.15 / §6.12.9); then incremented for each Request to the BMC.
+	// (spec v1.5§18.15 / v2.0§6.12.9); then incremented for each Request to the BMC.
 	inSeq uint32
 
 	// "outSeq" is set by Remote Console to indicate the sequence number should picked by BMC.

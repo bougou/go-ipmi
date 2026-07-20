@@ -2,9 +2,25 @@ package sensor
 
 import (
 	"github.com/bougou/go-ipmi/pkg/types"
-	// 35.8 Set Sensor Thresholds Command
 )
 
+// 35.8 Set Sensor Thresholds Command. Note that the application issuing this
+// command is responsible for ensuring thresholds are set in the proper order
+// (e.g. upper critical above upper non-critical):
+//
+//	Upper Non Recoverable area
+//	-----------------UNR threshold
+//	Upper Critical area
+//	-----------------UCR threshold
+//	Upper Non Critical area
+//	-----------------UNC threshold
+//	OK area
+//	-----------------LNC threshold
+//	Lower Non Critical area
+//	-----------------LCR threshold
+//	Lower Critical area
+//	-----------------LNR threshold
+//	Lower NonRecoverable area
 type SetSensorThresholdsRequest struct {
 	SensorNumber uint8
 
@@ -78,22 +94,3 @@ func (r *SetSensorThresholdsResponse) CompletionCodes() map[uint8]string {
 func (res *SetSensorThresholdsResponse) Format() string {
 	return ""
 }
-
-// SetSensorThresholds is to set the specified threshold for the given sensor.
-// Note that the application issuing this command is responsible for ensuring that
-// thresholds for a sensor are set in the proper order (e.g. that
-// the upper critical threshold is set higher than the upper non-critical threshold)
-//
-//	Upper Non Recoverable area
-//	-----------------UNR threshold
-//	Upper Critical area
-//	-----------------UCR threshold
-//	Upper Non Critical area
-//	-----------------UNC threshold
-//	OK area
-//	-----------------LNC threshold
-//	Lower Non Critical area
-//	-----------------LCR threshold
-//	Lower Critical area
-//	-----------------LNR threshold
-//	Lower NonRecoverable area

@@ -66,7 +66,7 @@ type IPMIResponse struct {
 	ResponderAddr uint8 // SlaveAddress or SoftwareID
 
 	// Sequence number. This field is used to verify that a response is for a particular instance of a request.
-	// Refer to [IPMB] for additional information on use and operation of the Seq field.
+	// Refer to the IPMB specification for additional information on use and operation of the Seq field.
 	RequesterSequence uint8 // higher 6 bits
 	ResponderLUN      uint8 // lower 2 bits
 

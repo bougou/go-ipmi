@@ -10,14 +10,12 @@ import (
 type SetDCMIMgmtControllerIdentifierRequest struct {
 	Offset     uint8
 	WriteBytes uint8
-	IDStr      []byte
+	IDStr      []byte // null-terminated identifier string
 }
 
 type SetDCMIMgmtControllerIdentifierResponse struct {
-	// Total Asset Tag Length.
-	// This is the length in bytes of the stored Asset Tag after the Set operation has completed.
-	// The Asset Tag length shall be set to the sum of the offset to write plus bytes to write.
-	// For example, if offset to write is 32 and bytes to write is 4, the Total Asset Tag Length returned will be 36.
+	// Total Management Controller Identifier length after the Set operation completes.
+	// Length is offset plus bytes written (e.g. offset 32 and 4 bytes written → 36).
 	TotalLength uint8
 }
 
@@ -55,5 +53,3 @@ func (res *SetDCMIMgmtControllerIdentifierResponse) Unpack(msg []byte) error {
 func (res *SetDCMIMgmtControllerIdentifierResponse) Format() string {
 	return fmt.Sprintf("Total Length: %d", res.TotalLength)
 }
-
-// make sure idStr null terminated

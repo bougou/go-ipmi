@@ -2,10 +2,9 @@ package chassis
 
 import (
 	"github.com/bougou/go-ipmi/pkg/types"
-	// 28.6 Set Front Panel Enables
-	// 定位
 )
 
+// 28.6 Set Front Panel Enables. Enables or disables front-panel buttons.
 type SetFrontPanelEnablesRequest struct {
 	DisableSleepButton      bool
 	DisableDiagnosticButton bool
@@ -52,5 +51,3 @@ func (res *SetFrontPanelEnablesResponse) Unpack(msg []byte) error {
 func (res *SetFrontPanelEnablesResponse) Format() string {
 	return ""
 }
-
-// The following command is used to enable or disable the buttons on the front panel of the chassis.

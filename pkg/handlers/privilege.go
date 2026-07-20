@@ -31,7 +31,7 @@ func sessionPrivilege(hctx *HandlerContext) (bmc.PrivilegeLevel, bool) {
 	return 0, false
 }
 
-// checkCommandPrivilege enforces per-command minimum privilege (spec §18.16).
+// checkCommandPrivilege enforces per-command minimum privilege (spec v1.5§6.8 / v2.0§6.8).
 func checkCommandPrivilege(hctx *HandlerContext, netFn, cmd uint8) CompletionCode {
 	if privilegeExempt(netFn, cmd) {
 		return CodeOK

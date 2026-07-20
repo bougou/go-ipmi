@@ -55,7 +55,7 @@ func (s *Server) dispatchIPMIv15UnAuth(addr net.Addr, pkt []byte, sess *ipmi.Ses
 }
 
 // dispatchIPMIv15SessionUnauth handles AuthType NONE packets on an established
-// session when per-message or user-level authentication is disabled (spec §6.11.4).
+// session when per-message or user-level authentication is disabled (spec v1.5§6.11.4 / v2.0§6.12.4).
 func (s *Server) dispatchIPMIv15SessionUnauth(addr net.Addr, pkt []byte, sess *ipmi.Session15) {
 	hdr := sess.SessionHeader15
 	netFn, cmd, data, seq, ok := protocol.ParseIPMIRequest(sess.Payload)

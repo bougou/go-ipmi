@@ -6,7 +6,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 28.14 Get POH Counter Command
+// 28.14 Get POH Counter Command. Returns the Power-On Hours counter reading and counts per hour.
 type GetPOHCounterRequest struct {
 	// empty
 }
@@ -54,5 +54,3 @@ func (res *GetPOHCounterResponse) Format() string {
 		fmt.Sprintf("Minutes per count : %d\n", res.MinutesPerCount) +
 		fmt.Sprintf("Counter reading   : %d\n", res.CounterReading)
 }
-
-// This command returns the present reading of the POH (Power-On Hours) counter, plus the number of counts per hour.

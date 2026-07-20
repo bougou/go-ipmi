@@ -10,7 +10,6 @@ import (
 )
 
 // SetDCMIPowerLimit sends a DCMI "Set Power Limit" command.
-// See [SetDCMIPowerLimitRequest] for details.
 func (c *Client) SetDCMIPowerLimit(ctx context.Context, request *dcmi.SetDCMIPowerLimitRequest) (response *dcmi.SetDCMIPowerLimitResponse, err error) {
 	response = &dcmi.SetDCMIPowerLimitResponse{}
 	err = c.Exchange(ctx, request, response)
@@ -18,7 +17,6 @@ func (c *Client) SetDCMIPowerLimit(ctx context.Context, request *dcmi.SetDCMIPow
 }
 
 // GetDCMISensorInfo sends a DCMI "Get Sensor Info" command.
-// See [GetDCMISensorInfoRequest] for details.
 func (c *Client) GetDCMISensorInfo(ctx context.Context, request *dcmi.GetDCMISensorInfoRequest) (response *dcmi.GetDCMISensorInfoResponse, err error) {
 	response = &dcmi.GetDCMISensorInfoResponse{}
 	err = c.Exchange(ctx, request, response)
@@ -67,7 +65,6 @@ func (c *Client) GetDCMIThermalLimit(ctx context.Context, entityID types.EntityI
 }
 
 // GetDCMIPowerLimit sends a DCMI "Get Power Limit" command.
-// See [GetDCMIPowerLimitRequest] for details.
 func (c *Client) GetDCMIPowerLimit(ctx context.Context) (response *dcmi.GetDCMIPowerLimitResponse, err error) {
 	request := &dcmi.GetDCMIPowerLimitRequest{}
 	response = &dcmi.GetDCMIPowerLimitResponse{}
@@ -237,7 +234,6 @@ func (c *Client) GetDCMIConfigParamsFor(ctx context.Context, dcmiConfigParams *t
 }
 
 // GetDCMIMgmtControllerIdentifier sends a DCMI "Get Management Controller Identifier" command.
-// See [GetDCMIMgmtControllerIdentifierRequest] for details.
 func (c *Client) GetDCMIMgmtControllerIdentifier(ctx context.Context, offset uint8) (response *dcmi.GetDCMIMgmtControllerIdentifierResponse, err error) {
 	request := &dcmi.GetDCMIMgmtControllerIdentifierRequest{Offset: offset}
 	response = &dcmi.GetDCMIMgmtControllerIdentifierResponse{}
@@ -275,7 +271,6 @@ func (c *Client) ActivateDCMIPowerLimit(ctx context.Context, activate bool) (res
 }
 
 // GetDCMIPowerReading sends a DCMI "Get Power Reading" command.
-// See [GetDCMIPowerReadingRequest] for details.
 func (c *Client) GetDCMIPowerReading(ctx context.Context) (response *dcmi.GetDCMIPowerReadingResponse, err error) {
 	request := &dcmi.GetDCMIPowerReadingRequest{}
 	response = &dcmi.GetDCMIPowerReadingResponse{}
@@ -437,7 +432,6 @@ func (c *Client) SetDCMIConfigParamFor(ctx context.Context, param types.DCMIConf
 }
 
 // GetDCMIAssetTag sends a DCMI "Get Asset Tag" command.
-// See [GetDCMIAssetTagRequest] for details.
 func (c *Client) GetDCMIAssetTag(ctx context.Context, offset uint8) (response *dcmi.GetDCMIAssetTagResponse, err error) {
 	request := &dcmi.GetDCMIAssetTagRequest{Offset: offset}
 	response = &dcmi.GetDCMIAssetTagResponse{}

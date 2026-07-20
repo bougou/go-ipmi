@@ -22,7 +22,7 @@ const (
 	V15AuthTypeOEM      V15AuthType = 0x05
 )
 
-// v15InboundWindow is the inbound sequence sliding window (spec §6.11.11 Option 1).
+// v15InboundWindow is the inbound sequence sliding window (spec v1.5§6.11.11 Option 1 / v2.0§6.12.11 Option 1).
 const v15InboundWindow = 8
 
 // DefaultV15AuthTypes is the default set of v1.5 auth types the reference BMC
@@ -149,7 +149,7 @@ func (s *V15SessionStore) Get(id uint32) (*V15Session, error) {
 	return sess, nil
 }
 
-// Touch records valid session activity for inactivity timeout (spec §6.11.13).
+// Touch records valid session activity for inactivity timeout (spec v1.5§6.11.13 / v2.0§6.12.15).
 func (s *V15SessionStore) Touch(sess *V15Session) {
 	if sess == nil {
 		return
@@ -200,11 +200,11 @@ func (s *V15SessionStore) CountActiveSessionsWithMaxPrivilegeAtLeast(min Privile
 }
 
 // Activate transitions a pending session to active with a new permanent ID.
-// maxPrivilege is the requested ceiling; initial privilege is USER per §18.16
+// maxPrivilege is the requested ceiling; initial privilege is USER per v1.5§6.8 / v2.0§6.8
 // (Callback when max is Callback).
 //
 // inboundSeq is the Activate Session response "Session inbound sequence number"
-// (spec §18.15 / §6.12.9): the starting sequence the remote console must use on
+// (spec v1.5§18.15 / v2.0§6.12.9): the starting sequence the remote console must use on
 // its first authenticated packet. InboundSeq on the session tracks the highest
 // sequence already accepted, so it is seeded to inboundSeq-1 (wrapping) with an
 // empty receive bitmap — otherwise the first packet (seq == inboundSeq) is
@@ -313,7 +313,7 @@ func v15SeqDiff(high, seq uint32) int64 {
 	return diff
 }
 
-// TryAcceptInboundSeq implements spec §6.11.11 Option 1 (+/-8 window, no dupes).
+// TryAcceptInboundSeq implements spec v1.5§6.11.11 Option 1 / v2.0§6.12.11 Option 1 (+/-8 window, no dupes).
 func (sess *V15Session) TryAcceptInboundSeq(seq uint32) bool {
 	if seq == 0 {
 		return false
@@ -371,7 +371,7 @@ func V15InboundSeqValid(sess *V15Session, seq uint32) bool {
 
 // NextOutboundSeq returns the sequence number for the current outbound message
 // and advances the counter for the next one. Sequence 0 is reserved for
-// pre-session packets and is skipped on wrap (§6.12.9).
+// pre-session packets and is skipped on wrap (v1.5§6.11.9 / v2.0§6.12.9).
 func (sess *V15Session) NextOutboundSeq() uint32 {
 	if sess.OutboundSeq == 0 {
 		sess.OutboundSeq = 1

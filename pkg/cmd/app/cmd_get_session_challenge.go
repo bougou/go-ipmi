@@ -6,7 +6,9 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 22.16
+// v1.5§18.14 / v2.0§22.16 Get Session Challenge. Selects which BMC-supported authentication type
+// the remote console wants to use, and a username that selects user information
+// for the session.
 type GetSessionChallengeRequest struct {
 	// Authentication Type for Challenge
 	// indicating what type of authentication type the console wants to use.
@@ -52,6 +54,3 @@ func (*GetSessionChallengeResponse) CompletionCodes() map[uint8]string {
 func (res *GetSessionChallengeResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
-
-// The command selects which of the BMC-supported authentication types the Remote Console would like to use,
-// and a username that selects which set of user information should be used for the session

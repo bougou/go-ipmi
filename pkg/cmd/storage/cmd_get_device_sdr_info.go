@@ -6,7 +6,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 35.2 Get Device SDR Info Command
+// 35.2 Get Device SDR Info Command. Returns general information about sensors in a Dynamic Sensor Device.
 type GetDeviceSDRInfoRequest struct {
 	// true: Get SDR count. This returns the total number of SDRs in the device.
 	// false: Get Sensor count. This returns the number of sensors implemented on LUN this command was addressed to.
@@ -86,5 +86,3 @@ func (res *GetDeviceSDRInfoResponse) Format() string {
 		fmt.Sprintf("LUN 2 has sensors  : %v\n", res.LUN2HasSensors) +
 		fmt.Sprintf("LUN 3 has sensors  : %v\n", res.LUN3HasSensors)
 }
-
-// This command returns general information about the collection of sensors in a Dynamic Sensor Device.

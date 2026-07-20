@@ -6,7 +6,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 20.7 Get ACPI Power State Command
+// 20.7 Get ACPI Power State Command. Returns the present ACPI power state of the system.
 type GetACPIPowerStateRequest struct {
 	// empty
 }
@@ -45,5 +45,3 @@ func (res *GetACPIPowerStateResponse) Format() string {
 		fmt.Sprintf("ACPI System Power State: %s\n", res.SystemPowerState) +
 		fmt.Sprintf("ACPI Device Power State: %s\n", res.DevicePowerState)
 }
-
-// This command is provided to allow system software to tell a controller the present ACPI power state of the system.

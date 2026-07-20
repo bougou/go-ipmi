@@ -6,7 +6,8 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 35.7 Get Sensor Hysteresis Command
+// 35.7 Get Sensor Hysteresis Command. Retrieves present hysteresis values for the
+// sensor. Fixed hysteresis values may also be obtained from the sensor SDR.
 type GetSensorHysteresisRequest struct {
 	SensorNumber uint8
 }
@@ -45,6 +46,3 @@ func (res *GetSensorHysteresisResponse) Format() string {
 		fmt.Sprintf("Positive Hysteresis : %d\n", res.PositiveRaw) +
 		fmt.Sprintf("Negative Hysteresis : %d\n", res.NegativeRaw)
 }
-
-// This command retrieves the present hysteresis values for the specified sensor.
-// If the sensor hysteresis values are "fixed", then the hysteresis values can be obtained from the SDR for the sensor.

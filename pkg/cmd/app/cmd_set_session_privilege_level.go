@@ -6,7 +6,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 22.18 Set Session Privilege Level Command
+// v1.5§18.16 / v2.0§22.18 Set Session Privilege Level Command
 type SetSessionPrivilegeLevelRequest struct {
 	PrivilegeLevel types.PrivilegeLevel
 }

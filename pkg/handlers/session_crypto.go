@@ -1,8 +1,7 @@
 package handlers
 
-// session_crypto.go contains the HMAC and key-derivation logic for IPMI 2.0
-// RAKP authentication.  All inputs and outputs are raw bytes; callers own the
-// returned slices.
+// HMAC and key-derivation logic for IPMI 2.0 RAKP authentication. All inputs
+// and outputs are raw bytes; callers own the returned slices.
 //
 // Algorithm references:
 //   - IPMI 2.0 spec §13.31 – RAKP key exchange
@@ -90,9 +89,7 @@ func computeRAKP3AuthCode(sess *bmc.Session, b *bmc.BMC) ([]byte, error) {
 // Spec §13.31 additionally states that the RAKP steps are followed even when
 // the cipher suite has no integrity/encryption, so suites that pair a non-None
 // auth algorithm with Integrity=None (e.g. suite 1 / 15) still produce a
-// non-empty RAKP4 ICV. Using the integrity algorithm here was a spec deviation
-// that only worked for suites where the integrity truncation coincidentally
-// matched the auth algorithm's RAKP4 truncation (suites 2/3/16/17).
+// non-empty RAKP4 ICV. Client-side notes live in pkg/client/client_auth_code.go.
 func computeRAKP4AuthCode(sess *bmc.Session, b *bmc.BMC) ([]byte, error) {
 	// RAKP-none: the Integrity Check Value is absent (spec §13.28.2).
 	if sess.AuthAlg == types.AuthAlg_None {

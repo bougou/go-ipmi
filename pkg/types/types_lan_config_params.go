@@ -1616,7 +1616,7 @@ type LanConfigParam_IPv6Status struct {
 
 	// Maximum number of Dynamic (SLAAC/ DHCPv6) IPv6 addresses that can be obtained for
 	// establishing connections to the BMC.
-	//Note: in some implementations this may exceed the number of simultaneous sessions supported on the channel.
+	// Same caveat as StaticAddressMax: may exceed simultaneous sessions on the channel.
 	// 0 = Dynamic addressing is not supported by the BMC.
 	DynamicAddressMax uint8
 

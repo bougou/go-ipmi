@@ -21,7 +21,8 @@ type GetDCMIThermalLimitResponse struct {
 	TemperatureLimit uint8
 	// Interval in seconds over which the temperature must continuously be sampled as exceeding the set limit
 	// before the specified Exception Action will be taken.
-	// Samples are taken at the rate specified by the sampling frequency value in parameter #5 of the DCMI Capabilities // parameters (see Table 6-3, DCMI Capabilities Parameters).
+	// Samples are taken at the rate specified by the sampling frequency value in
+	// parameter #5 of the DCMI Capabilities parameters (see Table 6-3, DCMI Capabilities Parameters).
 	ExceptionTimeSec uint16
 }
 

@@ -17,7 +17,6 @@ func (c *Client) ReserveSDRRepo(ctx context.Context) (response *storage.ReserveS
 	return
 }
 
-// This command returns general information about the collection of sensors in a Dynamic Sensor Device.
 func (c *Client) GetDeviceSDRInfo(ctx context.Context, getSDRCount bool) (response *storage.GetDeviceSDRInfoResponse, err error) {
 	request := &storage.GetDeviceSDRInfoRequest{
 		GetSDRCount: getSDRCount,
@@ -37,16 +36,6 @@ func (c *Client) DeleteSELEntry(ctx context.Context, recordID uint16, reservatio
 	return
 }
 
-// The Get Device SDR command allows SDR information for sensors for a Sensor Device
-// (typically implemented in a satellite management controller) to be returned.
-//
-// The Get Device SDR Command can return any type of SDR, not just Types 01h and 02h.
-// This is an optional command for Static Sensor Devices, and mandatory for Dynamic Sensor Devices.
-// The format and action of this command is similar to that for the Get SDR command
-// for SDR Repository Devices.
-//
-// Sensor Devices that support the Get Device SDR command return SDR Records that
-// match the SDR Repository formats.
 func (c *Client) GetDeviceSDR(ctx context.Context, recordID uint16) (response *storage.GetDeviceSDRResponse, err error) {
 	request := &storage.GetDeviceSDRRequest{
 		ReservationID: 0,
@@ -358,7 +347,6 @@ func (c *Client) GetSELTimeUTCOffset(ctx context.Context) (response *storage.Get
 	return
 }
 
-// The command writes the specified byte or word to the FRU Inventory Info area. This is a low level direct interface to a non-volatile storage area. This means that the interface does not interpret or check any semantics or formatting for the data being written.
 func (c *Client) WriteFRUData(ctx context.Context, fruDeviceID uint8, writeOffset uint16, writeData []byte) (response *storage.WriteFRUDataResponse, err error) {
 	request := &storage.WriteFRUDataRequest{
 		FRUDeviceID: fruDeviceID,
@@ -370,7 +358,6 @@ func (c *Client) WriteFRUData(ctx context.Context, fruDeviceID uint8, writeOffse
 	return
 }
 
-// This command returns overall the size of the FRU Inventory Area in this device, in bytes.
 func (c *Client) GetFRUInventoryAreaInfo(ctx context.Context, fruDeviceID uint8) (response *storage.GetFRUInventoryAreaInfoResponse, err error) {
 	request := &storage.GetFRUInventoryAreaInfoRequest{
 		FRUDeviceID: fruDeviceID,
@@ -403,7 +390,7 @@ func (c *Client) GetSDRRepoAllocInfo(ctx context.Context) (response *storage.Get
 	return
 }
 
-// SetSELTimeUTCOffset initializes and retrieve a UTC offset (timezone) that is associated with the SEL Time
+// SetSELTimeUTCOffset sets the UTC offset (timezone) associated with SEL Time.
 func (c *Client) SetSELTimeUTCOffset(ctx context.Context, minutesOffset int16) (response *storage.SetSELTimeUTCOffsetResponse, err error) {
 	request := &storage.SetSELTimeUTCOffsetRequest{
 		MinutesOffset: minutesOffset,
@@ -423,7 +410,6 @@ func (c *Client) ClearSEL(ctx context.Context, reservationID uint16) (response *
 	return
 }
 
-// This command is used to obtain a Reservation ID.
 func (c *Client) ReserveDeviceSDRRepo(ctx context.Context) (response *storage.ReserveDeviceSDRRepoResponse, err error) {
 	request := &storage.ReserveDeviceSDRRepoRequest{}
 	response = &storage.ReserveDeviceSDRRepoResponse{}

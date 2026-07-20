@@ -6,7 +6,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 34.1 Get FRU Inventory Area Info Command
+// 34.1 Get FRU Inventory Area Info Command. Returns the FRU Inventory Area size in bytes.
 type GetFRUInventoryAreaInfoRequest struct {
 	FRUDeviceID uint8
 }
@@ -43,5 +43,3 @@ func (res *GetFRUInventoryAreaInfoResponse) Format() string {
 	return "" +
 		fmt.Sprintf("FRU size = %d bytes (accessed by %s)\n", res.AreaSizeBytes, types.FormatBool(res.DeviceAccessedByWords, "words", "bytes"))
 }
-
-// This command returns overall the size of the FRU Inventory Area in this device, in bytes.

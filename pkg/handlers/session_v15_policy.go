@@ -28,7 +28,7 @@ func MinimumPrivilege(netFn, cmd uint8) bmc.PrivilegeLevel {
 }
 
 // V15AllowsAuthTypeNone reports whether an active v1.5 session may accept a
-// post-activation packet with AuthType NONE per spec §6.11.4.
+// post-activation packet with AuthType NONE per spec v1.5§6.11.4 / v2.0§6.12.4.
 func V15AllowsAuthTypeNone(ch *bmc.Channel, netFn, cmd uint8, sess *bmc.V15Session) bool {
 	if ch == nil || sess == nil || sess.State != bmc.V15SessionStateActive {
 		return false

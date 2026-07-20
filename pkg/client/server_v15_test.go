@@ -117,7 +117,7 @@ func TestServerV15SessionActivationMD2(t *testing.T) {
 }
 
 // TestV15ClientActivateSeedsInboundSeq locks the client half of the Activate
-// Session inbound-seq contract (spec §18.15 / §6.12.9): after Activate returns
+// Session inbound-seq contract (spec v1.5§18.15 / v2.0§6.12.9): after Activate returns
 // starting seq N, inSeq must be N-1 so the pre-increment on the next send
 // emits N. Against a correct BMC the sliding window often still accepts N+1,
 // so client-e2e alone may not catch a regression — this assertion does.

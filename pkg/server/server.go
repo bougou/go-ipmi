@@ -1,6 +1,6 @@
 package server
 
-// server.go is the entry point for the IPMI BMC server.
+// Package server is the entry point for the IPMI BMC server.
 //
 // The Server ties together a [transport.PacketConn] (how packets arrive), a
 // [bmc.BMC] (all BMC state), and a [handlers.Registry] (what each command
@@ -368,10 +368,6 @@ func (s *Server) sendRMCPPlusSession(addr net.Addr, payloadType, flags uint8, se
 	}
 	_, _ = s.conn.WriteTo(pkt, addr)
 }
-
-// decryptPayload and encryptPayload delegate to the AES-CBC-128 helpers
-// that already exist in helpers_hmac.go in the main package.
-// We reproduce small wrappers here to avoid importing ourselves.
 
 // decryptPayload decrypts an AES-CBC-128 confidential payload and strips the
 // IPMI 2.0 padding (spec §13.29).  The wire format is:

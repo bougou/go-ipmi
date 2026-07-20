@@ -10,7 +10,10 @@ const (
 	MaxCipherSuiteListIndex uint8 = 0x3f
 )
 
-// 22.15 Get Channel Cipher Suites Command
+// 22.15 Get Channel Cipher Suites Command. This command can be executed prior to
+// establishing a session with the BMC. It looks up authentication, integrity,
+// and confidentiality algorithms supported as combined cipher suites. Applies
+// only to implementations that support IPMI v2.0/RMCP+ sessions.
 type GetChannelCipherSuitesRequest struct {
 	// 0h-Bh, Fh = channel numbers
 	// Eh = retrieve information for channel this request was issued on
@@ -55,11 +58,6 @@ func (*GetChannelCipherSuitesResponse) CompletionCodes() map[uint8]string {
 func (res *GetChannelCipherSuitesResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }
-
-// This command can be executed prior to establishing a session with the BMC.
-// The command is used to look up what authentication, integrity, and confidentiality algorithms are supported.
-// The algorithms are used in combination as 'Cipher Suites'.
-// This command only applies to implementations that support IPMI v2.0/RMCP+ sessions.
 
 func ParseCipherSuitesData(cipherSuitesData []byte) ([]types.CipherSuiteRecord, error) {
 	offset := 0

@@ -458,24 +458,6 @@ func (c *Client) GetPEFConfigParamsFor(ctx context.Context, pefConfigParams *typ
 	return nil
 }
 
-// SetSensorThresholds is to set the specified threshold for the given sensor.
-// Note that the application issuing this command is responsible for ensuring that
-// thresholds for a sensor are set in the proper order (e.g. that
-// the upper critical threshold is set higher than the upper non-critical threshold)
-//
-//	Upper Non Recoverable area
-//	-----------------UNR threshold
-//	Upper Critical area
-//	-----------------UCR threshold
-//	Upper Non Critical area
-//	-----------------UNC threshold
-//	OK area
-//	-----------------LNC threshold
-//	Lower Non Critical area
-//	-----------------LCR threshold
-//	Lower Critical area
-//	-----------------LNR threshold
-//	Lower NonRecoverable area
 func (c *Client) SetSensorThresholds(ctx context.Context, request *sensor.SetSensorThresholdsRequest) (response *sensor.SetSensorThresholdsResponse, err error) {
 	response = &sensor.SetSensorThresholdsResponse{}
 	err = c.Exchange(ctx, request, response)

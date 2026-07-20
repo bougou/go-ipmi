@@ -2,9 +2,9 @@ package storage
 
 import (
 	"github.com/bougou/go-ipmi/pkg/types"
-	// 31.11a Set SEL Time UTC Offset
 )
 
+// 31.11a Set SEL Time UTC Offset. Sets the UTC offset (timezone) associated with SEL Time.
 type SetSELTimeUTCOffsetRequest struct {
 	// signed integer for the offset in minutes from UTC to SEL Time. (ranges from -1440 to 1440)
 	MinutesOffset int16
@@ -39,5 +39,3 @@ func (res *SetSELTimeUTCOffsetResponse) CompletionCodes() map[uint8]string {
 func (res *SetSELTimeUTCOffsetResponse) Format() string {
 	return ""
 }
-
-// SetSELTimeUTCOffset initializes and retrieve a UTC offset (timezone) that is associated with the SEL Time

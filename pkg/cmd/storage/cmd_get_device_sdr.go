@@ -4,7 +4,10 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 35.3 Get Device SDR Command
+// 35.3 Get Device SDR Command. Returns SDR information for a Sensor Device
+// (typically a satellite management controller). Can return any SDR type, not
+// just 01h/02h. Optional for Static Sensor Devices; mandatory for Dynamic Sensor
+// Devices. Format matches SDR Repository records.
 type GetDeviceSDRRequest struct {
 	ReservationID uint16
 	RecordID      uint16

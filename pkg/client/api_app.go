@@ -684,10 +684,10 @@ func (c *Client) ActivateSession(ctx context.Context) (response *app.ActivateSes
 	c.session.v15.sessionID = response.SessionID
 
 	// Seed to N-1 so the pre-increment in genSession15 emits N on the first
-	// post-Activate request (spec §18.15 / §6.12.9).
+	// post-Activate request (spec v1.5§18.15 / v2.0§6.12.9).
 	c.session.v15.inSeq = v15SeedInSeq(response.InitialInboundSequenceNumber)
 
-	// Spec §22.17: the AuthType in the Activate Session response is the auth
+	// Spec v1.5§18.15 / v2.0§22.17: the AuthType in the Activate Session response is the auth
 	// type the BMC wants used for the remainder of the session — it may
 	// differ from what we requested (some BMCs, e.g. ASUS, return None even
 	// when the session was activated with MD5). Adopt it so subsequent

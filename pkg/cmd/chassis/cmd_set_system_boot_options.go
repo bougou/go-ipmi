@@ -4,7 +4,9 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 28.12 Set System Boot Options Command
+// 28.12 Set System Boot Options Command. Sets parameters that direct system boot
+// following power up or reset. Boot flags apply for one restart; system BIOS
+// should read them from the BMC and then clear the flags.
 type SetSystemBootOptionsParamRequest struct {
 	// Parameter valid
 	//  - 1b = mark parameter invalid / locked
@@ -57,7 +59,3 @@ func (res *SetSystemBootOptionsParamResponse) Unpack(msg []byte) error {
 func (res *SetSystemBootOptionsParamResponse) Format() string {
 	return ""
 }
-
-// This command is used to set parameters that direct the system boot following a system power up or reset.
-// The boot flags only apply for one system restart. It is the responsibility of the system BIOS
-// to read these settings from the BMC and then clear the boot flags

@@ -32,7 +32,7 @@ type RAKPMessage1 struct {
 }
 
 type RAKPMessage2 struct {
-	// authAlg describes the authentication algorithm was agreed upon in
+	// authAlg is the authentication algorithm agreed upon in
 	// the open session request/response phase.
 	// We need to know that here so that we know how many bytes (if any) to read from the packet for KeyExchangeAuthenticationCode
 	authAlg types.AuthAlg

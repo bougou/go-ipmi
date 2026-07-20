@@ -32,7 +32,7 @@ func (guidMode GUIDMode) String() string {
 }
 
 // ParseGUID parses the raw guid data with the specified encoding mode.
-// Different GUIDMode would interpret the [16]byte data into different layout of uuid.
+// Different GUIDMode would interpret the 16-byte data into different layout of uuid.
 //
 // see: https://github.com/ipmitool/ipmitool/issues/25
 func ParseGUID(data []byte, guidMode GUIDMode) (*uuid.UUID, error) {

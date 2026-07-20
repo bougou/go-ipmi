@@ -183,9 +183,7 @@ func (c *Client) SetSystemBootOptionsParamFor(ctx context.Context, param types.B
 	return nil
 }
 
-// This command was used with early versions of the ICMB.
-// It has been superseded by the Chassis Control command
-// For host systems, this corresponds to a system hard reset.
+// ChassisReset sends the legacy Chassis Reset command.
 func (c *Client) ChassisReset(ctx context.Context) (response *chassis.ChassisResetResponse, err error) {
 	request := &chassis.ChassisResetRequest{}
 	response = &chassis.ChassisResetResponse{}

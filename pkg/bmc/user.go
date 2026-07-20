@@ -53,7 +53,7 @@ func (u *User) SetPassword(raw []byte) {
 }
 
 // PasswordV15Padded returns the user's password zero-padded to 16 bytes per
-// IPMI v1.5 AuthCode algorithms (spec §18.15.1).
+// IPMI v1.5 AuthCode algorithms (spec v1.5§18.15.1 / v2.0§22.17.1).
 func (u *User) PasswordV15Padded() []byte {
 	var p [16]byte
 	copy(p[:], u.Password[:])
@@ -65,7 +65,6 @@ func (u *User) PasswordV15Padded() []byte {
 func (u *User) VerifyPassword(raw []byte) bool {
 	var candidate [MaxPasswordLen]byte
 	copy(candidate[:], raw)
-	// subtle.ConstantTimeCompare is in crypto/subtle – stdlib.
 	return constantTimeEqual(u.Password[:], candidate[:])
 }
 
@@ -140,7 +139,7 @@ func (s *UserStore) GetByName(name string) (*User, error) {
 }
 
 // FindEnabledByNameOnChannel scans user IDs 1..MaxUsers in order and returns
-// the first enabled user with a matching name and channel access (spec §18.14).
+// the first enabled user with a matching name and channel access (spec v1.5§18.24 / v2.0§22.27).
 func (s *UserStore) FindEnabledByNameOnChannel(name string, channel uint8) (*User, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -182,8 +181,8 @@ func (s *UserStore) Count() int {
 	return len(s.users)
 }
 
-// PrivilegeLevel mirrors ipmi.PrivilegeLevel to avoid an import cycle.
-// The server maps these to the main package type before sending responses.
+// PrivilegeLevel mirrors [types.PrivilegeLevel] so bmc stays free of wire-type
+// conversions in session state; handlers map to types before sending responses.
 type PrivilegeLevel uint8
 
 const (
@@ -196,7 +195,7 @@ const (
 )
 
 // constantTimeEqual performs a constant-time comparison of two equal-length slices.
-// We avoid importing crypto/subtle here to stay inside stdlib.
+// Implemented locally to avoid pulling in crypto/subtle from this package.
 func constantTimeEqual(a, b []byte) bool {
 	if len(a) != len(b) {
 		return false

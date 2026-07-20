@@ -6,7 +6,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 31.11a Get SEL Time UTC Offset
+// 31.11a Get SEL Time UTC Offset. Retrieves the UTC offset (timezone) associated with SEL Time.
 type GetSELTimeUTCOffsetRequest struct {
 	// empty
 }
@@ -43,5 +43,3 @@ func (res *GetSELTimeUTCOffsetResponse) CompletionCodes() map[uint8]string {
 func (res *GetSELTimeUTCOffsetResponse) Format() string {
 	return fmt.Sprintf("Offset : %d", res.MinutesOffset)
 }
-
-// GetSELTimeUTCOffset is used to retrieve the SEL Time UTC Offset (timezone)
