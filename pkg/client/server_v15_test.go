@@ -194,7 +194,7 @@ func newV15TestBMC(t *testing.T, username, password string) *bmc.BMC {
 		IPMIVersion:             0x20,
 		ManufacturerID:          0x000157,
 		ProductID:               0x0001,
-		AdditionalDeviceSupport: 0x3D,
+		AdditionalDeviceSupport: 0x39,
 	}
 	var guid [16]byte
 	copy(guid[:], "go-ipmi-v15\x00\x00\x00\x00\x00")

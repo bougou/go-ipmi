@@ -135,8 +135,8 @@ type I2CHAL interface {
 
 // ErrNotSupported is returned by HAL methods when the hardware does not
 // support the requested operation.  Handlers translate this to an appropriate
-// IPMI completion code: CodeBootParamNotSupported 0x80 (§28.12/§28.13) for
-// parameter-level operations, CodeUnspecifiedError 0xFF (§5.2 Table 5-2)
+// IPMI completion code: CodeBootParamNotSupported 0x80 (v2.0§28.12/§28.13) for
+// parameter-level operations, CodeUnspecifiedError 0xFF (v2.0§5.2 Table 5-2)
 // via codeFromErr for general error paths.
 var ErrNotSupported = errNotSupported{}
 

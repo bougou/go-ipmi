@@ -50,7 +50,35 @@ const (
 	FRUFormatVersion     uint8 = 0x01
 	FRUAreaFieldsEndMark uint8 = 0xc1
 	FRUCommonHeaderSize  uint8 = 8
+	// FRUMultiRecordFormatVersion is the default MultiRecord format version
+	// (fru§16.2.3: shall be 02h unless otherwise specified).
+	FRUMultiRecordFormatVersion uint8 = 0x02
 )
+
+// FRUField is one Type/Length-encoded FRU string field (fru§13).
+// Data holds the raw bytes that follow the type/length byte on the wire.
+type FRUField struct {
+	TypeLength TypeLength
+	Data       []byte
+}
+
+// Pack serialises the field as type/length + raw data (fru§13).
+func (f FRUField) Pack() []byte {
+	return packFRUField(f.TypeLength, f.Data)
+}
+
+// String decodes Data according to TypeLength for display.
+func (f FRUField) String() string {
+	return FRUFieldString(f.TypeLength, f.Data)
+}
+
+func FRUFieldString(tl TypeLength, raw []byte) string {
+	chars, err := tl.Chars(raw)
+	if err != nil {
+		return string(raw)
+	}
+	return string(chars)
+}
 
 type FRU struct {
 	DeviceID               uint8
@@ -58,7 +86,7 @@ type FRU struct {
 	DeviceNotPresent       bool
 	DeviceNotPresentReason string
 
-	// FRU/17. FRU Information Layout
+	// fru§17. FRU Information Layout
 
 	CommonHeader    *FRUCommonHeader
 	InternalUseArea *FRUInternalUseArea
@@ -83,37 +111,36 @@ func (fru *FRU) String() string {
 
 	if fru.ChassisInfoArea != nil {
 		buf.WriteString(fmt.Sprintf("  Chassis Type         : %s\n", fru.ChassisInfoArea.ChassisType.String()))
-		buf.WriteString(fmt.Sprintf("  Chassis Part Number  : %s\n", fru.ChassisInfoArea.PartNumber))
-		buf.WriteString(fmt.Sprintf("  Chassis Serial Number: %s\n", fru.ChassisInfoArea.SerialNumber))
+		buf.WriteString(fmt.Sprintf("  Chassis Part Number  : %s\n", FRUFieldString(fru.ChassisInfoArea.PartNumberTypeLength, fru.ChassisInfoArea.PartNumber)))
+		buf.WriteString(fmt.Sprintf("  Chassis Serial Number: %s\n", FRUFieldString(fru.ChassisInfoArea.SerialNumberTypeLength, fru.ChassisInfoArea.SerialNumber)))
 		for _, v := range fru.ChassisInfoArea.Custom {
-			buf.WriteString(fmt.Sprintf("  Chassis Extra        : %s\n", v))
+			buf.WriteString(fmt.Sprintf("  Chassis Extra        : %s\n", v.String()))
 		}
 	}
 
 	if fru.BoardInfoArea != nil {
 		buf.WriteString(fmt.Sprintf("  Board Mfg Date       : %s\n", fru.BoardInfoArea.MfgDateTime.String()))
-		buf.WriteString(fmt.Sprintf("  Board Mfg            : %s\n", fru.BoardInfoArea.Manufacturer))
-		buf.WriteString(fmt.Sprintf("  Board Product        : %s\n", fru.BoardInfoArea.ProductName))
-		buf.WriteString(fmt.Sprintf("  Board Serial         : %s\n", fru.BoardInfoArea.SerialNumber))
-		buf.WriteString(fmt.Sprintf("  Board Part Number    : %s\n", fru.BoardInfoArea.PartNumber))
+		buf.WriteString(fmt.Sprintf("  Board Mfg            : %s\n", FRUFieldString(fru.BoardInfoArea.ManufacturerTypeLength, fru.BoardInfoArea.Manufacturer)))
+		buf.WriteString(fmt.Sprintf("  Board Product        : %s\n", FRUFieldString(fru.BoardInfoArea.ProductNameTypeLength, fru.BoardInfoArea.ProductName)))
+		buf.WriteString(fmt.Sprintf("  Board Serial         : %s\n", FRUFieldString(fru.BoardInfoArea.SerialNumberTypeLength, fru.BoardInfoArea.SerialNumber)))
+		buf.WriteString(fmt.Sprintf("  Board Part Number    : %s\n", FRUFieldString(fru.BoardInfoArea.PartNumberTypeLength, fru.BoardInfoArea.PartNumber)))
 		for _, v := range fru.BoardInfoArea.Custom {
-			buf.WriteString(fmt.Sprintf("  Board Extra          : %s\n", v))
+			buf.WriteString(fmt.Sprintf("  Board Extra          : %s\n", v.String()))
 		}
 	}
 
 	if fru.ProductInfoArea != nil {
-		buf.WriteString(fmt.Sprintf("  Product Mfg          : %s\n", fru.ProductInfoArea.Manufacturer))
-		buf.WriteString(fmt.Sprintf("  Product Name         : %s\n", fru.ProductInfoArea.Name))
-		buf.WriteString(fmt.Sprintf("  Product Version      : %s\n", fru.ProductInfoArea.Version))
-		buf.WriteString(fmt.Sprintf("  Product Part Number  : %s\n", fru.ProductInfoArea.PartModel))
-		buf.WriteString(fmt.Sprintf("  Product Serial       : %s\n", fru.ProductInfoArea.SerialNumber))
+		buf.WriteString(fmt.Sprintf("  Product Mfg          : %s\n", FRUFieldString(fru.ProductInfoArea.ManufacturerTypeLength, fru.ProductInfoArea.Manufacturer)))
+		buf.WriteString(fmt.Sprintf("  Product Name         : %s\n", FRUFieldString(fru.ProductInfoArea.NameTypeLength, fru.ProductInfoArea.Name)))
+		buf.WriteString(fmt.Sprintf("  Product Version      : %s\n", FRUFieldString(fru.ProductInfoArea.VersionTypeLength, fru.ProductInfoArea.Version)))
+		buf.WriteString(fmt.Sprintf("  Product Part Number  : %s\n", FRUFieldString(fru.ProductInfoArea.PartModelTypeLength, fru.ProductInfoArea.PartModel)))
+		buf.WriteString(fmt.Sprintf("  Product Serial       : %s\n", FRUFieldString(fru.ProductInfoArea.SerialNumberTypeLength, fru.ProductInfoArea.SerialNumber)))
 
-		assetTag, _ := fru.ProductInfoArea.AssetTagTypeLength.Chars(fru.ProductInfoArea.AssetTag)
-		buf.WriteString(fmt.Sprintf("  Product Asset Tag    : %s\n", string(assetTag)))
+		buf.WriteString(fmt.Sprintf("  Product Asset Tag    : %s\n", FRUFieldString(fru.ProductInfoArea.AssetTagTypeLength, fru.ProductInfoArea.AssetTag)))
 		buf.WriteString(fmt.Sprintf("  Product Asset Tag TL : %s\n", fru.ProductInfoArea.AssetTagTypeLength))
 
 		for _, v := range fru.ProductInfoArea.Custom {
-			buf.WriteString(fmt.Sprintf("  Product Extra        : %s\n", v))
+			buf.WriteString(fmt.Sprintf("  Product Extra        : %s\n", v.String()))
 		}
 	}
 	for _, multiRecord := range fru.MultiRecords {
@@ -130,7 +157,7 @@ func (fru *FRU) String() string {
 // The offset unit in wire is in multiples of 8 bytes, offset value 0x0 indicates
 // that this area is not present.
 //
-// ref: FRU/8. Common Header Format
+// ref: fru§8. Common Header Format
 type FRUCommonHeader struct {
 	FormatVersion        uint8
 	InternalOffset8B     uint8
@@ -197,13 +224,13 @@ func (s *FRUCommonHeader) String() string {
 // The Internal Use Area is usually used to provide private non-volatile storage
 // for a management controller.
 //
-// see: FRU/9. Internal Use Area Format
+// see: fru§9. Internal Use Area Format
 type FRUInternalUseArea struct {
 	FormatVersion uint8
 	Data          []byte
 }
 
-// Unpack decodes an Internal Use Area per FRU/9.
+// Unpack decodes an Internal Use Area per fru§9.
 // msg is the full area slice bounded by common-header offsets; byte 0 is the
 // format version and bytes 1..end are implementation-specific data.
 func (a *FRUInternalUseArea) Unpack(msg []byte) error {
@@ -217,7 +244,7 @@ func (a *FRUInternalUseArea) Unpack(msg []byte) error {
 	return nil
 }
 
-// Pack encodes the Internal Use Area per FRU/9.
+// Pack encodes the Internal Use Area per fru§9.
 func (a *FRUInternalUseArea) Pack() []byte {
 	ver := a.FormatVersion
 	if ver == 0 {
@@ -235,7 +262,7 @@ func (a *FRUInternalUseArea) Pack() []byte {
 // Information Devices within a chassis, but only one device should provide
 // the Chassis Info Area.
 //
-// see: FRU/10. Chassis Info Area Format
+// see: fru§10. Chassis Info Area Format
 type FRUChassisInfoArea struct {
 	FormatVersion          uint8
 	Length8B               uint8
@@ -244,7 +271,7 @@ type FRUChassisInfoArea struct {
 	PartNumber             []byte
 	SerialNumberTypeLength TypeLength
 	SerialNumber           []byte
-	Custom                 [][]byte
+	Custom                 []FRUField
 	Unused                 []byte
 	Checksum               uint8
 }
@@ -283,7 +310,7 @@ func (fruChassis *FRUChassisInfoArea) Unpack(msg []byte) error {
 	return nil
 }
 
-// Pack encodes the Chassis Info Area per FRU/10.
+// Pack encodes the Chassis Info Area per fru§10.
 func (a *FRUChassisInfoArea) Pack() []byte {
 	ver := a.FormatVersion
 	if ver == 0 {
@@ -293,7 +320,7 @@ func (a *FRUChassisInfoArea) Pack() []byte {
 	body = append(body, packFRUField(a.PartNumberTypeLength, a.PartNumber)...)
 	body = append(body, packFRUField(a.SerialNumberTypeLength, a.SerialNumber)...)
 	for _, custom := range a.Custom {
-		body = append(body, packFRUASCIIField(string(custom))...)
+		body = append(body, custom.Pack()...)
 	}
 	body = append(body, FRUAreaFieldsEndMark)
 	return finalizeFRUArea(body, a.Unused)
@@ -396,7 +423,7 @@ func (chassisSecurityStatus ChassisSecurityStatus) String() string {
 // For example, individual boards from a board set, or a sub-chassis or backplane
 // that's part of a larger chassis.1
 //
-// see: FRU/11. Board Info Area Format
+// see: fru§11. Board Info Area Format
 type FRUBoardInfoArea struct {
 	FormatVersion          uint8
 	Length8B               uint8
@@ -412,7 +439,7 @@ type FRUBoardInfoArea struct {
 	PartNumber             []byte
 	FRUFileIDTypeLength    TypeLength
 	FRUFileID              []byte
-	Custom                 [][]byte
+	Custom                 []FRUField
 	Unused                 []byte
 	Checksum               uint8
 }
@@ -470,7 +497,7 @@ func (fruBoard *FRUBoardInfoArea) Unpack(msg []byte) error {
 	return nil
 }
 
-// Pack encodes the Board Info Area per FRU/11.
+// Pack encodes the Board Info Area per fru§11.
 func (a *FRUBoardInfoArea) Pack() []byte {
 	ver := a.FormatVersion
 	if ver == 0 {
@@ -489,7 +516,7 @@ func (a *FRUBoardInfoArea) Pack() []byte {
 	body = append(body, packFRUField(a.PartNumberTypeLength, a.PartNumber)...)
 	body = append(body, packFRUField(a.FRUFileIDTypeLength, a.FRUFileID)...)
 	for _, custom := range a.Custom {
-		body = append(body, packFRUASCIIField(string(custom))...)
+		body = append(body, custom.Pack()...)
 	}
 	body = append(body, FRUAreaFieldsEndMark)
 	return finalizeFRUArea(body, a.Unused)
@@ -526,7 +553,7 @@ func (boardType BoardType) String() string {
 // When this area is provided in the FRU Information Device that contains the
 // Chassis Info Area, the product info is for the overall system, as initially manufactured.
 //
-// see: FRU/12. Product Info Area Format
+// see: fru§12. Product Info Area Format
 type FRUProductInfoArea struct {
 	FormatVersion          uint8
 	Length8B               uint8
@@ -545,7 +572,7 @@ type FRUProductInfoArea struct {
 	AssetTag               []byte
 	FRUFileIDTypeLength    TypeLength
 	FRUFileID              []byte
-	Custom                 [][]byte
+	Custom                 []FRUField
 	Unused                 []byte
 	Checksum               uint8
 }
@@ -609,7 +636,7 @@ func (fruProduct *FRUProductInfoArea) Unpack(msg []byte) error {
 	return nil
 }
 
-// Pack encodes the Product Info Area per FRU/12.
+// Pack encodes the Product Info Area per fru§12.
 func (a *FRUProductInfoArea) Pack() []byte {
 	ver := a.FormatVersion
 	if ver == 0 {
@@ -624,7 +651,7 @@ func (a *FRUProductInfoArea) Pack() []byte {
 	body = append(body, packFRUField(a.AssetTagTypeLength, a.AssetTag)...)
 	body = append(body, packFRUField(a.FRUFileIDTypeLength, a.FRUFileID)...)
 	for _, custom := range a.Custom {
-		body = append(body, packFRUASCIIField(string(custom))...)
+		body = append(body, custom.Pack()...)
 	}
 	body = append(body, FRUAreaFieldsEndMark)
 	return finalizeFRUArea(body, a.Unused)
@@ -634,7 +661,7 @@ func (a *FRUProductInfoArea) Pack() []byte {
 // where the type and format of the information is specified in the individual
 // headers for the records.
 //
-// see: FRU/16. MultiRecord Area
+// see: fru§16. MultiRecord Area
 type FRUMultiRecord struct {
 	RecordType FRURecordType // used to identify the information contained in the record
 
@@ -683,12 +710,17 @@ func (fruMultiRecord *FRUMultiRecord) Unpack(msg []byte) error {
 	return nil
 }
 
-// Pack encodes a MultiRecord entry per FRU/16.1.
+// Pack encodes a MultiRecord entry per fru§16.1 / fru§16.2.
+// A zero FormatVersion defaults to [FRUMultiRecordFormatVersion] (fru§16.2.3).
 func (r *FRUMultiRecord) Pack() []byte {
 	data := r.RecordData
+	ver := r.FormatVersion
+	if ver == 0 {
+		ver = FRUMultiRecordFormatVersion
+	}
 	out := make([]byte, 5+len(data))
 	out[0] = byte(r.RecordType)
-	out[1] = r.FormatVersion & 0x0f
+	out[1] = ver & 0x0f
 	if r.EndOfList {
 		out[1] |= 0x80
 	}
@@ -699,13 +731,30 @@ func (r *FRUMultiRecord) Pack() []byte {
 	return out
 }
 
-// PackMultiRecords concatenates encoded multi-record entries.
+// PackMultiRecords concatenates encoded multi-record entries (fru§16).
+// The last non-nil record is forced to EndOfList=1 (fru§16.2.2); earlier
+// records are packed with EndOfList=0 so the area terminates correctly.
 func PackMultiRecords(records []*FRUMultiRecord) []byte {
-	var out []byte
-	for _, rec := range records {
+	last := -1
+	for i, rec := range records {
 		if rec != nil {
-			out = append(out, rec.Pack()...)
+			last = i
 		}
+	}
+	var out []byte
+	for i, rec := range records {
+		if rec == nil {
+			continue
+		}
+		wantEOL := i == last
+		if rec.EndOfList == wantEOL {
+			out = append(out, rec.Pack()...)
+			continue
+		}
+		// Copy only when EndOfList must change, to avoid mutating the caller.
+		packed := *rec
+		packed.EndOfList = wantEOL
+		out = append(out, packed.Pack()...)
 	}
 	return out
 }
@@ -801,7 +850,7 @@ type FRURecordTypeDCOutput struct {
 	OutputNumber uint8
 
 	// Expected voltage from the power supply. Value is a signed short given in 10 millivolt increments.
-	// 额定电压 毫-伏特
+	// 额定电压 毫 - 伏特
 	NominalVoltage10mV int16
 
 	MaxNegativeVoltage10mV int16
@@ -810,7 +859,7 @@ type FRURecordTypeDCOutput struct {
 
 	RippleNoise1mV uint16
 
-	// 毫-安培
+	// 毫 - 安培
 	MinCurrentDraw1mA uint16
 
 	MaxCurrentDraw1mA uint16
@@ -840,7 +889,7 @@ func (output *FRURecordTypeDCOutput) Unpack(msg []byte) error {
 	return nil
 }
 
-// Pack encodes record type 0x01 per FRU/18.2.
+// Pack encodes record type 0x01 per fru§18.2.
 func (o *FRURecordTypeDCOutput) Pack() []byte {
 	out := make([]byte, 13)
 	var b0 uint8
@@ -871,7 +920,7 @@ type FRURecordTypeExtendedDCOutput struct {
 	OutputNumber uint8
 
 	// Expected voltage from the power supply. Value is a signed short given in 10 millivolt increments.
-	// 毫-伏特
+	// 毫 - 伏特
 	NominalVoltage10mV int16
 
 	MaxNegativeVoltage10mV int16
@@ -910,7 +959,7 @@ func (output *FRURecordTypeExtendedDCOutput) Unpack(msg []byte) error {
 	return nil
 }
 
-// Pack encodes record type 0x09 per FRU/18.2a.
+// Pack encodes record type 0x09 per fru§18.2a.
 func (o *FRURecordTypeExtendedDCOutput) Pack() []byte {
 	out := make([]byte, 13)
 	var b0 uint8
@@ -965,7 +1014,7 @@ func (output *FRURecordTypeDCLoad) Unpack(msg []byte) error {
 	return nil
 }
 
-// Pack encodes record type 0x02 per FRU/18.3.
+// Pack encodes record type 0x02 per fru§18.3.
 func (o *FRURecordTypeDCLoad) Pack() []byte {
 	out := make([]byte, 13)
 	out[0] = o.OutputNumber & 0x0f
@@ -1015,7 +1064,7 @@ func (f *FRURecordTypeExtendedDCLoad) Unpack(msg []byte) error {
 	return nil
 }
 
-// Pack encodes record type 0x0A per FRU/18.3a.
+// Pack encodes record type 0x0A per fru§18.3a.
 func (f *FRURecordTypeExtendedDCLoad) Pack() []byte {
 	out := make([]byte, 13)
 	var b0 uint8
@@ -1094,7 +1143,7 @@ func (f *FRURecordTypeManagementAccess) Unpack(msg []byte) error {
 	return nil
 }
 
-// Pack encodes record type 0x03 per FRU/18.4.
+// Pack encodes record type 0x03 per fru§18.4.
 func (r *FRURecordTypeManagementAccess) Pack() []byte {
 	out := make([]byte, 1+len(r.Data))
 	out[0] = uint8(r.SubRecordType)
@@ -1123,7 +1172,7 @@ func (f *FRURecordTypeBaseCompatibility) Unpack(msg []byte) error {
 	return nil
 }
 
-// Pack encodes record type 0x04 per FRU/18.5.
+// Pack encodes record type 0x04 per fru§18.5.
 func (r *FRURecordTypeBaseCompatibility) Pack() []byte {
 	out := make([]byte, 7)
 	PackUint24L(r.ManufacturerID, out, 0)
@@ -1155,7 +1204,7 @@ func (f *FRURecordTypeExtendedCompatibilityRecord) Unpack(msg []byte) error {
 	return nil
 }
 
-// Pack encodes record type 0x05 per FRU/18.6.
+// Pack encodes record type 0x05 per fru§18.6.
 func (r *FRURecordTypeExtendedCompatibilityRecord) Pack() []byte {
 	out := make([]byte, 7)
 	PackUint24L(r.ManufacturerID, out, 0)
@@ -1181,7 +1230,7 @@ func (f *FRURecordTypeOEM) Unpack(msg []byte) error {
 	return nil
 }
 
-// Pack encodes OEM multi-record types 0xC0–0xFF per FRU/18.7.
+// Pack encodes OEM multi-record types 0xC0–0xFF per fru§18.7.
 func (r *FRURecordTypeOEM) Pack() []byte {
 	out := make([]byte, 3+len(r.Data))
 	PackUint24L(r.ManufacturerID, out, 0)
@@ -1189,8 +1238,10 @@ func (r *FRURecordTypeOEM) Pack() []byte {
 	return out
 }
 
-// getFRUTypeLengthField return a field data bytes whose length is determined by
-// a TypeLength byte. The offset index SHOULD points to the TypeLength field.
+// getFRUTypeLengthField returns a field whose length is determined by a
+// Type/Length byte (fru§13). The offset MUST point at the Type/Length byte.
+// fieldData is the raw wire bytes after the Type/Length byte (not decoded);
+// use TypeLength.Chars to obtain display text.
 func getFRUTypeLengthField(fruData []byte, offset uint16) (nextOffset uint16, typeLength TypeLength, fieldData []byte, err error) {
 	if len(fruData) < int(offset+1) {
 		err = ErrUnpackedDataTooShortWith(len(fruData), int(offset+1))
@@ -1206,43 +1257,48 @@ func getFRUTypeLengthField(fruData []byte, offset uint16) (nextOffset uint16, ty
 
 	dataStart := int(offset) + 1
 	dataEnd := dataStart + int(length)
-
-	fieldDataRaw := fruData[dataStart:dataEnd]
-
-	fieldData, err = typeLength.Chars(fieldDataRaw)
-	if err != nil {
-		err = fmt.Errorf("get chars from typelength failed, err: %w", err)
-		return
-	}
+	fieldData = fruData[dataStart:dataEnd]
 
 	nextOffset = offset + uint16(length) + 1
 	return
 }
 
-// getFRUCustomUnusedChecksumFields is a helper function to get
-// custom, unused, and checksum these three fields from fru data.
-// The offset SHOULD points to the start of the custom area fields.
-func getFRUCustomUnusedChecksumFields(fruData []byte, offset uint16) (custom [][]byte, unused []byte, checksum uint8, err error) {
+// getFRUCustomUnusedChecksumFields returns custom fields, unused padding, and
+// the area checksum. The offset MUST point at the first custom field (or C1h).
+// Custom fields retain their Type/Length byte (fru§5 / fru§13).
+//
+// Termination (lenient, matching common BMC images):
+//   - C1h end-of-fields mark (fru§13), or
+//   - a null Type/Length field (length bits = 0). Many FRU images omit C1h and
+//     pad with 0x00/0xC0; treating null as end avoids reading the checksum byte
+//     as a Type/Length and failing with "data too short".
+func getFRUCustomUnusedChecksumFields(fruData []byte, offset uint16) (custom []FRUField, unused []byte, checksum uint8, err error) {
 	if len(fruData) < int(offset+1) {
 		err = ErrUnpackedDataTooShortWith(len(fruData), int(offset+1))
 		return
 	}
 
 	for {
+		if int(offset) >= len(fruData)-1 {
+			break
+		}
 		if fruData[offset] == FRUAreaFieldsEndMark {
 			break
 		}
-		nextOffset, _, fieldData, e := getFRUTypeLengthField(fruData, offset)
+		tlPeek := TypeLength(fruData[offset])
+		if tlPeek.Length() == 0 {
+			break
+		}
+		nextOffset, tl, fieldData, e := getFRUTypeLengthField(fruData, offset)
 		if e != nil {
 			err = fmt.Errorf("getFRUTypeLengthField failed, err: %w", e)
 			return
 		}
+		custom = append(custom, FRUField{
+			TypeLength: tl,
+			Data:       append([]byte(nil), fieldData...),
+		})
 		offset = nextOffset
-
-		if len(fieldData) == 0 {
-			break
-		}
-		custom = append(custom, fieldData)
 	}
 
 	unusedBytesOffset := int(offset) + 1

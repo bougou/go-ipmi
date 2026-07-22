@@ -8,8 +8,8 @@ import (
 )
 
 func handleGetSDRRepoInfo(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
-	sdr := sdrStore(hctx)
-	if sdr == nil {
+	store := storageHAL(hctx)
+	if store == nil || store.SDR() == nil {
 		return nil, CodeNotSupportedInState, nil
 	}
 	_ = req
@@ -26,8 +26,8 @@ func handleGetSDRRepoInfo(ctx context.Context, hctx *HandlerContext, req []byte)
 }
 
 func handleGetSDRRepoAllocInfo(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
-	sdr := sdrStore(hctx)
-	if sdr == nil {
+	store := storageHAL(hctx)
+	if store == nil || store.SDR() == nil {
 		return nil, CodeNotSupportedInState, nil
 	}
 	_ = req
@@ -44,7 +44,8 @@ func handleGetSDRRepoAllocInfo(ctx context.Context, hctx *HandlerContext, req []
 }
 
 func handleReserveSDRRepo(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
-	if sdrStore(hctx) == nil {
+	store := storageHAL(hctx)
+	if store == nil || store.SDR() == nil {
 		return nil, CodeNotSupportedInState, nil
 	}
 	_ = req
@@ -58,8 +59,8 @@ func handleReserveSDRRepo(ctx context.Context, hctx *HandlerContext, req []byte)
 }
 
 func handleGetSDR(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
-	sdr := sdrStore(hctx)
-	if sdr == nil {
+	store := storageHAL(hctx)
+	if store == nil || store.SDR() == nil {
 		return nil, CodeNotSupportedInState, nil
 	}
 

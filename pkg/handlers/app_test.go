@@ -18,7 +18,7 @@ func newTestBMC() *bmc.BMC {
 		IPMIVersion:             0x20,
 		ManufacturerID:          0x000157, // PICMG
 		ProductID:               0x0001,
-		AdditionalDeviceSupport: 0x3D,
+		AdditionalDeviceSupport: 0x39,
 	}
 	var guid [16]byte
 	return bmc.New(info, guid, mock.New(), bmc.WithClock(clock.Real))

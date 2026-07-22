@@ -113,7 +113,7 @@ func (r *SDRRepository) GetRecord(ctx context.Context, recordID uint16) (record 
 	return record, nextID, nil
 }
 
-// Info returns the SDR Repository Info response per §33.9.
+// Info returns the Get SDR Repository Info response per v2.0§33.9.
 func (r *SDRRepository) Info(ctx context.Context) (*storage.GetSDRRepoInfoResponse, error) {
 	ids, err := r.RecordIDs(ctx)
 	if err != nil {
@@ -138,7 +138,7 @@ func (r *SDRRepository) Info(ctx context.Context) (*storage.GetSDRRepoInfoRespon
 	}, nil
 }
 
-// AllocInfo returns the SDR Repository Alloc Info response per §33.10.
+// AllocInfo returns the Get SDR Repository Allocation Info response per v2.0§33.10.
 func (r *SDRRepository) AllocInfo(ctx context.Context) (*storage.GetSDRRepoAllocInfoResponse, error) {
 	used, maxRec, err := r.scanRecords(ctx)
 	if err != nil {

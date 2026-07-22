@@ -6,7 +6,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 34.1 Get FRU Inventory Area Info Command. Returns the FRU Inventory Area size in bytes.
+// v2.0§34.1 Get FRU Inventory Area Info Command. Returns the FRU Inventory Area size in bytes.
 type GetFRUInventoryAreaInfoRequest struct {
 	FRUDeviceID uint8
 }

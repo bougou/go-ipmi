@@ -102,7 +102,7 @@ func newTestBMC(t *testing.T, clk clock.Clock, username, password string) *bmc.B
 		IPMIVersion:             0x20,
 		ManufacturerID:          0x000157,
 		ProductID:               0x0001,
-		AdditionalDeviceSupport: 0x3D,
+		AdditionalDeviceSupport: 0x39,
 	}
 	var guid [16]byte
 	copy(guid[:], "go-ipmi-test\x00\x00\x00\x00\x00")

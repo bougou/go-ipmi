@@ -9,7 +9,7 @@ import (
 )
 
 func handleGetFRUInventoryAreaInfo(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
-	fru := fruStore(hctx)
+	fru := hctx.BMC.FRUInventory()
 	if fru == nil {
 		return nil, CodeNotSupportedInState, nil
 	}
@@ -19,7 +19,7 @@ func handleGetFRUInventoryAreaInfo(ctx context.Context, hctx *HandlerContext, re
 		return nil, CodeRequestDataTruncated, nil
 	}
 
-	data, err := fru.Read(ctx, typed.FRUDeviceID)
+	size, err := fru.AreaSize(ctx, typed.FRUDeviceID)
 	if err != nil {
 		if bmc.StorageMissing(err) {
 			return nil, CodeRequestedRecordNotPresent, nil
@@ -28,14 +28,14 @@ func handleGetFRUInventoryAreaInfo(ctx context.Context, hctx *HandlerContext, re
 	}
 
 	resp := &storage.GetFRUInventoryAreaInfoResponse{
-		AreaSizeBytes:         uint16(len(data)),
+		AreaSizeBytes:         size,
 		DeviceAccessedByWords: false,
 	}
 	return resp.Pack(), CodeOK, nil
 }
 
 func handleReadFRUData(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
-	fru := fruStore(hctx)
+	fru := hctx.BMC.FRUInventory()
 	if fru == nil {
 		return nil, CodeNotSupportedInState, nil
 	}
@@ -79,22 +79,6 @@ func storageHAL(hctx *HandlerContext) hal.StorageHAL {
 		return nil
 	}
 	return hctx.BMC.HAL().Storage()
-}
-
-func fruStore(hctx *HandlerContext) hal.FRUStore {
-	store := storageHAL(hctx)
-	if store == nil {
-		return nil
-	}
-	return store.FRU()
-}
-
-func sdrStore(hctx *HandlerContext) hal.SDRStore {
-	store := storageHAL(hctx)
-	if store == nil {
-		return nil
-	}
-	return store.SDR()
 }
 
 func hasFRUDevice(ctx context.Context, store hal.StorageHAL, deviceID uint8) bool {

@@ -2,14 +2,14 @@ package hal
 
 import "context"
 
-// StorageHAL groups persistent blob stores for Storage NetFn data (§33–34).
+// StorageHAL groups persistent blob stores for Storage NetFn data (v2.0§33–§34).
 // Each sub-store may be nil when the backing hardware is absent.
 type StorageHAL interface {
 	FRU() FRUStore
 	SDR() SDRStore
 }
 
-// FRUStore holds wire-format FRU inventory blobs (§34).
+// FRUStore holds wire-format FRU inventory blobs (v2.0§34).
 // DeviceID 0 is the builtin MC FRU at LUN 00b.
 type FRUStore interface {
 	Read(ctx context.Context, deviceID uint8) ([]byte, error)

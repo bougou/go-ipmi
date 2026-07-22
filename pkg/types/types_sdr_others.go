@@ -192,7 +192,7 @@ func parseSDREntityAssociation(data []byte, sdr *SDR) error {
 	return nil
 }
 
-// Pack encodes a Type 08h Entity Association record per §43.4.
+// Pack encodes a Type 08h Entity Association record per v2.0§43.4.
 func (s *SDREntityAssociation) Pack(recordID uint16) []byte {
 	var flag uint8
 	if s.ContainedEntitiesAsRange {
@@ -315,9 +315,9 @@ func parseSDRDeviceRelativeEntityAssociation(data []byte, sdr *SDR) error {
 	return nil
 }
 
-// Pack encodes a Type 09h Device-relative Entity Association record per §43.5.
+// Pack encodes a Type 09h Device-relative Entity Association record per v2.0§43.5.
 func (s *SDRDeviceRelative) Pack(recordID uint16) []byte {
-	body := make([]byte, 27) // 5 header + 27 body = 32 total (§43.5)
+	body := make([]byte, 27) // 5 header + 27 body = 32 total (v2.0§43.5)
 	body[0] = s.ContainerEntityID
 	body[1] = s.ContainerEntityInstance
 	body[2] = s.ContainerEntityDeviceAddress
@@ -430,7 +430,7 @@ func parseSDRGenericLocator(data []byte, sdr *SDR) error {
 	return nil
 }
 
-// Pack encodes a Type 10h Generic Device Locator record per §43.7.
+// Pack encodes a Type 10h Generic Device Locator record per v2.0§43.7.
 func (s *SDRGenericDeviceLocator) Pack(recordID uint16) []byte {
 	body := make([]byte, 16)
 	body[0] = s.DeviceAccessAddress
@@ -578,7 +578,7 @@ func parseSDRFRUDeviceLocator(data []byte, sdr *SDR) error {
 	return nil
 }
 
-// Pack encodes a Type 11h FRU Device Locator record per §43.8.
+// Pack encodes a Type 11h FRU Device Locator record per v2.0§43.8.
 func (s *SDRFRUDeviceLocator) Pack(recordID uint16) []byte {
 	body := make([]byte, 16)
 	body[0] = s.DeviceAccessAddress
@@ -683,7 +683,7 @@ func parseSDRManagementControllerDeviceLocator(data []byte, sdr *SDR) error {
 	return nil
 }
 
-// Pack encodes a Type 12h MC Device Locator record per §43.9.
+// Pack encodes a Type 12h MC Device Locator record per v2.0§43.9.
 func (s *SDRMgmtControllerDeviceLocator) Pack(recordID uint16) []byte {
 	body := make([]byte, 16)
 	body[0] = s.DeviceSlaveAddress
@@ -803,9 +803,9 @@ func parseSDRManagementControllerConfirmation(data []byte, sdr *SDR) error {
 	return nil
 }
 
-// Pack encodes a Type 13h MC Confirmation record per §43.10.
+// Pack encodes a Type 13h MC Confirmation record per v2.0§43.10.
 func (s *SDRMgmtControllerConfirmation) Pack(recordID uint16) []byte {
-	body := make([]byte, 27) // 5 header + 27 body = 32 total (§43.10)
+	body := make([]byte, 27) // 5 header + 27 body = 32 total (v2.0§43.10)
 	body[0] = s.DeviceSlaveAddress
 	body[1] = s.DeviceID
 	body[2] = (s.ChannelNumber&0x0f)<<4 | (s.DeviceRevision & 0x0f)
@@ -880,7 +880,7 @@ func parseSDRBMCMessageChannelInfo(data []byte, sdr *SDR) error {
 	return nil
 }
 
-// Pack encodes a Type 14h BMC Message Channel Info record per §43.11.
+// Pack encodes a Type 14h BMC Message Channel Info record per v2.0§43.11.
 func (s *SDRBMCChannelInfo) Pack(recordID uint16) []byte {
 	body := make([]byte, 11)
 	body[0] = packChannelInfo(s.Channel0)
@@ -926,7 +926,7 @@ func parseSDROEM(data []byte, sdr *SDR) error {
 	return nil
 }
 
-// Pack encodes a Type C0h OEM record per §43.12.
+// Pack encodes a Type C0h OEM record per v2.0§43.12.
 func (s *SDROEM) Pack(recordID uint16) []byte {
 	body := make([]byte, 3+len(s.OEMData))
 	PackUint24L(s.ManufacturerID, body, 0)

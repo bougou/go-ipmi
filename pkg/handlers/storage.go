@@ -1,6 +1,6 @@
 package handlers
 
-// Storage command IDs (spec §33–34).
+// Storage command IDs (spec v2.0§33–§34).
 const (
 	CmdGetFRUInventoryAreaInfo uint8 = 0x10
 	CmdReadFRUData             uint8 = 0x11

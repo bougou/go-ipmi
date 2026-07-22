@@ -236,7 +236,7 @@ func parseSDRCompactSensor(data []byte, sdr *SDR) error {
 	return nil
 }
 
-// Pack encodes a Type 02h Compact Sensor record per §43.2.
+// Pack encodes a Type 02h Compact Sensor record per v2.0§43.2.
 func (s *SDRCompact) Pack(recordID uint16) []byte {
 	body := make([]byte, 32)
 	PackUint16L(uint16(s.GeneratorID), body, 0)

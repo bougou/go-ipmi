@@ -52,7 +52,7 @@ func run() error {
 		IPMIVersion:             0x20,
 		ManufacturerID:          0x000157,
 		ProductID:               0x0001,
-		AdditionalDeviceSupport: 0x3D,
+		AdditionalDeviceSupport: 0x39, // Sensor+FRU+IPMB Rx/Tx; no SEL (unimplemented); SDR OR'd when present
 	}
 	var guid [16]byte
 	copy(guid[:], "go-ipmi-e2e\x00\x00\x00\x00")

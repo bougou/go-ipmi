@@ -2,7 +2,7 @@ package types
 
 import "fmt"
 
-// PackSDR serializes a parsed [SDR] back to wire bytes per IPMI §43.
+// PackSDR serializes a parsed [SDR] back to wire bytes per v2.0§43.
 func PackSDR(sdr *SDR) ([]byte, error) {
 	if sdr == nil || sdr.RecordHeader == nil {
 		return nil, fmt.Errorf("types: PackSDR: nil sdr or record header")
@@ -70,7 +70,7 @@ func PackSDR(sdr *SDR) ([]byte, error) {
 	}
 }
 
-// packSDRWire wraps a record body with the five-byte SDR header (§43).
+// packSDRWire wraps a record body with the five-byte SDR header (v2.0§43).
 func packSDRWire(recordID uint16, recordType SDRRecordType, body []byte) []byte {
 	rec := make([]byte, SDRRecordHeaderSize+len(body))
 	PackUint16L(recordID, rec, 0)

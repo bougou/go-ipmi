@@ -2,7 +2,7 @@ package bmc
 
 import "sync"
 
-// SDRRepoStore tracks the active SDR repository reservation (§33.11).
+// SDRRepoStore tracks the active SDR repository reservation (v2.0§33.11).
 type SDRRepoStore struct {
 	mu            sync.Mutex
 	reservationID uint16

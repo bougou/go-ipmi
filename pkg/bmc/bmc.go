@@ -56,11 +56,14 @@ type BMC struct {
 	// v15Disabled disables IPMI v1.5 LAN sessions when true.
 	v15Disabled bool
 
-	// SDRRepo tracks SDR repository reservation state (§33.11).
+	// SDRRepo tracks SDR repository reservation state (v2.0§33.11).
 	SDRRepo *SDRRepoStore
-	// sdrRepo is the lazily-initialised SDR record repository cache (§33).
+	// sdrRepo is the lazily-initialised SDR record repository (v2.0§33).
 	sdrRepo     *SDRRepository
 	sdrRepoOnce sync.Once
+	// fruInv is the lazily-initialised FRU inventory (v2.0§34).
+	fruInv     *FRUInventory
+	fruInvOnce sync.Once
 
 	hal   hal.HAL
 	clock clock.Clock
@@ -222,4 +225,20 @@ func (b *BMC) SDRRepository() *SDRRepository {
 		b.sdrRepo = NewSDRRepository(store.SDR(), b.clock)
 	})
 	return b.sdrRepo
+}
+
+// FRUInventory returns the FRU inventory , or nil when the backing HAL
+// provides no FRU storage.
+func (b *BMC) FRUInventory() *FRUInventory {
+	b.fruInvOnce.Do(func() {
+		if b.hal == nil {
+			return
+		}
+		store := b.hal.Storage()
+		if store == nil || store.FRU() == nil {
+			return
+		}
+		b.fruInv = NewFRUInventory(store.FRU())
+	})
+	return b.fruInv
 }

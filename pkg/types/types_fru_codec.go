@@ -210,7 +210,7 @@ func fruPackChecksum(data []byte) uint8 {
 }
 
 // fruAreaEnd returns the byte offset where the area at start8B ends, bounded by
-// the next present area offset in the common header (FRU §8, §9).
+// the next present area offset in the common header (fru§8 / fru§9).
 func fruAreaEnd(data []byte, hdr *FRUCommonHeader, start8B uint8) (int, error) {
 	off := int(start8B) * 8
 	if off >= len(data) {
