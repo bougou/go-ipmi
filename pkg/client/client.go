@@ -65,6 +65,11 @@ type Client struct {
 
 	l sync.Mutex
 
+	// fruMaxReadSize is the largest Read FRU Data count that succeeded (or was
+	// negotiated down after C7/C8/CAh). Zero means uninitialized; tryReadFRUData
+	// starts from defaultFRUReadSize and remembers reductions across chunks.
+	fruMaxReadSize uint8
+
 	// closedCh is closed when Client.Close() is called.
 	// used to notify other goroutines that Client is closed.
 	closedCh chan bool

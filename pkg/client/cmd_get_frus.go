@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
@@ -154,9 +155,10 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*types.FRU, error) {
 	// Walk the SDRs to look for FRU Devices and Management Controller Devices.
 	// For FRU devices, print the FRU from the SDR locator record.
 	// For MC devices, issue FRU commands to the satellite controller to print FRU data.
-	sdrs, err := c.GetSDRs(ctx, types.SDRRecordTypeFRUDeviceLocator, types.SDRRecordTypeManagementControllerDeviceLocator)
+	// Use GetSDRsRaw (header peek, no sensor enhance) — same approach as ipmitool.
+	sdrs, err := c.GetSDRsRaw(ctx, types.SDRRecordTypeFRUDeviceLocator, types.SDRRecordTypeManagementControllerDeviceLocator)
 	if err != nil {
-		return nil, fmt.Errorf("GetSDRS failed, err: %w", err)
+		return nil, fmt.Errorf("GetSDRsRaw failed, err: %w", err)
 	}
 
 	for _, sdr := range sdrs {
@@ -234,19 +236,10 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*types.FRU, error) {
 }
 
 func (c *Client) GetFRUAreaChassis(ctx context.Context, deviceID uint8, offset uint16) (*types.FRUChassisInfoArea, error) {
-	// read enough (2 bytes) to check the length field
-	res, err := c.ReadFRUData(ctx, deviceID, offset, 2)
+	data, err := c.readFRUAreaAtOffset(ctx, deviceID, offset)
 	if err != nil {
-		return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
+		return nil, err
 	}
-	length := uint16(res.Data[1]) * 8 // in multiples of 8 bytes
-
-	// now read full area data
-	data, err := c.readFRUDataByLength(ctx, deviceID, offset, length)
-	if err != nil {
-		return nil, fmt.Errorf("read full fru area data failed, err: %w", err)
-	}
-	c.Debugf("Got %d fru data\n", len(data))
 
 	fruChassis := &types.FRUChassisInfoArea{}
 	if err := fruChassis.Unpack(data); err != nil {
@@ -257,19 +250,10 @@ func (c *Client) GetFRUAreaChassis(ctx context.Context, deviceID uint8, offset u
 }
 
 func (c *Client) GetFRUAreaBoard(ctx context.Context, deviceID uint8, offset uint16) (*types.FRUBoardInfoArea, error) {
-	// read enough (2 bytes) to check the length field
-	res, err := c.ReadFRUData(ctx, deviceID, offset, 2)
+	data, err := c.readFRUAreaAtOffset(ctx, deviceID, offset)
 	if err != nil {
-		return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
+		return nil, err
 	}
-	length := uint16(res.Data[1]) * 8 // in multiples of 8 bytes
-
-	// now read full area data
-	data, err := c.readFRUDataByLength(ctx, deviceID, offset, length)
-	if err != nil {
-		return nil, fmt.Errorf("read full fru area data failed, err: %w", err)
-	}
-	c.Debugf("Got %d fru data\n", len(data))
 
 	fruBoard := &types.FRUBoardInfoArea{}
 	if err := fruBoard.Unpack(data); err != nil {
@@ -280,23 +264,14 @@ func (c *Client) GetFRUAreaBoard(ctx context.Context, deviceID uint8, offset uin
 }
 
 func (c *Client) GetFRUAreaProduct(ctx context.Context, deviceID uint8, offset uint16) (*types.FRUProductInfoArea, error) {
-	// read enough (2 bytes) to check the length field
-	res, err := c.ReadFRUData(ctx, deviceID, offset, 2)
+	data, err := c.readFRUAreaAtOffset(ctx, deviceID, offset)
 	if err != nil {
-		return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
+		return nil, err
 	}
-	length := uint16(res.Data[1]) * 8 // in multiples of 8 bytes
-
-	// now read full area data
-	data, err := c.readFRUDataByLength(ctx, deviceID, offset, length)
-	if err != nil {
-		return nil, fmt.Errorf("read full fru area data failed, err: %w", err)
-	}
-	c.Debugf("Got %d fru data\n", len(data))
 
 	fruProduct := &types.FRUProductInfoArea{}
 	if err := fruProduct.Unpack(data); err != nil {
-		return nil, fmt.Errorf("unpack fru board failed, err: %w", err)
+		return nil, fmt.Errorf("unpack fru product failed, err: %w", err)
 	}
 
 	return fruProduct, nil
@@ -306,22 +281,27 @@ func (c *Client) GetFRUAreaMultiRecords(ctx context.Context, deviceID uint8, off
 	records := make([]*types.FRUMultiRecord, 0)
 
 	for {
-		// read enough (5 bytes) to check the length of each record
-		// For a MultiRecord, the first 5 bytes contains the Record Header,
-		// and the third byte holds the data length.
-		//
-		// see: FRU/16.1 Record Header
+		// Probe MultiRecord header (fru§16.1): byte 2 is data length.
 		res, err := c.ReadFRUData(ctx, deviceID, offset, 5)
 		if err != nil {
 			return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
 		}
+		if len(res.Data) < 5 {
+			return nil, fmt.Errorf("ReadFRUData returned too few bytes for multi-record header (%d)", len(res.Data))
+		}
 		length := uint16(res.Data[2])
+		recordSize := 5 + length
 
-		// now read full data for this record
-		recordSize := 5 + length // Record Header + Data Length
-		data, err := c.readFRUDataByLength(ctx, deviceID, offset, recordSize)
-		if err != nil {
-			return nil, fmt.Errorf("read full fru area data failed, err: %w", err)
+		data := make([]byte, 0, recordSize)
+		data = append(data, res.Data...)
+		if uint16(len(data)) < recordSize {
+			rest, err := c.readFRUDataByLength(ctx, deviceID, offset+uint16(len(data)), recordSize-uint16(len(data)))
+			if err != nil {
+				return nil, fmt.Errorf("read full fru area data failed, err: %w", err)
+			}
+			data = append(data, rest...)
+		} else {
+			data = data[:recordSize]
 		}
 		c.Debugf("Got %d fru data\n", len(data))
 
@@ -332,7 +312,6 @@ func (c *Client) GetFRUAreaMultiRecords(ctx context.Context, deviceID uint8, off
 		c.Debug("Multi record", record)
 		records = append(records, record)
 
-		// update offset for the next record
 		offset += uint16(5 + record.RecordLength)
 
 		if record.EndOfList {
@@ -341,4 +320,35 @@ func (c *Client) GetFRUAreaMultiRecords(ctx context.Context, deviceID uint8, off
 	}
 
 	return records, nil
+}
+
+// readFRUAreaAtOffset probes the area length byte then reads only the remaining
+// bytes (avoids re-reading the probe prefix on the full-area pass).
+func (c *Client) readFRUAreaAtOffset(ctx context.Context, deviceID uint8, offset uint16) ([]byte, error) {
+	// Area length is at offset+1, in multiples of 8 bytes (fru§8 / chassis/board/product).
+	res, err := c.ReadFRUData(ctx, deviceID, offset, 2)
+	if err != nil {
+		return nil, fmt.Errorf("ReadFRUData failed, err: %w", err)
+	}
+	if len(res.Data) < 2 {
+		return nil, fmt.Errorf("ReadFRUData returned too few bytes (%d)", len(res.Data))
+	}
+	length := uint16(res.Data[1]) * 8
+	if length < 2 {
+		return nil, fmt.Errorf("invalid FRU area length %d", length)
+	}
+
+	data := make([]byte, 0, length)
+	data = append(data, res.Data...)
+	if uint16(len(data)) >= length {
+		return data[:length], nil
+	}
+
+	rest, err := c.readFRUDataByLength(ctx, deviceID, offset+uint16(len(data)), length-uint16(len(data)))
+	if err != nil {
+		return nil, fmt.Errorf("read full fru area data failed, err: %w", err)
+	}
+	data = append(data, rest...)
+	c.Debugf("Got %d fru data\n", len(data))
+	return data, nil
 }

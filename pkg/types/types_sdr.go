@@ -165,17 +165,26 @@ func (sdr *SDR) HasAnalogReading() bool {
 // ParseSDR parses raw SDR record data to SDR struct.
 // This function is normally used after getting GetSDRResponse or GetDeviceSDRResponse to
 // interpret the raw SDR record data in the response.
-func ParseSDR(data []byte, nextRecordID uint16) (*SDR, error) {
-	sdrHeader := &SDRHeader{}
+// ParseSDRHeader parses the fixed 5-byte SDR record header (v2.0§43).
+func ParseSDRHeader(data []byte) (*SDRHeader, error) {
 	if len(data) < SDRRecordHeaderSize {
 		return nil, ErrNotEnoughDataWith("sdr record header size", len(data), SDRRecordHeaderSize)
 	}
 
+	sdrHeader := &SDRHeader{}
 	sdrHeader.RecordID, _, _ = UnpackUint16L(data, 0)
 	sdrHeader.SDRVersion, _, _ = UnpackUint8(data, 2)
 	recordType, _, _ := UnpackUint8(data, 3)
 	sdrHeader.RecordType = SDRRecordType(recordType)
 	sdrHeader.RecordLength, _, _ = UnpackUint8(data, 4)
+	return sdrHeader, nil
+}
+
+func ParseSDR(data []byte, nextRecordID uint16) (*SDR, error) {
+	sdrHeader, err := ParseSDRHeader(data)
+	if err != nil {
+		return nil, err
+	}
 
 	sdr := &SDR{
 		RecordHeader: sdrHeader,

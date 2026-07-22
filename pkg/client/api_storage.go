@@ -186,6 +186,11 @@ func (c *Client) ReadFRUData(ctx context.Context, fruDeviceID uint8, readOffset 
 	return
 }
 
+// defaultFRUReadSize is the initial Read FRU Data chunk size (bytes).
+// ipmitool starts from the channel max response size; 32 is a safe LAN default
+// and is remembered/reduced across chunks via Client.fruMaxReadSize.
+const defaultFRUReadSize uint8 = 32
+
 // readFRUDataByLength reads FRU Data in loop until reaches the specified data length
 func (c *Client) readFRUDataByLength(ctx context.Context, deviceID uint8, offset uint16, length uint16) ([]byte, error) {
 	var data []byte
@@ -212,11 +217,14 @@ func (c *Client) readFRUDataByLength(ctx context.Context, deviceID uint8, offset
 	return data, nil
 }
 
-// tryReadFRUData will try to read FRU data with a read count which starts with
-// the minimal number of the specified length and the hard-coded 32, if the
-// ReadFRUData failed, it try another request with a decreased read count.
+// tryReadFRUData reads one FRU chunk. It starts from the cached max read size
+// (or defaultFRUReadSize) and decreases on C7/C8/CAh, persisting the reduction
+// so later chunks do not re-probe from the default.
 func (c *Client) tryReadFRUData(ctx context.Context, deviceID uint8, readOffset uint16, length uint16) (response *storage.ReadFRUDataResponse, err error) {
-	var readCount uint8 = 32
+	readCount := c.fruMaxReadSize
+	if readCount == 0 {
+		readCount = defaultFRUReadSize
+	}
 	if length <= uint16(readCount) {
 		readCount = uint8(length)
 	}
@@ -236,6 +244,7 @@ func (c *Client) tryReadFRUData(ctx context.Context, deviceID uint8, readOffset 
 			cc := respErr.CompletionCode()
 			if storage.ReadFRUDataLength2Big(cc) {
 				readCount -= 1
+				c.fruMaxReadSize = readCount
 				continue
 			}
 		}
@@ -462,6 +471,55 @@ func (c *Client) GetSDREnhanced(ctx context.Context, recordID uint16) (*types.SD
 	return sdr, nil
 }
 
+// GetSDRHeader returns the 5-byte SDR record header and next record ID via a
+// partial Get SDR (v2.0§33.12). Used to skip non-matching records without
+// fetching the full body.
+func (c *Client) GetSDRHeader(ctx context.Context, recordID uint16) (*types.SDRHeader, uint16, error) {
+	request := &storage.GetSDRRequest{
+		ReservationID: 0,
+		RecordID:      recordID,
+		ReadOffset:    0,
+		ReadBytes:     uint8(types.SDRRecordHeaderSize),
+	}
+	response := &storage.GetSDRResponse{}
+	err := c.Exchange(ctx, request, response)
+	if err != nil {
+		if respErr, ok := types.IsResponseError(err); ok &&
+			respErr.CompletionCode() == types.CompletionCodeReservationCanceled {
+			rsp, rerr := c.ReserveSDRRepo(ctx)
+			if rerr != nil {
+				return nil, 0, fmt.Errorf("ReserveSDRRepo failed, err: %w", rerr)
+			}
+			request.ReservationID = rsp.ReservationID
+			response = &storage.GetSDRResponse{}
+			if err = c.Exchange(ctx, request, response); err != nil {
+				return nil, 0, fmt.Errorf("GetSDR header failed for recordID (%#02x), err: %w", recordID, err)
+			}
+		} else {
+			return nil, 0, fmt.Errorf("GetSDR header failed for recordID (%#02x), err: %w", recordID, err)
+		}
+	}
+
+	header, err := types.ParseSDRHeader(response.RecordData)
+	if err != nil {
+		return nil, 0, fmt.Errorf("ParseSDRHeader failed, err: %w", err)
+	}
+	return header, response.NextRecordID, nil
+}
+
+// GetSDRParsed fetches and parses a full SDR record without enhancing sensor readings.
+func (c *Client) GetSDRParsed(ctx context.Context, recordID uint16) (*types.SDR, error) {
+	res, err := c.GetSDR(ctx, recordID)
+	if err != nil {
+		return nil, fmt.Errorf("GetSDR failed for recordID (%#02x), err: %w", recordID, err)
+	}
+	sdr, err := types.ParseSDR(res.RecordData, res.NextRecordID)
+	if err != nil {
+		return nil, fmt.Errorf("ParseSDR failed, err: %w", err)
+	}
+	return sdr, nil
+}
+
 // getSDR return SDR in a partial read way.
 func (c *Client) getSDR(ctx context.Context, recordID uint16) (response *storage.GetSDRResponse, err error) {
 	var data []byte
@@ -586,6 +644,9 @@ func (c *Client) GetSDRBySensorName(ctx context.Context, sensorName string) (*ty
 // GetSDRs fetches the SDR records with the specified RecordTypes.
 // The parameter is a slice of SDRRecordType used as filter.
 // Empty means to get all SDR records.
+//
+// Matching Full/Compact records are enhanced with live sensor readings.
+// Prefer GetSDRsRaw when only record metadata is needed (e.g. FRU enumeration).
 func (c *Client) GetSDRs(ctx context.Context, recordTypes ...types.SDRRecordType) ([]*types.SDR, error) {
 	var recordID uint16 = 0
 	var out = make([]*types.SDR, 0)
@@ -608,6 +669,57 @@ func (c *Client) GetSDRs(ctx context.Context, recordTypes ...types.SDRRecordType
 					break
 				}
 			}
+		}
+
+		recordID = sdr.NextRecordID
+		if recordID == 0xffff {
+			break
+		}
+	}
+
+	return out, nil
+}
+
+// GetSDRsRaw is like GetSDRs but does not enhance sensor readings.
+// When recordTypes is non-empty, non-matching records are skipped with a
+// header-only Get SDR peek (ipmitool fru print style), avoiding full-body
+// fetches and Get Sensor Reading for unrelated sensors.
+func (c *Client) GetSDRsRaw(ctx context.Context, recordTypes ...types.SDRRecordType) ([]*types.SDR, error) {
+	typeFilter := make(map[types.SDRRecordType]struct{}, len(recordTypes))
+	for _, t := range recordTypes {
+		typeFilter[t] = struct{}{}
+	}
+	filter := len(typeFilter) > 0
+
+	var recordID uint16
+	var out = make([]*types.SDR, 0)
+	for {
+		if filter {
+			header, nextID, err := c.GetSDRHeader(ctx, recordID)
+			if err != nil {
+				return nil, fmt.Errorf("GetSDRHeader for recordID (%#0x) failed, err: %w", recordID, err)
+			}
+			if _, ok := typeFilter[header.RecordType]; !ok {
+				recordID = nextID
+				if recordID == 0xffff {
+					break
+				}
+				continue
+			}
+		}
+
+		sdr, err := c.GetSDRParsed(ctx, recordID)
+		if err != nil {
+			return nil, fmt.Errorf("GetSDRParsed for recordID (%#0x) failed, err: %w", recordID, err)
+		}
+		if sdr.RecordHeader == nil {
+			continue
+		}
+
+		if !filter {
+			out = append(out, sdr)
+		} else if _, ok := typeFilter[sdr.RecordHeader.RecordType]; ok {
+			out = append(out, sdr)
 		}
 
 		recordID = sdr.NextRecordID
