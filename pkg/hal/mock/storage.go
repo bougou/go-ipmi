@@ -26,7 +26,7 @@ func (f *fruStore) Read(_ context.Context, deviceID uint8) ([]byte, error) {
 	defer s.mu.RUnlock()
 	v, ok := s.fru[deviceID]
 	if !ok {
-		return nil, hal.ErrNotSupported
+		return nil, hal.ErrNotFound
 	}
 	return append([]byte(nil), v...), nil
 }
@@ -70,7 +70,7 @@ func (d *sdrStore) Read(_ context.Context, recordID uint16) ([]byte, error) {
 	defer s.mu.RUnlock()
 	v, ok := s.sdr[recordID]
 	if !ok {
-		return nil, hal.ErrNotSupported
+		return nil, hal.ErrNotFound
 	}
 	return append([]byte(nil), v...), nil
 }

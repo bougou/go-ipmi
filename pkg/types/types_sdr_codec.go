@@ -81,6 +81,29 @@ func packSDRWire(recordID uint16, recordType SDRRecordType, body []byte) []byte 
 	return rec
 }
 
+// packSensorRecordSharing encodes the 2-byte Sensor Record Sharing / Sensor
+// Direction field used by Compact (v2.0§43.2) and Event-Only (v2.0§43.3) SDRs:
+//
+//	Byte1: [7:6] Direction, [5:4] ID String Instance Modifier Type, [3:0] Share Count
+//	Byte2: [7] Entity Instance Sharing, [6:0] ID String Instance Modifier Offset
+func packSensorRecordSharing(direction, modifierType, shareCount uint8, entitySharing bool, offset uint8) (b1, b2 uint8) {
+	b1 = ((direction & 0x03) << 6) | ((modifierType & 0x03) << 4) | (shareCount & 0x0f)
+	b2 = offset & 0x7f
+	if entitySharing {
+		b2 = SetBit7(b2)
+	}
+	return b1, b2
+}
+
+func unpackSensorRecordSharing(b1, b2 uint8) (direction, modifierType, shareCount uint8, entitySharing bool, offset uint8) {
+	direction = (b1 >> 6) & 0x03
+	modifierType = (b1 >> 4) & 0x03
+	shareCount = b1 & 0x0f
+	entitySharing = IsBit7Set(b2)
+	offset = b2 & 0x7f
+	return
+}
+
 func packASCIITypeLengthField(s string) []byte {
 	if s == "" {
 		return []byte{0xC0}

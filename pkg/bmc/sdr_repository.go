@@ -9,10 +9,26 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
+// defaultSDRRepoSize is the synthetic repository capacity used for Info/AllocInfo.
+// v2.0§33.9 encodes free space as uint16 where FFFEh means "64KB-2 or more";
+// values larger than that must be clamped (see encodeSDRRepoFreeSpace).
 const defaultSDRRepoSize = 64 * 1024
 
+// encodeSDRRepoFreeSpace maps a free-byte count onto the Get SDR Repository
+// Info Free Space field (v2.0§33.9): 0000h = full, FFFEh = 64KB-2 or more,
+// FFFFh = unspecified.
+func encodeSDRRepoFreeSpace(free int) uint16 {
+	if free <= 0 {
+		return 0
+	}
+	if free >= 0xFFFE {
+		return 0xFFFE
+	}
+	return uint16(free)
+}
+
 // SDRRepository reads SDR records from [hal.SDRStore] and implements
-// repository semantics for Storage NetFn handlers (§33).
+// repository semantics for Storage NetFn handlers (v2.0§33).
 type SDRRepository struct {
 	store hal.SDRStore
 	clk   clock.Clock
@@ -56,20 +72,23 @@ func (r *SDRRepository) scanRecords(ctx context.Context) (total, maxRec int, err
 }
 
 // GetRecord returns the wire record and next Record ID for repository traversal.
-// recordID 0 maps to the lowest stored ID per §33.12.
+// Per v2.0§33.12: recordID 0000h maps to the first SDR; FFFFh maps to the last.
 func (r *SDRRepository) GetRecord(ctx context.Context, recordID uint16) (record []byte, nextID uint16, err error) {
 	ids, err := r.RecordIDs(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
 	if len(ids) == 0 {
-		return nil, 0, hal.ErrNotSupported
+		return nil, 0, hal.ErrNotFound
 	}
 
 	idx := -1
-	if recordID == 0 {
+	switch recordID {
+	case 0:
 		idx = 0
-	} else {
+	case 0xffff:
+		idx = len(ids) - 1
+	default:
 		for i, id := range ids {
 			if id == recordID {
 				idx = i
@@ -78,7 +97,7 @@ func (r *SDRRepository) GetRecord(ctx context.Context, recordID uint16) (record 
 		}
 	}
 	if idx < 0 {
-		return nil, 0, hal.ErrNotSupported
+		return nil, 0, hal.ErrNotFound
 	}
 
 	id := ids[idx]
@@ -105,14 +124,11 @@ func (r *SDRRepository) Info(ctx context.Context) (*storage.GetSDRRepoInfoRespon
 		return nil, err
 	}
 	free := defaultSDRRepoSize - used
-	if free < 0 {
-		free = 0
-	}
 	now := r.clk.Now()
 	return &storage.GetSDRRepoInfoResponse{
 		SDRVersion:             types.SDRCommandSetVersion,
 		RecordCount:            uint16(len(ids)),
-		FreeSpaceBytes:         uint16(free),
+		FreeSpaceBytes:         encodeSDRRepoFreeSpace(free),
 		MostRecentAdditionTime: now,
 		MostRecentEraseTime:    now,
 		SDROperationSupport: storage.SDROperationSupport{
@@ -151,7 +167,8 @@ func (r *SDRRepository) AllocInfo(ctx context.Context) (*storage.GetSDRRepoAlloc
 	}, nil
 }
 
-// StorageMissing reports whether err indicates the backing store is absent.
+// StorageMissing reports whether err indicates a missing FRU device or SDR record
+// (mapped to completion code CBh by storage handlers).
 func StorageMissing(err error) bool {
-	return err == hal.ErrNotSupported
+	return err == hal.ErrNotFound
 }

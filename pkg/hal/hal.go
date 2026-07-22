@@ -143,3 +143,11 @@ var ErrNotSupported = errNotSupported{}
 type errNotSupported struct{}
 
 func (errNotSupported) Error() string { return "operation not supported by hardware" }
+
+// ErrNotFound is returned by storage HAL methods when a FRU device ID or SDR
+// record ID is absent. Storage handlers map this to CBh (v2.0§5.2 Table 5-2).
+var ErrNotFound = errNotFound{}
+
+type errNotFound struct{}
+
+func (errNotFound) Error() string { return "requested record or device not found" }

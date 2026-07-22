@@ -18,8 +18,9 @@ type FRUStore interface {
 	DeviceIDs(ctx context.Context) ([]uint8, error)
 }
 
-// SDRStore holds wire-format SDR repository records (§33).
-// RecordID 0 is not a valid stored ID; handlers map Get SDR(0) to the lowest ID.
+// SDRStore holds wire-format SDR repository records (v2.0§33).
+// RecordID 0 is not a valid stored ID; [bmc.SDRRepository.GetRecord] maps
+// Get SDR(0000h) to the first record and Get SDR(FFFFh) to the last (v2.0§33.12).
 type SDRStore interface {
 	Read(ctx context.Context, recordID uint16) ([]byte, error)
 	Write(ctx context.Context, recordID uint16, data []byte) error

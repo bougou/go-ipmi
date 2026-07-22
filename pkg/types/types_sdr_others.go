@@ -27,28 +27,15 @@ type SDREventOnly struct {
 	SensorType             SensorType
 	SensorEventReadingType EventReadingType
 
-	SensorDirection uint8
+	// Sensor Record Sharing / Sensor Direction (v2.0§43.3 Table 43-3, bytes 13–14).
+	// Packed as a 2-byte bitfield; see packSensorRecordSharing.
+	SensorDirection                uint8 // [7:6] of byte 1
+	IDStringInstanceModifierType   uint8 // [5:4] of byte 1: 00b=numeric, 01b=alpha
+	ShareCount                     uint8 // [3:0] of byte 1
+	EntityInstanceSharing          bool  // bit 7 of byte 2
+	IDStringInstanceModifierOffset uint8 // [6:0] of byte 2
 
-	IDStringInstanceModifierType uint8
-
-	// Share count (number of sensors sharing this record). Sensor numbers sharing this
-	// record are sequential starting with the sensor number specified by the Sensor
-	// Number field for this record. E.g. if the starting sensor number was 10, and the share
-	// count was 3, then sensors 10, 11, and 12 would share this record.
-	ShareCount uint8
-
-	EntityInstanceSharing bool
-
-	// Multiple Discrete sensors can share the same sensor data record. The ID String Instance
-	// Modifier and Modifier Offset are used to modify the Sensor ID String as follows:
-	// Suppose sensor ID is "Temp " for "Temperature Sensor", share count = 3, ID string
-	// instance modifier = numeric, instance modifier offset = 5 - then the sensors could be
-	// identified as:
-	// Temp 5, Temp 6, Temp 7
-	// If the modifier = alpha, and offset = 26, then the sensors could be identified as:
-	// Temp AA, Temp AB, Temp AC
-	// (alpha characters are considered to be base 26 for ASCII)
-	IDStringInstanceModifierOffset uint8
+	OEM uint8 // byte 16; reserved for OEM use (v2.0§43.3)
 
 	IDStringTypeLength TypeLength
 	IDStringBytes      []byte
@@ -95,18 +82,14 @@ func parseSDREventOnly(data []byte, sdr *SDR) error {
 	eventReadingType, _, _ := UnpackUint8(data, 11)
 	s.SensorEventReadingType = EventReadingType(eventReadingType)
 
+	// v2.0§43.3 bytes 13–14: Sensor Record Sharing / Sensor Direction.
 	b12, _, _ := UnpackUint8(data, 12)
-	s.SensorDirection = b12
-
 	b13, _, _ := UnpackUint8(data, 13)
-	s.IDStringInstanceModifierType = b13
+	s.SensorDirection, s.IDStringInstanceModifierType, s.ShareCount,
+		s.EntityInstanceSharing, s.IDStringInstanceModifierOffset = unpackSensorRecordSharing(b12, b13)
 
-	b14, _, _ := UnpackUint8(data, 14)
-	s.ShareCount = b14
-
-	b15, _, _ := UnpackUint8(data, 15)
-	s.EntityInstanceSharing = IsBit7Set(b15)
-	s.IDStringInstanceModifierOffset = b15 & 0x7f
+	// byte 15 reserved (write as 00h); byte 16 OEM.
+	s.OEM, _, _ = UnpackUint8(data, 15)
 
 	typeLength, _, _ := UnpackUint8(data, 16)
 	s.IDStringTypeLength = TypeLength(typeLength)
@@ -119,22 +102,21 @@ func parseSDREventOnly(data []byte, sdr *SDR) error {
 	return nil
 }
 
-// Pack encodes a Type 03h Event-only Sensor record per §43.3.
+// Pack encodes a Type 03h Event-only Sensor record per v2.0§43.3.
 func (s *SDREventOnly) Pack(recordID uint16) []byte {
-	body := make([]byte, 16)
+	body := make([]byte, 12)
 	PackUint16L(uint16(s.GeneratorID), body, 0)
 	body[2] = uint8(s.SensorNumber)
 	body[3] = uint8(s.SensorEntityID)
 	body[4] = packEntityInstanceByte(s.SensorEntityInstance, s.SensorEntityIsLogical)
 	body[5] = uint8(s.SensorType)
 	body[6] = uint8(s.SensorEventReadingType)
-	body[7] = s.SensorDirection
-	body[8] = s.IDStringInstanceModifierType
-	body[9] = s.ShareCount
-	if s.EntityInstanceSharing {
-		body[10] = SetBit7(body[10])
-	}
-	body[10] |= s.IDStringInstanceModifierOffset & 0x7f
+	body[7], body[8] = packSensorRecordSharing(
+		s.SensorDirection, s.IDStringInstanceModifierType, s.ShareCount,
+		s.EntityInstanceSharing, s.IDStringInstanceModifierOffset,
+	)
+	// body[9] reserved (00h)
+	body[10] = s.OEM
 
 	id := packIDField(s.IDStringTypeLength, s.IDStringBytes)
 	body = append(body[:11], id...)

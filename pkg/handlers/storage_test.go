@@ -182,6 +182,53 @@ func TestHandleGetSDRRepoInfo(t *testing.T) {
 	}
 }
 
+func TestHandleGetSDRRepoInfo_EmptyRepoFreeSpace(t *testing.T) {
+	// v2.0§33.9: free space is uint16; 64KiB capacity must report FFFEh
+	// ("64KB-2 or more"), not overflow to 0000h (full).
+	b, _ := newTestBMCWithStorage(t)
+	hctx := &HandlerContext{BMC: b}
+	resp, cc, err := handleGetSDRRepoInfo(context.Background(), hctx, nil)
+	if err != nil || cc != CodeOK {
+		t.Fatalf("cc=%v err=%v", cc, err)
+	}
+	var info storage.GetSDRRepoInfoResponse
+	if err := info.Unpack(resp); err != nil {
+		t.Fatal(err)
+	}
+	if info.RecordCount != 0 {
+		t.Fatalf("RecordCount: want 0 got %d", info.RecordCount)
+	}
+	if info.FreeSpaceBytes != 0xFFFE {
+		t.Fatalf("FreeSpaceBytes: want 0xFFFE got %#04x", info.FreeSpaceBytes)
+	}
+}
+
+func TestHandleGetSDR_LastRecordID(t *testing.T) {
+	// v2.0§33.12: Record ID FFFFh returns the last SDR in the repository.
+	b, m := newTestBMCWithStorage(t)
+	rec1 := []byte{0x01, 0x00, types.SDRCommandSetVersion, 0x02, 0x02, 0xaa, 0xbb}
+	rec2 := []byte{0x02, 0x00, types.SDRCommandSetVersion, 0x02, 0x02, 0xcc, 0xdd}
+	_ = m.Storage().SDR().Write(context.Background(), 1, rec1)
+	_ = m.Storage().SDR().Write(context.Background(), 2, rec2)
+
+	hctx := &HandlerContext{BMC: b}
+	req := (&storage.GetSDRRequest{RecordID: 0xffff, ReadOffset: 0, ReadBytes: 7}).Pack()
+	resp, cc, err := handleGetSDR(context.Background(), hctx, req)
+	if err != nil || cc != CodeOK {
+		t.Fatalf("cc=%v err=%v", cc, err)
+	}
+	var decoded storage.GetSDRResponse
+	if err := decoded.Unpack(resp); err != nil {
+		t.Fatal(err)
+	}
+	if decoded.NextRecordID != 0xffff {
+		t.Fatalf("NextRecordID for last: want 0xffff got %#04x", decoded.NextRecordID)
+	}
+	if len(decoded.RecordData) < 2 || decoded.RecordData[0] != 0x02 || decoded.RecordData[1] != 0x00 {
+		t.Fatalf("want last record ID 0x0002, got %x", decoded.RecordData)
+	}
+}
+
 func TestHandleGetDeviceID_StorageBits(t *testing.T) {
 	b, m := newTestBMCWithStorage(t)
 	_ = m.Storage().FRU().Write(context.Background(), 0, testFRUBytes(t))

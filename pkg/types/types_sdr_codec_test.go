@@ -140,6 +140,9 @@ func TestGenericDeviceLocatorChannelNumber(t *testing.T) {
 }
 
 func TestEventOnlySharingFieldsRoundTrip(t *testing.T) {
+	// Golden bit packing per v2.0§43.3 Table 43-3:
+	// Direction=10b (output), Modifier=01b (alpha), ShareCount=3 → byte1 = 0x93
+	// EntitySharing=1, Offset=0x15 → byte2 = 0x95
 	raw := (&SDREventOnly{
 		GeneratorID:                    0x0020,
 		SensorNumber:                   0x02,
@@ -151,9 +154,21 @@ func TestEventOnlySharingFieldsRoundTrip(t *testing.T) {
 		ShareCount:                     3,
 		EntityInstanceSharing:          true,
 		IDStringInstanceModifierOffset: 0x15,
+		OEM:                            0xAB,
 		IDStringTypeLength:             TypeLength(0xC0 | 3),
 		IDStringBytes:                  []byte("Fan"),
 	}).Pack(0x20)
+
+	body := raw[5:] // skip 5-byte SDR header
+	if body[7] != 0x93 || body[8] != 0x95 {
+		t.Fatalf("sharing bytes: want 0x93 0x95, got %#02x %#02x", body[7], body[8])
+	}
+	if body[9] != 0x00 {
+		t.Fatalf("reserved byte: want 0x00, got %#02x", body[9])
+	}
+	if body[10] != 0xAB {
+		t.Fatalf("OEM byte: want 0xAB, got %#02x", body[10])
+	}
 
 	assertPackSDRRoundTrip(t, raw)
 
@@ -176,6 +191,62 @@ func TestEventOnlySharingFieldsRoundTrip(t *testing.T) {
 	}
 	if eo.IDStringInstanceModifierOffset != 0x15 {
 		t.Fatalf("IDStringInstanceModifierOffset: want 0x15 got %#02x", eo.IDStringInstanceModifierOffset)
+	}
+	if eo.OEM != 0xAB {
+		t.Fatalf("OEM: want 0xAB got %#02x", eo.OEM)
+	}
+}
+
+func TestCompactSharingFieldsRoundTrip(t *testing.T) {
+	// Same bit packing as Event-Only (v2.0§43.2 Table 43-2 bytes 24–25).
+	raw := (&SDRCompact{
+		GeneratorID:                    0x0020,
+		SensorNumber:                   0x05,
+		SensorEntityID:                 0x07,
+		SensorType:                     SensorTypeTemperature,
+		SensorEventReadingType:         EventReadingTypeThreshold,
+		SensorDirection:                0x01, // input
+		IDStringInstanceModifierType:   0x00, // numeric
+		ShareCount:                     4,
+		EntityInstanceSharing:          true,
+		IDStringInstanceModifierOffset: 0x0A,
+		SensorUnit: SensorUnit{
+			BaseUnit: SensorUnitType_DegreesC,
+		},
+		IDStringTypeLength: TypeLength(0xC0 | 4),
+		IDStringBytes:      []byte("Temp"),
+	}).Pack(0x15)
+
+	body := raw[5:]
+	// Direction=01b, Modifier=00b, ShareCount=4 → 0x44
+	// EntitySharing=1, Offset=0x0A → 0x8A
+	if body[18] != 0x44 || body[19] != 0x8A {
+		t.Fatalf("sharing bytes: want 0x44 0x8A, got %#02x %#02x", body[18], body[19])
+	}
+
+	assertPackSDRRoundTrip(t, raw)
+
+	sdr, err := ParseSDR(raw, 0xffff)
+	if err != nil {
+		t.Fatalf("ParseSDR: %v", err)
+	}
+	c := sdr.Compact
+	if c.SensorDirection != 0x01 || c.ShareCount != 4 || !c.EntityInstanceSharing {
+		t.Fatalf("sharing fields: dir=%#02x count=%d sharing=%v", c.SensorDirection, c.ShareCount, c.EntityInstanceSharing)
+	}
+	if c.IDStringInstanceModifierOffset != 0x0A {
+		t.Fatalf("offset: want 0x0A got %#02x", c.IDStringInstanceModifierOffset)
+	}
+}
+
+func TestUnpackSensorRecordSharingGolden(t *testing.T) {
+	dir, mod, count, sharing, offset := unpackSensorRecordSharing(0x93, 0x95)
+	if dir != 0x02 || mod != 0x01 || count != 3 || !sharing || offset != 0x15 {
+		t.Fatalf("got dir=%#02x mod=%#02x count=%d sharing=%v offset=%#02x", dir, mod, count, sharing, offset)
+	}
+	b1, b2 := packSensorRecordSharing(dir, mod, count, sharing, offset)
+	if b1 != 0x93 || b2 != 0x95 {
+		t.Fatalf("repack: want 0x93 0x95, got %#02x %#02x", b1, b2)
 	}
 }
 

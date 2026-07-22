@@ -47,17 +47,13 @@ type SDRCompact struct {
 	// SensorStatus is not stored in SDR intrinsically, this field is set by `enhanceSDR`
 	SensorStatus string
 
-	// Sensor Direction. Indicates whether the sensor is monitoring an input or
-	// output relative to the given Entity. E.g. if the sensor is monitoring a
-	// current, this can be used to specify whether it is an input voltage or an
-	// output voltage.
-	// 00b = unspecified / not applicable
-	// 01b = input
-	// 10b = output
-	// 11b = reserved
-	SensorDirection uint8
-
-	EntityInstanceSharing uint8
+	// Sensor Record Sharing / Sensor Direction (v2.0§43.2 Table 43-2, bytes 24–25).
+	// Packed as a 2-byte bitfield; see packSensorRecordSharing.
+	SensorDirection                uint8 // [7:6] of byte 1: 00b=unspecified, 01b=input, 10b=output
+	IDStringInstanceModifierType   uint8 // [5:4] of byte 1: 00b=numeric, 01b=alpha
+	ShareCount                     uint8 // [3:0] of byte 1
+	EntityInstanceSharing          bool  // bit 7 of byte 2
+	IDStringInstanceModifierOffset uint8 // [6:0] of byte 2
 
 	// Positive hysteresis is defined as the unsigned number of counts that are
 	// subtracted from the raw threshold values to create the "re-arm" point for all
@@ -220,6 +216,12 @@ func parseSDRCompactSensor(data []byte, sdr *SDR) error {
 		ModifierUnit:     SensorUnitType(b22),
 	}
 
+	// v2.0§43.2 bytes 24–25: Sensor Record Sharing / Sensor Direction.
+	b23, _, _ := UnpackUint8(data, 23)
+	b24, _, _ := UnpackUint8(data, 24)
+	s.SensorDirection, s.IDStringInstanceModifierType, s.ShareCount,
+		s.EntityInstanceSharing, s.IDStringInstanceModifierOffset = unpackSensorRecordSharing(b23, b24)
+
 	s.PositiveHysteresisRaw, _, _ = UnpackUint8(data, 25)
 	s.NegativeHysteresisRaw, _, _ = UnpackUint8(data, 26)
 
@@ -254,10 +256,14 @@ func (s *SDRCompact) Pack(recordID uint16) []byte {
 	body[15] = b20
 	body[16] = b21
 	body[17] = b22
-	body[18] = s.SensorDirection
-	body[19] = s.EntityInstanceSharing
+	// v2.0§43.2 bytes 24–25 (body[18:20]): Sensor Record Sharing / Sensor Direction.
+	body[18], body[19] = packSensorRecordSharing(
+		s.SensorDirection, s.IDStringInstanceModifierType, s.ShareCount,
+		s.EntityInstanceSharing, s.IDStringInstanceModifierOffset,
+	)
 	body[20] = s.PositiveHysteresisRaw
 	body[21] = s.NegativeHysteresisRaw
+	// body[22:25] reserved (00h) + OEM; left zero unless OEM is set later.
 
 	id := packIDField(s.IDStringTypeLength, s.IDStringBytes)
 	body = append(body[:26], id...)

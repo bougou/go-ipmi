@@ -13,8 +13,7 @@ type GetFRUInventoryAreaInfoRequest struct {
 
 type GetFRUInventoryAreaInfoResponse struct {
 	AreaSizeBytes         uint16
-	DeviceAccessedByWords bool // false: bytes; true: words (bit 0, §34.2 Table 34-2)
-	DeviceIsController    bool // bit 7: device is a controller (§34.2 Table 34-2)
+	DeviceAccessedByWords bool // false: bytes; true: words (bit 0, v2.0§34.1 Table 34-2)
 }
 
 func (req *GetFRUInventoryAreaInfoRequest) Command() types.Command {
@@ -40,9 +39,6 @@ func (res *GetFRUInventoryAreaInfoResponse) Pack() []byte {
 	if res.DeviceAccessedByWords {
 		b = types.SetBit0(b)
 	}
-	if res.DeviceIsController {
-		b = types.SetBit7(b)
-	}
 	types.PackUint8(b, out, 2)
 	return out
 }
@@ -55,7 +51,6 @@ func (res *GetFRUInventoryAreaInfoResponse) Unpack(msg []byte) error {
 	res.AreaSizeBytes, _, _ = types.UnpackUint16L(msg, 0)
 	b, _, _ := types.UnpackUint8(msg, 2)
 	res.DeviceAccessedByWords = types.IsBit0Set(b)
-	res.DeviceIsController = types.IsBit7Set(b)
 	return nil
 }
 
@@ -64,10 +59,6 @@ func (r *GetFRUInventoryAreaInfoResponse) CompletionCodes() map[uint8]string {
 }
 
 func (res *GetFRUInventoryAreaInfoResponse) Format() string {
-	controller := ""
-	if res.DeviceIsController {
-		controller = ", controller"
-	}
-	return "" +
-		fmt.Sprintf("FRU size = %d bytes (accessed by %s%s)\n", res.AreaSizeBytes, types.FormatBool(res.DeviceAccessedByWords, "words", "bytes"), controller)
+	return fmt.Sprintf("FRU size = %d bytes (accessed by %s)\n",
+		res.AreaSizeBytes, types.FormatBool(res.DeviceAccessedByWords, "words", "bytes"))
 }
