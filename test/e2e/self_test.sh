@@ -20,7 +20,8 @@ set -euo pipefail
 source "$(dirname "$0")/common.sh"
 e2e_init
 
-PORT="${GOIPMI_SERVER_PORT:-$((9623 + RANDOM % 1000))}"
+# Stay clear of client e2e / CI ipmi-simulator default (9623).
+PORT="${GOIPMI_SERVER_PORT:-$((9700 + RANDOM % 1000))}"
 USER="${GOIPMI_USER:-ADMIN}"
 PASS="${GOIPMI_PASS:-ADMIN}"
 
@@ -45,6 +46,10 @@ env \
 SERVER_PID=$!
 sleep 1
 
+if ! kill -0 "${SERVER_PID}" 2>/dev/null; then
+	echo -e "${RED}ERROR: goipmi-server exited early (port ${PORT} likely in use)${NC}" >&2
+	exit 1
+fi
 if ! ss -uln | grep -q ":${PORT} "; then
 	echo -e "${RED}ERROR: server failed to start${NC}" >&2
 	exit 1

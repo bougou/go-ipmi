@@ -1,0 +1,29 @@
+---
+name: Go Checks
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  fmt-vet:
+    name: gofmt & go vet
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Check gofmt
+        run: |
+          make fmt
+          git diff --exit-code
+
+      - name: Run go vet
+        run: make vet

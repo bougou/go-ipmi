@@ -50,16 +50,17 @@ lint:
 dependencies:
 	test -d $(BINDIR) || mkdir $(BINDIR)
 	GOBIN=$(BINDIR) go install github.com/onsi/ginkgo/ginkgo@v1.16.4
-
-	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s -- -b $(BINDIR) latest
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(BINDIR) latest
 
 # ---------------------------------------------------------------------------
 # E2E tests
 # ---------------------------------------------------------------------------
-#   make test-e2e-client  — goipmi → ipmi-simulator
-#   make test-e2e-server  — ipmitool → goipmi-server
-#   make test-e2e-self    — goipmi → goipmi-server
-#   make test-e2e         — run all three
+#   make test-e2e-client         — goipmi → ipmi-simulator
+#   make test-e2e-server         — ipmitool → goipmi-server
+#   make test-e2e-self           — goipmi → goipmi-server
+#   make test-e2e-chassis-codec  — typed chassis codec / boot options
+#   make test-e2e-cipher         — RMCP+ cipher suite coverage
+#   make test-e2e                — run all suites (CI uses this)
 
 test-e2e-client: build
 	./test/e2e/client_test.sh

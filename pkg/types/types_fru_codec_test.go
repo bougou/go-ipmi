@@ -441,13 +441,13 @@ func TestFRUProduct_NullFieldEndsCustomWithoutC1(t *testing.T) {
 	}
 	body = append(body, packFRUASCIIField("Acme")...)
 	body = append(body, packFRUASCIIField("BMC")...)
-	body = append(body, packFRUASCIIField("")...) // part
-	body = append(body, packFRUASCIIField("")...) // version
-	body = append(body, packFRUASCIIField("")...) // serial
-	body = append(body, packFRUASCIIField("")...) // asset
-	body = append(body, packFRUASCIIField("")...) // file id
+	body = append(body, packFRUASCIIField("")...)   // part
+	body = append(body, packFRUASCIIField("")...)   // version
+	body = append(body, packFRUASCIIField("")...)   // serial
+	body = append(body, packFRUASCIIField("")...)   // asset
+	body = append(body, packFRUASCIIField("")...)   // file id
 	body = append(body, packFRUASCIIField("XY")...) // one custom (TL must not be C1h)
-	body = append(body, 0xC0)                        // null field (no C1h)
+	body = append(body, 0xC0)                       // null field (no C1h)
 	// Pad to 8-byte multiple including checksum byte.
 	for (len(body)+1)%8 != 0 {
 		body = append(body, 0x00)
