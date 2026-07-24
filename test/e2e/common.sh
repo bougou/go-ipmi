@@ -14,13 +14,17 @@ e2e_init() {
 e2e_run_test() {
 	local name="$1"
 	shift
+	local start_ns elapsed_ms rc=0
 	echo ""
 	echo "--- ${name} ---"
-	if "$@"; then
-		echo -e "${GREEN}✓ ${name}${NC}"
+	start_ns=$(date +%s%N)
+	"$@" || rc=$?
+	elapsed_ms=$(( ($(date +%s%N) - start_ns) / 1000000 ))
+	if [ "${rc}" -eq 0 ]; then
+		echo -e "${GREEN}✓ ${name}${NC} (${elapsed_ms}ms)"
 	else
-		echo -e "${RED}✗ ${name}${NC}" >&2
-		return 1
+		echo -e "${RED}✗ ${name}${NC} (${elapsed_ms}ms)" >&2
+		return "${rc}"
 	fi
 }
 
