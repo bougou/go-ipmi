@@ -5,8 +5,9 @@
 # both IPMI v2.0 (lanplus) and v1.5 (lan -A MD5) to verify dual-stack serving.
 #
 # Environment variables:
-#   GOIPMI_SERVER_PORT – port for the server to listen on (default: 9623)
-#                         Use a port >1024 to avoid sudo when testing locally.
+#   GOIPMI_SERVER_PORT – port for the server to listen on
+#                         (default: random high port; avoid clashing with the
+#                         client e2e / CI ipmi-simulator on 9623)
 #   IPMITOOL_BIN       – path to ipmitool   (auto-detected if unset)
 #   IPMITOOL_IMAGE     – Docker image to use when ipmitool is not found
 #                         (default: ghcr.io/halfcrazy/ipmitool:eecd64f)
@@ -14,8 +15,8 @@
 # Requires: make build  (or: make test-e2e-server)
 #
 # Usage:
-#   ./test/e2e/server_test.sh                          # port 623   (needs root)
-#   GOIPMI_SERVER_PORT=9623 ./test/e2e/server_test.sh  # port 9623 (no root needed)
+#   ./test/e2e/server_test.sh
+#   GOIPMI_SERVER_PORT=9623 ./test/e2e/server_test.sh
 
 set -euo pipefail
 
@@ -23,7 +24,8 @@ set -euo pipefail
 source "$(dirname "$0")/common.sh"
 e2e_init
 
-GOIPMI_SERVER_PORT="${GOIPMI_SERVER_PORT:-9623}"
+# Stay clear of client e2e / CI service container default (9623).
+GOIPMI_SERVER_PORT="${GOIPMI_SERVER_PORT:-$((9700 + RANDOM % 1000))}"
 GOIPMI_USER="${GOIPMI_USER:-ADMIN}"
 GOIPMI_PASS="${GOIPMI_PASS:-ADMIN}"
 IPMITOOL_IMAGE="${IPMITOOL_IMAGE:-ghcr.io/halfcrazy/ipmitool:eecd64f}"
@@ -72,8 +74,14 @@ ${USE_SUDO} env \
 SERVER_PID=$!
 sleep 2
 
+# Port alone is not enough: another process (e.g. CI ipmi-simulator on 9623)
+# can own the UDP port after goipmi-server exits on bind failure.
+if ! kill -0 "${SERVER_PID}" 2>/dev/null; then
+	echo -e "${RED}ERROR: goipmi-server exited early (port ${GOIPMI_SERVER_PORT} likely in use)${NC}" >&2
+	exit 1
+fi
 if ! ss -uln | grep -q ":${GOIPMI_SERVER_PORT} "; then
-	echo "ERROR: server failed to bind port ${GOIPMI_SERVER_PORT}" >&2
+	echo -e "${RED}ERROR: server failed to bind port ${GOIPMI_SERVER_PORT}${NC}" >&2
 	exit 1
 fi
 echo "==> Server is listening on :${GOIPMI_SERVER_PORT}"

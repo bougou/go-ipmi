@@ -7,19 +7,20 @@ on:
       - "main"
   pull_request:
     types:
-    - opened
-    - synchronize
+      - opened
+      - synchronize
   workflow_dispatch:
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Client E2E: goipmi → ipmi-simulator
-  # ---------------------------------------------------------------------------
-  client-e2e:
-    name: Client E2E (go-ipmi → ipmi-simulator)
+  # Single entry point: Makefile `test-e2e` is the source of truth for which
+  # suites run. Keep CI and local in sync by only extending that target.
+  e2e:
+    name: E2E (make test-e2e)
     runs-on: ubuntu-latest
 
     services:
+      # Client suite (goipmi → ipmi-simulator) defaults to 127.0.0.1:9623.
+      # The script can also auto-start Docker if this service is absent.
       ipmi-simulator:
         image: vaporio/ipmi-simulator:master
         ports:
@@ -33,41 +34,5 @@ jobs:
         with:
           go-version: "1.24"
 
-      - name: Run client E2E tests
-        run: make test-e2e-client
-
-  # ---------------------------------------------------------------------------
-  # Server E2E: ipmitool → goipmi-server
-  # ---------------------------------------------------------------------------
-  server-e2e:
-    name: Server E2E (ipmitool → go-ipmi server)
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.24"
-
-      - name: Run server E2E tests
-        run: make test-e2e-server
-
-  # ---------------------------------------------------------------------------
-  # Self E2E: goipmi → goipmi-server (both from this repo)
-  # ---------------------------------------------------------------------------
-  self-e2e:
-    name: Self E2E (goipmi → goipmi-server)
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.24"
-
-      - name: Run self E2E tests
-        run: make test-e2e-self
+      - name: Run E2E tests
+        run: make test-e2e
