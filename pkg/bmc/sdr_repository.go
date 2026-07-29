@@ -2,29 +2,49 @@ package bmc
 
 import (
 	"context"
+	"time"
 
 	"github.com/bougou/go-ipmi/pkg/clock"
-	"github.com/bougou/go-ipmi/pkg/command/storage"
 	"github.com/bougou/go-ipmi/pkg/hal"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // defaultSDRRepoSize is the synthetic repository capacity used for Info/AllocInfo.
 // v2.0§33.9 encodes free space as uint16 where FFFEh means "64KB-2 or more";
-// values larger than that must be clamped (see encodeSDRRepoFreeSpace).
+// handlers clamp values larger than that when packing the wire response.
 const defaultSDRRepoSize = 64 * 1024
 
-// encodeSDRRepoFreeSpace maps a free-byte count onto the Get SDR Repository
-// Info Free Space field (v2.0§33.9): 0000h = full, FFFEh = 64KB-2 or more,
-// FFFFh = unspecified.
-func encodeSDRRepoFreeSpace(free int) uint16 {
-	if free <= 0 {
-		return 0
-	}
-	if free >= 0xFFFE {
-		return 0xFFFE
-	}
-	return uint16(free)
+// SDRCapabilities describes which SDR repository operations this BMC supports.
+// Handlers map these flags onto storage.SDROperationSupport (v2.0§33.9).
+type SDRCapabilities struct {
+	ModalUpdate    bool
+	NonModalUpdate bool
+	DeleteSDR      bool
+	PartialAddSDR  bool
+	ReserveRepo    bool
+	GetAllocInfo   bool
+}
+
+// SDRRepoInfo is BMC-side repository status (not a wire response).
+// Handlers map this to storage.GetSDRRepoInfoResponse (v2.0§33.9).
+type SDRRepoInfo struct {
+	SDRVersion      uint8
+	RecordCount     uint16
+	FreeBytes       int // raw free capacity; §33.9 wire encoding is the handler's job
+	MostRecentAdd   time.Time
+	MostRecentErase time.Time
+	Overflow        bool
+	Capabilities    SDRCapabilities
+}
+
+// SDRRepoAllocInfo is BMC-side allocation accounting (not a wire response).
+// Handlers map this to storage.GetSDRRepoAllocInfoResponse (v2.0§33.10).
+type SDRRepoAllocInfo struct {
+	PossibleAllocUnits uint16
+	AllocUnitSize      uint16
+	FreeAllocUnits     uint16
+	LargestFreeBlock   uint16
+	MaximumRecordSize  uint8
 }
 
 // SDRRepository reads SDR records from [hal.SDRStore] and implements
@@ -113,8 +133,8 @@ func (r *SDRRepository) GetRecord(ctx context.Context, recordID uint16) (record 
 	return record, nextID, nil
 }
 
-// Info returns the Get SDR Repository Info response per v2.0§33.9.
-func (r *SDRRepository) Info(ctx context.Context) (*storage.GetSDRRepoInfoResponse, error) {
+// Info returns BMC-side SDR repository status per v2.0§33.9 semantics.
+func (r *SDRRepository) Info(ctx context.Context) (*SDRRepoInfo, error) {
 	ids, err := r.RecordIDs(ctx)
 	if err != nil {
 		return nil, err
@@ -125,21 +145,21 @@ func (r *SDRRepository) Info(ctx context.Context) (*storage.GetSDRRepoInfoRespon
 	}
 	free := defaultSDRRepoSize - used
 	now := r.clk.Now()
-	return &storage.GetSDRRepoInfoResponse{
-		SDRVersion:             types.SDRCommandSetVersion,
-		RecordCount:            uint16(len(ids)),
-		FreeSpaceBytes:         encodeSDRRepoFreeSpace(free),
-		MostRecentAdditionTime: now,
-		MostRecentEraseTime:    now,
-		SDROperationSupport: storage.SDROperationSupport{
-			SupportReserveSDRRepo:      true,
-			SupportGetSDRRepoAllocInfo: true,
+	return &SDRRepoInfo{
+		SDRVersion:      types.SDRCommandSetVersion,
+		RecordCount:     uint16(len(ids)),
+		FreeBytes:       free,
+		MostRecentAdd:   now,
+		MostRecentErase: now,
+		Capabilities: SDRCapabilities{
+			ReserveRepo:  true,
+			GetAllocInfo: true,
 		},
 	}, nil
 }
 
-// AllocInfo returns the Get SDR Repository Allocation Info response per v2.0§33.10.
-func (r *SDRRepository) AllocInfo(ctx context.Context) (*storage.GetSDRRepoAllocInfoResponse, error) {
+// AllocInfo returns BMC-side allocation accounting per v2.0§33.10 semantics.
+func (r *SDRRepository) AllocInfo(ctx context.Context) (*SDRRepoAllocInfo, error) {
 	used, maxRec, err := r.scanRecords(ctx)
 	if err != nil {
 		return nil, err
@@ -158,9 +178,9 @@ func (r *SDRRepository) AllocInfo(ctx context.Context) (*storage.GetSDRRepoAlloc
 	if maxRecSize < 64 {
 		maxRecSize = 64
 	}
-	return &storage.GetSDRRepoAllocInfoResponse{
+	return &SDRRepoAllocInfo{
 		PossibleAllocUnits: uint16(totalUnits),
-		AllocUnitsSize:     unitSize,
+		AllocUnitSize:      unitSize,
 		FreeAllocUnits:     uint16(freeUnits),
 		LargestFreeBlock:   uint16(freeUnits),
 		MaximumRecordSize:  maxRecSize,

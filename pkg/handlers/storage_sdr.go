@@ -8,6 +8,19 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
+// encodeSDRRepoFreeSpace maps a free-byte count onto the Get SDR Repository
+// Info Free Space field (v2.0§33.9): 0000h = full, FFFEh = 64KB-2 or more,
+// FFFFh = unspecified.
+func encodeSDRRepoFreeSpace(free int) uint16 {
+	if free <= 0 {
+		return 0
+	}
+	if free >= 0xFFFE {
+		return 0xFFFE
+	}
+	return uint16(free)
+}
+
 func handleGetSDRRepoInfo(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {
 	store := storageHAL(hctx)
 	if store == nil || store.SDR() == nil {
@@ -23,7 +36,23 @@ func handleGetSDRRepoInfo(ctx context.Context, hctx *HandlerContext, req []byte)
 	if err != nil {
 		return nil, codeFromErr(err), err
 	}
-	return info.Pack(), types.CodeOK, nil
+	resp := &storage.GetSDRRepoInfoResponse{
+		SDRVersion:             info.SDRVersion,
+		RecordCount:            info.RecordCount,
+		FreeSpaceBytes:         encodeSDRRepoFreeSpace(info.FreeBytes),
+		MostRecentAdditionTime: info.MostRecentAdd,
+		MostRecentEraseTime:    info.MostRecentErase,
+		SDROperationSupport: storage.SDROperationSupport{
+			Overflow:                     info.Overflow,
+			SupportModalSDRRepoUpdate:    info.Capabilities.ModalUpdate,
+			SupportNonModalSDRRepoUpdate: info.Capabilities.NonModalUpdate,
+			SupportDeleteSDR:             info.Capabilities.DeleteSDR,
+			SupportPartialAddSDR:         info.Capabilities.PartialAddSDR,
+			SupportReserveSDRRepo:        info.Capabilities.ReserveRepo,
+			SupportGetSDRRepoAllocInfo:   info.Capabilities.GetAllocInfo,
+		},
+	}
+	return resp.Pack(), types.CodeOK, nil
 }
 
 func handleGetSDRRepoAllocInfo(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {
@@ -41,7 +70,14 @@ func handleGetSDRRepoAllocInfo(ctx context.Context, hctx *HandlerContext, req []
 	if err != nil {
 		return nil, codeFromErr(err), err
 	}
-	return info.Pack(), types.CodeOK, nil
+	resp := &storage.GetSDRRepoAllocInfoResponse{
+		PossibleAllocUnits: info.PossibleAllocUnits,
+		AllocUnitsSize:     info.AllocUnitSize,
+		FreeAllocUnits:     info.FreeAllocUnits,
+		LargestFreeBlock:   info.LargestFreeBlock,
+		MaximumRecordSize:  info.MaximumRecordSize,
+	}
+	return resp.Pack(), types.CodeOK, nil
 }
 
 func handleReserveSDRRepo(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {

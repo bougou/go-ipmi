@@ -1,23 +1,31 @@
 package bmc
 
-import "testing"
+import (
+	"context"
+	"testing"
 
-func TestEncodeSDRRepoFreeSpace(t *testing.T) {
-	cases := []struct {
-		free int
-		want uint16
-	}{
-		{0, 0},
-		{-1, 0},
-		{1, 1},
-		{0xFFFD, 0xFFFD},
-		{0xFFFE, 0xFFFE},
-		{0xFFFF, 0xFFFE},
-		{64 * 1024, 0xFFFE}, // v2.0§33.9: FFFEh = 64KB-2 or more
+	"github.com/bougou/go-ipmi/pkg/clock"
+	"github.com/bougou/go-ipmi/pkg/hal/mock"
+	"github.com/bougou/go-ipmi/pkg/types"
+)
+
+func TestSDRRepositoryInfo_EmptyRepoFreeBytes(t *testing.T) {
+	// BMC reports raw free capacity; §33.9 wire clamping is done by handlers.
+	repo := NewSDRRepository(mock.New().Storage().SDR(), clock.Real)
+	info, err := repo.Info(context.Background())
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, tc := range cases {
-		if got := encodeSDRRepoFreeSpace(tc.free); got != tc.want {
-			t.Fatalf("encodeSDRRepoFreeSpace(%d): want %#04x got %#04x", tc.free, tc.want, got)
-		}
+	if info.RecordCount != 0 {
+		t.Fatalf("RecordCount: want 0 got %d", info.RecordCount)
+	}
+	if info.FreeBytes != defaultSDRRepoSize {
+		t.Fatalf("FreeBytes: want %d got %d", defaultSDRRepoSize, info.FreeBytes)
+	}
+	if info.SDRVersion != types.SDRCommandSetVersion {
+		t.Fatalf("SDRVersion: want %#02x got %#02x", types.SDRCommandSetVersion, info.SDRVersion)
+	}
+	if !info.Capabilities.ReserveRepo || !info.Capabilities.GetAllocInfo {
+		t.Fatalf("unexpected capabilities: %+v", info.Capabilities)
 	}
 }
