@@ -1,6 +1,10 @@
 package ipmi
 
-import client "github.com/bougou/go-ipmi/pkg/client"
+import (
+	client "github.com/bougou/go-ipmi/pkg/client"
+	"github.com/bougou/go-ipmi/pkg/rmcpplus"
+	"github.com/bougou/go-ipmi/pkg/types"
+)
 
 const (
 	DefaultBufferSize              = client.DefaultBufferSize
@@ -13,39 +17,39 @@ const (
 	DefaultOpenTimeoutSec          = client.DefaultOpenTimeoutSec
 	IPMIVersion15                  = client.IPMIVersion15
 	IPMIVersion20                  = client.IPMIVersion20
-	IPMI_MAX_USER_NAME_LENGTH      = client.IPMI_MAX_USER_NAME_LENGTH
-	IPMI_RAKP1_MESSAGE_SIZE        = client.IPMI_RAKP1_MESSAGE_SIZE
+	IPMI_MAX_USER_NAME_LENGTH      = rmcpplus.MaxUserNameLength
+	IPMI_RAKP1_MESSAGE_SIZE        = rmcpplus.RAKP1MessageSize
 	InterfaceLan                   = client.InterfaceLan
 	InterfaceLanplus               = client.InterfaceLanplus
 	InterfaceOpen                  = client.InterfaceOpen
 	InterfaceTool                  = client.InterfaceTool
-	RmcpOpenSessionRequestSize     = client.RmcpOpenSessionRequestSize
-	RmcpOpenSessionResponseMinSize = client.RmcpOpenSessionResponseMinSize
-	RmcpOpenSessionResponseSize    = client.RmcpOpenSessionResponseSize
+	RmcpOpenSessionRequestSize     = rmcpplus.OpenSessionRequestSize
+	RmcpOpenSessionResponseMinSize = rmcpplus.OpenSessionResponseMinSize
+	RmcpOpenSessionResponseSize    = rmcpplus.OpenSessionResponseSize
 )
 
 var (
-	ErrDCMIGroupExtensionIDMismatch = client.ErrDCMIGroupExtensionIDMismatch
-	ErrUnpackedDataTooShort         = client.ErrUnpackedDataTooShort
+	ErrDCMIGroupExtensionIDMismatch = types.ErrDCMIGroupExtensionIDMismatch
+	ErrUnpackedDataTooShort         = types.ErrUnpackedDataTooShort
 )
 
 type (
 	AuthCodeMultiSessionInput  = client.AuthCodeMultiSessionInput
 	AuthCodeSingleSessionInput = client.AuthCodeSingleSessionInput
-	AuthenticationPayload      = client.AuthenticationPayload
+	AuthenticationPayload      = rmcpplus.AuthenticationPayload
 	Client                     = client.Client
 	CommandContext             = client.CommandContext
 	CommandRawRequest          = client.CommandRawRequest
 	CommandRawResponse         = client.CommandRawResponse
-	ConfidentialityPayload     = client.ConfidentialityPayload
-	IntegrityPayload           = client.IntegrityPayload
+	ConfidentialityPayload     = rmcpplus.ConfidentialityPayload
+	IntegrityPayload           = rmcpplus.IntegrityPayload
 	Interface                  = client.Interface
-	OpenSessionRequest         = client.OpenSessionRequest
-	OpenSessionResponse        = client.OpenSessionResponse
-	RAKPMessage1               = client.RAKPMessage1
-	RAKPMessage2               = client.RAKPMessage2
-	RAKPMessage3               = client.RAKPMessage3
-	RAKPMessage4               = client.RAKPMessage4
+	OpenSessionRequest         = rmcpplus.OpenSessionRequest
+	OpenSessionResponse        = rmcpplus.OpenSessionResponse
+	RAKPMessage1               = rmcpplus.RAKPMessage1
+	RAKPMessage2               = rmcpplus.RAKPMessage2
+	RAKPMessage3               = rmcpplus.RAKPMessage3
+	RAKPMessage4               = rmcpplus.RAKPMessage4
 	RmcpPingRequest            = client.RmcpPingRequest
 	RmcpPingResponse           = client.RmcpPingResponse
 	SensorFilterOption         = client.SensorFilterOption
@@ -54,10 +58,10 @@ type (
 )
 
 var (
-	CheckDCMIGroupExenstionMatch        = client.CheckDCMIGroupExenstionMatch
-	ErrDCMIGroupExtensionIDMismatchWith = client.ErrDCMIGroupExtensionIDMismatchWith
-	ErrNotEnoughDataWith                = client.ErrNotEnoughDataWith
-	ErrUnpackedDataTooShortWith         = client.ErrUnpackedDataTooShortWith
+	CheckDCMIGroupExenstionMatch        = types.CheckDCMIGroupExenstionMatch
+	ErrDCMIGroupExtensionIDMismatchWith = types.ErrDCMIGroupExtensionIDMismatchWith
+	ErrNotEnoughDataWith                = types.ErrNotEnoughDataWith
+	ErrUnpackedDataTooShortWith         = types.ErrUnpackedDataTooShortWith
 	GetCommandContext                   = client.GetCommandContext
 	NewClient                           = client.NewClient
 	NewOpenClient                       = client.NewOpenClient

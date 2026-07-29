@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
+	"github.com/bougou/go-ipmi/pkg/rmcpplus"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
@@ -38,9 +39,9 @@ func RegisterSessionHandlers(r *Registry) {
 
 // handleGetChannelAuthCaps implements Get Channel Authentication Capabilities (App 0x38).
 // Advertises both IPMI v1.5 (lan) and v2.0/RMCP+ (lanplus) when enabled on the BMC.
-func handleGetChannelAuthCaps(_ context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
+func handleGetChannelAuthCaps(_ context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {
 	if len(req) < 2 {
-		return nil, CodeRequestDataTruncated, nil
+		return nil, types.CodeRequestDataTruncated, nil
 	}
 	// req[0] bits 3:0 = channel number (0x0E = current)
 	// req[1] bits 3:0 = requested privilege level
@@ -74,7 +75,7 @@ func handleGetChannelAuthCaps(_ context.Context, hctx *HandlerContext, req []byt
 	resp[5] = 0x00 // OEM ID byte 2
 	resp[6] = 0x00 // OEM ID byte 3
 	resp[7] = 0x00 // OEM auxiliary data
-	return resp, CodeOK, nil
+	return resp, types.CodeOK, nil
 }
 
 // resolveChannelNumber maps the channel number field of a channel-scoped
@@ -98,12 +99,12 @@ func resolveChannelNumber(reqByte uint8) uint8 {
 // Records are returned in 16-byte windows addressed by the list index; the
 // remote console keeps incrementing the index until fewer than 16 record bytes
 // are returned.
-func handleGetChannelCipherSuites(_ context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
+func handleGetChannelCipherSuites(_ context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {
 	if len(req) < 2 {
-		return nil, CodeRequestDataTruncated, nil
+		return nil, types.CodeRequestDataTruncated, nil
 	}
 	if hctx == nil || hctx.BMC == nil {
-		return []byte{resolveChannelNumber(req[0])}, CodeOK, nil
+		return []byte{resolveChannelNumber(req[0])}, types.CodeOK, nil
 	}
 	// Byte 0: channel number (bits 3:0; 0x0E = current channel)
 	// Byte 1: payload type (0x00 = IPMI)
@@ -124,106 +125,83 @@ func handleGetChannelCipherSuites(_ context.Context, hctx *HandlerContext, req [
 		}
 		resp = append(resp, record[start:end]...)
 	}
-	return resp, CodeOK, nil
+	return resp, types.CodeOK, nil
 }
 
 // ---------------------------------------------------------------------------
 // Set Session Privilege Level
 // ---------------------------------------------------------------------------
 
-func handleSetSessionPrivilegeLevel(_ context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
+func handleSetSessionPrivilegeLevel(_ context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {
 	if len(req) < 1 {
-		return nil, CodeRequestDataTruncated, nil
+		return nil, types.CodeRequestDataTruncated, nil
 	}
 
 	requested := bmc.PrivilegeLevel(req[0] & 0x0F)
 
 	if hctx.V15Session != nil {
 		if requested == 0 {
-			return []byte{uint8(hctx.V15Session.PrivilegeLevel)}, CodeOK, nil
+			return []byte{uint8(hctx.V15Session.PrivilegeLevel)}, types.CodeOK, nil
 		}
 		if requested > hctx.V15Session.MaxPrivilege {
-			return nil, CodeInsufficientPrivilege, nil
+			return nil, types.CodeCannotExecuteCommandSecurityRestrict, nil
 		}
 		hctx.V15Session.PrivilegeLevel = requested
-		return []byte{uint8(requested)}, CodeOK, nil
+		return []byte{uint8(requested)}, types.CodeOK, nil
 	}
 
 	if hctx.Session == nil {
-		return nil, CodeNotSupportedInState, nil
+		return nil, types.CodeCannotExecuteCommandNotSupported, nil
 	}
 
 	// Privilege 0 means "return current level" per spec.
 	if requested == 0 {
-		return []byte{uint8(hctx.Session.PrivilegeLevel)}, CodeOK, nil
+		return []byte{uint8(hctx.Session.PrivilegeLevel)}, types.CodeOK, nil
 	}
 	if requested > hctx.Session.MaxPrivilege {
-		return nil, CodeInsufficientPrivilege, nil
+		return nil, types.CodeCannotExecuteCommandSecurityRestrict, nil
 	}
 	hctx.Session.PrivilegeLevel = requested
-	return []byte{uint8(requested)}, CodeOK, nil
+	return []byte{uint8(requested)}, types.CodeOK, nil
 }
 
 // ---------------------------------------------------------------------------
 // Close Session
 // ---------------------------------------------------------------------------
 
-func handleCloseSession(_ context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
+func handleCloseSession(_ context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {
 	if len(req) < 4 {
-		return nil, CodeRequestDataTruncated, nil
+		return nil, types.CodeRequestDataTruncated, nil
 	}
 	sessionID := binary.LittleEndian.Uint32(req[0:4])
 
 	if err := hctx.BMC.Sessions.Close(sessionID); err == nil {
-		return nil, CodeOK, nil
+		return nil, types.CodeOK, nil
 	}
 	if err := hctx.BMC.V15Sessions.Close(sessionID); err != nil {
-		return nil, CodeParamOutOfRange, nil
+		return nil, types.CodeParameterOutOfRange, nil
 	}
-	return nil, CodeOK, nil
+	return nil, types.CodeOK, nil
 }
 
 // ---------------------------------------------------------------------------
 // RMCP+ Open Session (payload type 0x10)
 // ---------------------------------------------------------------------------
 
-// OpenSessionRequest holds the fields from an RMCP+ Open Session Request message.
-type OpenSessionRequest struct {
-	MessageTag      uint8
-	MaxPrivilege    uint8
-	ConsoleID       uint32
-	AuthAlgPayload  [8]byte
-	IntAlgPayload   [8]byte
-	CryptAlgPayload [8]byte
-}
-
-// OpenSessionResponse is the BMC's reply.
-type OpenSessionResponse struct {
-	MessageTag   uint8
-	StatusCode   uint8
-	MaxPrivilege uint8
-	ConsoleID    uint32
-	BMCID        uint32
-	AuthAlg      uint8
-	IntAlg       uint8
-	CryptAlg     uint8
-}
-
 // HandleOpenSession processes an RMCP+ Open Session Request and returns the
 // raw response payload.  It is called by the server before a session exists.
 func HandleOpenSession(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, error) {
-	if len(data) < 32 {
+	var req rmcpplus.OpenSessionRequest
+	if err := req.Unpack(data); err != nil {
 		return buildOpenSessionError(0, 0, 0x12), nil // Illegal parameter
 	}
 
-	tag := data[0]
-	maxPriv := data[1] & 0x0F
-	consoleID := binary.LittleEndian.Uint32(data[4:8])
-
-	// Parse algorithm payloads (3 x 8-byte records at offsets 8, 16, 24).
-	authAlg := types.AuthAlg(data[12])     // byte 4 of auth payload
-	intAlg := types.IntegrityAlg(data[20]) // byte 4 of integrity payload
-	cryptAlg := types.CryptAlg(data[28])   // byte 4 of crypt payload
+	authAlg := types.AuthAlg(req.AuthAlg)
+	intAlg := types.IntegrityAlg(req.IntegrityAlg)
+	cryptAlg := types.CryptAlg(req.CryptAlg)
+	tag := req.MessageTag
+	consoleID := req.RemoteConsoleSessionID
+	maxPriv := uint8(req.RequestedMaximumPrivilegeLevel)
 
 	// Validate that the requested algorithm triple matches a configured
 	// cipher suite (spec §22.15.2, §13.17). The triple must appear as a
@@ -245,37 +223,27 @@ func HandleOpenSession(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, er
 	}
 	sess.Channel = lanChannelNumber
 
-	resp := make([]byte, 36)
-	resp[0] = tag
-	resp[1] = 0x00 // no error
-	resp[2] = uint8(sess.MaxPrivilege)
-	resp[3] = 0x00 // reserved
-	binary.LittleEndian.PutUint32(resp[4:8], consoleID)
-	binary.LittleEndian.PutUint32(resp[8:12], sess.BMCID)
-	// Algorithm payloads (3 × 8 bytes).  resp is zero-initialised, so only
-	// the non-zero fields need to be set.
-	//   [PayloadType][reserved×2][0x08][Algorithm][reserved×3]
-	resp[12] = 0x00 // auth
-	resp[15] = 0x08 // payload length
-	resp[16] = uint8(authAlg)
-	resp[20] = 0x01 // integrity
-	resp[23] = 0x08
-	resp[24] = uint8(intAlg)
-	resp[28] = 0x02 // confidentiality
-	resp[31] = 0x08
-	resp[32] = uint8(cryptAlg)
-
-	return resp, nil
+	authPayload, integPayload, cryptPayload := rmcpplus.NewAlgorithmPayloads(authAlg, intAlg, cryptAlg)
+	resp := &rmcpplus.OpenSessionResponse{
+		MessageTag:             tag,
+		RmcpStatusCode:         types.RmcpStatusCodeNoErrors,
+		MaximumPrivilegeLevel:  uint8(sess.MaxPrivilege),
+		RemoteConsoleSessionID: consoleID,
+		ManagedSystemSessionID: sess.BMCID,
+		AuthenticationPayload:  authPayload,
+		IntegrityPayload:       integPayload,
+		ConfidentialityPayload: cryptPayload,
+	}
+	return resp.Pack(), nil
 }
 
 func buildOpenSessionError(tag uint8, consoleID uint32, statusCode uint8) []byte {
-	resp := make([]byte, 8)
-	resp[0] = tag
-	resp[1] = statusCode
-	resp[2] = 0x00
-	resp[3] = 0x00
-	binary.LittleEndian.PutUint32(resp[4:8], consoleID)
-	return resp
+	resp := &rmcpplus.OpenSessionResponse{
+		MessageTag:             tag,
+		RmcpStatusCode:         types.RmcpStatusCode(statusCode),
+		RemoteConsoleSessionID: consoleID,
+	}
+	return resp.Pack()
 }
 
 // ---------------------------------------------------------------------------
@@ -286,12 +254,13 @@ func buildOpenSessionError(tag uint8, consoleID uint32, statusCode uint8) []byte
 // It is called before the session is active; the session is identified by the
 // BMC session ID embedded in Message 1.
 func HandleRAKP1(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, error) {
-	if len(data) < 28 {
+	var req rmcpplus.RAKPMessage1
+	if err := req.Unpack(data); err != nil {
 		return rakp2Error(0, 0, 0x12), nil
 	}
 
-	tag := data[0]
-	bmcSessionID := binary.LittleEndian.Uint32(data[4:8])
+	tag := req.MessageTag
+	bmcSessionID := req.ManagedSystemSessionID
 
 	sess, err := b.Sessions.Get(bmcSessionID)
 	if err != nil {
@@ -302,14 +271,9 @@ func HandleRAKP1(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, error) {
 	}
 
 	// Store the console's random number and requested role.
-	copy(sess.ConsoleRand[:], data[8:24])
-	sess.Role = data[24] // whole privilege byte including name-only bit
-
-	usernameLen := data[27]
-	if int(28+usernameLen) > len(data) {
-		return rakp2Error(tag, sess.ConsoleID, 0x0C), nil // Invalid name length
-	}
-	username := string(data[28 : 28+usernameLen])
+	sess.ConsoleRand = req.RemoteConsoleRandomNumber
+	sess.Role = req.Role() // whole privilege byte including name-only bit
+	username := string(req.Username)
 
 	// Look up user.
 	user, lookupErr := b.Users.GetByName(username)
@@ -337,24 +301,24 @@ func HandleRAKP1(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, error) {
 		return rakp2Error(tag, sess.ConsoleID, 0xFF), err
 	}
 
-	resp := make([]byte, 40+len(authCode))
-	resp[0] = tag
-	resp[1] = 0x00 // no error
-	resp[2] = 0x00
-	resp[3] = 0x00
-	binary.LittleEndian.PutUint32(resp[4:8], sess.ConsoleID)
-	copy(resp[8:24], sess.BMCRand[:])
-	copy(resp[24:40], b.GUID[:])
-	copy(resp[40:], authCode)
-	return resp, nil
+	resp := &rmcpplus.RAKPMessage2{
+		MessageTag:                    tag,
+		RmcpStatusCode:                types.RmcpStatusCodeNoErrors,
+		RemoteConsoleSessionID:        sess.ConsoleID,
+		ManagedSystemRandomNumber:     sess.BMCRand,
+		ManagedSystemGUID:             b.GUID,
+		KeyExchangeAuthenticationCode: authCode,
+	}
+	return resp.Pack(), nil
 }
 
 func rakp2Error(tag uint8, consoleID uint32, status uint8) []byte {
-	resp := make([]byte, 8)
-	resp[0] = tag
-	resp[1] = status
-	binary.LittleEndian.PutUint32(resp[4:8], consoleID)
-	return resp
+	resp := &rmcpplus.RAKPMessage2{
+		MessageTag:             tag,
+		RmcpStatusCode:         types.RmcpStatusCode(status),
+		RemoteConsoleSessionID: consoleID,
+	}
+	return resp.Pack()
 }
 
 // ---------------------------------------------------------------------------
@@ -384,19 +348,17 @@ func HandleRAKP3(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, error) {
 		return rakp4Error(tag, sess.ConsoleID, statusCode), nil
 	}
 
-	// Verify the auth code sent by the console.
-	authCodeLen := rakp3AuthCodeLen(sess.AuthAlg)
-	if len(data) < 8+authCodeLen {
+	var req rmcpplus.RAKPMessage3
+	if err := req.Unpack(data, sess.AuthAlg); err != nil {
 		return rakp4Error(tag, sess.ConsoleID, 0x0F), nil // Invalid integrity check value
 	}
-	consoleAuthCode := data[8 : 8+authCodeLen]
 
 	expected, err := computeRAKP3AuthCode(sess, b)
 	if err != nil {
 		return rakp4Error(tag, sess.ConsoleID, 0xFF), err
 	}
 
-	if sess.User == nil || !hmacEqual(expected, consoleAuthCode) {
+	if sess.User == nil || !hmacEqual(expected, req.KeyExchangeAuthenticationCode) {
 		_ = b.Sessions.Close(bmcSessionID)
 		return rakp4Error(tag, sess.ConsoleID, 0x0D), nil // Unauthorized name
 	}
@@ -418,22 +380,22 @@ func HandleRAKP3(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, error) {
 		return rakp4Error(tag, sess.ConsoleID, 0xFF), err
 	}
 
-	resp := make([]byte, 8+len(rakp4Code))
-	resp[0] = tag
-	resp[1] = 0x00
-	resp[2] = 0x00
-	resp[3] = 0x00
-	binary.LittleEndian.PutUint32(resp[4:8], sess.ConsoleID)
-	copy(resp[8:], rakp4Code)
-	return resp, nil
+	resp := &rmcpplus.RAKPMessage4{
+		MessageTag:           tag,
+		RmcpStatusCode:       types.RmcpStatusCodeNoErrors,
+		MgmtConsoleSessionID: sess.ConsoleID,
+		IntegrityCheckValue:  rakp4Code,
+	}
+	return resp.Pack(), nil
 }
 
 func rakp4Error(tag uint8, consoleID uint32, status uint8) []byte {
-	resp := make([]byte, 8)
-	resp[0] = tag
-	resp[1] = status
-	binary.LittleEndian.PutUint32(resp[4:8], consoleID)
-	return resp
+	resp := &rmcpplus.RAKPMessage4{
+		MessageTag:           tag,
+		RmcpStatusCode:       types.RmcpStatusCode(status),
+		MgmtConsoleSessionID: consoleID,
+	}
+	return resp.Pack()
 }
 
 func authorizeSessionPrivilege(b *bmc.BMC, sess *bmc.Session) (uint8, bool) {

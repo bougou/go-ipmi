@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
+	"github.com/bougou/go-ipmi/pkg/crypto"
 	"github.com/bougou/go-ipmi/pkg/protocol"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
@@ -100,11 +101,11 @@ func TestRMCPPlusIntegrity_SHA256_128(t *testing.T) {
 	}
 
 	// The auth code length must be 16 bytes (128 bits), not 12 (SHA1-96).
-	authCodeLen, ok := rmcpPlusIntegrityAuthCodeLen(sess.IntegrityAlg)
+	authCodeLen, ok := crypto.IntegrityAuthCodeLen(sess.IntegrityAlg)
 	if !ok || authCodeLen != 16 {
 		t.Fatalf("want authCodeLen 16, got %d (ok=%v)", authCodeLen, ok)
 	}
-	padLen := rmcpPlusIntegrityPadLen(rmcpPlusHeaderSize, len(payload))
+	padLen := types.IntegrityPadLen(rmcpPlusHeaderSize, len(payload))
 	authCodeStart := rmcpPlusPayloadOffset + len(payload) + padLen + 2
 	if got := len(pkt) - authCodeStart; got != 16 {
 		t.Fatalf("trailer auth code length: want 16, got %d", got)

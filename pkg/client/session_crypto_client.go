@@ -4,6 +4,8 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"fmt"
+
+	"github.com/bougou/go-ipmi/pkg/crypto"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
@@ -110,21 +112,6 @@ func (c *Client) genSession20(payloadType types.PayloadType, rawPayload []byte) 
 	}, nil
 }
 
-func genSessionTrailerPadLength(sessionHeader []byte, sessionPayload []byte) int {
-
-	// (12) sessionHeader length
-	// sessionPayload length
-	// (1) pad length field
-	// (1) next header field
-	length := len(sessionHeader) + len(sessionPayload) + 1 + 1
-
-	var padSize int = 0
-	if length%4 != 0 {
-		padSize = 4 - int(length%4)
-	}
-	return padSize
-}
-
 // genSessionTrailer will create the SessionTrailer.
 //
 // see 13.28.4 Integrity Algorithms
@@ -132,7 +119,7 @@ func genSessionTrailerPadLength(sessionHeader []byte, sessionPayload []byte) int
 // data starting with the AuthType/Format field up to and including the field
 // that immediately precedes the AuthCode field itself.
 func (c *Client) genSessionTrailer(sessionHeader []byte, sessionPayload []byte) (*types.SessionTrailer, error) {
-	padSize := genSessionTrailerPadLength(sessionHeader, sessionPayload)
+	padSize := types.IntegrityPadLen(len(sessionHeader), len(sessionPayload))
 	var pad = make([]byte, padSize)
 	for i := 0; i < padSize; i++ {
 		pad[i] = 0xff
@@ -204,7 +191,7 @@ func (c *Client) encryptPayload(rawPayload []byte, iv []byte) ([]byte, error) {
 		cipherKey := c.session.v20.k2[0:16]
 		c.DebugBytes("cipher key (k2)", cipherKey, 16)
 
-		encryptedPayload, err := encryptAES(paddedData, cipherKey, iv)
+		encryptedPayload, err := crypto.EncryptAES(paddedData, cipherKey, iv)
 		if err != nil {
 			return nil, fmt.Errorf("encrypt payload with AES_CBC_128 failed, err: %w", err)
 		}
@@ -258,7 +245,7 @@ func (c *Client) encryptPayload(rawPayload []byte, iv []byte) ([]byte, error) {
 			cipherKey = keyRC[:16]
 		}
 
-		encryptedPayload, err := encryptRC4(rawPayload, cipherKey, iv)
+		encryptedPayload, err := crypto.EncryptRC4(rawPayload, cipherKey, iv)
 		if err != nil {
 			return nil, fmt.Errorf("encrypt payload with xRC4_40 or xRC4_128 failed, err: %w", err)
 		}
@@ -285,7 +272,7 @@ func (c *Client) decryptPayload(data []byte) ([]byte, error) {
 		iv := data[0:16] // the first 16 byte is the initialization vector
 		cipherText := data[16:]
 		cipherKey := c.session.v20.k2[0:16]
-		d, err := decryptAES(cipherText, cipherKey, iv)
+		d, err := crypto.DecryptAES(cipherText, cipherKey, iv)
 		if err != nil {
 			return nil, fmt.Errorf("decrypt payload with AES_CBC_128 failed, err: %w", err)
 		}
@@ -314,7 +301,7 @@ func (c *Client) decryptPayload(data []byte) ([]byte, error) {
 		}
 
 		payloadData := data[20:]
-		b, err := decryptRC4(payloadData, cipherKey, iv)
+		b, err := crypto.DecryptRC4(payloadData, cipherKey, iv)
 		if err != nil {
 			return nil, fmt.Errorf("decrypt payload with xRC4_128 failed, err: %w", err)
 		}

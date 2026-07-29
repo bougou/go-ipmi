@@ -5,7 +5,7 @@ import (
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/hal/mock"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 func TestParseCipherSuites(t *testing.T) {
@@ -13,7 +13,7 @@ func TestParseCipherSuites(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parseCipherSuites: %v", err)
 	}
-	if len(ids) != 2 || ids[0] != ipmi.CipherSuiteID3 || ids[1] != ipmi.CipherSuiteID17 {
+	if len(ids) != 2 || ids[0] != types.CipherSuiteID3 || ids[1] != types.CipherSuiteID17 {
 		t.Fatalf("unexpected ids: %v", ids)
 	}
 }

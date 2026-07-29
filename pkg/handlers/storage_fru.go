@@ -6,23 +6,24 @@ import (
 	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/cmd/storage"
 	"github.com/bougou/go-ipmi/pkg/hal"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-func handleGetFRUInventoryAreaInfo(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
+func handleGetFRUInventoryAreaInfo(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {
 	fru := hctx.BMC.FRUInventory()
 	if fru == nil {
-		return nil, CodeNotSupportedInState, nil
+		return nil, types.CodeCannotExecuteCommandNotSupported, nil
 	}
 
 	var typed storage.GetFRUInventoryAreaInfoRequest
 	if err := typed.Unpack(req); err != nil {
-		return nil, CodeRequestDataTruncated, nil
+		return nil, types.CodeRequestDataTruncated, nil
 	}
 
 	size, err := fru.AreaSize(ctx, typed.FRUDeviceID)
 	if err != nil {
 		if bmc.StorageMissing(err) {
-			return nil, CodeRequestedRecordNotPresent, nil
+			return nil, types.CodeRequestedDataNotPresent, nil
 		}
 		return nil, codeFromErr(err), err
 	}
@@ -31,31 +32,31 @@ func handleGetFRUInventoryAreaInfo(ctx context.Context, hctx *HandlerContext, re
 		AreaSizeBytes:         size,
 		DeviceAccessedByWords: false,
 	}
-	return resp.Pack(), CodeOK, nil
+	return resp.Pack(), types.CodeOK, nil
 }
 
-func handleReadFRUData(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
+func handleReadFRUData(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {
 	fru := hctx.BMC.FRUInventory()
 	if fru == nil {
-		return nil, CodeNotSupportedInState, nil
+		return nil, types.CodeCannotExecuteCommandNotSupported, nil
 	}
 
 	var typed storage.ReadFRUDataRequest
 	if err := typed.Unpack(req); err != nil {
-		return nil, CodeRequestDataTruncated, nil
+		return nil, types.CodeRequestDataTruncated, nil
 	}
 
 	data, err := fru.Read(ctx, typed.FRUDeviceID)
 	if err != nil {
 		if bmc.StorageMissing(err) {
-			return nil, CodeRequestedRecordNotPresent, nil
+			return nil, types.CodeRequestedDataNotPresent, nil
 		}
 		return nil, codeFromErr(err), err
 	}
 
 	size := len(data)
 	if int(typed.ReadOffset) >= size {
-		return nil, CodeRequestedRecordNotPresent, nil
+		return nil, types.CodeRequestedDataNotPresent, nil
 	}
 
 	avail := size - int(typed.ReadOffset)
@@ -71,7 +72,7 @@ func handleReadFRUData(ctx context.Context, hctx *HandlerContext, req []byte) ([
 		CountReturned: uint8(len(chunk)),
 		Data:          chunk,
 	}
-	return resp.Pack(), CodeOK, nil
+	return resp.Pack(), types.CodeOK, nil
 }
 
 func storageHAL(hctx *HandlerContext) hal.StorageHAL {

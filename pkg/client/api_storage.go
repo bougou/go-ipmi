@@ -47,7 +47,7 @@ func (c *Client) GetDeviceSDR(ctx context.Context, recordID uint16) (response *s
 	err = c.Exchange(ctx, request, response)
 
 	if respErr, ok := types.IsResponseError(err); ok {
-		if respErr.CompletionCode() == types.CompletionCodeCannotReturnRequestedDataBytes {
+		if respErr.CompletionCode() == types.CodeCannotReturnRequestedDataBytes {
 			return c.getDeviceSDR(ctx, recordID)
 		}
 	}
@@ -445,7 +445,7 @@ func (c *Client) GetSDR(ctx context.Context, recordID uint16) (response *storage
 	err = c.Exchange(ctx, request, response)
 
 	if respErr, ok := types.IsResponseError(err); ok {
-		if respErr.CompletionCode() == types.CompletionCodeCannotReturnRequestedDataBytes {
+		if respErr.CompletionCode() == types.CodeCannotReturnRequestedDataBytes {
 			return c.getSDR(ctx, recordID)
 		}
 	}
@@ -485,7 +485,7 @@ func (c *Client) GetSDRHeader(ctx context.Context, recordID uint16) (*types.SDRH
 	err := c.Exchange(ctx, request, response)
 	if err != nil {
 		if respErr, ok := types.IsResponseError(err); ok &&
-			respErr.CompletionCode() == types.CompletionCodeReservationCanceled {
+			respErr.CompletionCode() == types.CodeReservationCanceled {
 			rsp, rerr := c.ReserveSDRRepo(ctx)
 			if rerr != nil {
 				return nil, 0, fmt.Errorf("ReserveSDRRepo failed, err: %w", rerr)

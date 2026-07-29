@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"encoding/binary"
+
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // IPMI NetFn codes used in this file.
@@ -37,7 +39,7 @@ func RegisterAppHandlers(r *Registry) {
 
 // handleGetDeviceID implements Get Device ID (App 0x01).
 // Response format follows Table 20-2 of the IPMI 2.0 spec.
-func handleGetDeviceID(ctx context.Context, hctx *HandlerContext, _ []byte) ([]byte, CompletionCode, error) {
+func handleGetDeviceID(ctx context.Context, hctx *HandlerContext, _ []byte) ([]byte, types.CompletionCode, error) {
 	info := hctx.BMC.Info
 	deviceRev := info.DeviceRevision & 0x0F
 	additional := info.AdditionalDeviceSupport
@@ -63,46 +65,46 @@ func handleGetDeviceID(ctx context.Context, hctx *HandlerContext, _ []byte) ([]b
 	resp[8] = uint8(mid >> 16)
 	// Product ID: 2 bytes LS-first
 	binary.LittleEndian.PutUint16(resp[9:11], info.ProductID)
-	return resp, CodeOK, nil
+	return resp, types.CodeOK, nil
 }
 
 // handleColdReset implements Cold Reset (App 0x02).
-func handleColdReset(ctx context.Context, hctx *HandlerContext, _ []byte) ([]byte, CompletionCode, error) {
+func handleColdReset(ctx context.Context, hctx *HandlerContext, _ []byte) ([]byte, types.CompletionCode, error) {
 	ch := hctx.BMC.HAL().Chassis()
 	if ch == nil {
-		return nil, CodeNotSupportedInState, nil
+		return nil, types.CodeCannotExecuteCommandNotSupported, nil
 	}
 	if err := ch.ColdReset(ctx); err != nil {
-		return nil, CodeUnspecifiedError, err
+		return nil, types.CodeUnspecifiedError, err
 	}
-	return nil, CodeOK, nil
+	return nil, types.CodeOK, nil
 }
 
 // handleWarmReset implements Warm Reset (App 0x03).
-func handleWarmReset(ctx context.Context, hctx *HandlerContext, _ []byte) ([]byte, CompletionCode, error) {
+func handleWarmReset(ctx context.Context, hctx *HandlerContext, _ []byte) ([]byte, types.CompletionCode, error) {
 	ch := hctx.BMC.HAL().Chassis()
 	if ch == nil {
-		return nil, CodeNotSupportedInState, nil
+		return nil, types.CodeCannotExecuteCommandNotSupported, nil
 	}
 	if err := ch.WarmReset(ctx); err != nil {
-		return nil, CodeUnspecifiedError, err
+		return nil, types.CodeUnspecifiedError, err
 	}
-	return nil, CodeOK, nil
+	return nil, types.CodeOK, nil
 }
 
 // handleGetSelfTestResults implements Get Self Test Results (App 0x04).
 // Returns "No error" (0x55 0x00) as a static response; real implementations
 // should perform an actual self-test and return the result.
-func handleGetSelfTestResults(_ context.Context, _ *HandlerContext, _ []byte) ([]byte, CompletionCode, error) {
+func handleGetSelfTestResults(_ context.Context, _ *HandlerContext, _ []byte) ([]byte, types.CompletionCode, error) {
 	// 0x55 = "No error", 0x00 = test result byte (all tests passed)
-	return []byte{0x55, 0x00}, CodeOK, nil
+	return []byte{0x55, 0x00}, types.CodeOK, nil
 }
 
 // handleGetDeviceGUID implements Get Device GUID (App 0x08).
 // Returns the 16-byte GUID from the BMC config (stored LS-byte first per spec).
-func handleGetDeviceGUID(_ context.Context, hctx *HandlerContext, _ []byte) ([]byte, CompletionCode, error) {
+func handleGetDeviceGUID(_ context.Context, hctx *HandlerContext, _ []byte) ([]byte, types.CompletionCode, error) {
 	g := hctx.BMC.GUID
 	resp := make([]byte, 16)
 	copy(resp, g[:])
-	return resp, CodeOK, nil
+	return resp, types.CodeOK, nil
 }

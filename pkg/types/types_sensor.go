@@ -889,7 +889,7 @@ type Sensor struct {
 	EntityID       EntityID
 	EntityInstance EntityInstance
 
-	NotPresent       bool // update by GetSensorReading (CompletionCodeRequestedDataNotPresent)
+	NotPresent       bool // update by GetSensorReading (CodeRequestedDataNotPresent)
 	ScanningDisabled bool // update by GetSensorReadingResponse
 	ReadingAvailable bool // update by GetSensorReadingResponse
 

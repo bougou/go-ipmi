@@ -179,18 +179,15 @@ func New(info DeviceInfo, guid [16]byte, h hal.HAL, opts ...Option) *BMC {
 		hal:   h,
 		clock: clock.Real,
 
-		Users:       NewUserStore(),
-		Channels:    NewChannelStore(),
-		Sessions:    NewSessionStore(clock.Real),
-		V15Sessions: NewV15SessionStore(clock.Real),
-		SDRRepo:     NewSDRRepoStore(),
+		Users:    NewUserStore(),
+		Channels: NewChannelStore(),
+		SDRRepo:  NewSDRRepoStore(),
 	}
 	for _, o := range opts {
 		o(b)
 	}
-	// Re-apply clock to session stores after options in case WithClock was used.
-	b.Sessions.clock = b.clock
-	b.V15Sessions.clock = b.clock
+	b.Sessions = NewSessionStore(b.clock)
+	b.V15Sessions = NewV15SessionStore(b.clock)
 	return b
 }
 

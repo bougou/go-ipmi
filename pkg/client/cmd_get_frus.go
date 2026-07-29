@@ -42,7 +42,7 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 	fruAreaInfoRes, err := c.GetFRUInventoryAreaInfo(ctx, deviceID)
 	if err != nil {
 		if respErr, ok := types.IsResponseError(err); ok {
-			if respErr.CompletionCode() == types.CompletionCodeRequestedDataNotPresent {
+			if respErr.CompletionCode() == types.CodeRequestedDataNotPresent {
 				fru.DeviceNotPresent = true
 				fru.DeviceNotPresentReason = "InventoryRecordNotExist"
 				return fru, nil
@@ -61,11 +61,11 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 	if err != nil {
 		if respErr, ok := types.IsResponseError(err); ok {
 			switch respErr.CompletionCode() {
-			case types.CompletionCodeRequestedDataNotPresent:
+			case types.CodeRequestedDataNotPresent:
 				fru.DeviceNotPresent = true
 				fru.DeviceNotPresentReason = "DataNotPresent"
 				return fru, nil
-			case types.CompletionCodeProcessTimeout:
+			case types.CodeProcessTimeout:
 				fru.DeviceNotPresent = true
 				fru.DeviceNotPresentReason = "Timeout"
 				return fru, nil

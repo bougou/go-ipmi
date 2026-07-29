@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // runtimeConfig holds goipmi-server settings from the environment.
@@ -16,7 +16,7 @@ type runtimeConfig struct {
 	User     string
 	Password string
 
-	CipherSuites []ipmi.CipherSuiteID
+	CipherSuites []types.CipherSuiteID
 	V15AuthTypes []bmc.V15AuthType // nil = default (md5)
 	V15Disabled  bool
 }
@@ -99,9 +99,9 @@ func parseBoolEnv(v string) (bool, error) {
 // GOIPMI_SERVER_CIPHER_SUITES env var and validates each against the reference
 // server's supported set. Returns a descriptive error for bad input rather than
 // letting bmc.SetCipherSuites panic.
-func parseCipherSuites(raw string) ([]ipmi.CipherSuiteID, error) {
+func parseCipherSuites(raw string) ([]types.CipherSuiteID, error) {
 	parts := strings.Split(raw, ",")
-	ids := make([]ipmi.CipherSuiteID, 0, len(parts))
+	ids := make([]types.CipherSuiteID, 0, len(parts))
 	for _, p := range parts {
 		p = strings.TrimSpace(p)
 		if p == "" {
@@ -111,7 +111,7 @@ func parseCipherSuites(raw string) ([]ipmi.CipherSuiteID, error) {
 		if err != nil || n < 0 || n > 255 {
 			return nil, fmt.Errorf("invalid cipher suite id %q: expected an integer 0..255", p)
 		}
-		id := ipmi.CipherSuiteID(n)
+		id := types.CipherSuiteID(n)
 		if !bmc.SupportedCipherSuite(id) {
 			return nil, fmt.Errorf("cipher suite %d is not implemented by the reference server", id)
 		}

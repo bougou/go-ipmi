@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 func TestChassisControlRequiresOperatorPrivilege(t *testing.T) {
@@ -23,7 +24,7 @@ func TestChassisControlRequiresOperatorPrivilege(t *testing.T) {
 	if err != nil {
 		t.Fatalf("dispatch: %v", err)
 	}
-	if cc != CodeInsufficientPrivilege {
+	if cc != types.CodeCannotExecuteCommandSecurityRestrict {
 		t.Fatalf("want insufficient privilege, got %02x", cc)
 	}
 }
@@ -56,7 +57,7 @@ func TestActivateSessionRejectsReservedPrivilegeZero(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if cc != CodeParamOutOfRange {
+	if cc != types.CodeParameterOutOfRange {
 		t.Fatalf("want param out of range for privilege 0, got %02x", cc)
 	}
 }

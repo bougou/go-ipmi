@@ -7,7 +7,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/handlers"
 	"github.com/bougou/go-ipmi/pkg/protocol"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // handleIPMIv15 dispatches IPMI v1.5 LAN packets (AuthType != 0x06).
@@ -16,31 +16,31 @@ func (s *Server) handleIPMIv15(addr net.Addr, pkt []byte) {
 		return
 	}
 
-	var sess ipmi.Session15
+	var sess types.Session15
 	if err := sess.Unpack(pkt[4:]); err != nil {
 		return
 	}
 	hdr := sess.SessionHeader15
 
-	if hdr.AuthType != ipmi.AuthTypeNone && (s.bmc == nil || !s.bmc.V15LANEnabled()) {
+	if hdr.AuthType != types.AuthTypeNone && (s.bmc == nil || !s.bmc.V15LANEnabled()) {
 		return
 	}
 
 	switch hdr.AuthType {
-	case ipmi.AuthTypeNone:
+	case types.AuthTypeNone:
 		if hdr.SessionID != 0 {
 			s.dispatchIPMIv15SessionUnauth(addr, pkt, &sess)
 		} else {
 			s.dispatchIPMIv15UnAuth(addr, pkt, &sess)
 		}
-	case ipmi.AuthTypeMD2, ipmi.AuthTypeMD5, ipmi.AuthTypePassword:
+	case types.AuthTypeMD2, types.AuthTypeMD5, types.AuthTypePassword:
 		s.dispatchIPMIv15Auth(addr, pkt, &sess)
 	default:
 		return
 	}
 }
 
-func (s *Server) dispatchIPMIv15UnAuth(addr net.Addr, pkt []byte, sess *ipmi.Session15) {
+func (s *Server) dispatchIPMIv15UnAuth(addr net.Addr, pkt []byte, sess *types.Session15) {
 	netFn, cmd, data, seq, ok := protocol.ParseIPMIRequest(sess.Payload)
 	if !ok {
 		return
@@ -56,7 +56,7 @@ func (s *Server) dispatchIPMIv15UnAuth(addr net.Addr, pkt []byte, sess *ipmi.Ses
 
 // dispatchIPMIv15SessionUnauth handles AuthType NONE packets on an established
 // session when per-message or user-level authentication is disabled (spec v1.5§6.11.4 / v2.0§6.12.4).
-func (s *Server) dispatchIPMIv15SessionUnauth(addr net.Addr, pkt []byte, sess *ipmi.Session15) {
+func (s *Server) dispatchIPMIv15SessionUnauth(addr net.Addr, pkt []byte, sess *types.Session15) {
 	hdr := sess.SessionHeader15
 	netFn, cmd, data, seq, ok := protocol.ParseIPMIRequest(sess.Payload)
 	if !ok {
@@ -92,7 +92,7 @@ func (s *Server) dispatchIPMIv15SessionUnauth(addr net.Addr, pkt []byte, sess *i
 	s.sendIPMIv15Session(addr, pkt, v15Sess, ch, outboundSeq, ipmiResp, false)
 }
 
-func (s *Server) dispatchIPMIv15Auth(addr net.Addr, pkt []byte, sess *ipmi.Session15) {
+func (s *Server) dispatchIPMIv15Auth(addr net.Addr, pkt []byte, sess *types.Session15) {
 	hdr := sess.SessionHeader15
 	netFn, cmd, data, seq, ok := protocol.ParseIPMIRequest(sess.Payload)
 	if !ok {
@@ -175,8 +175,8 @@ func (s *Server) dispatchIPMIv15Auth(addr net.Addr, pkt []byte, sess *ipmi.Sessi
 }
 
 func (s *Server) sendIPMIv15UnAuth(addr net.Addr, reqPkt []byte, ipmiResp []byte) {
-	respHdr := ipmi.SessionHeader15{
-		AuthType:      ipmi.AuthTypeNone,
+	respHdr := types.SessionHeader15{
+		AuthType:      types.AuthTypeNone,
 		PayloadLength: uint8(len(ipmiResp)),
 	}
 	rmcp := []byte{reqPkt[0], reqPkt[1], 0xFF, reqPkt[3]}
@@ -185,7 +185,7 @@ func (s *Server) sendIPMIv15UnAuth(addr net.Addr, reqPkt []byte, ipmiResp []byte
 	_, _ = s.conn.WriteTo(out, addr)
 }
 
-func (s *Server) sendIPMIv15CommandCC(addr net.Addr, reqPkt []byte, sess *bmc.V15Session, netFn, cmd, seq uint8, cc handlers.CompletionCode, authenticated bool) {
+func (s *Server) sendIPMIv15CommandCC(addr net.Addr, reqPkt []byte, sess *bmc.V15Session, netFn, cmd, seq uint8, cc types.CompletionCode, authenticated bool) {
 	ipmiResp := protocol.BuildIPMIResponse(netFn, cmd, seq, uint8(cc), nil)
 	var outboundSeq uint32
 	if sess != nil && sess.State == bmc.V15SessionStateActive {
@@ -196,12 +196,12 @@ func (s *Server) sendIPMIv15CommandCC(addr net.Addr, reqPkt []byte, sess *bmc.V1
 }
 
 func (s *Server) sendIPMIv15Session(addr net.Addr, reqPkt []byte, sess *bmc.V15Session, ch *bmc.Channel, outboundSeq uint32, ipmiResp []byte, authenticated bool) {
-	var respHdr ipmi.SessionHeader15
+	var respHdr types.SessionHeader15
 	if authenticated && sess != nil {
 		authType := handlers.V15ResponseAuthType(ch, sess)
 		if authType == bmc.V15AuthTypeNone {
-			respHdr = ipmi.SessionHeader15{
-				AuthType:      ipmi.AuthTypeNone,
+			respHdr = types.SessionHeader15{
+				AuthType:      types.AuthTypeNone,
 				Sequence:      outboundSeq,
 				SessionID:     sess.SessionID,
 				PayloadLength: uint8(len(ipmiResp)),
@@ -214,8 +214,8 @@ func (s *Server) sendIPMIv15Session(addr net.Addr, reqPkt []byte, sess *bmc.V15S
 				ipmiResp,
 				outboundSeq,
 			)
-			respHdr = ipmi.SessionHeader15{
-				AuthType:      ipmi.AuthType(sess.AuthType),
+			respHdr = types.SessionHeader15{
+				AuthType:      types.AuthType(sess.AuthType),
 				Sequence:      outboundSeq,
 				SessionID:     sess.SessionID,
 				AuthCode:      authCode,
@@ -231,8 +231,8 @@ func (s *Server) sendIPMIv15Session(addr net.Addr, reqPkt []byte, sess *bmc.V15S
 				sessionID = sess.SessionID
 			}
 		}
-		respHdr = ipmi.SessionHeader15{
-			AuthType:      ipmi.AuthTypeNone,
+		respHdr = types.SessionHeader15{
+			AuthType:      types.AuthTypeNone,
 			Sequence:      outboundSeq,
 			SessionID:     sessionID,
 			PayloadLength: uint8(len(ipmiResp)),

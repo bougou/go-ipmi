@@ -351,7 +351,7 @@ func (c *Client) fillSensorReading(ctx context.Context, sensor *types.Sensor) er
 	readingRes, err := c.GetSensorReading(ctx, sensor.Number)
 	c.Debug("GetSensorReading response", readingRes.Format())
 
-	if isErrOfCompletionCodes(err, uint8(types.CompletionCodeRequestedDataNotPresent)) {
+	if isErrOfCompletionCodes(err, uint8(types.CodeRequestedDataNotPresent)) {
 		c.Debugf("GetSensorReading for sensor %#02x failed, err: %s", sensor.Number, err)
 		sensor.NotPresent = true
 		return nil
@@ -440,9 +440,9 @@ func _canIgnoreSensorErr(err error) error {
 	canIgnore := buildCanIgnoreFn(
 		// the following completion codes CAN be ignored,
 		// it normally means the sensor device does not exist or the sensor device does not recognize the IPMI command
-		uint8(types.CompletionCodeRequestedDataNotPresent),
-		uint8(types.CompletionCodeIllegalCommand),
-		uint8(types.CompletionCodeInvalidCommand),
+		uint8(types.CodeRequestedDataNotPresent),
+		uint8(types.CodeIllegalCommand),
+		uint8(types.CodeInvalidCommand),
 	)
 
 	return canIgnore(err)

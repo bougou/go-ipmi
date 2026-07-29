@@ -5,6 +5,10 @@
 //
 //   - [github.com/bougou/go-ipmi/pkg/types] — protocol types, constants, and
 //     wire-format helpers shared by client and server.
+//   - [github.com/bougou/go-ipmi/pkg/crypto] — shared AES/HMAC/RAKP/v1.5 AuthCode
+//     implementations (v2.0§13 / v1.5§18.15).
+//   - [github.com/bougou/go-ipmi/pkg/rmcpplus] — RMCP+ Open Session and RAKP
+//     message Pack/Unpack (v2.0§13.17–13.23).
 //   - [github.com/bougou/go-ipmi/pkg/client] — IPMI client (LAN, LAN+, open,
 //     ipmitool).
 //   - github.com/bougou/go-ipmi/pkg/cmd/* — per-command request/response types

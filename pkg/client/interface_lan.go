@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/bougou/go-ipmi/pkg/cmd/app"
+	"github.com/bougou/go-ipmi/pkg/rmcpplus"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
@@ -106,11 +107,11 @@ type v20 struct {
 // Most command requests are of IPMI PayloadType, but some requests like RAKP messages are not.
 func (c *Client) buildRawPayload(ctx context.Context, reqCmd types.Request) (types.PayloadType, []byte, error) {
 	var payloadType types.PayloadType
-	if _, ok := reqCmd.(*OpenSessionRequest); ok {
+	if _, ok := reqCmd.(*rmcpplus.OpenSessionRequest); ok {
 		payloadType = types.PayloadTypeRmcpOpenSessionRequest
-	} else if _, ok := reqCmd.(*RAKPMessage1); ok {
+	} else if _, ok := reqCmd.(*rmcpplus.RAKPMessage1); ok {
 		payloadType = types.PayloadTypeRAKPMessage1
-	} else if _, ok := reqCmd.(*RAKPMessage3); ok {
+	} else if _, ok := reqCmd.(*rmcpplus.RAKPMessage3); ok {
 		payloadType = types.PayloadTypeRAKPMessage3
 	} else if _, ok := reqCmd.(*types.SOLPayloadRequest); ok {
 		payloadType = types.PayloadTypeSOL
@@ -147,7 +148,7 @@ func (c *Client) buildRawPayload(ctx context.Context, reqCmd types.Request) (typ
 // standard IPMI commands.
 func isIPMIPayloadLANRequest(req types.Request) bool {
 	switch req.(type) {
-	case *OpenSessionRequest, *RAKPMessage1, *RAKPMessage3, *types.SOLPayloadRequest, *RmcpPingRequest:
+	case *rmcpplus.OpenSessionRequest, *rmcpplus.RAKPMessage1, *rmcpplus.RAKPMessage3, *types.SOLPayloadRequest, *RmcpPingRequest:
 		return false
 	default:
 		return true

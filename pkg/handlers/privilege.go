@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // privilegeExempt reports commands that do not require session privilege checks.
@@ -32,18 +33,18 @@ func sessionPrivilege(hctx *HandlerContext) (bmc.PrivilegeLevel, bool) {
 }
 
 // checkCommandPrivilege enforces per-command minimum privilege (spec v1.5§6.8 / v2.0§6.8).
-func checkCommandPrivilege(hctx *HandlerContext, netFn, cmd uint8) CompletionCode {
+func checkCommandPrivilege(hctx *HandlerContext, netFn, cmd uint8) types.CompletionCode {
 	if privilegeExempt(netFn, cmd) {
-		return CodeOK
+		return types.CodeOK
 	}
 	priv, ok := sessionPrivilege(hctx)
 	if !ok {
-		return CodeOK
+		return types.CodeOK
 	}
 	if priv < MinimumPrivilege(netFn, cmd) {
-		return CodeInsufficientPrivilege
+		return types.CodeCannotExecuteCommandSecurityRestrict
 	}
-	return CodeOK
+	return types.CodeOK
 }
 
 type dispatchingHandler struct {
@@ -52,8 +53,8 @@ type dispatchingHandler struct {
 	cmd   uint8
 }
 
-func (d *dispatchingHandler) Handle(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, CompletionCode, error) {
-	if cc := checkCommandPrivilege(hctx, d.netFn, d.cmd); cc != CodeOK {
+func (d *dispatchingHandler) Handle(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {
+	if cc := checkCommandPrivilege(hctx, d.netFn, d.cmd); cc != types.CodeOK {
 		return nil, cc, nil
 	}
 	return d.inner.Handle(ctx, hctx, req)

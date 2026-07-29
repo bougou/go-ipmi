@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"testing"
+
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 func TestRegistry_Dispatch(t *testing.T) {
@@ -11,7 +13,7 @@ func TestRegistry_Dispatch(t *testing.T) {
 		netFn   uint8
 		cmd     uint8
 		setup   func(*Registry)
-		wantCC  CompletionCode
+		wantCC  types.CompletionCode
 		wantLen int
 	}{
 		{
@@ -19,18 +21,18 @@ func TestRegistry_Dispatch(t *testing.T) {
 			netFn:  0x06,
 			cmd:    0xFF,
 			setup:  func(r *Registry) {},
-			wantCC: CodeCommandNotSupported,
+			wantCC: types.CodeInvalidCommand,
 		},
 		{
 			name:  "registered handler is dispatched",
 			netFn: 0x06,
 			cmd:   0x01,
 			setup: func(r *Registry) {
-				r.RegisterFunc(0x06, 0x01, func(_ context.Context, _ *HandlerContext, _ []byte) ([]byte, CompletionCode, error) {
-					return []byte{0xAB}, CodeOK, nil
+				r.RegisterFunc(0x06, 0x01, func(_ context.Context, _ *HandlerContext, _ []byte) ([]byte, types.CompletionCode, error) {
+					return []byte{0xAB}, types.CodeOK, nil
 				})
 			},
-			wantCC:  CodeOK,
+			wantCC:  types.CodeOK,
 			wantLen: 1,
 		},
 		{
@@ -40,17 +42,17 @@ func TestRegistry_Dispatch(t *testing.T) {
 			setup: func(r *Registry) {
 				called := false
 				r.Use(func(next Handler) Handler {
-					return HandlerFunc(func(ctx context.Context, hctx *HandlerContext, data []byte) ([]byte, CompletionCode, error) {
+					return HandlerFunc(func(ctx context.Context, hctx *HandlerContext, data []byte) ([]byte, types.CompletionCode, error) {
 						called = true
 						return next.Handle(ctx, hctx, data)
 					})
 				})
-				r.RegisterFunc(0x06, 0x02, func(_ context.Context, _ *HandlerContext, _ []byte) ([]byte, CompletionCode, error) {
-					return nil, CodeOK, nil
+				r.RegisterFunc(0x06, 0x02, func(_ context.Context, _ *HandlerContext, _ []byte) ([]byte, types.CompletionCode, error) {
+					return nil, types.CodeOK, nil
 				})
 				_ = called
 			},
-			wantCC: CodeOK,
+			wantCC: types.CodeOK,
 		},
 	}
 
@@ -71,13 +73,13 @@ func TestRegistry_Dispatch(t *testing.T) {
 
 func TestRegistry_Merge(t *testing.T) {
 	a := NewRegistry()
-	a.RegisterFunc(0x06, 0x01, func(_ context.Context, _ *HandlerContext, _ []byte) ([]byte, CompletionCode, error) {
-		return []byte{0x01}, CodeOK, nil
+	a.RegisterFunc(0x06, 0x01, func(_ context.Context, _ *HandlerContext, _ []byte) ([]byte, types.CompletionCode, error) {
+		return []byte{0x01}, types.CodeOK, nil
 	})
 
 	b := NewRegistry()
-	b.RegisterFunc(0x06, 0x02, func(_ context.Context, _ *HandlerContext, _ []byte) ([]byte, CompletionCode, error) {
-		return []byte{0x02}, CodeOK, nil
+	b.RegisterFunc(0x06, 0x02, func(_ context.Context, _ *HandlerContext, _ []byte) ([]byte, types.CompletionCode, error) {
+		return []byte{0x02}, types.CodeOK, nil
 	})
 
 	a.Merge(b)
@@ -85,7 +87,7 @@ func TestRegistry_Merge(t *testing.T) {
 	_, cc1, _ := a.Dispatch(context.Background(), &HandlerContext{}, 0x06, 0x01, nil)
 	_, cc2, _ := a.Dispatch(context.Background(), &HandlerContext{}, 0x06, 0x02, nil)
 
-	if cc1 != CodeOK || cc2 != CodeOK {
+	if cc1 != types.CodeOK || cc2 != types.CodeOK {
 		t.Errorf("after merge both keys should be present: cc1=%d cc2=%d", cc1, cc2)
 	}
 }

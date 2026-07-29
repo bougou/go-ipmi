@@ -35,7 +35,7 @@ func TestHandleGetChassisStatus_RoundTrip(t *testing.T) {
 	hctx := &HandlerContext{BMC: b}
 
 	resp, cc, err := handleGetChassisStatus(context.Background(), hctx, nil)
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("unexpected cc=%d err=%v", cc, err)
 	}
 	// Re-encode through the typed codec and back to validate round-trip.
@@ -62,38 +62,38 @@ func TestHandleChassisControl_PowerCycle(t *testing.T) {
 
 	req := (&chassis.ChassisControlRequest{ChassisControl: chassis.ChassisControlPowerCycle}).Pack()
 	_, cc, err := handleChassisControl(context.Background(), hctx, req)
-	if err != nil || cc != CodeOK {
-		t.Fatalf("PowerCycle: want CodeOK, got cc=%d err=%v", cc, err)
+	if err != nil || cc != types.CodeOK {
+		t.Fatalf("PowerCycle: want types.CodeNormal, got cc=%d err=%v", cc, err)
 	}
 	if ch.PowerCycles != 1 {
 		t.Fatalf("PowerCycle dispatch: want 1 call, got %d", ch.PowerCycles)
 	}
 
-	// Unknown action still returns CodeParamOutOfRange (regression guard for
+	// Unknown action still returns types.CodeParameterOutOfRange (regression guard for
 	// the previous behaviour where PowerCycle fell through to the default).
 	_, cc, _ = handleChassisControl(context.Background(), hctx, []byte{0x0F})
-	if cc != CodeParamOutOfRange {
-		t.Fatalf("unknown action: want CodeParamOutOfRange, got %d", cc)
+	if cc != types.CodeParameterOutOfRange {
+		t.Fatalf("unknown action: want types.CodeParameterOutOfRange, got %d", cc)
 	}
 }
 
 // TestHandleChassisControl_NodeBusy verifies that when a HAL method returns a
-// [CompletionCode] as an error (e.g. [CodeNodeBusy]), [codeFromErr] extracts
-// the specific code rather than falling back to [CodeUnspecifiedError].
+// [types.CompletionCode] as an error (e.g. [types.CodeNodeBusy]), [codeFromErr] extracts
+// the specific code rather than falling back to [types.CodeUnspecifiedError].
 func TestHandleChassisControl_NodeBusy(t *testing.T) {
 	m := mock.New()
 	b := newTestBMCWithMock(m)
 	ch := b.HAL().Chassis().(*mock.Chassis)
-	// SetPowerHook allows the test to inject a CompletionCode as error.
+	// SetPowerHook allows the test to inject a types.CompletionCode as error.
 	ch.SetPowerHook = func(on bool) error {
-		return CodeNodeBusy
+		return types.CodeNodeBusy
 	}
 	hctx := &HandlerContext{BMC: b}
 
 	req := (&chassis.ChassisControlRequest{ChassisControl: chassis.ChassisControlPowerDown}).Pack()
 	_, cc, _ := handleChassisControl(context.Background(), hctx, req)
-	if cc != CodeNodeBusy {
-		t.Fatalf("want CodeNodeBusy (0xC0), got cc=%d", cc)
+	if cc != types.CodeNodeBusy {
+		t.Fatalf("want types.CodeNodeBusy (0xC0), got cc=%d", cc)
 	}
 }
 
@@ -117,8 +117,8 @@ func TestHandleChassisControl_TypedDispatch(t *testing.T) {
 
 			req := (&chassis.ChassisControlRequest{ChassisControl: tc.action}).Pack()
 			_, cc, err := handleChassisControl(context.Background(), hctx, req)
-			if err != nil || cc != CodeOK {
-				t.Fatalf("%s: want CodeOK, got cc=%d err=%v", tc.name, cc, err)
+			if err != nil || cc != types.CodeOK {
+				t.Fatalf("%s: want types.CodeNormal, got cc=%d err=%v", tc.name, cc, err)
 			}
 			if !tc.check(ch) {
 				t.Fatalf("%s: HAL state check failed (On=%v ColdResets=%d WarmResets=%d PowerCycles=%d)",
@@ -142,8 +142,8 @@ func TestHandleSetSystemBootOptions_BootFlags(t *testing.T) {
 	req := append([]byte{byte(types.BootOptionParamSelector_BootFlags)}, flags.Pack()...)
 
 	_, cc, err := handleSetSystemBootOptions(context.Background(), hctx, req)
-	if err != nil || cc != CodeOK {
-		t.Fatalf("want CodeOK, got cc=%d err=%v", cc, err)
+	if err != nil || cc != types.CodeOK {
+		t.Fatalf("want types.CodeNormal, got cc=%d err=%v", cc, err)
 	}
 	if ch.BootFlags == nil {
 		t.Fatalf("SetBootFlags not invoked on HAL")
@@ -160,7 +160,7 @@ func TestHandleSetSystemBootOptions_BootFlags(t *testing.T) {
 // "BMC boot flag valid bit clearing" (§28.14 Table 28-14) is accepted as a
 // no-op for any payload shape: 0x08 suppresses only the 60-second timeout,
 // 0x1f suppresses every condition, and an empty payload toggles no bits.
-// The reference BMC never auto-clears the valid bit, so CodeOK is the
+// The reference BMC never auto-clears the valid bit, so types.CodeNormal is the
 // truthful answer and the request must not reach the HAL.
 func TestHandleSetSystemBootOptions_BootFlagValidBitClear(t *testing.T) {
 	m := mock.New()
@@ -176,8 +176,8 @@ func TestHandleSetSystemBootOptions_BootFlagValidBitClear(t *testing.T) {
 		{0x80 | selector, 0x08}, // mark-invalid bit accepted
 	} {
 		_, cc, err := handleSetSystemBootOptions(context.Background(), hctx, req)
-		if err != nil || cc != CodeOK {
-			t.Fatalf("req=%x: want CodeOK, got cc=%d err=%v", req, cc, err)
+		if err != nil || cc != types.CodeOK {
+			t.Fatalf("req=%x: want types.CodeNormal, got cc=%d err=%v", req, cc, err)
 		}
 	}
 	if ch.BootFlags != nil {
@@ -197,8 +197,8 @@ func TestHandleGetSystemBootOptions_BootFlags(t *testing.T) {
 
 	req := []byte{byte(types.BootOptionParamSelector_BootFlags)}
 	resp, cc, err := handleGetSystemBootOptions(context.Background(), hctx, req)
-	if err != nil || cc != CodeOK {
-		t.Fatalf("want CodeOK, got cc=%d err=%v", cc, err)
+	if err != nil || cc != types.CodeOK {
+		t.Fatalf("want types.CodeNormal, got cc=%d err=%v", cc, err)
 	}
 	if len(resp) < 2 {
 		t.Fatalf("response too short: %d", len(resp))
@@ -225,8 +225,8 @@ func TestHandleGetSystemBootOptions_NotSupported(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if cc != CodeBootParamNotSupported {
-		t.Fatalf("want CodeBootParamNotSupported for ErrNotSupported, got %d", cc)
+	if cc != types.CodeParameterNotSupported {
+		t.Fatalf("want types.CodeParameterNotSupported for ErrNotSupported, got %d", cc)
 	}
 }
 
@@ -236,12 +236,12 @@ func TestHandleSetSystemBootOptions_OtherParam(t *testing.T) {
 	ch := b.HAL().Chassis().(*mock.Chassis)
 	hctx := &HandlerContext{BMC: b}
 
-	// Set In Progress (0x00) is not implemented; spec §28.12 requires 80h (CodeBootParamNotSupported)
+	// Set In Progress (0x00) is not implemented; spec §28.12 requires 80h (types.CodeParameterNotSupported)
 	// for unsupported parameters.
 	req := []byte{byte(types.BootOptionParamSelector_SetInProgress), 0x01}
 	_, cc, err := handleSetSystemBootOptions(context.Background(), hctx, req)
-	if err != nil || cc != CodeBootParamNotSupported {
-		t.Fatalf("want CodeBootParamNotSupported (80h) for unimplemented param, got cc=%d err=%v", cc, err)
+	if err != nil || cc != types.CodeParameterNotSupported {
+		t.Fatalf("want types.CodeParameterNotSupported (80h) for unimplemented param, got cc=%d err=%v", cc, err)
 	}
 	if ch.BootFlags != nil {
 		t.Fatalf("HAL SetBootFlags must not be called for non-BootFlags params")
@@ -256,25 +256,25 @@ func TestHandleSetSystemBootOptions_Truncated(t *testing.T) {
 	// BootFlags param selector but only 2 bytes of data (need 5).
 	req := []byte{byte(types.BootOptionParamSelector_BootFlags), 0x01, 0x02}
 	_, cc, _ := handleSetSystemBootOptions(context.Background(), hctx, req)
-	if cc != CodeRequestDataTruncated {
-		t.Fatalf("want CodeRequestDataTruncated, got %d", cc)
+	if cc != types.CodeRequestDataTruncated {
+		t.Fatalf("want types.CodeRequestDataTruncated, got %d", cc)
 	}
 
 	// Empty request.
 	_, cc, _ = handleSetSystemBootOptions(context.Background(), hctx, nil)
-	if cc != CodeRequestDataTruncated {
-		t.Fatalf("empty request: want CodeRequestDataTruncated, got %d", cc)
+	if cc != types.CodeRequestDataTruncated {
+		t.Fatalf("empty request: want types.CodeRequestDataTruncated, got %d", cc)
 	}
 }
 
 func TestCodeFromHalErr(t *testing.T) {
-	if got := codeFromHalErr(nil); got != CodeOK {
-		t.Fatalf("nil: want CodeOK, got %d", got)
+	if got := codeFromHalErr(nil); got != types.CodeOK {
+		t.Fatalf("nil: want types.CodeNormal, got %d", got)
 	}
-	if got := codeFromHalErr(hal.ErrNotSupported); got != CodeBootParamNotSupported {
-		t.Fatalf("ErrNotSupported: want CodeBootParamNotSupported, got %d", got)
+	if got := codeFromHalErr(hal.ErrNotSupported); got != types.CodeParameterNotSupported {
+		t.Fatalf("ErrNotSupported: want types.CodeParameterNotSupported, got %d", got)
 	}
-	if got := codeFromHalErr(errors.New("boom")); got != CodeUnspecifiedError {
-		t.Fatalf("generic error: want CodeUnspecifiedError, got %d", got)
+	if got := codeFromHalErr(errors.New("boom")); got != types.CodeUnspecifiedError {
+		t.Fatalf("generic error: want types.CodeUnspecifiedError, got %d", got)
 	}
 }

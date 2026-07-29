@@ -72,7 +72,7 @@ func (res *ReadFRUDataResponse) Format() string {
 }
 
 func ReadFRUDataLength2Big(cc types.CompletionCode) bool {
-	return cc == types.CompletionCodeRequestDataLengthInvalid ||
-		cc == types.CompletionCodeRequestDataLengthLimitExceeded ||
-		cc == types.CompletionCodeCannotReturnRequestedDataBytes
+	return cc == types.CodeRequestDataLengthInvalid ||
+		cc == types.CodeRequestDataLengthLimitExceeded ||
+		cc == types.CodeCannotReturnRequestedDataBytes
 }

@@ -18,12 +18,12 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"sync"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/clock"
+	"github.com/bougou/go-ipmi/pkg/crypto"
 	"github.com/bougou/go-ipmi/pkg/handlers"
 	"github.com/bougou/go-ipmi/pkg/protocol"
 	"github.com/bougou/go-ipmi/pkg/transport"
@@ -311,7 +311,7 @@ func (s *Server) dispatchIPMIPreSession(ctx context.Context, addr net.Addr, payl
 func (s *Server) dispatchIPMISession(ctx context.Context, addr net.Addr, sess *bmc.Session, payload []byte, encrypted bool) {
 	ipmiPayload := payload
 	if encrypted && len(sess.K2) >= 16 {
-		dec, err := decryptPayload(payload, sess.K2)
+		dec, err := crypto.DecryptAESPayload(payload, sess.K2)
 		if err != nil {
 			return
 		}
@@ -336,7 +336,7 @@ func (s *Server) dispatchIPMISession(ctx context.Context, addr net.Addr, sess *b
 	var finalPayload []byte
 	flags := uint8(0)
 	if encrypted && len(sess.K2) >= 16 {
-		enc, err := encryptPayload(rawResp, sess.K2)
+		enc, err := crypto.EncryptAESPayload(rawResp, sess.K2, crypto.RandomBytes(16))
 		if err != nil {
 			return
 		}
@@ -368,61 +368,4 @@ func (s *Server) sendRMCPPlusSession(addr net.Addr, payloadType, flags uint8, se
 		return
 	}
 	_, _ = s.conn.WriteTo(pkt, addr)
-}
-
-// decryptPayload decrypts an AES-CBC-128 confidential payload and strips the
-// IPMI 2.0 padding (spec §13.29).  The wire format is:
-//
-//	IV(16) || AES-CBC( payload || pad bytes || pad-length )
-//
-// where the final decrypted byte is the number of pad bytes (0..15).  The
-// returned slice is the original payload with pad bytes and the pad-length
-// byte removed.
-func decryptPayload(cipherText, k2 []byte) ([]byte, error) {
-	if len(cipherText) < 16 {
-		return nil, fmt.Errorf("ciphertext too short")
-	}
-	iv := cipherText[:16]
-	padded, err := decryptAES(cipherText[16:], k2[:16], iv)
-	if err != nil {
-		return nil, err
-	}
-	if len(padded) == 0 {
-		return nil, fmt.Errorf("decrypted payload is empty")
-	}
-	padLen := int(padded[len(padded)-1])
-	// pad-length must fit within the trailing pad region; a value >= len-1
-	// would leave no payload and indicates a corrupted/invalid padding.
-	if padLen >= len(padded) {
-		return nil, fmt.Errorf("invalid AES pad length %d for %d-byte block", padLen, len(padded))
-	}
-	return padded[:len(padded)-1-padLen], nil
-}
-
-func encryptPayload(plain, k2 []byte) ([]byte, error) {
-	padded, _ := aesPad(plain)
-	iv := randomBytes(16)
-	encrypted, err := encryptAES(padded, k2[:16], iv)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]byte, 16+len(encrypted))
-	copy(out[:16], iv)
-	copy(out[16:], encrypted)
-	return out, nil
-}
-
-// aesPad pads plain to a multiple of 16 bytes per IPMI 2.0 spec §13.29.
-func aesPad(plain []byte) ([]byte, int) {
-	padLen := 16 - (len(plain)+1)%16
-	if padLen == 16 {
-		padLen = 0
-	}
-	padded := make([]byte, len(plain)+padLen+1)
-	copy(padded, plain)
-	for i := 0; i < padLen; i++ {
-		padded[len(plain)+i] = byte(i + 1)
-	}
-	padded[len(plain)+padLen] = byte(padLen)
-	return padded, padLen
 }

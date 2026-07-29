@@ -3,11 +3,13 @@ package client
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
+
+	"github.com/bougou/go-ipmi/pkg/rmcpplus"
 	"github.com/bougou/go-ipmi/pkg/types"
 
 	"golang.org/x/net/proxy"
-	"sync"
-	"time"
 )
 
 type Interface string
@@ -101,8 +103,8 @@ func NewToolClient(path string) (*Client, error) {
 }
 
 func NewClient(host string, port int, user string, pass string) (*Client, error) {
-	if len(user) > IPMI_MAX_USER_NAME_LENGTH {
-		return nil, fmt.Errorf("user name (%s) too long, exceed (%d) characters", user, IPMI_MAX_USER_NAME_LENGTH)
+	if len(user) > rmcpplus.MaxUserNameLength {
+		return nil, fmt.Errorf("user name (%s) too long, exceed (%d) characters", user, rmcpplus.MaxUserNameLength)
 	}
 
 	c := &Client{

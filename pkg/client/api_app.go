@@ -364,7 +364,7 @@ func (c *Client) GetUsers(ctx context.Context, channelNumber uint8) ([]*app.User
 		res2, err := c.GetUsername(ctx, userID)
 		if err != nil {
 			if respErr, ok := types.IsResponseError(err); ok {
-				if respErr.CompletionCode() == types.CompletionCodeRequestDataFieldInvalid {
+				if respErr.CompletionCode() == types.CodeRequestDataFieldInvalid {
 
 					username = ""
 				}

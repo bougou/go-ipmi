@@ -1,12 +1,10 @@
 package server
 
 import (
-	"crypto/hmac"
-	"crypto/sha1"
-	"crypto/sha256"
 	"encoding/binary"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
+	"github.com/bougou/go-ipmi/pkg/crypto"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
@@ -14,11 +12,11 @@ const (
 	rmcpHeaderSize        = 4
 	rmcpPlusHeaderSize    = 12
 	rmcpPlusPayloadOffset = rmcpHeaderSize + rmcpPlusHeaderSize
-	rmcpPlusNextHeader    = 0x07
+	rmcpPlusNextHeader    = 0x07 // v2.0 Table 13-8
 )
 
 func appendRMCPPlusIntegrity(pkt []byte, sess *bmc.Session) ([]byte, bool) {
-	authCodeLen, ok := rmcpPlusIntegrityAuthCodeLen(sess.IntegrityAlg)
+	authCodeLen, ok := crypto.IntegrityAuthCodeLen(sess.IntegrityAlg)
 	if !ok {
 		return nil, false
 	}
@@ -29,7 +27,7 @@ func appendRMCPPlusIntegrity(pkt []byte, sess *bmc.Session) ([]byte, bool) {
 		return nil, false
 	}
 
-	padLen := rmcpPlusIntegrityPadLen(len(pkt[rmcpHeaderSize:rmcpPlusPayloadOffset]), len(pkt[rmcpPlusPayloadOffset:]))
+	padLen := types.IntegrityPadLen(len(pkt[rmcpHeaderSize:rmcpPlusPayloadOffset]), len(pkt[rmcpPlusPayloadOffset:]))
 	out := make([]byte, 0, len(pkt)+padLen+2+authCodeLen)
 	out = append(out, pkt...)
 	for i := 0; i < padLen; i++ {
@@ -37,13 +35,16 @@ func appendRMCPPlusIntegrity(pkt []byte, sess *bmc.Session) ([]byte, bool) {
 	}
 	out = append(out, byte(padLen), rmcpPlusNextHeader)
 
-	authCode := rmcpPlusIntegrityAuthCode(sess.IntegrityAlg, out[rmcpHeaderSize:], sess.K1)
+	authCode, err := crypto.SessionIntegrityAuthCode(sess.IntegrityAlg, out[rmcpHeaderSize:], sess.K1, "")
+	if err != nil || len(authCode) != authCodeLen {
+		return nil, false
+	}
 	out = append(out, authCode...)
 	return out, true
 }
 
 func verifyRMCPPlusIntegrity(pkt []byte, sess *bmc.Session, authenticated bool) bool {
-	authCodeLen, ok := rmcpPlusIntegrityAuthCodeLen(sess.IntegrityAlg)
+	authCodeLen, ok := crypto.IntegrityAuthCodeLen(sess.IntegrityAlg)
 	if !ok {
 		return false
 	}
@@ -60,7 +61,7 @@ func verifyRMCPPlusIntegrity(pkt []byte, sess *bmc.Session, authenticated bool) 
 		return false
 	}
 
-	padLen := rmcpPlusIntegrityPadLen(rmcpPlusHeaderSize, payloadLen)
+	padLen := types.IntegrityPadLen(rmcpPlusHeaderSize, payloadLen)
 	authCodeStart := payloadEnd + padLen + 2
 	if len(pkt) != authCodeStart+authCodeLen {
 		return false
@@ -75,42 +76,9 @@ func verifyRMCPPlusIntegrity(pkt []byte, sess *bmc.Session, authenticated bool) 
 		return false
 	}
 
-	expected := rmcpPlusIntegrityAuthCode(sess.IntegrityAlg, pkt[rmcpHeaderSize:authCodeStart], sess.K1)
-	return hmac.Equal(expected, pkt[authCodeStart:])
-}
-
-func rmcpPlusIntegrityPadLen(sessionHeaderLen, payloadLen int) int {
-	n := sessionHeaderLen + payloadLen + 1 + 1
-	if n%4 == 0 {
-		return 0
+	expected, err := crypto.SessionIntegrityAuthCode(sess.IntegrityAlg, pkt[rmcpHeaderSize:authCodeStart], sess.K1, "")
+	if err != nil {
+		return false
 	}
-	return 4 - n%4
-}
-
-func rmcpPlusIntegrityAuthCodeLen(alg types.IntegrityAlg) (int, bool) {
-	switch alg {
-	case types.IntegrityAlg_None:
-		return 0, true
-	case types.IntegrityAlg_HMAC_SHA1_96:
-		return 12, true
-	case types.IntegrityAlg_HMAC_SHA256_128:
-		return 16, true
-	default:
-		return 0, false
-	}
-}
-
-func rmcpPlusIntegrityAuthCode(alg types.IntegrityAlg, data, key []byte) []byte {
-	switch alg {
-	case types.IntegrityAlg_HMAC_SHA1_96:
-		h := hmac.New(sha1.New, key)
-		h.Write(data)
-		return h.Sum(nil)[:12]
-	case types.IntegrityAlg_HMAC_SHA256_128:
-		h := hmac.New(sha256.New, key)
-		h.Write(data)
-		return h.Sum(nil)[:16]
-	default:
-		return nil
-	}
+	return crypto.Equal(expected, pkt[authCodeStart:])
 }

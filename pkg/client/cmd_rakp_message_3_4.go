@@ -4,106 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bougou/go-ipmi/pkg/rmcpplus"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// 13.22 RAKP Message 3
-type RAKPMessage3 struct {
-	// Selected by remote console. Used by remote console to help match
-	// responses up with requests.
-	MessageTag uint8
-
-	// Identifies the status of the previous message.
-	RmcpStatusCode types.RmcpStatusCode
-
-	// The Managed System's Session ID for this session, returned by the managed system on the previous RMCP+ Open Session Response message.
-	ManagedSystemSessionID uint32
-
-	// An integrity check value over the relevant items specified by the RAKP
-	// authentication algorithm identified in RAKP Message 1.
-	// The size of this field depends on the specific authentication algorithm.
-	//
-	// This field may be 0 bytes (absent) for some algorithms (e.g. RAKP-none).
-	KeyExchangeAuthenticationCode []byte
-}
-
-type RAKPMessage4 struct {
-	authAlg types.AuthAlg
-
-	MessageTag uint8
-
-	RmcpStatusCode types.RmcpStatusCode
-
-	MgmtConsoleSessionID uint32
-
-	// An integrity check value over the relevant items specified by
-	// the RAKP authentication algorithm that was identified in RAKP Message 1.
-	//
-	// The size of this field depends on the specific authentication algorithm.
-	//
-	// For example, the RAKP-HMAC-SHA1 specifies that an HMACSHA1-96 algorithm be used for calculating this field.
-	// See Section 13.28
-	// Authentication, Integrity, and Confidentiality Algorithm Numbers for info on
-	// the algorithm to be used for this field.
-	//
-	// This field may be 0 bytes (absent) for some authentication algorithms (e.g. RAKP-none)
-	IntegrityCheckValue []byte
-}
-
-func (req *RAKPMessage3) Command() types.Command {
-	return types.CommandNone
-}
-
-func (req *RAKPMessage3) Pack() []byte {
-	var msg = make([]byte, 8+len(req.KeyExchangeAuthenticationCode))
-	packUint8(req.MessageTag, msg, 0)
-	packUint8(uint8(req.RmcpStatusCode), msg, 1)
-	packUint16(0, msg, 2) // reserved
-	packUint32L(req.ManagedSystemSessionID, msg, 4)
-	packBytes(req.KeyExchangeAuthenticationCode, msg, 8)
-	return msg
-}
-
-func (res *RAKPMessage4) Unpack(msg []byte) error {
-	authCodeLen := 0
-	switch res.authAlg {
-	case types.AuthAlg_None:
-		// nothing need to do
-	case types.AuthAlg_HMAC_MD5:
-		// need to copy 16 bytes
-		authCodeLen = 16
-	case types.AuthAlg_HMAC_SHA1:
-		// need to copy 12 bytes
-		authCodeLen = 12
-	case types.AuthAlg_HMAC_SHA256:
-		authCodeLen = 16
-	default:
-	}
-
-	if len(msg) < 8+authCodeLen {
-		return types.ErrUnpackedDataTooShortWith(len(msg), 8+authCodeLen)
-	}
-
-	res.MessageTag, _, _ = unpackUint8(msg, 0)
-	b1, _, _ := unpackUint8(msg, 1)
-	res.RmcpStatusCode = types.RmcpStatusCode(b1)
-	res.MgmtConsoleSessionID, _, _ = unpackUint32L(msg, 4)
-	res.IntegrityCheckValue, _, _ = unpackBytes(msg, 8, authCodeLen)
-	return nil
-}
-
-func (*RAKPMessage4) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
-func (res *RAKPMessage4) Format() string {
-	return fmt.Sprintf("%v", res)
-}
-
-// authAlg is used to parse the returned RAKPMessage4 message
-func (c *Client) RAKPMessage3(ctx context.Context) (response *RAKPMessage4, err error) {
-	// create session integrity key
+// RAKPMessage3 sends RAKP Message 3 and validates RAKP Message 4.
+func (c *Client) RAKPMessage3(ctx context.Context) (response *rmcpplus.RAKPMessage4, err error) {
 	sik, err := c.generate_sik()
 	if err != nil {
 		err = fmt.Errorf("generate sik failed, err: %w", err)
@@ -130,15 +36,15 @@ func (c *Client) RAKPMessage3(ctx context.Context) (response *RAKPMessage4, err 
 		return nil, fmt.Errorf("generate rakp3 auth code failed, err: %w", err)
 	}
 
-	request := &RAKPMessage3{
+	request := &rmcpplus.RAKPMessage3{
 		MessageTag:                    0,
 		RmcpStatusCode:                types.RmcpStatusCode(c.session.v20.rakp2ReturnCode),
 		ManagedSystemSessionID:        c.session.v20.bmcSessionID,
 		KeyExchangeAuthenticationCode: authCode,
 	}
 
-	response = &RAKPMessage4{
-		authAlg: c.session.v20.authAlg,
+	response = &rmcpplus.RAKPMessage4{
+		AuthAlg: c.session.v20.authAlg,
 	}
 	c.session.v20.state = types.SessionStateRakp3Sent
 
@@ -156,11 +62,10 @@ func (c *Client) RAKPMessage3(ctx context.Context) (response *RAKPMessage4, err 
 	return response, nil
 }
 
-func (c *Client) ValidateRAKP4(ctx context.Context, response *RAKPMessage4) (bool, error) {
+func (c *Client) ValidateRAKP4(ctx context.Context, response *rmcpplus.RAKPMessage4) (bool, error) {
 	if response.RmcpStatusCode != types.RmcpStatusCodeNoErrors {
 		return false, fmt.Errorf("rakp4 status code not ok, %x", response.RmcpStatusCode)
 	}
-	// verify
 	if c.session.v20.consoleSessionID != response.MgmtConsoleSessionID {
 		return false, fmt.Errorf("session not activated")
 	}

@@ -47,7 +47,7 @@ func TestHandleGetFRUInventoryAreaInfo(t *testing.T) {
 
 	hctx := &HandlerContext{BMC: b}
 	resp, cc, err := handleGetFRUInventoryAreaInfo(context.Background(), hctx, []byte{0x00})
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("cc=%v err=%v", cc, err)
 	}
 	var decoded storage.GetFRUInventoryAreaInfoResponse
@@ -67,7 +67,7 @@ func TestHandleReadFRUData_RoundTrip(t *testing.T) {
 	req := (&storage.ReadFRUDataRequest{FRUDeviceID: 0, ReadOffset: 0, ReadCount: 32}).Pack()
 	hctx := &HandlerContext{BMC: b}
 	resp, cc, err := handleReadFRUData(context.Background(), hctx, req)
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("cc=%v err=%v", cc, err)
 	}
 	var decoded storage.ReadFRUDataResponse
@@ -84,7 +84,7 @@ func TestHandleReadFRUData_MissingDevice(t *testing.T) {
 	req := (&storage.ReadFRUDataRequest{FRUDeviceID: 1, ReadOffset: 0, ReadCount: 8}).Pack()
 	hctx := &HandlerContext{BMC: b}
 	_, cc, err := handleReadFRUData(context.Background(), hctx, req)
-	if err != nil || cc != CodeRequestedRecordNotPresent {
+	if err != nil || cc != types.CodeRequestedDataNotPresent {
 		t.Fatalf("cc=%v err=%v", cc, err)
 	}
 }
@@ -103,13 +103,13 @@ func TestHandleGetSDR_Traverse(t *testing.T) {
 	hctx := &HandlerContext{BMC: b}
 	req := (&storage.GetSDRRequest{RecordID: 0, ReadOffset: 0, ReadBytes: 0xff}).Pack()
 	_, cc, err := handleGetSDR(context.Background(), hctx, req)
-	if err != nil || cc != CodeCannotReturnRequestedDataBytes {
+	if err != nil || cc != types.CodeCannotReturnRequestedDataBytes {
 		t.Fatalf("full read should trigger CAh: cc=%v err=%v", cc, err)
 	}
 
 	req = (&storage.GetSDRRequest{RecordID: 0, ReadOffset: 0, ReadBytes: 16}).Pack()
 	resp, cc, err := handleGetSDR(context.Background(), hctx, req)
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("partial read: cc=%v err=%v", cc, err)
 	}
 	var decoded storage.GetSDRResponse
@@ -129,12 +129,12 @@ func TestHandleGetSDR_ReservationRequired(t *testing.T) {
 	hctx := &HandlerContext{BMC: b}
 	req := (&storage.GetSDRRequest{RecordID: 1, ReadOffset: 16, ReadBytes: 4}).Pack()
 	_, cc, err := handleGetSDR(context.Background(), hctx, req)
-	if err != nil || cc != CodeReservationCanceled {
+	if err != nil || cc != types.CodeReservationCanceled {
 		t.Fatalf("want C5h without reservation: cc=%v err=%v", cc, err)
 	}
 
 	reserveResp, cc, err := handleReserveSDRRepo(context.Background(), hctx, nil)
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("reserve: cc=%v err=%v", cc, err)
 	}
 	var reserve storage.ReserveSDRRepoResponse
@@ -149,7 +149,7 @@ func TestHandleGetSDR_ReservationRequired(t *testing.T) {
 		ReadBytes:     4,
 	}).Pack()
 	resp, cc, err := handleGetSDR(context.Background(), hctx, req)
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("reserved partial: cc=%v err=%v", cc, err)
 	}
 	var decoded storage.GetSDRResponse
@@ -167,7 +167,7 @@ func TestHandleGetSDRRepoInfo(t *testing.T) {
 
 	hctx := &HandlerContext{BMC: b}
 	resp, cc, err := handleGetSDRRepoInfo(context.Background(), hctx, nil)
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("cc=%v err=%v", cc, err)
 	}
 	var info storage.GetSDRRepoInfoResponse
@@ -188,7 +188,7 @@ func TestHandleGetSDRRepoInfo_EmptyRepoFreeSpace(t *testing.T) {
 	b, _ := newTestBMCWithStorage(t)
 	hctx := &HandlerContext{BMC: b}
 	resp, cc, err := handleGetSDRRepoInfo(context.Background(), hctx, nil)
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("cc=%v err=%v", cc, err)
 	}
 	var info storage.GetSDRRepoInfoResponse
@@ -214,7 +214,7 @@ func TestHandleGetSDR_LastRecordID(t *testing.T) {
 	hctx := &HandlerContext{BMC: b}
 	req := (&storage.GetSDRRequest{RecordID: 0xffff, ReadOffset: 0, ReadBytes: 7}).Pack()
 	resp, cc, err := handleGetSDR(context.Background(), hctx, req)
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("cc=%v err=%v", cc, err)
 	}
 	var decoded storage.GetSDRResponse
@@ -236,7 +236,7 @@ func TestHandleGetDeviceID_StorageBits(t *testing.T) {
 
 	hctx := &HandlerContext{BMC: b}
 	resp, cc, err := handleGetDeviceID(context.Background(), hctx, nil)
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("cc=%v err=%v", cc, err)
 	}
 	if resp[1]&0x80 != 0 {
@@ -257,11 +257,11 @@ func TestStorageHandlers_NilHAL(t *testing.T) {
 	hctx := &HandlerContext{BMC: b}
 
 	_, cc, err := handleGetFRUInventoryAreaInfo(context.Background(), hctx, []byte{0})
-	if err != nil || cc != CodeNotSupportedInState {
+	if err != nil || cc != types.CodeCannotExecuteCommandNotSupported {
 		t.Fatalf("fru info: cc=%v err=%v", cc, err)
 	}
 	_, cc, err = handleGetSDR(context.Background(), hctx, (&storage.GetSDRRequest{}).Pack())
-	if err != nil || cc != CodeNotSupportedInState {
+	if err != nil || cc != types.CodeCannotExecuteCommandNotSupported {
 		t.Fatalf("get sdr: cc=%v err=%v", cc, err)
 	}
 }

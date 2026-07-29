@@ -7,6 +7,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/clock"
 	"github.com/bougou/go-ipmi/pkg/hal/mock"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 func newTestBMC() *bmc.BMC {
@@ -32,8 +33,8 @@ func TestHandleGetDeviceID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if cc != CodeOK {
-		t.Fatalf("want CodeOK, got %d", cc)
+	if cc != types.CodeOK {
+		t.Fatalf("want types.CodeNormal, got %d", cc)
 	}
 	if len(resp) < 11 {
 		t.Fatalf("response too short: %d bytes", len(resp))
@@ -64,8 +65,8 @@ func TestHandleGetDeviceGUID(t *testing.T) {
 	hctx := &HandlerContext{BMC: b}
 	resp, cc, _ := handleGetDeviceGUID(context.Background(), hctx, nil)
 
-	if cc != CodeOK {
-		t.Fatalf("want CodeOK, got %d", cc)
+	if cc != types.CodeOK {
+		t.Fatalf("want types.CodeNormal, got %d", cc)
 	}
 	if len(resp) != 16 {
 		t.Fatalf("want 16 bytes, got %d", len(resp))
@@ -77,8 +78,8 @@ func TestHandleGetDeviceGUID(t *testing.T) {
 
 func TestHandleGetSelfTestResults(t *testing.T) {
 	resp, cc, _ := handleGetSelfTestResults(context.Background(), nil, nil)
-	if cc != CodeOK {
-		t.Fatalf("want CodeOK, got %d", cc)
+	if cc != types.CodeOK {
+		t.Fatalf("want types.CodeNormal, got %d", cc)
 	}
 	if len(resp) < 2 || resp[0] != 0x55 {
 		t.Errorf("unexpected self-test response: %v", resp)
@@ -90,8 +91,8 @@ func TestHandleColdReset(t *testing.T) {
 	hctx := &HandlerContext{BMC: b}
 
 	_, cc, _ := handleColdReset(context.Background(), hctx, nil)
-	if cc != CodeOK {
-		t.Fatalf("want CodeOK, got %d", cc)
+	if cc != types.CodeOK {
+		t.Fatalf("want types.CodeNormal, got %d", cc)
 	}
 
 	chassis := b.HAL().Chassis().(*mock.Chassis)

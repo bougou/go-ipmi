@@ -11,7 +11,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/hal/mock"
 	"github.com/bougou/go-ipmi/pkg/server"
 	"github.com/bougou/go-ipmi/pkg/transport/udp"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // TestServerV15SessionActivation verifies the reference BMC server accepts a
@@ -49,7 +49,7 @@ func TestServerV15SessionActivation(t *testing.T) {
 	c.WithInterface(InterfaceLan).
 		WithTimeout(2 * time.Second).
 		WithRetry(0)
-	c.session.authType = ipmi.AuthTypeMD5
+	c.session.authType = types.AuthTypeMD5
 
 	if err := c.Connect(context.Background()); err != nil {
 		t.Fatalf("Connect (v1.5): %v", err)
@@ -103,7 +103,7 @@ func TestServerV15SessionActivationMD2(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = c.Close(context.Background()) })
 
-	if c.session.authType != ipmi.AuthTypeMD2 {
+	if c.session.authType != types.AuthTypeMD2 {
 		t.Fatalf("want MD2 auth type, got %v", c.session.authType)
 	}
 
@@ -153,11 +153,11 @@ func TestV15ClientActivateSeedsInboundSeq(t *testing.T) {
 		WithTimeout(2 * time.Second).
 		WithRetry(0)
 	c.v20 = false
-	c.session.authType = ipmi.AuthTypeMD5
-	c.maxPrivilegeLevel = ipmi.PrivilegeLevelAdministrator
+	c.session.authType = types.AuthTypeMD5
+	c.maxPrivilegeLevel = types.PrivilegeLevelAdministrator
 
 	bg := context.Background()
-	if _, err := c.GetChannelAuthenticationCapabilities(bg, ipmi.ChannelNumberSelf, c.maxPrivilegeLevel); err != nil {
+	if _, err := c.GetChannelAuthenticationCapabilities(bg, types.ChannelNumberSelf, c.maxPrivilegeLevel); err != nil {
 		t.Fatalf("GetChannelAuthenticationCapabilities: %v", err)
 	}
 	if _, err := c.GetSessionChallenge(bg); err != nil {

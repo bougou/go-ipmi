@@ -7,8 +7,7 @@ import (
 	"testing"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
-	"github.com/bougou/go-ipmi/pkg/client"
-	ipmi "github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 func TestHandleGetChannelAuthCapsAdvertisesV15AndV20(t *testing.T) {
@@ -17,8 +16,8 @@ func TestHandleGetChannelAuthCapsAdvertisesV15AndV20(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if cc != CodeOK {
-		t.Fatalf("want CodeOK, got %d", cc)
+	if cc != types.CodeOK {
+		t.Fatalf("want types.CodeNormal, got %d", cc)
 	}
 	if resp[1]&0x04 == 0 {
 		t.Fatalf("expected MD5 auth type advertised, byte=0x%02x", resp[1])
@@ -52,8 +51,8 @@ func TestHandleGetSessionChallenge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if cc != CodeOK {
-		t.Fatalf("want CodeOK, got %d", cc)
+	if cc != types.CodeOK {
+		t.Fatalf("want types.CodeNormal, got %d", cc)
 	}
 	if len(resp) != 20 {
 		t.Fatalf("want 20 response bytes, got %d", len(resp))
@@ -74,27 +73,6 @@ func TestHandleGetSessionChallenge(t *testing.T) {
 	}
 }
 
-func TestGenV15AuthCodeMatchesClient(t *testing.T) {
-	password := []byte("ADMIN")
-	sessionID := uint32(0xAABBCCDD)
-	sessionSeq := uint32(0)
-	ipmiData := []byte{0x20, 0x18, 0xc8, 0x81, 0x04, 0x3a}
-
-	serverCode := GenV15AuthCode(password, bmc.V15AuthTypeMD5, sessionID, ipmiData, sessionSeq)
-
-	clientInput := &client.AuthCodeMultiSessionInput{
-		Password:   string(password),
-		SessionID:  sessionID,
-		SessionSeq: sessionSeq,
-		IPMIData:   ipmiData,
-	}
-	clientCode := clientInput.AuthCode(ipmi.AuthTypeMD5)
-
-	if !bytes.Equal(serverCode, clientCode) {
-		t.Fatalf("auth code mismatch:\n server=%x\n client=%x", serverCode, clientCode)
-	}
-}
-
 func TestV15SessionActivationFlow(t *testing.T) {
 	b := newTestBMC()
 	user, err := b.Users.Add(2, "ADMIN")
@@ -112,7 +90,7 @@ func TestV15SessionActivationFlow(t *testing.T) {
 	challengeReq[0] = uint8(bmc.V15AuthTypeMD5)
 	copy(challengeReq[1:], []byte("ADMIN"))
 	challengeResp, cc, err := handleGetSessionChallenge(context.Background(), &HandlerContext{BMC: b}, challengeReq)
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("GetSessionChallenge: cc=%d err=%v", cc, err)
 	}
 	tempID := binary.LittleEndian.Uint32(challengeResp[0:4])
@@ -126,7 +104,7 @@ func TestV15SessionActivationFlow(t *testing.T) {
 
 	hctx := &HandlerContext{BMC: b, V15Session: sess, User: user}
 	activateResp, cc, err := handleActivateSession(context.Background(), hctx, activateReq)
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("ActivateSession: cc=%d err=%v", cc, err)
 	}
 	if len(activateResp) != 10 {
@@ -181,7 +159,7 @@ func TestActivateSessionRejectsChallengeMismatch(t *testing.T) {
 	challengeReq[0] = uint8(bmc.V15AuthTypeMD5)
 	copy(challengeReq[1:], []byte("ADMIN"))
 	challengeResp, cc, err := handleGetSessionChallenge(context.Background(), &HandlerContext{BMC: b}, challengeReq)
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("GetSessionChallenge: cc=%d err=%v", cc, err)
 	}
 	tempID := binary.LittleEndian.Uint32(challengeResp[0:4])

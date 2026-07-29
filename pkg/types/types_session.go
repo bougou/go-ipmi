@@ -270,7 +270,8 @@ func (s *Session20) Unpack(msg []byte) error {
 	sessionTrailerIndex := sessionHeaderSize + payloadLength
 	if s.SessionHeader20.PayloadAuthenticated && s.SessionHeader20.SessionID != 0 {
 
-		padSize := genSessionTrailerPadLength(sessionHeader.Pack(), s.SessionPayload)
+		hdr := sessionHeader.Pack()
+		padSize := IntegrityPadLen(len(hdr), len(s.SessionPayload))
 		sessionTrailer := &SessionTrailer{}
 		_, err := sessionTrailer.Unpack(msg, sessionTrailerIndex, padSize)
 		if err != nil {
@@ -332,16 +333,13 @@ const (
 	SessionStateCloseSent           SessionState = 0x07
 )
 
-func genSessionTrailerPadLength(sessionHeader []byte, sessionPayload []byte) int {
-	// (12) sessionHeader length
-	// sessionPayload length
-	// (1) pad length field
-	// (1) next header field
-	length := len(sessionHeader) + len(sessionPayload) + 1 + 1
-
-	var padSize int = 0
-	if length%4 != 0 {
-		padSize = 4 - int(length%4)
+// IntegrityPadLen returns the number of 0xFF Integrity Pad bytes needed so
+// that (session header || payload || pad || Pad Length || Next Header) is a
+// multiple of 4 bytes before the AuthCode field (v2.0§13.28.4 / Table 13-8).
+func IntegrityPadLen(sessionHeaderLen, payloadLen int) int {
+	n := sessionHeaderLen + payloadLen + 1 + 1 // + Pad Length + Next Header
+	if n%4 == 0 {
+		return 0
 	}
-	return padSize
+	return 4 - n%4
 }

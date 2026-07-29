@@ -16,8 +16,8 @@ func TestHandleGetChannelAuthCapsAdvertisesRMCPPlusOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if cc != CodeOK {
-		t.Fatalf("want CodeOK, got %d", cc)
+	if cc != types.CodeOK {
+		t.Fatalf("want types.CodeNormal, got %d", cc)
 	}
 	if len(resp) != 8 {
 		t.Fatalf("want 8 response bytes, got %d", len(resp))
@@ -138,7 +138,7 @@ func TestHandleGetChannelCipherSuites_Default(t *testing.T) {
 
 	// listIndex 0: channel byte + 10 record bytes (suite 3 + suite 17).
 	resp, cc, err := handleGetChannelCipherSuites(context.Background(), hctx, []byte{0x8e, 0x00, 0x00})
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("unexpected cc=%d err=%v", cc, err)
 	}
 	if len(resp) != 11 {
@@ -162,7 +162,7 @@ func TestHandleGetChannelCipherSuites_Custom(t *testing.T) {
 	hctx := &HandlerContext{BMC: b}
 
 	resp, cc, err := handleGetChannelCipherSuites(context.Background(), hctx, []byte{0x8e, 0x00, 0x00})
-	if err != nil || cc != CodeOK {
+	if err != nil || cc != types.CodeOK {
 		t.Fatalf("unexpected cc=%d err=%v", cc, err)
 	}
 	if len(resp) != 6 {
