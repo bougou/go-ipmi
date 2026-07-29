@@ -6,7 +6,7 @@ import (
 	"iter"
 	"time"
 
-	"github.com/bougou/go-ipmi/pkg/cmd/storage"
+	"github.com/bougou/go-ipmi/pkg/command/storage"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 

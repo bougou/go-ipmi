@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bougou/go-ipmi/pkg/cmd/sensor"
+	"github.com/bougou/go-ipmi/pkg/command/sensor"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 

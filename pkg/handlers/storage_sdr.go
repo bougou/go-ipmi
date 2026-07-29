@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
-	"github.com/bougou/go-ipmi/pkg/cmd/storage"
+	"github.com/bougou/go-ipmi/pkg/command/storage"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 

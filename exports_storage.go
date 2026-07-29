@@ -1,6 +1,6 @@
 package ipmi
 
-import storage "github.com/bougou/go-ipmi/pkg/cmd/storage"
+import storage "github.com/bougou/go-ipmi/pkg/command/storage"
 
 type (
 	AddSELEntryRequest              = storage.AddSELEntryRequest

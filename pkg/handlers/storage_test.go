@@ -6,7 +6,7 @@ import (
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/clock"
-	"github.com/bougou/go-ipmi/pkg/cmd/storage"
+	"github.com/bougou/go-ipmi/pkg/command/storage"
 	"github.com/bougou/go-ipmi/pkg/hal/mock"
 	"github.com/bougou/go-ipmi/pkg/types"
 )

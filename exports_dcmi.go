@@ -1,6 +1,6 @@
 package ipmi
 
-import dcmi "github.com/bougou/go-ipmi/pkg/cmd/dcmi"
+import dcmi "github.com/bougou/go-ipmi/pkg/command/dcmi"
 
 type (
 	ActivateDCMIPowerLimitRequest           = dcmi.ActivateDCMIPowerLimitRequest

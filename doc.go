@@ -11,7 +11,7 @@
 //     message Pack/Unpack (v2.0§13.17–13.23).
 //   - [github.com/bougou/go-ipmi/pkg/client] — IPMI client (LAN, LAN+, open,
 //     ipmitool).
-//   - github.com/bougou/go-ipmi/pkg/cmd/* — per-command request/response types
+//   - github.com/bougou/go-ipmi/pkg/command/* — per-command request/response types
 //     grouped by netFn (app, chassis, sensor, storage, transport, dcmi, oem).
 //   - [github.com/bougou/go-ipmi/pkg/server] — IPMI BMC server (RMCP+,
 //     handler registry, session management).

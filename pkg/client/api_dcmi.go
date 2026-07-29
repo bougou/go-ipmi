@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bougou/go-ipmi/pkg/cmd/dcmi"
+	"github.com/bougou/go-ipmi/pkg/command/dcmi"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 

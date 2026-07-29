@@ -6,7 +6,7 @@ import (
 	"time"
 
 	ipmiclient "github.com/bougou/go-ipmi/pkg/client"
-	ipmiapp "github.com/bougou/go-ipmi/pkg/cmd/app"
+	ipmiapp "github.com/bougou/go-ipmi/pkg/command/app"
 	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/kr/pretty"
 	"github.com/spf13/cobra"

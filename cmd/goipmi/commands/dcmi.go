@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	ipmidcmi "github.com/bougou/go-ipmi/pkg/cmd/dcmi"
+	ipmidcmi "github.com/bougou/go-ipmi/pkg/command/dcmi"
 	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )

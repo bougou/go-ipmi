@@ -1,6 +1,6 @@
 package ipmi
 
-import chassis "github.com/bougou/go-ipmi/pkg/cmd/chassis"
+import chassis "github.com/bougou/go-ipmi/pkg/command/chassis"
 
 const (
 	ChassisControlDiagnosticInterrupt = chassis.ChassisControlDiagnosticInterrupt

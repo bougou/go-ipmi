@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/bougou/go-ipmi/pkg/cmd/oem"
+	"github.com/bougou/go-ipmi/pkg/command/oem"
 )
 
 func (c *Client) GetSupermicroBiosVersion(ctx context.Context) (response *oem.CommandGetSupermicroBiosVersionResponse, err error) {

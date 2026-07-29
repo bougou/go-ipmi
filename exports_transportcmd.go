@@ -1,6 +1,6 @@
 package ipmi
 
-import transportcmd "github.com/bougou/go-ipmi/pkg/cmd/transport"
+import transportcmd "github.com/bougou/go-ipmi/pkg/command/transport"
 
 const (
 	ChannelSecurityKeysLockStatus_Locked      = transportcmd.ChannelSecurityKeysLockStatus_Locked

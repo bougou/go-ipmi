@@ -7,7 +7,7 @@ import (
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/clock"
-	"github.com/bougou/go-ipmi/pkg/cmd/chassis"
+	"github.com/bougou/go-ipmi/pkg/command/chassis"
 	"github.com/bougou/go-ipmi/pkg/hal"
 	"github.com/bougou/go-ipmi/pkg/hal/mock"
 	"github.com/bougou/go-ipmi/pkg/types"

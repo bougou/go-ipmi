@@ -1,6 +1,6 @@
 package ipmi
 
-import sensor "github.com/bougou/go-ipmi/pkg/cmd/sensor"
+import sensor "github.com/bougou/go-ipmi/pkg/command/sensor"
 
 const (
 	AlertImmediateOperationClearStatus   = sensor.AlertImmediateOperationClearStatus

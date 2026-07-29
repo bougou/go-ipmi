@@ -3,7 +3,7 @@ package handlers
 import (
 	"context"
 
-	"github.com/bougou/go-ipmi/pkg/cmd/chassis"
+	"github.com/bougou/go-ipmi/pkg/command/chassis"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 

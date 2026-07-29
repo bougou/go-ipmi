@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	ipmiapp "github.com/bougou/go-ipmi/pkg/cmd/app"
+	ipmiapp "github.com/bougou/go-ipmi/pkg/command/app"
 	"github.com/spf13/cobra"
 )
 

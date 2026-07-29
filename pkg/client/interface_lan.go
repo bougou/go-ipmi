@@ -9,7 +9,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/bougou/go-ipmi/pkg/cmd/app"
+	"github.com/bougou/go-ipmi/pkg/command/app"
 	"github.com/bougou/go-ipmi/pkg/rmcpplus"
 	"github.com/bougou/go-ipmi/pkg/types"
 )

@@ -1,6 +1,6 @@
 package ipmi
 
-import app "github.com/bougou/go-ipmi/pkg/cmd/app"
+import app "github.com/bougou/go-ipmi/pkg/command/app"
 
 const (
 	CommandRangeMask007F                 = app.CommandRangeMask007F

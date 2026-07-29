@@ -1,9 +1,10 @@
 package client
 
 import (
-	"github.com/bougou/go-ipmi/pkg/cmd/app"
-	"github.com/bougou/go-ipmi/pkg/types"
 	"testing"
+
+	"github.com/bougou/go-ipmi/pkg/command/app"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 func Test_ActivateSessionAuthCode(t *testing.T) {

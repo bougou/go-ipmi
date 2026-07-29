@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	ipmichassis "github.com/bougou/go-ipmi/pkg/cmd/chassis"
+	ipmichassis "github.com/bougou/go-ipmi/pkg/command/chassis"
 	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )

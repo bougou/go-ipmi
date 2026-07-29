@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bougou/go-ipmi/pkg/cmd/transport"
+	"github.com/bougou/go-ipmi/pkg/command/transport"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
