@@ -447,6 +447,9 @@ func (c *Client) closeLAN(ctx context.Context) error {
 	// close the channel to notify the keepAliveSession goroutine to stop
 	close(c.closedCh)
 
+	// Closing the network connection must not depend on the BMC replying to
+	// close session, it always needs to be done or we will have a resource leak.
+	// For example a timed-out or unreachable BMC must not leave the socket open.
 	var sessionID uint32
 	if c.v20 {
 		sessionID = c.session.v20.bmcSessionID
@@ -457,15 +460,17 @@ func (c *Client) closeLAN(ctx context.Context) error {
 	request := &app.CloseSessionRequest{
 		SessionID: sessionID,
 	}
-	if _, err := c.CloseSession(ctx, request); err != nil {
-		return fmt.Errorf("CloseSession failed, err: %w", err)
+	_, sessionErr := c.CloseSession(ctx, request)
+	if sessionErr != nil {
+		sessionErr = fmt.Errorf("CloseSession failed, err: %w", sessionErr)
 	}
 
-	if err := c.udpClient.Close(); err != nil {
-		return fmt.Errorf("close udp connection failed, err: %w", err)
+	connectionErr := c.udpClient.Close()
+	if connectionErr != nil {
+		connectionErr = fmt.Errorf("close UDP connection failed, err: %w", connectionErr)
 	}
 
-	return nil
+	return errors.Join(sessionErr, connectionErr)
 }
 
 // 6.12.15 Session Inactivity Timeouts
