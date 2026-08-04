@@ -99,6 +99,34 @@ func (cc CompletionCode) String() string {
 	return fmt.Sprintf("0x%02x", uint8(cc))
 }
 
+// commandSpecificCC records the command-specific completion codes (80h-BEh,
+// v2.0§5.2 Table 5-2) defined in each command's own spec section. Generic
+// codes live in CC; this table holds only the per-command additions, keyed by
+// Command so that code holding just the dispatched command (server-side
+// dispatch/middleware, without a decoded Response) can still name a code.
+var commandSpecificCC = map[Command]map[uint8]string{
+	// v2.0§28.12 Table 28-12 / §28.13 Table 28-13.
+	CommandSetSystemBootOptions: {
+		0x80: "Parameter not supported",
+		0x81: "Attempt to set 'set in progress' when not in 'set complete' state",
+		0x82: "Attempt to write read-only parameter",
+	},
+	CommandGetSystemBootOptions: {
+		0x80: "Parameter not supported",
+	},
+}
+
+// StrCCForCommand returns the description of ccode for the specified command:
+// the command-specific name when the command defines one for ccode, otherwise
+// the generic name, otherwise the hex string. Unlike StrCC it needs no decoded
+// Response, so it works wherever only the Command is available.
+func StrCCForCommand(cmd Command, ccode uint8) string {
+	if s, ok := commandSpecificCC[cmd][ccode]; ok {
+		return s
+	}
+	return CompletionCode(ccode).String()
+}
+
 // Error makes CompletionCode implement the error interface.
 func (cc CompletionCode) Error() string {
 	return fmt.Sprintf("IPMI completion code %s", cc.String())
