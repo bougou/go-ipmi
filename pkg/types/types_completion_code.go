@@ -323,6 +323,25 @@ var commandSpecificCC = map[Command]map[uint8]string{
 	CommandForwarded: {
 		0x80: "Target controller unavailable",
 	},
+
+	// DCMI commands (dcmi-spec-v1.5 §6). DCMI §8 Table 8-1 only mirrors the
+	// IPMI generic codes; the command-specific ones are called out in the
+	// command tables themselves. Set/Get DCMI Configuration Parameters follow
+	// the parameter-configuration pattern (Tables 6-4/6-5).
+	CommandGetDCMIPowerLimit: {
+		0x80: "No Active Set Power Limit",
+	},
+	CommandSetDCMIPowerLimit: {
+		0x84: "Power Limit out of range",
+		0x85: "Correction Time out of range",
+		0x89: "Statistics Reporting Period out of range",
+	},
+	CommandSetDCMIThermalLimit: {
+		0x84: "Thermal Limit out of range",
+		0x85: "Exception Time out of range",
+	},
+	CommandSetDCMIConfigParam: paramConfigSetCC,
+	CommandGetDCMIConfigParam: paramConfigGetCC,
 }
 
 // StrCCForCommand returns the description of ccode for the specified command:
