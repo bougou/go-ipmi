@@ -58,6 +58,12 @@ func TestStrCCForCommand(t *testing.T) {
 			want:  "Invalid Session Handle in request",
 		},
 		{
+			name:  "DCMI set power limit out of range",
+			cmd:   CommandSetDCMIPowerLimit,
+			ccode: 0x84,
+			want:  "Power Limit out of range",
+		},
+		{
 			name:  "zero command falls back to hex for command-specific range",
 			cmd:   Command{},
 			ccode: 0x81,
