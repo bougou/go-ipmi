@@ -34,6 +34,30 @@ func TestStrCCForCommand(t *testing.T) {
 			want:  "0x80",
 		},
 		{
+			name:  "shared parameter-config set applies to sibling commands",
+			cmd:   CommandSetPEFConfigParam,
+			ccode: 0x83,
+			want:  "Attempt to read write-only parameter",
+		},
+		{
+			name:  "set-in-progress conflict on boot options",
+			cmd:   CommandSetSystemBootOptions,
+			ccode: 0x81,
+			want:  "Attempt to set 'set in progress' value (in parameter #0) when not in 'set complete' state",
+		},
+		{
+			name:  "SEL erase in progress",
+			cmd:   CommandGetSELInfo,
+			ccode: 0x81,
+			want:  "Cannot execute command, SEL erase in progress",
+		},
+		{
+			name:  "codes above 84h are reachable",
+			cmd:   CommandCloseSession,
+			ccode: 0x88,
+			want:  "Invalid Session Handle in request",
+		},
+		{
 			name:  "zero command falls back to hex for command-specific range",
 			cmd:   Command{},
 			ccode: 0x81,
