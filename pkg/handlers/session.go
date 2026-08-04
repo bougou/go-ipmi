@@ -16,8 +16,6 @@ const (
 	CmdGetChannelAuthCapabilities uint8 = 0x38
 	CmdGetSessionChallenge        uint8 = 0x39
 	CmdActivateSession            uint8 = 0x3A
-	CmdSetSessionPrivilegeLevel   uint8 = 0x3B
-	CmdCloseSession               uint8 = 0x3C
 
 	lanChannelNumber uint8 = 1
 )
@@ -26,10 +24,10 @@ const (
 // Open Session and RAKP messages are dispatched differently (they arrive before
 // a session exists); see [HandleOpenSession], [HandleRAKP1], [HandleRAKP3].
 func RegisterSessionHandlers(r *Registry) {
-	r.Register(NetFnAppRequest, CmdGetChannelAuthCapabilities, HandlerFunc(handleGetChannelAuthCaps))
-	r.Register(NetFnAppRequest, CmdGetChannelCipherSuites, HandlerFunc(handleGetChannelCipherSuites))
-	r.Register(NetFnAppRequest, CmdSetSessionPrivilegeLevel, HandlerFunc(handleSetSessionPrivilegeLevel))
-	r.Register(NetFnAppRequest, CmdCloseSession, HandlerFunc(handleCloseSession))
+	r.RegisterFunc(types.CommandGetChannelAuthCapabilities, handleGetChannelAuthCaps)
+	r.RegisterFunc(types.CommandGetChannelCipherSuites, handleGetChannelCipherSuites)
+	r.RegisterFunc(types.CommandSetSessionPrivilegeLevel, handleSetSessionPrivilegeLevel)
+	r.RegisterFunc(types.CommandCloseSession, handleCloseSession)
 	registerV15SessionHandlers(r)
 }
 

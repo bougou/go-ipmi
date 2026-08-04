@@ -18,12 +18,19 @@ package handlers
 
 import (
 	"github.com/bougou/go-ipmi/pkg/bmc"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // HandlerContext carries per-request BMC state to a [Handler].
 // All fields are read-only from the handler's perspective; mutations must go
 // through the store methods (which are goroutine-safe).
 type HandlerContext struct {
+	// Command identifies the request being dispatched.  [Registry.Dispatch]
+	// fills it in from the command table, so middleware and handlers can name
+	// the request without re-deriving it from NetFn/Cmd.  For a command with no
+	// entry in the table, only ID and NetFn are populated and Name is empty.
+	Command types.Command
+
 	// BMC is the top-level BMC state.
 	BMC *bmc.BMC
 

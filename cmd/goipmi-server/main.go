@@ -12,6 +12,7 @@
 //	GOIPMI_SERVER_CIPHER_SUITES   – RMCP+ cipher suite IDs, comma-separated (default: 3,17)
 //	GOIPMI_SERVER_V15_AUTH_TYPES  – v1.5 auth types: none,md2,md5,password,oem (default: md5)
 //	GOIPMI_SERVER_V15             – set to 0/false to disable v1.5 while keeping lanplus (default: 1)
+//	GOIPMI_SERVER_TRACE           – set to 1/true to log every dispatched command to stderr (default: 0)
 package main
 
 import (
@@ -81,7 +82,11 @@ func run() error {
 	}
 	defer conn.Close()
 
-	srv := server.NewServer(b, conn)
+	var opts []server.ServerOption
+	if cfg.Trace {
+		opts = append(opts, server.WithHandlerRegistry(tracingRegistry()))
+	}
+	srv := server.NewServer(b, conn, opts...)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()

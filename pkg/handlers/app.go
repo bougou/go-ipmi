@@ -7,34 +7,31 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// IPMI NetFn codes used in this file.
+// NetFn and command codes for the requests this package inspects as raw wire
+// bytes, before dispatch has resolved them to a [types.Command] (privilege
+// rules, v1.5 authentication policy, session state machine). Registration uses
+// the [types] command table directly and needs none of these.
+//
+// TestWireConstantsMatchCommandTable keeps the values in step with that table.
 const (
 	NetFnAppRequest     uint8 = 0x06
 	NetFnChassisRequest uint8 = 0x00
-	NetFnStorageRequest uint8 = 0x0A
-	NetFnSensorRequest  uint8 = 0x04
 )
 
 // IPMI App command IDs.
 const (
-	CmdGetDeviceID            uint8 = 0x01
 	CmdColdReset              uint8 = 0x02
 	CmdWarmReset              uint8 = 0x03
-	CmdGetSelfTestResults     uint8 = 0x04
-	CmdGetDeviceGUID          uint8 = 0x08
-	CmdSetBMCGlobalEnables    uint8 = 0x2E
-	CmdGetBMCGlobalEnables    uint8 = 0x2F
-	CmdGetChannelAuthCaps     uint8 = 0x38
 	CmdGetChannelCipherSuites uint8 = 0x54
 )
 
 // RegisterAppHandlers adds all App/Global command handlers to r.
 func RegisterAppHandlers(r *Registry) {
-	r.Register(NetFnAppRequest, CmdGetDeviceID, HandlerFunc(handleGetDeviceID))
-	r.Register(NetFnAppRequest, CmdColdReset, HandlerFunc(handleColdReset))
-	r.Register(NetFnAppRequest, CmdWarmReset, HandlerFunc(handleWarmReset))
-	r.Register(NetFnAppRequest, CmdGetSelfTestResults, HandlerFunc(handleGetSelfTestResults))
-	r.Register(NetFnAppRequest, CmdGetDeviceGUID, HandlerFunc(handleGetDeviceGUID))
+	r.RegisterFunc(types.CommandGetDeviceID, handleGetDeviceID)
+	r.RegisterFunc(types.CommandColdReset, handleColdReset)
+	r.RegisterFunc(types.CommandWarmReset, handleWarmReset)
+	r.RegisterFunc(types.CommandGetSelfTestResults, handleGetSelfTestResults)
+	r.RegisterFunc(types.CommandGetDeviceGUID, handleGetDeviceGUID)
 }
 
 // handleGetDeviceID implements Get Device ID (App 0x01).

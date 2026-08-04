@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 func TestV15AllowsAuthTypeNonePerMessageDisabled(t *testing.T) {
@@ -19,7 +20,7 @@ func TestV15AllowsAuthTypeNonePerMessageEnabled(t *testing.T) {
 	ch := &bmc.Channel{Number: 1, PerMessageAuth: true, UserLevelAuth: true}
 	sess := &bmc.V15Session{State: bmc.V15SessionStateActive, PrivilegeLevel: bmc.PrivilegeLevelAdministrator}
 
-	if V15AllowsAuthTypeNone(ch, NetFnChassisRequest, CmdGetChassisStatus, sess) {
+	if V15AllowsAuthTypeNone(ch, NetFnChassisRequest, types.CommandGetChassisStatus.ID, sess) {
 		t.Fatal("expected auth required when per-message auth enabled")
 	}
 }
@@ -28,7 +29,7 @@ func TestV15AllowsAuthTypeNoneUserLevelDisabled(t *testing.T) {
 	ch := &bmc.Channel{Number: 1, PerMessageAuth: true, UserLevelAuth: false}
 	sess := &bmc.V15Session{State: bmc.V15SessionStateActive, PrivilegeLevel: bmc.PrivilegeLevelUser}
 
-	if !V15AllowsAuthTypeNone(ch, NetFnAppRequest, CmdGetDeviceID, sess) {
+	if !V15AllowsAuthTypeNone(ch, NetFnAppRequest, types.CommandGetDeviceID.ID, sess) {
 		t.Fatal("expected user-level get device id without auth when user-level auth disabled")
 	}
 	if V15AllowsAuthTypeNone(ch, NetFnChassisRequest, CmdChassisControl, sess) {

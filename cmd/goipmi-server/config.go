@@ -19,6 +19,7 @@ type runtimeConfig struct {
 	CipherSuites []types.CipherSuiteID
 	V15AuthTypes []bmc.V15AuthType // nil = default (md5)
 	V15Disabled  bool
+	Trace        bool
 }
 
 func loadRuntimeConfig() (runtimeConfig, error) {
@@ -42,6 +43,14 @@ func loadRuntimeConfig() (runtimeConfig, error) {
 			return cfg, fmt.Errorf("GOIPMI_SERVER_V15: %w", err)
 		}
 		cfg.V15Disabled = !enabled
+	}
+
+	if v := strings.TrimSpace(os.Getenv("GOIPMI_SERVER_TRACE")); v != "" {
+		trace, err := parseBoolEnv(v)
+		if err != nil {
+			return cfg, fmt.Errorf("GOIPMI_SERVER_TRACE: %w", err)
+		}
+		cfg.Trace = trace
 	}
 
 	if raw := strings.TrimSpace(os.Getenv("GOIPMI_SERVER_V15_AUTH_TYPES")); raw != "" {
@@ -74,6 +83,9 @@ func printRuntimeBanner(cfg runtimeConfig, b *bmc.BMC) {
 		fmt.Printf("goipmi-server: IPMI v1.5 (lan) auth types: %s\n", bmc.FormatV15AuthTypes(b.ResolvedV15AuthTypes()))
 	} else {
 		fmt.Println("goipmi-server: IPMI v1.5 (lan) disabled")
+	}
+	if cfg.Trace {
+		fmt.Println("goipmi-server: per-command trace enabled (stderr)")
 	}
 }
 
