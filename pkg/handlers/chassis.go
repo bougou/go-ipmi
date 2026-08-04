@@ -9,22 +9,17 @@ import (
 
 // IPMI Chassis command IDs (spec §28).
 const (
-	CmdGetChassisCapabilities uint8 = 0x00
-	CmdGetChassisStatus       uint8 = 0x01
-	CmdChassisControl         uint8 = 0x02
-	CmdChassisIdentify        uint8 = 0x04
-	CmdSetSystemBootOptions   uint8 = 0x08
-	CmdGetSystemBootOptions   uint8 = 0x09
+	CmdChassisControl uint8 = 0x02
 )
 
 // RegisterChassisHandlers adds all Chassis command handlers to r.
 func RegisterChassisHandlers(r *Registry) {
-	r.Register(NetFnChassisRequest, CmdGetChassisCapabilities, HandlerFunc(handleGetChassisCapabilities))
-	r.Register(NetFnChassisRequest, CmdGetChassisStatus, HandlerFunc(handleGetChassisStatus))
-	r.Register(NetFnChassisRequest, CmdChassisControl, HandlerFunc(handleChassisControl))
-	r.Register(NetFnChassisRequest, CmdChassisIdentify, HandlerFunc(handleChassisIdentify))
-	r.Register(NetFnChassisRequest, CmdSetSystemBootOptions, HandlerFunc(handleSetSystemBootOptions))
-	r.Register(NetFnChassisRequest, CmdGetSystemBootOptions, HandlerFunc(handleGetSystemBootOptions))
+	r.RegisterFunc(types.CommandGetChassisCapabilities, handleGetChassisCapabilities)
+	r.RegisterFunc(types.CommandGetChassisStatus, handleGetChassisStatus)
+	r.RegisterFunc(types.CommandChassisControl, handleChassisControl)
+	r.RegisterFunc(types.CommandChassisIdentify, handleChassisIdentify)
+	r.RegisterFunc(types.CommandSetSystemBootOptions, handleSetSystemBootOptions)
+	r.RegisterFunc(types.CommandGetSystemBootOptions, handleGetSystemBootOptions)
 }
 
 // handleGetChassisCapabilities returns a minimal static response.

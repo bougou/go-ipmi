@@ -43,6 +43,7 @@ func TestLoadRuntimeConfigDefaultsDualStack(t *testing.T) {
 	t.Setenv("GOIPMI_SERVER_CIPHER_SUITES", "")
 	t.Setenv("GOIPMI_SERVER_V15", "")
 	t.Setenv("GOIPMI_SERVER_V15_AUTH_TYPES", "")
+	t.Setenv("GOIPMI_SERVER_TRACE", "")
 
 	cfg, err := loadRuntimeConfig()
 	if err != nil {
@@ -50,6 +51,11 @@ func TestLoadRuntimeConfigDefaultsDualStack(t *testing.T) {
 	}
 	if cfg.V15Disabled {
 		t.Fatal("v1.5 should be enabled by default")
+	}
+	// E2E runs this server with stdout and stderr attached to the terminal, so
+	// the trace stays off unless asked for.
+	if cfg.Trace {
+		t.Fatal("trace should be off by default")
 	}
 	if len(cfg.V15AuthTypes) != 0 {
 		t.Fatalf("expected nil v15 auth types (use BMC default), got %v", cfg.V15AuthTypes)
@@ -74,6 +80,23 @@ func TestLoadRuntimeConfigCustomV15Auth(t *testing.T) {
 	}
 	if len(cfg.V15AuthTypes) != 2 {
 		t.Fatalf("want 2 auth types, got %v", cfg.V15AuthTypes)
+	}
+}
+
+func TestLoadRuntimeConfigEnableTrace(t *testing.T) {
+	t.Setenv("GOIPMI_SERVER_TRACE", "1")
+
+	cfg, err := loadRuntimeConfig()
+	if err != nil {
+		t.Fatalf("loadRuntimeConfig: %v", err)
+	}
+	if !cfg.Trace {
+		t.Fatal("expected trace enabled")
+	}
+
+	t.Setenv("GOIPMI_SERVER_TRACE", "nonsense")
+	if _, err := loadRuntimeConfig(); err == nil {
+		t.Fatal("expected an error for an unparseable GOIPMI_SERVER_TRACE")
 	}
 }
 

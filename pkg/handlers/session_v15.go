@@ -21,8 +21,8 @@ const (
 )
 
 func registerV15SessionHandlers(r *Registry) {
-	r.Register(NetFnAppRequest, CmdGetSessionChallenge, HandlerFunc(handleGetSessionChallenge))
-	r.Register(NetFnAppRequest, CmdActivateSession, HandlerFunc(handleActivateSession))
+	r.RegisterFunc(types.CommandGetSessionChallenge, handleGetSessionChallenge)
+	r.RegisterFunc(types.CommandActivateSession, handleActivateSession)
 }
 
 func handleGetSessionChallenge(_ context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {

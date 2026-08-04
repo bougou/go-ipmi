@@ -1,14 +1,6 @@
 package handlers
 
-// Storage command IDs (spec v2.0§33–§34).
-const (
-	CmdGetFRUInventoryAreaInfo uint8 = 0x10
-	CmdReadFRUData             uint8 = 0x11
-	CmdGetSDRRepoInfo          uint8 = 0x20
-	CmdGetSDRRepoAllocInfo     uint8 = 0x21
-	CmdReserveSDRRepo          uint8 = 0x22
-	CmdGetSDR                  uint8 = 0x23
-)
+import "github.com/bougou/go-ipmi/pkg/types"
 
 const (
 	maxSDRReadBytes = 16
@@ -16,10 +8,10 @@ const (
 
 // RegisterStorageHandlers adds P0 read-only Storage NetFn handlers to r.
 func RegisterStorageHandlers(r *Registry) {
-	r.Register(NetFnStorageRequest, CmdGetFRUInventoryAreaInfo, HandlerFunc(handleGetFRUInventoryAreaInfo))
-	r.Register(NetFnStorageRequest, CmdReadFRUData, HandlerFunc(handleReadFRUData))
-	r.Register(NetFnStorageRequest, CmdGetSDRRepoInfo, HandlerFunc(handleGetSDRRepoInfo))
-	r.Register(NetFnStorageRequest, CmdGetSDRRepoAllocInfo, HandlerFunc(handleGetSDRRepoAllocInfo))
-	r.Register(NetFnStorageRequest, CmdReserveSDRRepo, HandlerFunc(handleReserveSDRRepo))
-	r.Register(NetFnStorageRequest, CmdGetSDR, HandlerFunc(handleGetSDR))
+	r.RegisterFunc(types.CommandGetFRUInventoryAreaInfo, handleGetFRUInventoryAreaInfo)
+	r.RegisterFunc(types.CommandReadFRUData, handleReadFRUData)
+	r.RegisterFunc(types.CommandGetSDRRepoInfo, handleGetSDRRepoInfo)
+	r.RegisterFunc(types.CommandGetSDRRepoAllocInfo, handleGetSDRRepoAllocInfo)
+	r.RegisterFunc(types.CommandReserveSDRRepo, handleReserveSDRRepo)
+	r.RegisterFunc(types.CommandGetSDR, handleGetSDR)
 }
