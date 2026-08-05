@@ -32,10 +32,6 @@ func (req *SetDCMIMgmtControllerIdentifierRequest) Command() types.Command {
 	return types.CommandSetDCMIMgmtControllerIdentifier
 }
 
-func (res *SetDCMIMgmtControllerIdentifierResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetDCMIMgmtControllerIdentifierResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 2)

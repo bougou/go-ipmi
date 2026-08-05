@@ -43,14 +43,6 @@ func (req *SetDCMIPowerLimitRequest) Command() types.Command {
 	return types.CommandSetDCMIPowerLimit
 }
 
-func (res *SetDCMIPowerLimitResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x84: "Power Limit out of range",
-		0x85: "Correction Time out of range",
-		0x89: "Statistics Reporting Period out of range",
-	}
-}
-
 func (res *SetDCMIPowerLimitResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 1)

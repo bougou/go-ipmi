@@ -111,10 +111,6 @@ func (res *GetSessionInfoResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *GetSessionInfoResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetSessionInfoResponse) Format() string {
 	var sessionType string
 	switch res.AuxiliaryData {

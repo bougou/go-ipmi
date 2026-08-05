@@ -30,10 +30,6 @@ func (res *ReserveDeviceSDRRepoResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *ReserveDeviceSDRRepoResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *ReserveDeviceSDRRepoResponse) Format() string {
 	return ""
 }

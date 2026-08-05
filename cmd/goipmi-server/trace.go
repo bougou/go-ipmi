@@ -27,13 +27,13 @@ func tracingRegistry() *handlers.Registry {
 // traceCommands logs one line per dispatched command. Driving this server with
 // `ipmitool -I lanplus ... chassis power on` produces, abridged:
 //
-//	trace "Get Channel Authentication Capabilities" netfn=0x06 cmd=0x38 user=-         priv=-             cc=0x00 req=2B resp=8B 60.828µs
-//	trace "Get Channel Cipher Suites"               netfn=0x06 cmd=0x54 user=-         priv=-             cc=0x00 req=3B resp=11B 8.759µs
-//	trace "Set Session Privilege Level"             netfn=0x06 cmd=0x3b user=ADMIN     priv=ADMINISTRATOR cc=0x00 req=1B resp=1B 422ns
-//	trace <unregistered>                            netfn=0x2c cmd=0x3e user=ADMIN     priv=ADMINISTRATOR cc=0xc1 req=2B resp=0B 1.953µs err=no handler for netFn=0x2c cmd=0x3e
-//	trace "Get Device ID"                           netfn=0x06 cmd=0x01 user=ADMIN     priv=ADMINISTRATOR cc=0x00 req=0B resp=11B 3.908µs
-//	trace "Chassis Control"                         netfn=0x00 cmd=0x02 user=ADMIN     priv=ADMINISTRATOR cc=0x00 req=1B resp=0B 963ns
-//	trace "Close Session"                           netfn=0x06 cmd=0x3c user=ADMIN     priv=ADMINISTRATOR cc=0x00 req=4B resp=0B 1.001µs
+//	trace "Get Channel Authentication Capabilities" netfn=0x06 cmd=0x38 user=-         priv=-             cc=0x00 (Command completed normally) req=2B resp=8B 60.828µs
+//	trace "Get Channel Cipher Suites"               netfn=0x06 cmd=0x54 user=-         priv=-             cc=0x00 (Command completed normally) req=3B resp=11B 8.759µs
+//	trace "Set Session Privilege Level"             netfn=0x06 cmd=0x3b user=ADMIN     priv=ADMINISTRATOR cc=0x00 (Command completed normally) req=1B resp=1B 422ns
+//	trace <unregistered>                            netfn=0x2c cmd=0x3e user=ADMIN     priv=ADMINISTRATOR cc=0xc1 (Invalid command) req=2B resp=0B 1.953µs err=no handler for netFn=0x2c cmd=0x3e
+//	trace "Get Device ID"                           netfn=0x06 cmd=0x01 user=ADMIN     priv=ADMINISTRATOR cc=0x00 (Command completed normally) req=0B resp=11B 3.908µs
+//	trace "Chassis Control"                         netfn=0x00 cmd=0x02 user=ADMIN     priv=ADMINISTRATOR cc=0x00 (Command completed normally) req=1B resp=0B 963ns
+//	trace "Close Session"                           netfn=0x06 cmd=0x3c user=ADMIN     priv=ADMINISTRATOR cc=0x00 (Command completed normally) req=4B resp=0B 1.001µs
 //
 // Every field comes from what the dispatcher already knew, which is the point:
 // middleware is the layer that wants to describe a request, so
@@ -65,10 +65,13 @@ func traceCommands(next handlers.Handler) handlers.Handler {
 // the interesting half testable without capturing stderr.
 func traceLine(hctx *handlers.HandlerContext, cc types.CompletionCode, err error, reqLen, respLen int, elapsed time.Duration) string {
 	// 41 columns fits the widest name this server registers, "Get Channel
-	// Authentication Capabilities", in quotes.
-	line := fmt.Sprintf("trace %-41s netfn=0x%02x cmd=0x%02x user=%-9s priv=%-13s cc=0x%02x req=%dB resp=%dB %v",
+	// Authentication Capabilities", in quotes. cc name comes from
+	// [types.StrCC] so command-specific 80h-BEh codes resolve without
+	// a decoded Response.
+	line := fmt.Sprintf("trace %-41s netfn=0x%02x cmd=0x%02x user=%-9s priv=%-13s cc=0x%02x (%s) req=%dB resp=%dB %v",
 		commandName(hctx), uint8(hctx.Command.NetFn), hctx.Command.ID,
-		userName(hctx), privilege(hctx), uint8(cc), reqLen, respLen, elapsed)
+		userName(hctx), privilege(hctx), uint8(cc), types.StrCC(hctx.Command, uint8(cc)),
+		reqLen, respLen, elapsed)
 	if err != nil {
 		line += " err=" + err.Error()
 	}

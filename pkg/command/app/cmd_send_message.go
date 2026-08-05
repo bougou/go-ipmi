@@ -57,15 +57,6 @@ func (res *SendMessageResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*SendMessageResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "Invalid Session Handle. The session handle does not match up with any currently active sessions for this channel.",
-		0x81: "Lost Arbitration",
-		0x82: "Bus Error",
-		0x83: "NAK on Write",
-	}
-}
-
 func (res *SendMessageResponse) Format() string {
 	return ""
 }

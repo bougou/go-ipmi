@@ -22,12 +22,6 @@ func (req *GetMessageRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (res *GetMessageResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "data not available (queue / buffer empty)",
-	}
-}
-
 func (res *GetMessageResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 1)

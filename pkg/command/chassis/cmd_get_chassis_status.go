@@ -190,10 +190,6 @@ func (req *GetChassisStatusRequest) Command() types.Command {
 	return types.CommandGetChassisStatus
 }
 
-func (res *GetChassisStatusResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetChassisStatusResponse) Unpack(msg []byte) error {
 	if len(msg) < 3 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 3)

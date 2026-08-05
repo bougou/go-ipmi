@@ -95,11 +95,6 @@ func (res *GetConfigurableCommandSubfunctionsResponse) Unpack(msg []byte) error 
 	return nil
 }
 
-func (*GetConfigurableCommandSubfunctionsResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *GetConfigurableCommandSubfunctionsResponse) Format() string {
 	out := ""
 	for k, v := range res.SubfunctionsSupport {

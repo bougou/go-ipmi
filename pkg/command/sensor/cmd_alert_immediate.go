@@ -56,14 +56,6 @@ func (req *AlertImmediateRequest) Command() types.Command {
 	return types.CommandAlertImmediate
 }
 
-func (res *AlertImmediateResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x81: "Alert Immediate rejected due to alert already in progress",
-		0x82: "Alert Immediate rejected due to IPMI messaging session active on this channel",
-		0x83: "Platform Event Parameters (4:11) not supported",
-	}
-}
-
 func (res *AlertImmediateResponse) Unpack(msg []byte) error {
 	return nil
 }

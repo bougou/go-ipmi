@@ -166,34 +166,6 @@ func (res *IPMIResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-// AllCC returns all possible completion codes for the specified response.
-// i.e.:
-//
-//	the generic completion codes for all ipmi cmd response
-//	+
-//	the specific completion codes for specified cmd response.
-func AllCC(response Response) map[uint8]string {
-	out := map[uint8]string{}
-	for k, v := range CC {
-		out[k] = v
-	}
-	for k, v := range response.CompletionCodes() {
-		out[k] = v
-	}
-	return out
-}
-
-// StrCC return the description of ccode for the specified response.
-// The available completion codes set consists of general completion codes (CC) for all
-// commands response and specific completion codes for this response.
-func StrCC(response Response, ccode uint8) string {
-	s, ok := AllCC(response)[ccode]
-	if ok {
-		return s
-	}
-	return "unknown completion code"
-}
-
 type Result[T any] struct {
 	Ok  *T
 	Err error

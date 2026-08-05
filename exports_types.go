@@ -706,7 +706,6 @@ const (
 )
 
 var (
-	CC                                        = types.CC
 	CommandActivateDCMIPowerLimit             = types.CommandActivateDCMIPowerLimit
 	CommandActivatePayload                    = types.CommandActivatePayload
 	CommandActivateSession                    = types.CommandActivateSession

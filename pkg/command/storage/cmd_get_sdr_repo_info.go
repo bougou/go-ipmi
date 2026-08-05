@@ -133,8 +133,3 @@ func (res *GetSDRRepoInfoResponse) Format() string {
 		fmt.Sprintf("Reserve SDR repository supported    : %v\n", res.SDROperationSupport.SupportReserveSDRRepo) +
 		fmt.Sprintf("SDR Repository Alloc info supported : %v\n", res.SDROperationSupport.SupportGetSDRRepoAllocInfo)
 }
-
-func (res *GetSDRRepoInfoResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}

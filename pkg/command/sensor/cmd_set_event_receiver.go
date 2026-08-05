@@ -26,10 +26,6 @@ func (req *SetEventReceiverRequest) Command() types.Command {
 	return types.CommandSetEventReceiver
 }
 
-func (res *SetEventReceiverResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetEventReceiverResponse) Unpack(msg []byte) error {
 	return nil
 }

@@ -37,12 +37,6 @@ func (req *GetSystemInfoParamRequest) Command() types.Command {
 	return types.CommandGetSystemInfoParam
 }
 
-func (res *GetSystemInfoParamResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "parameter not supported",
-	}
-}
-
 func (res *GetSystemInfoParamResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 1)

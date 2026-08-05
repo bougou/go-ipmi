@@ -52,11 +52,6 @@ func (res *GetWatchdogTimerResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *GetWatchdogTimerResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *GetWatchdogTimerResponse) Format() string {
 	return "" +
 		fmt.Sprintf("Watchdog Timer Use     : %s (%#02x)\n", res.TimerUse, uint8(res.TimerUse)) +

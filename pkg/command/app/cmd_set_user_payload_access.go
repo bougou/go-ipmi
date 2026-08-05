@@ -67,10 +67,6 @@ func (req *SetUserPayloadAccessRequest) Command() types.Command {
 	return types.CommandSetUserPayloadAccess
 }
 
-func (res *SetUserPayloadAccessResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetUserPayloadAccessResponse) Unpack(msg []byte) error {
 
 	return nil

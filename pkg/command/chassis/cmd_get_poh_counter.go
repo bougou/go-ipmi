@@ -38,10 +38,6 @@ func (res *GetPOHCounterResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetPOHCounterResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetPOHCounterResponse) Format() string {
 	totalMinutes := res.Minutes()
 

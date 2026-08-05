@@ -65,10 +65,6 @@ func (res *GetSensorReadingFactorsResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetSensorReadingFactorsResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetSensorReadingFactorsResponse) Format() string {
 	return "" +
 		fmt.Sprintf("M           : %d\n", res.M) +

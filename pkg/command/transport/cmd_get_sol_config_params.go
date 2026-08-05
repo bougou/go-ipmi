@@ -36,10 +36,6 @@ func (req *GetSOLConfigParamRequest) Pack() []byte {
 	return out
 }
 
-func (res *GetSOLConfigParamResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetSOLConfigParamResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 1)

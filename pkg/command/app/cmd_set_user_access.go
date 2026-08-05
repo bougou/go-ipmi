@@ -54,16 +54,6 @@ func (req *SetUserAccessRequest) Pack() []byte {
 	return out
 }
 
-func (res *SetUserAccessResponse) CompletionCodes() map[uint8]string {
-	// Note: an implementation will not return an error completion code if the user
-	// access level is set higher than the privilege limit for a given channel. If it is
-	// desired to bring attention to this condition, it is up to software to check the
-	// channel privilege limits set using the Set Channel Access command and
-	// provide notification of any mismatch.
-
-	return map[uint8]string{}
-}
-
 func (res *SetUserAccessResponse) Unpack(msg []byte) error {
 	return nil
 }

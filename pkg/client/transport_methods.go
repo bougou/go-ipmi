@@ -96,7 +96,8 @@ func (c *Client) BuildRmcpRequest(ctx context.Context, reqCmd types.Request) (*t
 }
 
 // ParseRmcpResponse parses a raw RMCP response message into the given Response.
-func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response types.Response) error {
+// cmd identifies the request for command-specific completion-code naming.
+func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, cmd types.Command, response types.Response) error {
 	rmcp := &types.Rmcp{}
 	if err := rmcp.Unpack(msg); err != nil {
 		return fmt.Errorf("unpack rmcp failed, err: %w", err)
@@ -126,7 +127,7 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response typ
 		if ccode != 0x00 {
 			return types.NewResponseError(
 				types.CompletionCode(ccode),
-				fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, types.StrCC(response, ccode)),
+				fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, types.StrCC(cmd, ccode)),
 			)
 		}
 		if err := response.Unpack(ipmiRes.Data); err != nil {
@@ -186,7 +187,7 @@ func (c *Client) ParseRmcpResponse(ctx context.Context, msg []byte, response typ
 			if ccode != 0x00 {
 				return types.NewResponseError(
 					types.CompletionCode(ccode),
-					fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, types.StrCC(response, ccode)),
+					fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, types.StrCC(cmd, ccode)),
 				)
 			}
 			if err := response.Unpack(ipmiRes.Data); err != nil {

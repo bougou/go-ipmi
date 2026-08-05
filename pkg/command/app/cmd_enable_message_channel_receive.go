@@ -45,11 +45,6 @@ func (res *EnableMessageChannelReceiveResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*EnableMessageChannelReceiveResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *EnableMessageChannelReceiveResponse) Format() string {
 	// Todo
 	return ""

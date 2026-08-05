@@ -35,11 +35,6 @@ func (res *GetSELTimeUTCOffsetResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *GetSELTimeUTCOffsetResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *GetSELTimeUTCOffsetResponse) Format() string {
 	return fmt.Sprintf("Offset : %d", res.MinutesOffset)
 }

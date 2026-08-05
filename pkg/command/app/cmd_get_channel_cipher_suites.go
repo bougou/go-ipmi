@@ -50,11 +50,6 @@ func (res *GetChannelCipherSuitesResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*GetChannelCipherSuitesResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *GetChannelCipherSuitesResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }

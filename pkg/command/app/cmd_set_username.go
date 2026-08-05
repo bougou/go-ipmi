@@ -33,10 +33,6 @@ func (req *SetUsernameRequest) Pack() []byte {
 	return out
 }
 
-func (res *SetUsernameResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetUsernameResponse) Unpack(msg []byte) error {
 	return nil
 }

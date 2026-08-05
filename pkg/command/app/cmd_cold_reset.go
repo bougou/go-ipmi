@@ -20,10 +20,6 @@ func (req *ColdResetRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (res *ColdResetResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *ColdResetResponse) Unpack(msg []byte) error {
 	return nil
 }

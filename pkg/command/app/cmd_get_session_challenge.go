@@ -44,13 +44,6 @@ func (res *GetSessionChallengeResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*GetSessionChallengeResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x81: "invalid user name",
-		0x82: "null user name (User 1) not enabled",
-	}
-}
-
 func (res *GetSessionChallengeResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }

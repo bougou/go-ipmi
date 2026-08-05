@@ -12,6 +12,19 @@ type Command struct {
 	Name  string
 }
 
+// CommandKey is the wire identity of a command: request NetFn + command ID.
+// Name is intentionally excluded so lookups match regardless of whether the
+// caller has a named table entry or a raw {NetFn, ID} pair from the wire.
+type CommandKey struct {
+	NetFn NetFn
+	ID    uint8
+}
+
+// Key returns the Name-independent identity of c for map lookups.
+func (c Command) Key() CommandKey {
+	return CommandKey{NetFn: c.NetFn, ID: c.ID}
+}
+
 type Request interface {
 	// Pack encodes the object to data bytes
 	Pack() []byte
@@ -22,8 +35,6 @@ type Request interface {
 type Response interface {
 	// Unpack decodes the object from data bytes
 	Unpack(data []byte) error
-	// CompletionCodes returns a map of command-specific completion codes
-	CompletionCodes() map[uint8]string
 	// Format return a formatted human friendly string
 	Format() string
 }

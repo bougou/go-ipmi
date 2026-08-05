@@ -53,10 +53,6 @@ func (req *PlatformEventMessageRequest) Command() types.Command {
 	return types.CommandPlatformEventMessage
 }
 
-func (res *PlatformEventMessageResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *PlatformEventMessageResponse) Unpack(msg []byte) error {
 	return nil
 }

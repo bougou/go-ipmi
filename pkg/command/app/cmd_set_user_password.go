@@ -57,10 +57,6 @@ func (req *SetUserPasswordRequest) Pack() []byte {
 	return out
 }
 
-func (res *SetUserPasswordResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetUserPasswordResponse) Unpack(msg []byte) error {
 	return nil
 }

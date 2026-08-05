@@ -43,10 +43,6 @@ func (req *SetDCMIThermalLimitRequest) Command() types.Command {
 	return types.CommandSetDCMIThermalLimit
 }
 
-func (res *SetDCMIThermalLimitResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetDCMIThermalLimitResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 1)

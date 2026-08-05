@@ -56,11 +56,6 @@ func (res *GetConfigurableCommandsResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*GetConfigurableCommandsResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *GetConfigurableCommandsResponse) Format() string {
 	// Todo
 	return ""

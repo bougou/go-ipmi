@@ -244,7 +244,7 @@ func (c *Client) exchangeLAN(ctx context.Context, request types.Request, respons
 
 	c.DebugBytes("recv", recv, 16)
 
-	if err := c.ParseRmcpResponse(ctx, recv, response); err != nil {
+	if err := c.ParseRmcpResponse(ctx, recv, request.Command(), response); err != nil {
 		return err
 	}
 

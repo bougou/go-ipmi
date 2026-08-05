@@ -39,11 +39,6 @@ func (res *GetBTInterfaceCapabilitiesResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*GetBTInterfaceCapabilitiesResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *GetBTInterfaceCapabilitiesResponse) Format() string {
 	return ""
 }

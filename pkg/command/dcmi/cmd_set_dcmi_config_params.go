@@ -30,10 +30,6 @@ func (req *SetDCMIConfigParamRequest) Command() types.Command {
 	return types.CommandSetDCMIConfigParam
 }
 
-func (res *SetDCMIConfigParamResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetDCMIConfigParamResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 2)

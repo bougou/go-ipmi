@@ -28,10 +28,6 @@ func (req *SOLActivatingRequest) Pack() []byte {
 	return out
 }
 
-func (res *SOLActivatingResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SOLActivatingResponse) Unpack(msg []byte) error {
 	return nil
 }

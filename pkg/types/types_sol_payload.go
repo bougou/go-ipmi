@@ -77,11 +77,6 @@ func (r *SOLPayloadResponse) Unpack(data []byte) error {
 	return r.SOLPayloadPacket.Unpack(data)
 }
 
-// CompletionCodes returns command-specific completion codes.
-func (r *SOLPayloadResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 // Format returns a human-readable representation.
 func (r *SOLPayloadResponse) Format() string {
 	return ""

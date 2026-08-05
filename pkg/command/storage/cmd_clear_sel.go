@@ -43,11 +43,6 @@ func (res *ClearSELResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *ClearSELResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *ClearSELResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }

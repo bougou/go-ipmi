@@ -43,12 +43,6 @@ func (req *GetChannelOEMPayloadInfoRequest) Command() types.Command {
 	return types.CommandGetChannelOEMPayloadInfo
 }
 
-func (res *GetChannelOEMPayloadInfoResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "OEM Payload IANA and/or Payload ID not supported",
-	}
-}
-
 func (res *GetChannelOEMPayloadInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 7 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 7)

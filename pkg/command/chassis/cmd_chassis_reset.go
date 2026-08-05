@@ -23,10 +23,6 @@ func (req *ChassisResetRequest) Command() types.Command {
 	return types.CommandChassisReset
 }
 
-func (res *ChassisResetResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *ChassisResetResponse) Unpack(msg []byte) error {
 	return nil
 }

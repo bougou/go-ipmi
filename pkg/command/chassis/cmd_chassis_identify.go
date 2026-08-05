@@ -31,10 +31,6 @@ func (req *ChassisIdentifyRequest) Command() types.Command {
 	return types.CommandChassisIdentify
 }
 
-func (res *ChassisIdentifyResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *ChassisIdentifyResponse) Unpack(msg []byte) error {
 	return nil
 }

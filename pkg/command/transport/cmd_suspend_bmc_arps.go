@@ -39,12 +39,6 @@ func (req *SuspendARPsRequest) Command() types.Command {
 	return types.CommandSuspendARPs
 }
 
-func (res *SuspendARPsResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "parameter not supported.",
-	}
-}
-
 func (res *SuspendARPsResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 1)

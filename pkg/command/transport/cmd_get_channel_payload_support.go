@@ -44,10 +44,6 @@ func (req *GetChannelPayloadSupportRequest) Command() types.Command {
 	return types.CommandGetChannelPayloadSupport
 }
 
-func (res *GetChannelPayloadSupportResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetChannelPayloadSupportResponse) Unpack(msg []byte) error {
 	if len(msg) < 8 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 8)

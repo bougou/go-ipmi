@@ -64,12 +64,6 @@ func (res *GetSELInfoResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetSELInfoResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x81: "cannot execute command, SEL erase in progress",
-	}
-}
-
 func (res *GetSELInfoResponse) Format() string {
 	var version string
 	if res.SELVersion == 0x51 {

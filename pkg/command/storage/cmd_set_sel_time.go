@@ -29,11 +29,6 @@ func (res *SetSELTimeResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *SetSELTimeResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *SetSELTimeResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }

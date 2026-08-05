@@ -34,11 +34,6 @@ func (res *GetSystemGUIDResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*GetSystemGUIDResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *GetSystemGUIDResponse) Format() string {
 	guidMode := types.GUIDModeSMBIOS
 	u, err := types.ParseGUID(res.GUID[:], guidMode)

@@ -64,12 +64,6 @@ func (res *GetPEFConfigParamResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetPEFConfigParamResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "parameter not supported",
-	}
-}
-
 func (res *GetPEFConfigParamResponse) Format() string {
 	return "" +
 		fmt.Sprintf("Parameter Revision           : %#02x (%d)\n", res.ParamRevision, res.ParamRevision) +

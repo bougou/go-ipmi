@@ -44,11 +44,6 @@ func (res *GetBMCGlobalEnablesResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*GetBMCGlobalEnablesResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *GetBMCGlobalEnablesResponse) Format() string {
 	// Todo
 	return ""

@@ -31,10 +31,6 @@ func (res *SetSensorTypeResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *SetSensorTypeResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetSensorTypeResponse) Format() string {
 	return ""
 }

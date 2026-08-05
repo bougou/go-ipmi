@@ -101,10 +101,6 @@ func (req *GetDeviceIDRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (res *GetDeviceIDResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetDeviceIDResponse) Unpack(msg []byte) error {
 	if len(msg) < 11 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 11)

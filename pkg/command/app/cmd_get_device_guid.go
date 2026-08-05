@@ -23,10 +23,6 @@ func (req *GetDeviceGUIDRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (res *GetDeviceGUIDResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetDeviceGUIDResponse) Unpack(msg []byte) error {
 	if len(msg) < 16 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 16)

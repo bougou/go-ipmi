@@ -39,12 +39,6 @@ func (res *SetLastProcessedEventIdResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *SetLastProcessedEventIdResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x81: "cannot execute command, SEL erase in progress",
-	}
-}
-
 func (res *SetLastProcessedEventIdResponse) Format() string {
 	return ""
 }

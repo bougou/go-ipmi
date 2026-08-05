@@ -49,11 +49,6 @@ func (res *ClearMessageFlagsResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*ClearMessageFlagsResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *ClearMessageFlagsResponse) Format() string {
 	// Todo
 	return ""

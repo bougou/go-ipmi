@@ -61,11 +61,6 @@ func (res *GetSystemInterfaceCapabilitiesResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*GetSystemInterfaceCapabilitiesResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *GetSystemInterfaceCapabilitiesResponse) Format() string {
 	return ""
 }

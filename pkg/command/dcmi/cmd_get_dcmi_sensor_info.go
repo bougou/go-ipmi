@@ -38,10 +38,6 @@ func (req *GetDCMISensorInfoRequest) Command() types.Command {
 	return types.CommandGetDCMISensorInfo
 }
 
-func (res *GetDCMISensorInfoResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetDCMISensorInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 3 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 3)

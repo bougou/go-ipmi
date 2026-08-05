@@ -57,11 +57,6 @@ func (res *GetNetFnSupportResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*GetNetFnSupportResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *GetNetFnSupportResponse) Format() string {
 	// Todo
 	return ""

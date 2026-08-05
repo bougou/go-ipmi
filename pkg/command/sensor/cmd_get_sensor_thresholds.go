@@ -61,10 +61,6 @@ func (res *GetSensorThresholdsResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetSensorThresholdsResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetSensorThresholdsResponse) Format() string {
 	return "" +
 		fmt.Sprintf("UNR Readable : %v%s\n", res.UNR_Readable, types.FormatBool(res.UNR_Readable, fmt.Sprintf(", raw: %#02x", res.UNR_Raw), "")) +

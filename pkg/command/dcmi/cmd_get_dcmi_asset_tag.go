@@ -37,15 +37,6 @@ func (req *GetDCMIAssetTagRequest) Command() types.Command {
 	return types.CommandGetDCMIAssetTag
 }
 
-func (res *GetDCMIAssetTagResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "Encoding type in FRU is binary / unspecified",
-		0x81: "Encoding type in FRU is BCD Plus",
-		0x82: "Encoding type in FRU is 6-bit ASCII Packed",
-		0x83: "Encoding type in FRU is set to ASCII+Latin1, but language code is not set to English (indicating data is 2-byte UNICODE)",
-	}
-}
-
 func (res *GetDCMIAssetTagResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 2)

@@ -49,10 +49,6 @@ func (req *GetSystemRestartCauseRequest) Command() types.Command {
 	return types.CommandGetSystemRestartCause
 }
 
-func (res *GetSystemRestartCauseResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetSystemRestartCauseResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 2)

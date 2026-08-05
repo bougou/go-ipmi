@@ -23,10 +23,6 @@ func (req *SetPowerCycleIntervalRequest) Command() types.Command {
 	return types.CommandSetPowerCycleInterval
 }
 
-func (res *SetPowerCycleIntervalResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetPowerCycleIntervalResponse) Unpack(msg []byte) error {
 	return nil
 }

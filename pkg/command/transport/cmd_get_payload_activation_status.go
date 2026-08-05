@@ -45,10 +45,6 @@ func (req *GetPayloadActivationStatusRequest) Command() types.Command {
 	return types.CommandGetPayloadActivationStatus
 }
 
-func (res *GetPayloadActivationStatusResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetPayloadActivationStatusResponse) Unpack(msg []byte) error {
 	if len(msg) < 3 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 3)

@@ -20,10 +20,6 @@ func (req *WarmResetRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (res *WarmResetResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *WarmResetResponse) Unpack(msg []byte) error {
 	return nil
 }

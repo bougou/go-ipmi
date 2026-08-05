@@ -35,13 +35,6 @@ func (res *DeactivatePayloadResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*DeactivatePayloadResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "Payload already deactivated",
-		0x81: "Payload type is disabled",
-	}
-}
-
 func (res *DeactivatePayloadResponse) Format() string {
 	return ""
 }

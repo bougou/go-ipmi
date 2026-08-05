@@ -28,10 +28,6 @@ func (res *CommandGetSupermicroBiosVersionResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *CommandGetSupermicroBiosVersionResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *CommandGetSupermicroBiosVersionResponse) Format() string {
 	return "" +
 		fmt.Sprintf("bios.version = %s\n", res.Version)

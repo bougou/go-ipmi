@@ -43,10 +43,6 @@ func (req *ChassisControlRequest) Command() types.Command {
 	return types.CommandChassisControl
 }
 
-func (res *ChassisControlResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *ChassisControlResponse) Unpack(msg []byte) error {
 	return nil
 }

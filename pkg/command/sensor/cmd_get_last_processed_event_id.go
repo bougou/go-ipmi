@@ -40,12 +40,6 @@ func (res *GetLastProcessedEventIdResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetLastProcessedEventIdResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x81: "cannot execute command, SEL erase in progress",
-	}
-}
-
 func (res *GetLastProcessedEventIdResponse) Format() string {
 	return "" +
 		fmt.Sprintf("Last SEL addition     : %s\n", res.MostRecentAdditionTime.String()) +

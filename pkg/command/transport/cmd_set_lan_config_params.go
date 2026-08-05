@@ -29,15 +29,6 @@ func (req *SetLanConfigParamRequest) Command() types.Command {
 	return types.CommandSetLanConfigParam
 }
 
-func (res *SetLanConfigParamResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "parameter not supported.",
-		0x81: "attempt to set the 'set in progress' value (in parameter #0) when not in the 'set complete' state.",
-		0x82: "attempt to write read-only parameter",
-		0x83: "attempt to read write-only parameter",
-	}
-}
-
 func (res *SetLanConfigParamResponse) Unpack(msg []byte) error {
 	return nil
 }

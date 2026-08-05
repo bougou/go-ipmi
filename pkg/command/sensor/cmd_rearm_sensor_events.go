@@ -112,10 +112,6 @@ func (res *RearmSensorEventsResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *RearmSensorEventsResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *RearmSensorEventsResponse) Format() string {
 	return ""
 }

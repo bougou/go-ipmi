@@ -36,10 +36,6 @@ func (req *GetChassisCapabilitiesRequest) Command() types.Command {
 	return types.CommandGetChassisCapabilities
 }
 
-func (res *GetChassisCapabilitiesResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetChassisCapabilitiesResponse) Unpack(msg []byte) error {
 	if len(msg) < 5 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 5)

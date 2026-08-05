@@ -32,12 +32,6 @@ func (res *ReadEventMessageBufferResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*ReadEventMessageBufferResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: " data not available (queue / buffer empty)",
-	}
-}
-
 func (res *ReadEventMessageBufferResponse) Format() string {
 	return ""
 }

@@ -45,10 +45,6 @@ func (req *SetChassisCapabilitiesRequest) Command() types.Command {
 	return types.CommandSetChassisCapabilities
 }
 
-func (res *SetChassisCapabilitiesResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetChassisCapabilitiesResponse) Unpack(msg []byte) error {
 	return nil
 }

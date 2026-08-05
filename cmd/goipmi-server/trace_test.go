@@ -33,7 +33,7 @@ func TestTraceLineNamesTheCommand(t *testing.T) {
 				User:    &bmc.User{Name: "ADMIN"},
 			},
 			cc:   types.CodeOK,
-			want: []string{`"Chassis Control"`, "netfn=0x00", "cmd=0x02", "user=ADMIN", "priv=ADMINISTRATOR", "cc=0x00"},
+			want: []string{`"Chassis Control"`, "netfn=0x00", "cmd=0x02", "user=ADMIN", "priv=ADMINISTRATOR", "cc=0x00", "Command completed normally"},
 		},
 		{
 			name: "unregistered command still reports its numbers",
@@ -44,7 +44,25 @@ func TestTraceLineNamesTheCommand(t *testing.T) {
 			},
 			cc:   types.CodeInvalidCommand,
 			err:  errors.New("no handler for netFn=0x2c cmd=0x3e"),
-			want: []string{"<unregistered>", "netfn=0x2c", "cmd=0x3e", "cc=0xc1", "err=no handler for netFn=0x2c cmd=0x3e"},
+			want: []string{"<unregistered>", "netfn=0x2c", "cmd=0x3e", "cc=0xc1", "Invalid command", "err=no handler for netFn=0x2c cmd=0x3e"},
+		},
+		{
+			name: "command-specific completion code is named without a Response",
+			hctx: &handlers.HandlerContext{
+				Command: types.CommandSetUserPassword,
+				Session: &bmc.Session{PrivilegeLevel: bmc.PrivilegeLevelAdministrator},
+				User:    &bmc.User{Name: "ADMIN"},
+			},
+			cc:   0x81,
+			want: []string{`"Set User Password Command"`, "cc=0x81", "Password test failed. Wrong password size was used"},
+		},
+		{
+			name: "Name-less command key still resolves command-specific codes",
+			hctx: &handlers.HandlerContext{
+				Command: types.Command{ID: types.CommandCloseSession.ID, NetFn: types.CommandCloseSession.NetFn},
+			},
+			cc:   0x87,
+			want: []string{"<unregistered>", "cc=0x87", "Invalid Session ID in request"},
 		},
 		{
 			name: "pre-session command has neither user nor privilege",

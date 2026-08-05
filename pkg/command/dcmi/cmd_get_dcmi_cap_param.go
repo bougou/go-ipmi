@@ -43,10 +43,6 @@ func (req *GetDCMICapParamRequest) Command() types.Command {
 	return types.CommandGetDCMICapParam
 }
 
-func (res *GetDCMICapParamResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetDCMICapParamResponse) Pack() []byte {
 	out := make([]byte, 4+len(res.ParamData))
 

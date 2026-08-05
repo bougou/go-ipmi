@@ -31,13 +31,6 @@ func (res *AddSELEntryResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *AddSELEntryResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "operation not supported for this Record Type",
-		0x81: "cannot execute command, SEL erase in progress",
-	}
-}
-
 func (res *AddSELEntryResponse) Format() string {
 	return fmt.Sprintf("Record ID : %d (%#02x)", res.RecordID, res.RecordID)
 }

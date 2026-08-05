@@ -141,10 +141,6 @@ func (res *RAKPMessage2) Pack() []byte {
 	return out
 }
 
-func (*RAKPMessage2) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *RAKPMessage2) Format() string {
 	return fmt.Sprintf("%v", res)
 }

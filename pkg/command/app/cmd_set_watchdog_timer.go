@@ -52,11 +52,6 @@ func (res *SetWatchdogTimerResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *SetWatchdogTimerResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *SetWatchdogTimerResponse) Format() string {
 	return ""
 }

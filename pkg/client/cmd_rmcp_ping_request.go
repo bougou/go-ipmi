@@ -57,11 +57,6 @@ func (res *RmcpPingResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *RmcpPingResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *RmcpPingResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }

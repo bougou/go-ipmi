@@ -35,10 +35,6 @@ func (res *CommandRawResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *CommandRawResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *CommandRawResponse) Format() string {
 	// convert the byte array to a slice of hex strings
 	hexStrings := make([]string, len(res.Response))

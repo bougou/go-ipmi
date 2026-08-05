@@ -29,12 +29,6 @@ func (req *GetDCMIPowerLimitRequest) Command() types.Command {
 	return types.CommandGetDCMIPowerLimit
 }
 
-func (res *GetDCMIPowerLimitResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "No Active Set Power Limit",
-	}
-}
-
 func (res *GetDCMIPowerLimitResponse) Unpack(msg []byte) error {
 	if len(msg) < 14 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 14)

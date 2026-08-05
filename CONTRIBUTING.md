@@ -60,8 +60,6 @@ type Request interface {
 type Response interface {
 	// Unpack decodes the object from data bytes
 	Unpack(data []byte) error
-	// CompletionCodes returns a map of command-specific completion codes
-	CompletionCodes() map[uint8]string
 	// Format return a formatted human friendly string
 	Format() string
 }
@@ -72,4 +70,11 @@ type Response interface {
 ## IPMI Command Response
 
 - Define necessary fields per IPMI specification, but DO NOT define the completion code field in the Response struct.
-- If there are no command-specific completion codes, just return an empty map for the `CompletionCodes()` method.
+- Command-specific completion codes (80h–BEh) are **not** methods on Response. They live in a single table in
+  `pkg/types/types_completion_code.go`, keyed by `Command.Key()` (NetFn + Cmd, without Name).
+- When adding a command that the IPMI/DCMI/FRU specs define command-specific completion codes for, add those
+  entries to that table (reuse shared maps such as `paramConfigSetCC` / `selEraseCC` when the wording matches).
+  Commands with only generic codes need no table entry.
+- To name a code at runtime, call `StrCC(cmd, ccode)` (also `AllCC(cmd)` / `CommandSpecificCC(cmd)`).
+  Prefer `request.Command()` as the identity: it is what was sent on the wire.
+  These helpers are available on the root package and as `types.StrCC` / etc.

@@ -61,11 +61,6 @@ func (res *GetSDRResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *GetSDRResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *GetSDRResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }

@@ -52,10 +52,6 @@ func (req *GetDCMIPowerReadingRequest) Command() types.Command {
 	return types.CommandGetDCMIPowerReading
 }
 
-func (res *GetDCMIPowerReadingResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetDCMIPowerReadingResponse) Unpack(msg []byte) error {
 	if len(msg) < 18 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 19)

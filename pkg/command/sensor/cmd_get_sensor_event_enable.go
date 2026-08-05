@@ -110,10 +110,6 @@ func (res *GetSensorEventEnableResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetSensorEventEnableResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetSensorEventEnableResponse) Format() string {
 	all := res.SensorEventFlag.TrueEvents()
 	asserted := types.SensorEvents(all).FilterAssert()

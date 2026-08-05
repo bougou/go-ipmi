@@ -51,13 +51,6 @@ func (res *SetCommandEnablesResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*SetCommandEnablesResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{
-		0x80: "attempt to enable an unsupported or un-configurable command",
-	}
-}
-
 func (res *SetCommandEnablesResponse) Format() string {
 	return ""
 }

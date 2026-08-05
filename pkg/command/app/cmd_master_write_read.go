@@ -56,15 +56,6 @@ func (res *MasterWriteReadResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*MasterWriteReadResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x81: "Lost Arbitration",
-		0x82: "Bus Error",
-		0x83: "NAK on Write",
-		0x84: "Truncated Read",
-	}
-}
-
 func (res *MasterWriteReadResponse) Format() string {
 	return ""
 }

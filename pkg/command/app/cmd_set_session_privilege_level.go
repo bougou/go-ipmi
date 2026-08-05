@@ -34,14 +34,6 @@ func (res *SetSessionPrivilegeLevelResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*SetSessionPrivilegeLevelResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "Requested level not available for this user",
-		0x81: "Requested level exceeds Channel and/or User Privilege Limit",
-		0x82: "Cannot disable User Level authentication",
-	}
-}
-
 func (res *SetSessionPrivilegeLevelResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }

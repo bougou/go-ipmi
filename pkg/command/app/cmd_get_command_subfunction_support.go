@@ -69,11 +69,6 @@ func (res *GetCommandSubfunctionSupportResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*GetCommandSubfunctionSupportResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *GetCommandSubfunctionSupportResponse) Format() string {
 	// Todo
 	return ""

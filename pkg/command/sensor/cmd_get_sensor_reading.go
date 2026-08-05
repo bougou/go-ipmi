@@ -105,11 +105,6 @@ func (res *GetSensorReadingResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetSensorReadingResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (r *GetSensorReadingResponse) ThresholdStatus() types.SensorThresholdStatus {
 	if r.Above_UCR {
 		return types.SensorThresholdStatus_UCR

@@ -39,10 +39,6 @@ func (req *GetUserPayloadAccessRequest) Command() types.Command {
 	return types.CommandGetUserPayloadAccess
 }
 
-func (res *GetUserPayloadAccessResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetUserPayloadAccessResponse) Unpack(msg []byte) error {
 	if len(msg) < 4 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 4)

@@ -42,10 +42,6 @@ func (req *GetIPStatisticsRequest) Command() types.Command {
 	return types.CommandGetIPStatistics
 }
 
-func (res *GetIPStatisticsResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetIPStatisticsResponse) Unpack(msg []byte) error {
 	if len(msg) < 18 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 18)

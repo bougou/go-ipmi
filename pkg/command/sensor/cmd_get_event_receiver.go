@@ -21,10 +21,6 @@ func (req *GetEventReceiverRequest) Command() types.Command {
 	return types.CommandGetEventReceiver
 }
 
-func (res *GetEventReceiverResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetEventReceiverResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 2)

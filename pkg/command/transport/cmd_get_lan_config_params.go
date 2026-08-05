@@ -32,12 +32,6 @@ func (req *GetLanConfigParamRequest) Command() types.Command {
 	return types.CommandGetLanConfigParam
 }
 
-func (res *GetLanConfigParamResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "parameter not supported.",
-	}
-}
-
 func (res *GetLanConfigParamResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 1)

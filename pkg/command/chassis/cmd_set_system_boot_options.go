@@ -44,14 +44,6 @@ func (req *SetSystemBootOptionsParamRequest) Command() types.Command {
 	return types.CommandSetSystemBootOptions
 }
 
-func (res *SetSystemBootOptionsParamResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "parameter not supported",
-		0x81: "attempt to set the 'set in progress' value (in parameter #0) when not in the 'set complete' state. (This completion code provides a way to recognize that another party has already 'claimed' the parameters)",
-		0x82: "attempt to write read-only parameter",
-	}
-}
-
 func (res *SetSystemBootOptionsParamResponse) Unpack(msg []byte) error {
 	return nil
 }

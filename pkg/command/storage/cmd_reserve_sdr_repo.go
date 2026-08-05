@@ -36,10 +36,6 @@ func (res *ReserveSDRRepoResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *ReserveSDRRepoResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *ReserveSDRRepoResponse) Format() string {
 	return ""
 }

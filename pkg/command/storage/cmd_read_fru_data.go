@@ -59,12 +59,6 @@ func (res *ReadFRUDataResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *ReadFRUDataResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x81: "FRU device busy",
-	}
-}
-
 func (res *ReadFRUDataResponse) Format() string {
 	return "" +
 		fmt.Sprintf("Count returned : %d\n", res.CountReturned) +

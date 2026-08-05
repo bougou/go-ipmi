@@ -51,13 +51,6 @@ func (res *SetSensorReadingAndEventStatusResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *SetSensorReadingAndEventStatusResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "Attempt to change reading or set or clear status bits that are not settable via this command",
-		0x81: "Attempted to set Event Data Bytes, but setting Event Data Bytes is not supported for this sensor.",
-	}
-}
-
 func (res *SetSensorReadingAndEventStatusResponse) Format() string {
 	return ""
 }

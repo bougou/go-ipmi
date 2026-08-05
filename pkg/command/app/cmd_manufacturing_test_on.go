@@ -21,10 +21,6 @@ func (req *ManufacturingTestOnRequest) Pack() []byte {
 	return []byte{}
 }
 
-func (res *ManufacturingTestOnResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *ManufacturingTestOnResponse) Unpack(msg []byte) error {
 	return nil
 }

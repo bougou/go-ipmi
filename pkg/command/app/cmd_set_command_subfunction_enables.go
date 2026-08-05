@@ -76,13 +76,6 @@ func (res *SetCommandSubfunctionEnablesResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*SetCommandSubfunctionEnablesResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{
-		0x80: "attempt to enable an unsupported or un-configurable sub-function.",
-	}
-}
-
 func (res *SetCommandSubfunctionEnablesResponse) Format() string {
 	return ""
 }

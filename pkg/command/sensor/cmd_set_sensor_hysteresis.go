@@ -32,10 +32,6 @@ func (res *SetSensorHysteresisResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *SetSensorHysteresisResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetSensorHysteresisResponse) Format() string {
 	return ""
 }

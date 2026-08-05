@@ -125,10 +125,6 @@ func (res *SetSensorEventEnableResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *SetSensorEventEnableResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetSensorEventEnableResponse) Format() string {
 	return ""
 }

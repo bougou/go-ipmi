@@ -41,13 +41,6 @@ func (res *WriteFRUDataResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *WriteFRUDataResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "write-protected offset",
-		0x81: "FRU device busy",
-	}
-}
-
 func (res *WriteFRUDataResponse) Format() string {
 	return fmt.Sprintf("Count written : %d", res.CountWritten)
 }

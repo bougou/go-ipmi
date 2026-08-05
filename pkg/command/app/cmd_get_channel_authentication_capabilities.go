@@ -144,11 +144,6 @@ func (res *GetChannelAuthenticationCapabilitiesResponse) Unpack(msg []byte) erro
 	return nil
 }
 
-func (*GetChannelAuthenticationCapabilitiesResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *GetChannelAuthenticationCapabilitiesResponse) ChooseAuthType() types.AuthType {
 	// Prefer MD5 over MD2 when both are available, matching ipmitool behaviour
 	// (password supplied → use MD5 if supported).

@@ -37,10 +37,6 @@ func (res *GetSensorHysteresisResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetSensorHysteresisResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetSensorHysteresisResponse) Format() string {
 	return "" +
 		fmt.Sprintf("Positive Hysteresis : %d\n", res.PositiveRaw) +

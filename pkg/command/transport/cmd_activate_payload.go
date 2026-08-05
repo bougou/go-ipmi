@@ -89,16 +89,6 @@ func (res *ActivatePayloadResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*ActivatePayloadResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "Payload already active on another session",
-		0x81: "Payload type is disabled",
-		0x82: "Payload activation limit reached",
-		0x83: "Cannot activate payload with encryption",
-		0x84: "Cannot activate payload without encryption",
-	}
-}
-
 func (res *ActivatePayloadResponse) Format() string {
 	return ""
 }

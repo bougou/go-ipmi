@@ -36,12 +36,6 @@ func (req *GetDCMITemperatureReadingsRequest) Command() types.Command {
 	return types.CommandGetDCMITemperatureReadings
 }
 
-func (res *GetDCMITemperatureReadingsResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "No Active Set Power Limit",
-	}
-}
-
 func (res *GetDCMITemperatureReadingsResponse) Unpack(msg []byte) error {
 	if len(msg) < 3 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 3)

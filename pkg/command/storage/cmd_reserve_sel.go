@@ -29,13 +29,6 @@ func (res *ReserveSELResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*ReserveSELResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{
-		0x81: "cannot execute command, SEL erase in progress",
-	}
-}
-
 func (res *ReserveSELResponse) Format() string {
 	return ""
 }

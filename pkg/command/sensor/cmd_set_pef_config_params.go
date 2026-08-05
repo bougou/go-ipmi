@@ -35,16 +35,6 @@ func (res *SetPEFConfigParamResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *SetPEFConfigParamResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "parameter not supported",
-		// (This completion code provides a way to recognize that another party has already 'claimed' the parameters)"
-		0x81: "attempt to set the 'set in progress' value (in parameter #0) when not in the 'set complete' state.",
-		0x82: "attempt to write read-only parameter",
-		0x83: "attempt to read write-only parameter",
-	}
-}
-
 func (res *SetPEFConfigParamResponse) Format() string {
 	return ""
 }

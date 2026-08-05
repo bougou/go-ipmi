@@ -40,10 +40,6 @@ func (req *SetFrontPanelEnablesRequest) Command() types.Command {
 	return types.CommandSetFrontPanelEnables
 }
 
-func (res *SetFrontPanelEnablesResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetFrontPanelEnablesResponse) Unpack(msg []byte) error {
 	return nil
 }

@@ -99,7 +99,7 @@ func (c *Client) exchangeOpen(ctx context.Context, request types.Request, respon
 	if ccode != 0x00 {
 		return types.NewResponseError(
 			types.CompletionCode(ccode),
-			fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, types.StrCC(response, ccode)),
+			fmt.Sprintf("ipmiRes CompletionCode (%#02x) is not normal: %s", ccode, types.StrCC(request.Command(), ccode)),
 		)
 	}
 

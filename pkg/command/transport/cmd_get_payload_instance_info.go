@@ -35,10 +35,6 @@ func (req *GetPayloadInstanceInfoRequest) Command() types.Command {
 	return types.CommandGetPayloadInstanceInfo
 }
 
-func (res *GetPayloadInstanceInfoResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetPayloadInstanceInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 12 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 12)

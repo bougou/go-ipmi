@@ -142,10 +142,6 @@ func (res *OpenSessionResponse) Pack() []byte {
 	return out
 }
 
-func (*OpenSessionResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *OpenSessionResponse) Format() string {
 	return "" +
 		fmt.Sprintf("  Message tag                         : %#02x\n", res.MessageTag) +

@@ -73,10 +73,6 @@ func (res *GetDeviceSDRInfoResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetDeviceSDRInfoResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetDeviceSDRInfoResponse) Format() string {
 	return "" +
 		fmt.Sprintf("Count              : %d (%s)\n", res.Count, types.FormatBool(res.getSDRCount, "SDRs", "Sensors")) +

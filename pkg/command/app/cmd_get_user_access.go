@@ -59,10 +59,6 @@ func (req *GetUserAccessRequest) Pack() []byte {
 	return []byte{req.ChannelNumber, req.UserID}
 }
 
-func (res *GetUserAccessResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetUserAccessResponse) Unpack(msg []byte) error {
 	if len(msg) < 4 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 4)

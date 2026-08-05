@@ -24,10 +24,6 @@ func (req *GetUsernameRequest) Pack() []byte {
 	return []byte{req.UserID}
 }
 
-func (res *GetUsernameResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetUsernameResponse) Unpack(msg []byte) error {
 	if len(msg) < 16 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 16)

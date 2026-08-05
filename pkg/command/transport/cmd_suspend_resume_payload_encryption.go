@@ -34,10 +34,6 @@ func (req *SuspendResumePayloadEncryptionRequest) Command() types.Command {
 	return types.CommandSuspendResumePayloadEncryption
 }
 
-func (res *SuspendResumePayloadEncryptionResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SuspendResumePayloadEncryptionResponse) Unpack(msg []byte) error {
 	return nil
 }

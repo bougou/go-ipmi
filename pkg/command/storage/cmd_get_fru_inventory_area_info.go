@@ -54,10 +54,6 @@ func (res *GetFRUInventoryAreaInfoResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetFRUInventoryAreaInfoResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetFRUInventoryAreaInfoResponse) Format() string {
 	return fmt.Sprintf("FRU size = %d bytes (accessed by %s)\n",
 		res.AreaSizeBytes, types.FormatBool(res.DeviceAccessedByWords, "words", "bytes"))

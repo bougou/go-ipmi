@@ -43,12 +43,6 @@ func (res *GetDeviceSDRResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetDeviceSDRResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "record changed",
-	}
-}
-
 func (res *GetDeviceSDRResponse) Format() string {
 	return ""
 }

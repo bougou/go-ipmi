@@ -26,12 +26,6 @@ func (req *GetChannelPayloadVersionRequest) Command() types.Command {
 	return types.CommandGetChannelPayloadVersion
 }
 
-func (res *GetChannelPayloadVersionResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "Payload type not available on given channel",
-	}
-}
-
 func (res *GetChannelPayloadVersionResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 1)

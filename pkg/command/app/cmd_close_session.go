@@ -34,13 +34,6 @@ func (res *CloseSessionResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *CloseSessionResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x87: "Invalid session id",
-		0x88: "Invalid session handle",
-	}
-}
-
 func (res *CloseSessionResponse) Format() string {
 	return ""
 }

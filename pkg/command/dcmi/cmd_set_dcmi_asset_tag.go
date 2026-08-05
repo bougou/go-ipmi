@@ -44,10 +44,6 @@ func (req *SetDCMIAssetTagRequest) Command() types.Command {
 	return types.CommandSetDCMIAssetTag
 }
 
-func (res *SetDCMIAssetTagResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetDCMIAssetTagResponse) Unpack(msg []byte) error {
 	if len(msg) < 2 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 2)

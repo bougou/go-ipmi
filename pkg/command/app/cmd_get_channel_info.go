@@ -62,10 +62,6 @@ func (req *GetChannelInfoRequest) Command() types.Command {
 	return types.CommandGetChannelInfo
 }
 
-func (res *GetChannelInfoResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetChannelInfoResponse) Unpack(msg []byte) error {
 	if len(msg) < 9 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 9)

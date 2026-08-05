@@ -50,10 +50,6 @@ func (res *ArmPEFPostponeTimerResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *ArmPEFPostponeTimerResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *ArmPEFPostponeTimerResponse) Format() string {
 	return "" +
 		fmt.Sprintf("Present timer countdown value : %d (%#02x)\n", res.PresentValue, res.PresentValue)

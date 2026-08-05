@@ -25,10 +25,6 @@ func (req *ActivateDCMIPowerLimitRequest) Command() types.Command {
 	return types.CommandActivateDCMIPowerLimit
 }
 
-func (res *ActivateDCMIPowerLimitResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *ActivateDCMIPowerLimitResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 1)

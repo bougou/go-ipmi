@@ -39,12 +39,6 @@ func (req *GetSystemBootOptionsParamRequest) Command() types.Command {
 	return types.CommandGetSystemBootOptions
 }
 
-func (res *GetSystemBootOptionsParamResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "parameter not supported",
-	}
-}
-
 func (res *GetSystemBootOptionsParamResponse) Unpack(msg []byte) error {
 	if len(msg) < 3 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 3)

@@ -56,10 +56,6 @@ func (res *GetPEFCapabilitiesResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetPEFCapabilitiesResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetPEFCapabilitiesResponse) Format() string {
 	return "" +
 		fmt.Sprintf("PEF Version                  : %#2x\n", res.PEFVersion) +

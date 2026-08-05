@@ -50,12 +50,6 @@ func (res *GetSELEntryResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (*GetSELEntryResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x81: "cannot execute command, SEL erase in progress",
-	}
-}
-
 func (res *GetSELEntryResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }

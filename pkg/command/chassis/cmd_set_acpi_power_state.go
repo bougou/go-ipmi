@@ -112,10 +112,6 @@ func (req *SetACPIPowerStateRequest) Command() types.Command {
 	return types.CommandSetACPIPowerState
 }
 
-func (res *SetACPIPowerStateResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetACPIPowerStateResponse) Unpack(msg []byte) error {
 	return nil
 }

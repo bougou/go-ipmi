@@ -82,16 +82,6 @@ func (req *SetChannelSecurityKeysRequest) Command() types.Command {
 	return types.CommandSetChannelSecurityKeys
 }
 
-func (res *SetChannelSecurityKeysResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "Cannot perform set / confirm. Key is locked",
-		0x81: "insufficient key bytes",
-		0x82: "too many key bytes",
-		0x83: "key value does not meet criteria for specified type of key",
-		0x84: "KR is not used.",
-	}
-}
-
 func (res *SetChannelSecurityKeysResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 1)

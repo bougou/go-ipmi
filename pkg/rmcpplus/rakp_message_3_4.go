@@ -84,10 +84,6 @@ func (res *RAKPMessage4) Pack() []byte {
 	return out
 }
 
-func (*RAKPMessage4) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *RAKPMessage4) Format() string {
 	return fmt.Sprintf("%v", res)
 }

@@ -49,10 +49,6 @@ func (res *GetSDRRepoAllocInfoResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *GetSDRRepoAllocInfoResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetSDRRepoAllocInfoResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }

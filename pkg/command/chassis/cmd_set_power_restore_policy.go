@@ -27,10 +27,6 @@ func (req *SetPowerRestorePolicyRequest) Command() types.Command {
 	return types.CommandSetPowerRestorePolicy
 }
 
-func (res *SetPowerRestorePolicyResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetPowerRestorePolicyResponse) Unpack(msg []byte) error {
 	if len(msg) < 1 {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 1)

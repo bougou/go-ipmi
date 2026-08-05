@@ -26,15 +26,6 @@ func (req *SetSOLConfigParamRequest) Pack() []byte {
 	return out
 }
 
-func (res *SetSOLConfigParamResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x80: "parameter not supported",
-		0x81: "attempt to set the 'set in progress' value",
-		0x82: "attempt to write read-only parameter",
-		0x83: "attempt to read write-only parameter",
-	}
-}
-
 func (res *SetSOLConfigParamResponse) Unpack(msg []byte) error {
 	return nil
 }

@@ -31,11 +31,6 @@ func (res *SetSELTimeUTCOffsetResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *SetSELTimeUTCOffsetResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{}
-}
-
 func (res *SetSELTimeUTCOffsetResponse) Format() string {
 	return ""
 }

@@ -87,10 +87,6 @@ func (res *SetSensorThresholdsResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *SetSensorThresholdsResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *SetSensorThresholdsResponse) Format() string {
 	return ""
 }

@@ -54,13 +54,6 @@ func (req *SetChannelAccessRequest) Command() types.Command {
 	return types.CommandSetChannelAccess
 }
 
-func (res *SetChannelAccessResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x82: "set not supported on selected channel (e.g. channel is session-less.)",
-		0x83: "access mode not supported",
-	}
-}
-
 func (res *SetChannelAccessResponse) Unpack(msg []byte) error {
 	return nil
 }

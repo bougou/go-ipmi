@@ -24,13 +24,6 @@ func (res *ResetWatchdogTimerResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *ResetWatchdogTimerResponse) CompletionCodes() map[uint8]string {
-	// no command-specific cc
-	return map[uint8]string{
-		0x80: "Attempt to start un-initialized watchdog",
-	}
-}
-
 func (res *ResetWatchdogTimerResponse) Format() string {
 	return ""
 }

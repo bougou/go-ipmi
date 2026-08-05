@@ -38,10 +38,6 @@ func (res *GetSELAllocInfoResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (res *GetSELAllocInfoResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetSELAllocInfoResponse) Format() string {
 	return "" +
 		fmt.Sprintf("# of Alloc Units : %d\n", res.PossibleAllocUnits) +

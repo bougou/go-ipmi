@@ -102,22 +102,6 @@ func (res *ActivateSessionResponse) Unpack(data []byte) error {
 	return nil
 }
 
-func (*ActivateSessionResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{
-		0x81: "No session slot available (BMC cannot accept any more sessions)",
-		0x82: "No slot available for given user. (Limit of user sessions allowed under that name has been reached)",
-		// (An implementation may only be able to support a certain number of
-		// sessions based on what authentication resources are required. For
-		// example, if User Level Authentication is disabled, an implementation
-		// may be able to allow a larger number of users that are limited to User
-		// Level privilege, than users that require higher privilege.)
-		0x83: "No slot available to support user due to maximum privilege capability",
-		0x84: "session sequence number out-of-range",
-		0x85: "invalid Session ID in request",
-		0x86: "requested maximum privilege level exceeds user and/or channel privilege limit",
-	}
-}
-
 func (res *ActivateSessionResponse) Format() string {
 	return fmt.Sprintf("%v", res)
 }

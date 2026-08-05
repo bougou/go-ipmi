@@ -37,10 +37,6 @@ func (res *GetSensorTypeResponse) Unpack(msg []byte) error {
 	return nil
 }
 
-func (r *GetSensorTypeResponse) CompletionCodes() map[uint8]string {
-	return map[uint8]string{}
-}
-
 func (res *GetSensorTypeResponse) Format() string {
 	return "" +
 		fmt.Sprintf("Sensor Type        : %s\n", res.SensorType) +
