@@ -11,6 +11,10 @@ import (
 
 // ValidateRAKP2 validates RAKP Message 2 returned by BMC.
 func (c *Client) ValidateRAKP2(ctx context.Context, rakp2 *rmcpplus.RAKPMessage2) (bool, error) {
+	if rakp2.RmcpStatusCode != types.RmcpStatusCodeNoErrors {
+		return false, types.NewRmcpStatusError(rakp2.RmcpStatusCode)
+	}
+
 	if c.session.v20.consoleSessionID != rakp2.RemoteConsoleSessionID {
 		return false, fmt.Errorf("session id not matched, cached console session id: %x, rakp2 returned session id: %x", c.session.v20.consoleSessionID, rakp2.RemoteConsoleSessionID)
 	}
@@ -23,7 +27,7 @@ func (c *Client) ValidateRAKP2(ctx context.Context, rakp2 *rmcpplus.RAKPMessage2
 	c.DebugBytes("rakp2 returned auth code", rakp2.KeyExchangeAuthenticationCode, 16)
 
 	if !isByteSliceEqual(authcode, rakp2.KeyExchangeAuthenticationCode) {
-		return false, fmt.Errorf("rakp2 authcode not equal, console: %x, bmc: %x", authcode, rakp2.KeyExchangeAuthenticationCode)
+		return false, fmt.Errorf("RAKP2 authentication code mismatch: %w", ErrRAKPAuthentication)
 	}
 	return true, nil
 }

@@ -10,6 +10,25 @@ var (
 	ErrDCMIGroupExtensionIDMismatch = errors.New("DCMI group extension ID mismatch")
 )
 
+// RmcpStatusError reports a non-zero RMCP+ Open Session or RAKP status code.
+type RmcpStatusError struct {
+	statusCode RmcpStatusCode
+}
+
+func (e *RmcpStatusError) Error() string {
+	return fmt.Sprintf("RMCP+ status %#02x: %s", uint8(e.statusCode), e.statusCode)
+}
+
+// StatusCode returns the RMCP+ status code reported by the BMC.
+func (e *RmcpStatusError) StatusCode() RmcpStatusCode {
+	return e.statusCode
+}
+
+// NewRmcpStatusError creates an error for a non-zero RMCP+ status code.
+func NewRmcpStatusError(statusCode RmcpStatusCode) *RmcpStatusError {
+	return &RmcpStatusError{statusCode: statusCode}
+}
+
 func ErrUnpackedDataTooShortWith(actual int, expected int) error {
 	return fmt.Errorf("%w (%d/%d)", ErrUnpackedDataTooShort, actual, expected)
 }

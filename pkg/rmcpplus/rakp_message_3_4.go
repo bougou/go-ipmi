@@ -60,15 +60,26 @@ func (req *RAKPMessage3) Unpack(msg []byte, authAlg types.AuthAlg) error {
 }
 
 func (res *RAKPMessage4) Unpack(msg []byte) error {
-	authCodeLen := crypto.RAKP4ICVLen(res.AuthAlg)
-	if len(msg) < 8+authCodeLen {
-		return types.ErrUnpackedDataTooShortWith(len(msg), 8+authCodeLen)
+	// Error responses contain only the eight-byte fixed portion. Validate and decode it first.
+	// Only successful responses are required to include an integrity check value.
+	if len(msg) < 8 {
+		return types.ErrUnpackedDataTooShortWith(len(msg), 8)
 	}
 
 	res.MessageTag, _, _ = types.UnpackUint8(msg, 0)
 	b1, _, _ := types.UnpackUint8(msg, 1)
 	res.RmcpStatusCode = types.RmcpStatusCode(b1)
 	res.MgmtConsoleSessionID, _, _ = types.UnpackUint32L(msg, 4)
+	if res.RmcpStatusCode != types.RmcpStatusCodeNoErrors {
+		// A non-zero status is a valid short RAKP4 response. Preserve the decoded status so
+		// Client.ValidateRAKP4 can return it as a typed RmcpStatusError.
+		return nil
+	}
+
+	authCodeLen := crypto.RAKP4ICVLen(res.AuthAlg)
+	if len(msg) < 8+authCodeLen {
+		return types.ErrUnpackedDataTooShortWith(len(msg), 8+authCodeLen)
+	}
 	res.IntegrityCheckValue, _, _ = types.UnpackBytes(msg, 8, authCodeLen)
 	return nil
 }

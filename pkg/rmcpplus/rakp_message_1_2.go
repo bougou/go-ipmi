@@ -103,7 +103,9 @@ func (res *RAKPMessage2) Unpack(msg []byte) error {
 	res.RemoteConsoleSessionID, _, _ = types.UnpackUint32L(msg, 4)
 
 	if res.RmcpStatusCode != types.RmcpStatusCodeNoErrors {
-		return fmt.Errorf("the return status of rakp2 has error: %v", res.RmcpStatusCode)
+		// A non-zero status is a valid short RAKP2 response. Preserve the decoded status so
+		// Client.ValidateRAKP2 can return it as a typed RmcpStatusError.
+		return nil
 	}
 
 	if len(msg) < 40 {

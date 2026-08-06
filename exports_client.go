@@ -30,6 +30,7 @@ const (
 
 var (
 	ErrDCMIGroupExtensionIDMismatch = types.ErrDCMIGroupExtensionIDMismatch
+	ErrRAKPAuthentication           = client.ErrRAKPAuthentication
 	ErrUnpackedDataTooShort         = types.ErrUnpackedDataTooShort
 )
 
