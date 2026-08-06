@@ -49,8 +49,7 @@ func (c *Client) OpenSession(ctx context.Context) (response *rmcpplus.OpenSessio
 	c.Debug("OPEN SESSION RESPONSE", response.Format())
 
 	if response.RmcpStatusCode != types.RmcpStatusCodeNoErrors {
-		err = fmt.Errorf("rakp status code error: (%#02x) %s", uint8(response.RmcpStatusCode), response.RmcpStatusCode)
-		return
+		return response, types.NewRmcpStatusError(response.RmcpStatusCode)
 	}
 
 	c.session.v20.state = types.SessionStateOpenSessionReceived

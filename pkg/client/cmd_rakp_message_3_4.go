@@ -64,7 +64,7 @@ func (c *Client) RAKPMessage3(ctx context.Context) (response *rmcpplus.RAKPMessa
 
 func (c *Client) ValidateRAKP4(ctx context.Context, response *rmcpplus.RAKPMessage4) (bool, error) {
 	if response.RmcpStatusCode != types.RmcpStatusCodeNoErrors {
-		return false, fmt.Errorf("rakp4 status code not ok, %x", response.RmcpStatusCode)
+		return false, types.NewRmcpStatusError(response.RmcpStatusCode)
 	}
 	if c.session.v20.consoleSessionID != response.MgmtConsoleSessionID {
 		return false, fmt.Errorf("session not activated")
@@ -79,7 +79,7 @@ func (c *Client) ValidateRAKP4(ctx context.Context, response *rmcpplus.RAKPMessa
 	c.DebugBytes("rakp4 bmc returned authcode", response.IntegrityCheckValue, 16)
 
 	if !isByteSliceEqual(response.IntegrityCheckValue, authCode) {
-		return false, fmt.Errorf("rakp4 returned integrity check not passed, console mac %0x, bmc mac: %0x", authCode, response.IntegrityCheckValue)
+		return false, fmt.Errorf("RAKP4 integrity check value does not match: %w", ErrRAKPAuthentication)
 	}
 	return true, nil
 }

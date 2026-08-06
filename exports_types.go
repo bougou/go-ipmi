@@ -1170,6 +1170,7 @@ type (
 	Rmcp                                                 = types.Rmcp
 	RmcpAckMessage                                       = types.RmcpAckMessage
 	RmcpHeader                                           = types.RmcpHeader
+	RmcpStatusError                                      = types.RmcpStatusError
 	RmcpStatusCode                                       = types.RmcpStatusCode
 	SDR                                                  = types.SDR
 	SDRBMCChannelInfo                                    = types.SDRBMCChannelInfo
@@ -1304,6 +1305,7 @@ var (
 	NewResponseError           = types.NewResponseError
 	NewRmcpHeader              = types.NewRmcpHeader
 	NewRmcpHeaderASF           = types.NewRmcpHeaderASF
+	NewRmcpStatusError         = types.NewRmcpStatusError
 	OneSComplement             = types.OneSComplement
 	OneSComplementEncode       = types.OneSComplementEncode
 	PackBytes                  = types.PackBytes
