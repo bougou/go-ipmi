@@ -319,9 +319,8 @@ func (c *Client) Connect15(ctx context.Context) error {
 		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %w", c.maxPrivilegeLevel, err)
 	}
 
-	go func() {
-		c.keepSessionAlive(ctx, DefaultKeepAliveIntervalSec)
-	}()
+	// The Connect context bounds setup. Client.Close owns the established session lifetime.
+	go c.keepSessionAlive(context.WithoutCancel(ctx), DefaultKeepAliveIntervalSec)
 
 	return nil
 
@@ -407,9 +406,8 @@ func (c *Client) Connect20(ctx context.Context) error {
 		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %w", c.maxPrivilegeLevel, err)
 	}
 
-	go func() {
-		c.keepSessionAlive(ctx, DefaultKeepAliveIntervalSec)
-	}()
+	// The Connect context bounds setup. Client.Close owns the established session lifetime.
+	go c.keepSessionAlive(context.WithoutCancel(ctx), DefaultKeepAliveIntervalSec)
 
 	return nil
 }
