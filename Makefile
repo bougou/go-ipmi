@@ -35,6 +35,8 @@ build-all: fmt vet
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -a -o $(OUTPUT_DIR)/goipmi-$(APP_VERSION)-linux-arm64 ./cmd/goipmi
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -a -o $(OUTPUT_DIR)/goipmi-$(APP_VERSION)-darwin-amd64 ./cmd/goipmi
 	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -a -o $(OUTPUT_DIR)/goipmi-$(APP_VERSION)-darwin-arm64 ./cmd/goipmi
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -a -o $(OUTPUT_DIR)/goipmi-$(APP_VERSION)-windows-amd64.exe ./cmd/goipmi
+	CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -a -o $(OUTPUT_DIR)/goipmi-$(APP_VERSION)-windows-arm64.exe ./cmd/goipmi
 
 # Run go fmt against code
 fmt:

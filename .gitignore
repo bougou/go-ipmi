@@ -43,6 +43,15 @@ _output
 /_output/goipmi
 /_output/goipmi-server
 
+# local build artifacts under cmd/ (do not prefix with ./ — gitignore treats
+# the leading dot as a literal directory name and the pattern won't match)
+cmd/goipmi/goipmi
+cmd/goipmi/goipmi.exe
+cmd/testtools/
+
+# local dist/ output of cross-built binaries
+/dist/
+
 # asdf
 .tool-versions
 .claude

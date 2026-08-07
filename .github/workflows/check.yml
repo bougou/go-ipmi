@@ -8,8 +8,8 @@ on:
       - synchronize
 
 jobs:
-  fmt-vet:
-    name: gofmt & go vet
+  gofmt:
+    name: gofmt
     runs-on: ubuntu-latest
 
     steps:
@@ -25,5 +25,28 @@ jobs:
           make fmt
           git diff --exit-code
 
+  vet:
+    name: go vet (${{ matrix.goos }}/${{ matrix.goarch }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Vet platform-specific files (e.g. interface_system_windows.go,
+        # open/ioctl_windows.go) that the host-GOOS vet on linux would skip.
+        goos: [linux, windows, darwin]
+        goarch: [amd64]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
       - name: Run go vet
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
         run: make vet
