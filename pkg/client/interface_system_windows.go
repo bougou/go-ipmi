@@ -26,12 +26,20 @@ import (
 
 // winIPMIResponse mirrors the JSON emitted by the PowerShell helper script.
 type winIPMIResponse struct {
-	// CompletionCode is the driver/method level status of the WMI call
-	// (0 means the request was delivered). It is distinct from the IPMI
-	// completion code, which is the first byte of ResponseData.
+	// CompletionCode is the IPMI completion code returned by the BMC and
+	// propagated through the Microsoft_IPMI WMI provider. Per the WMI method
+	// documentation, RequestResponse's CompletionCode parameter is "the
+	// completion code that is returned by the BMC". 0x00 means the command
+	// completed normally; any non-zero value is a real IPMI completion code
+	// (generic per IPMI v2.0 §5.2, or command-specific per the command's
+	// spec section) and must be surfaced to callers as a ResponseError so
+	// that higher-level logic (e.g. GetUsers skipping empty slots on 0xCC)
+	// can react to it.
 	CompletionCode uint32 `json:"CompletionCode"`
-	// ResponseData is the comma separated list of response bytes. The first
-	// byte is the IPMI completion code.
+	// ResponseData is the comma separated list of response bytes. On success
+	// (CompletionCode == 0) the first byte is the IPMI completion code (0x00)
+	// followed by the command's response payload, matching the on-wire
+	// layout exchangeOpen expects.
 	ResponseData     string `json:"ResponseData"`
 	ResponseDataSize uint32 `json:"ResponseDataSize"`
 }
@@ -115,7 +123,14 @@ if ($null -eq $rd) { $rdStr = '' } else { $rdStr = (($rd | ForEach-Object { [int
 	}
 
 	if resp.CompletionCode != 0 {
-		return nil, fmt.Errorf("Microsoft_IPMI RequestResponse returned method completion code %#x", resp.CompletionCode)
+		// The driver surfaced the BMC's own IPMI completion code here.
+		// Wrap it as a ResponseError so callers can match on the specific
+		// code (e.g. types.CodeRequestDataFieldInvalid) instead of seeing
+		// an opaque transport error.
+		return nil, types.NewResponseError(
+			types.CompletionCode(resp.CompletionCode),
+			fmt.Sprintf("Microsoft_IPMI RequestResponse returned BMC completion code %#x", resp.CompletionCode),
+		)
 	}
 
 	recv, err := parseByteCSV(resp.ResponseData)
