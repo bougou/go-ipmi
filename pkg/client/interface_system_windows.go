@@ -4,174 +4,39 @@
 package client
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"os/exec"
-	"strconv"
-	"strings"
 
-	"github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/open"
 )
 
-// On Windows there is no OpenIPMI character device. Local (in-band) access to
-// the BMC is provided by the Microsoft IPMI driver (ipmidrv.sys), which is
-// surfaced through the Microsoft_IPMI WMI class in the root\wmi namespace.
-//
-// Rather than pulling in a COM/WMI dependency, the implementation drives the
-// provider through PowerShell (consistent with how the "tool" interface shells
-// out to ipmitool). Each request invokes the Microsoft_IPMI RequestResponse
-// method and the result is marshalled back as JSON.
+// On Windows there is no OpenIPMI character device. Local (in-band) access
+// to the BMC is provided by the Microsoft IPMI driver (ipmidrv.sys) through
+// the Microsoft_IPMI WMI class. pkg/open provides the two transports
+// (open.COMBackend and open.PowerShellBackend); the selection semantics and
+// the auto fallback behaviour are documented there.
 
-// winIPMIResponse mirrors the JSON emitted by the PowerShell helper script.
-type winIPMIResponse struct {
-	// CompletionCode is the IPMI completion code returned by the BMC and
-	// propagated through the Microsoft_IPMI WMI provider. Per the WMI method
-	// documentation, RequestResponse's CompletionCode parameter is "the
-	// completion code that is returned by the BMC". 0x00 means the command
-	// completed normally; any non-zero value is a real IPMI completion code
-	// (generic per IPMI v2.0 §5.2, or command-specific per the command's
-	// spec section) and must be surfaced to callers as a ResponseError so
-	// that higher-level logic (e.g. GetUsers skipping empty slots on 0xCC)
-	// can react to it.
-	CompletionCode uint32 `json:"CompletionCode"`
-	// ResponseData is the comma separated list of response bytes. On success
-	// (CompletionCode == 0) the first byte is the IPMI completion code (0x00)
-	// followed by the command's response payload, matching the on-wire
-	// layout exchangeOpen expects.
-	ResponseData     string `json:"ResponseData"`
-	ResponseDataSize uint32 `json:"ResponseDataSize"`
-}
-
-// ConnectOpen verifies that the Microsoft_IPMI WMI provider is available.
+// ConnectOpen selects a backend based on c.openBackendPref and connects it.
+// "" or open.BackendAuto (the default) tries the native COM backend first
+// and falls back to the PowerShell backend on failure.
 func (c *Client) ConnectOpen(ctx context.Context, devnum int32) error {
-	c.Debugf("Using Microsoft_IPMI WMI provider (root\\wmi)\n")
+	tryCom := func() (open.Backend, error) { return open.ConnectCOMBackend(ctx) }
+	tryPS := func() (open.Backend, error) { return open.ConnectPowerShellBackend(ctx) }
 
-	script := `$ErrorActionPreference = 'Stop'
-$ipmi = Get-CimInstance -Namespace 'root/wmi' -ClassName 'Microsoft_IPMI' -ErrorAction Stop | Select-Object -First 1
-if ($null -eq $ipmi) { throw 'Microsoft_IPMI WMI instance not found' }
-'ok'`
-
-	if _, err := c.runPowerShell(ctx, script); err != nil {
-		return fmt.Errorf("Microsoft_IPMI WMI provider not available (is the IPMI driver installed and are you running as administrator?), err: %w", err)
-	}
-
-	return nil
-}
-
-// closeOpen is a no-op for the WMI backed local interface.
-func (c *Client) closeOpen(ctx context.Context) error {
-	return nil
-}
-
-func (c *Client) openSendRequest(ctx context.Context, request types.Request) ([]byte, error) {
-	cmdData := request.Pack()
-	c.DebugBytes("cmd data", cmdData, 16)
-
-	parts := make([]string, len(cmdData))
-	for i, b := range cmdData {
-		parts[i] = strconv.Itoa(int(b))
-	}
-	dataCSV := strings.Join(parts, ",")
-
-	netFn := uint8(request.Command().NetFn)
-	cmd := uint8(request.Command().ID)
-	responderAddr := types.BMC_SA
-	var lun uint8 = 0
-
-	commandContext := GetCommandContext(ctx)
-	if commandContext != nil {
-		c.Debug("Got CommandContext:", commandContext)
-		if commandContext.responderAddr != nil {
-			responderAddr = *commandContext.responderAddr
-		}
-		if commandContext.responderLUN != nil {
-			lun = *commandContext.responderLUN
-		}
-	}
-
-	script := fmt.Sprintf(`$ErrorActionPreference = 'Stop'
-$data = [byte[]]@(%s)
-$arguments = @{
-  NetworkFunction = [byte]%d
-  Command = [byte]%d
-  Lun = [byte]%d
-  ResponderAddress = [byte]%d
-  RequestData = $data
-  RequestDataSize = [uint32]$data.Length
-}
-$ipmi = Get-CimInstance -Namespace 'root/wmi' -ClassName 'Microsoft_IPMI' -ErrorAction Stop | Select-Object -First 1
-if ($null -eq $ipmi) { throw 'Microsoft_IPMI WMI instance not found' }
-$res = Invoke-CimMethod -InputObject $ipmi -MethodName 'RequestResponse' -Arguments $arguments -ErrorAction Stop
-$rd = $res.ResponseData
-if ($null -eq $rd) { $rdStr = '' } else { $rdStr = (($rd | ForEach-Object { [int]$_ }) -join ',') }
-[pscustomobject]@{
-  CompletionCode = [uint32]$res.CompletionCode
-  ResponseData = $rdStr
-  ResponseDataSize = [uint32]$res.ResponseDataSize
-} | ConvertTo-Json -Compress`, dataCSV, netFn, cmd, lun, responderAddr)
-
-	out, err := c.runPowerShell(ctx, script)
+	backend, err := open.ResolveBackend(c.openBackendPref, tryCom, tryPS, func(err error) {
+		c.Debugf("COM backend unavailable, falling back to PowerShell: %v\n", err)
+	})
 	if err != nil {
-		return nil, fmt.Errorf("Microsoft_IPMI RequestResponse failed, err: %w", err)
+		return err
 	}
+	c.openipmi.backend = backend
 
-	var resp winIPMIResponse
-	if err := json.Unmarshal(bytes.TrimSpace(out), &resp); err != nil {
-		return nil, fmt.Errorf("parse Microsoft_IPMI response failed, err: %w, output: %s", err, string(out))
+	switch backend.(type) {
+	case *open.COMBackend:
+		c.Debugf("Using Microsoft_IPMI WMI provider via native COM (root\\wmi)\n")
+	case *open.PowerShellBackend:
+		c.Debugf("Using Microsoft_IPMI WMI provider via PowerShell (root\\wmi)\n")
+	default:
+		c.Debugf("Using Microsoft_IPMI WMI provider (%T)\n", backend)
 	}
-
-	if resp.CompletionCode != 0 {
-		// The driver surfaced the BMC's own IPMI completion code here.
-		// Wrap it as a ResponseError so callers can match on the specific
-		// code (e.g. types.CodeRequestDataFieldInvalid) instead of seeing
-		// an opaque transport error.
-		return nil, types.NewResponseError(
-			types.CompletionCode(resp.CompletionCode),
-			fmt.Sprintf("Microsoft_IPMI RequestResponse returned BMC completion code %#x", resp.CompletionCode),
-		)
-	}
-
-	recv, err := parseByteCSV(resp.ResponseData)
-	if err != nil {
-		return nil, fmt.Errorf("parse Microsoft_IPMI response data failed, err: %w", err)
-	}
-
-	// recv[0] is the IPMI completion code, recv[1:] is the response data.
-	return recv, nil
-}
-
-// runPowerShell executes the given PowerShell script and returns its stdout.
-func (c *Client) runPowerShell(ctx context.Context, script string) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, "powershell", "-NonInteractive", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script)
-
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("%w: %s", err, strings.TrimSpace(stderr.String()))
-	}
-
-	return stdout.Bytes(), nil
-}
-
-// parseByteCSV parses a comma separated list of unsigned byte values.
-func parseByteCSV(s string) ([]byte, error) {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return []byte{}, nil
-	}
-
-	fields := strings.Split(s, ",")
-	out := make([]byte, len(fields))
-	for i, f := range fields {
-		v, err := strconv.ParseUint(strings.TrimSpace(f), 10, 8)
-		if err != nil {
-			return nil, fmt.Errorf("invalid byte value %q: %w", f, err)
-		}
-		out[i] = byte(v)
-	}
-	return out, nil
+	return nil
 }

@@ -5,7 +5,7 @@ import (
 	"crypto/subtle"
 
 	"github.com/bougou/go-ipmi/pkg/types"
-	"github.com/bougou/go-ipmi/utils/md2"
+	"github.com/bougou/go-ipmi/pkg/utils/md2"
 )
 
 // SingleSessionInput is the AuthCode carried in Activate Session request data

@@ -28,6 +28,8 @@ var (
 	timeout int
 	retries int
 
+	openBackend string
+
 	client *ipmiclient.Client
 )
 
@@ -59,6 +61,11 @@ func initClient() error {
 		}
 		client = c // assign to global variable
 		client.WithInterface(ipmiclient.InterfaceOpen)
+		// Windows only: select which Microsoft_IPMI WMI transport to use.
+		// Ignored on Linux/macOS.
+		if openBackend != "" {
+			client.WithOpenBackend(openBackend)
+		}
 
 	case "lan", "lanplus":
 		c, err := ipmiclient.NewClient(host, port, username, password)
@@ -157,6 +164,8 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.PersistentFlags().IntVarP(&timeout, "timeout", "", 0, "timeout in seconds for each IPMI request/response cycle (not for entire command execution)"+
 		"\n0 means to use the default hard-coded timeout of the interface")
 	rootCmd.PersistentFlags().IntVarP(&retries, "retries", "R", 4, "Set the number of retries for lan/lanplus interface")
+	rootCmd.PersistentFlags().StringVar(&openBackend, "open-backend", "", "Windows only: Microsoft_IPMI WMI transport (wmi-com, wmi-ps, auto). "+
+		"Empty defaults to auto (native COM with PowerShell fallback). Ignored on Linux/macOS.")
 	rootCmd.Flags().AddGoFlagSet(flag.CommandLine)
 
 	rootCmd.AddCommand(NewCmdMC())

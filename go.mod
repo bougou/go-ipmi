@@ -3,6 +3,7 @@ module github.com/bougou/go-ipmi
 go 1.24.0
 
 require (
+	github.com/go-ole/go-ole v1.3.0
 	github.com/google/uuid v1.1.2
 	github.com/kr/pretty v0.3.0
 	github.com/olekukonko/tablewriter v1.0.9

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bougou/go-ipmi/pkg/open"
 	"github.com/bougou/go-ipmi/pkg/rmcpplus"
 	"github.com/bougou/go-ipmi/pkg/types"
 
@@ -19,6 +20,17 @@ const (
 	InterfaceLanplus Interface = "lanplus"
 	InterfaceOpen    Interface = "open"
 	InterfaceTool    Interface = "tool"
+
+	// OpenBackend* are the supported values for Client.openBackendPref
+	// (Windows only). They select which Microsoft_IPMI WMI transport the
+	// Open Interface uses on Windows. Linux ignores the field.
+	// They alias the backend names defined in pkg/open.
+	OpenBackendAuto       string = open.BackendAuto
+	OpenBackendCOM        string = open.BackendCOM
+	OpenBackendPowerShell string = open.BackendPowerShell
+
+	// OpenBackendPower is a deprecated alias of OpenBackendPowerShell.
+	OpenBackendPower string = open.BackendPowerShell
 
 	DefaultKeepAliveIntervalSec int = 30
 	DefaultBufferSize           int = 4096
@@ -71,6 +83,12 @@ type Client struct {
 	// negotiated down after C7/C8/CAh). Zero means uninitialized; tryReadFRUData
 	// starts from defaultFRUReadSize and remembers reductions across chunks.
 	fruMaxReadSize uint8
+
+	// openBackendPref selects which Windows Open Interface transport to use
+	// when Interface == InterfaceOpen. Valid values: "" / "auto" (default;
+	// try native COM, fall back to PowerShell), "wmi-com", "wmi-ps".
+	// Ignored on non-Windows platforms.
+	openBackendPref string
 
 	// closedCh is closed when Client.Close() is called.
 	// used to notify other goroutines that Client is closed.
@@ -154,6 +172,15 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 
 func (c *Client) WithInterface(intf Interface) *Client {
 	c.Interface = intf
+	return c
+}
+
+// WithOpenBackend selects the Windows Open Interface transport. Accepted
+// values: "" / OpenBackendAuto (default; native COM with PowerShell fallback),
+// OpenBackendCOM, OpenBackendPowerShell. No-op on non-Windows platforms.
+// Must be called before Connect.
+func (c *Client) WithOpenBackend(pref string) *Client {
+	c.openBackendPref = pref
 	return c
 }
 

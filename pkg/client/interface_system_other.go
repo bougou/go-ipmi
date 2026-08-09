@@ -7,8 +7,6 @@ import (
 	"context"
 	"fmt"
 	"runtime"
-
-	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 var errOpenUnsupported = fmt.Errorf("open (local) interface is not supported on %s, only linux and windows are supported", runtime.GOOS)
@@ -16,13 +14,4 @@ var errOpenUnsupported = fmt.Errorf("open (local) interface is not supported on 
 // ConnectOpen is not supported on this platform.
 func (c *Client) ConnectOpen(ctx context.Context, devnum int32) error {
 	return errOpenUnsupported
-}
-
-// closeOpen is not supported on this platform.
-func (c *Client) closeOpen(ctx context.Context) error {
-	return errOpenUnsupported
-}
-
-func (c *Client) openSendRequest(ctx context.Context, request types.Request) ([]byte, error) {
-	return nil, errOpenUnsupported
 }
