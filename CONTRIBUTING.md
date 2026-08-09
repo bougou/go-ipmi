@@ -1,80 +1,73 @@
 # Contributing
 
-Each command defined in the IPMI specification is a pair of request/response messages.
-These IPMI commands are implemented as methods of the `ipmi.Client` struct in this library.
+An IPMI command is a request/response pair. In this tree, command methods live
+on `client.Client` (`pkg/client`). Request/response wire types for a NetFn
+usually sit under `pkg/command/<netfn>/`; shared interfaces and helpers are in
+`pkg/types`.
 
-Using `ipmitool` as an example, some `ipmitool` command lines are implemented by calling just one underlying IPMI command,
-while many others are not. For instance, `ipmitool sdr list` is a loop of `GetSDR` IPMI commands.
+`ipmitool` is a useful comparison point: some of its subcommands are one IPMI
+transaction (`mc info` → `GetDeviceID`), others are loops (`sdr list` →
+repeated `GetSDR`). This library also ships conveniences such as `GetSDRs`
+that are not themselves single specification commands. Coverage:
+[docs/commands.md](./docs/commands.md).
 
-This library also implements some methods that are not IPMI commands defined
-in the IPMI specification, but rather common helpers, like `GetSDRs` to get all SDRs.
+## Adding a command
 
-## IPMI Command Guideline
+For a command `DoSomething`:
 
-For an IPMI Command `DoSomething`:
+1. Define `DoSomethingRequest` implementing `types.Request`.
+2. Define `DoSomethingResponse` implementing `types.Response`.
+3. Add `DoSomething` on `client.Client`.
 
-- You must define `DoSomethingRequest` which conforms to the `ipmi.Request` interface; it holds the request message data.
-- You must define `DoSomethingResponse` which conforms to the `ipmi.Response` interface; it holds the response message data.
-- You must define the `DoSomething` method on `ipmi.Client`
-
-For the `DoSomething` method, you can pass `DoSomethingRequest` directly as the input parameter, like:
+Either accept the request object:
 
 ```go
-func (c *Client) DoSomething(ctx context.Context, request *DoSomethingRequest) (response *DoSomethingResponse, err error) {
-  response = &DoSomethingResponse{}
-  err = c.Exchange(ctx, request, response)
-  return
+func (c *Client) DoSomething(ctx context.Context, request *DoSomethingRequest) (*DoSomethingResponse, error) {
+	response := &DoSomethingResponse{}
+	err := c.Exchange(ctx, request, response)
+	return response, err
 }
 ```
 
-or, you can pass plain parameters and construct the `DoSomethingRequest` in the method body, like:
+or accept plain parameters and build the request inside the method:
 
 ```go
-func (c *Client) DoSomething(ctx context.Context, param1 string, param2 string) (response *DoSomethingResponse, err error) {
-  request := &DoSomethingRequest{
-    // construct by using input params
-  }
-  response = &DoSomethingResponse{}
-  err = c.Exchange(ctx, request, response)
-  return
+func (c *Client) DoSomething(ctx context.Context, param1, param2 string) (*DoSomethingResponse, error) {
+	request := &DoSomethingRequest{
+		// fill from param1, param2
+	}
+	response := &DoSomethingResponse{}
+	err := c.Exchange(ctx, request, response)
+	return response, err
 }
 ```
 
-Calling the `Exchange` method of `ipmi.Client` will handle all other complex underlying work.
+`Exchange` owns the session/transport work.
 
-## ipmi.Request interface
+## `types.Request` / `types.Response`
 
 ```go
 type Request interface {
-	// Pack encodes the object to data bytes
 	Pack() []byte
-	// Command return the IPMI command info (NetFn/Cmd).
-	// All IPMI specification specified commands are already predefined in this repo.
-	Command() Command
+	Command() Command // NetFn/Cmd; predefined commands live in this repo
 }
 
-```
-## ipmi.Response interface
-
-```go
 type Response interface {
-	// Unpack decodes the object from data bytes
 	Unpack(data []byte) error
-	// Format return a formatted human friendly string
 	Format() string
 }
 ```
 
-## IPMI Command Request
+Both interfaces (and `Command`) are in `pkg/types`.
 
-## IPMI Command Response
+## Responses and completion codes
 
-- Define necessary fields per IPMI specification, but DO NOT define the completion code field in the Response struct.
-- Command-specific completion codes (80h–BEh) are **not** methods on Response. They live in a single table in
-  `pkg/types/types_completion_code.go`, keyed by `Command.Key()` (NetFn + Cmd, without Name).
-- When adding a command that the IPMI/DCMI/FRU specs define command-specific completion codes for, add those
-  entries to that table (reuse shared maps such as `paramConfigSetCC` / `selEraseCC` when the wording matches).
-  Commands with only generic codes need no table entry.
-- To name a code at runtime, call `StrCC(cmd, ccode)` (also `AllCC(cmd)` / `CommandSpecificCC(cmd)`).
-  Prefer `request.Command()` as the identity: it is what was sent on the wire.
-  These helpers are available on the root package and as `types.StrCC` / etc.
+- Put the fields the specification defines on the response struct. Do not add a
+  completion-code field there.
+- Command-specific codes (80h–BEh) are tabulated in
+  `pkg/types/types_completion_code.go`, keyed by `Command.Key()` (NetFn + Cmd,
+  without Name). Reuse shared maps such as `paramConfigSetCC` / `selEraseCC`
+  when the wording matches. Commands with only generic codes need no entry.
+- At runtime use `types.StrCC(cmd, ccode)` (also `types.AllCC` /
+  `types.CommandSpecificCC`). Prefer `request.Command()` as the identity — that
+  is what went on the wire.

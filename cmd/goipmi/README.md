@@ -1,7 +1,7 @@
 # goipmi
 
-The `goipmi` is a binary tool which provides the same command usages like `ipmitool`.
-The `goipmi` calls `go-ipmi` library underlying.
+Command-line front-end for the client library. Subcommands roughly follow
+`ipmitool` so the implementation can be checked against real BMCs; it is not
+meant to replace `ipmitool`.
 
-The purpose of creating `goipmi` tool was not intended to substitute `ipmitool`.
-It was just used to verify the correctness of `go-ipmi` library.
+See the [project README](../../README.md) and [docs/client.md](../../docs/client.md).

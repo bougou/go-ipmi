@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bougou/go-ipmi"
+	ipmiclient "github.com/bougou/go-ipmi/pkg/client"
 	"github.com/spf13/cobra"
 )
 
@@ -66,9 +66,9 @@ func NewCmdSOLActivate() *cobra.Command {
 			}
 
 			ctx := context.Background()
-			var opts *ipmi.SOLActivateOptions
+			var opts *ipmiclient.SOLActivateOptions
 			if payloadInstance != 1 {
-				opts = &ipmi.SOLActivateOptions{
+				opts = &ipmiclient.SOLActivateOptions{
 					PayloadInstance: payloadInstance,
 				}
 			}
