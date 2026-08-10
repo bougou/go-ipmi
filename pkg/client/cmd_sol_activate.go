@@ -3,7 +3,6 @@ package client
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -96,9 +95,6 @@ func (c *Client) SOLActivate(ctx context.Context, in io.Reader, out io.Writer, o
 		PayloadInstance: payloadInstance,
 	})
 	if err != nil {
-		if respErr, ok := types.IsResponseError(err); ok && respErr.CompletionCode() == types.CompletionCode(0x80) {
-			return errors.New("SOL payload already active on another session")
-		}
 		return err
 	}
 	if opts.OnActivated != nil {
