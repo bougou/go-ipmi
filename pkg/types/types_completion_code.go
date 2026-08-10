@@ -62,6 +62,17 @@ const (
 	// (v2.0§28.12 / §28.13) and other config-parameter commands (e.g. §22.14a/b
 	// Set/Get System Info Parameters) when the parameter selector is not implemented.
 	CodeParameterNotSupported CompletionCode = 0x80
+
+	// Activate Payload command completion codes (v2.0§24.1, Table 24-2).
+	CodeActivatePayloadAlreadyActive                   CompletionCode = 0x80
+	CodeActivatePayloadTypeDisabled                                   = 0x81
+	CodeActivatePayloadActivationLimitReached                         = 0x82
+	CodeActivatePayloadCannotActivateWithEncryption                   = 0x83
+	CodeActivatePayloadCannotActivateWithoutEncryption                = 0x84
+
+	// Deactivate Payload command completion codes (v2.0§24.2, Table 24-3).
+	CodeDeactivatePayloadAlreadyDeactivated CompletionCode = 0x80
+	CodeDeactivatePayloadTypeDisabled                      = 0x81
 )
 
 // String return description of generic completion code.
@@ -255,15 +266,15 @@ var commandSpecificCC = map[CommandKey]map[uint8]string{
 
 	// v2.0§24 payload commands.
 	CommandActivatePayload.Key(): { // Table 24-2
-		0x80: "Payload already active on another session",
-		0x81: "Payload type is disabled",
-		0x82: "Payload activation limit reached",
-		0x83: "Cannot activate payload with encryption",
-		0x84: "Cannot activate payload without encryption",
+		uint8(CodeActivatePayloadAlreadyActive):                   "Payload already active on another session",
+		uint8(CodeActivatePayloadTypeDisabled):                    "Payload type is disabled",
+		uint8(CodeActivatePayloadActivationLimitReached):          "Payload activation limit reached",
+		uint8(CodeActivatePayloadCannotActivateWithEncryption):    "Cannot activate payload with encryption",
+		uint8(CodeActivatePayloadCannotActivateWithoutEncryption): "Cannot activate payload without encryption",
 	},
 	CommandDeactivatePayload.Key(): { // Table 24-3
-		0x80: "Payload already deactivated",
-		0x81: "Payload type is disabled",
+		uint8(CodeDeactivatePayloadAlreadyDeactivated): "Payload already deactivated",
+		uint8(CodeDeactivatePayloadTypeDisabled):       "Payload type is disabled",
 	},
 	CommandSuspendResumePayloadEncryption.Key(): { // Table 24-5
 		0x80: "Operation not supported for given payload type",
