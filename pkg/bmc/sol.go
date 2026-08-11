@@ -385,6 +385,10 @@ type SOLInstance struct {
 	open func(context.Context) (hal.ConsoleConn, error)
 	send SOLSendFunc // nil when the server injected no sender (unit tests)
 
+	// tracef is the optional diagnostic sink for console lifecycle events
+	// (reconnect); nil (the default) disables it. Written from the pump only.
+	tracef func(format string, args ...any)
+
 	clock   clock.Clock
 	config  *SOLConfig
 	stopCh  chan struct{}
@@ -880,11 +884,27 @@ func (inst *SOLInstance) reconnectLocked(now time.Time) {
 	}
 	inst.conn = conn
 	inst.broken = false
+	if inst.tracef != nil {
+		inst.tracef("sol! sess=%x console reconnected after %d failed attempt(s)\n", inst.SessionID, inst.failures)
+	}
 	inst.failures = 0
 	inst.reconnectAt = time.Time{}
 	inst.giveUp = false
 	inst.rx = nil
 	inst.rxSince = time.Time{}
+}
+
+// SetTracef installs the diagnostic sink for console lifecycle events. The
+// server wires it to its solDebug-gated SOL trace; a nil sink (the default)
+// keeps the library silent. Callable from any goroutine; events are emitted
+// from the pump.
+//
+// The sink is printf-shaped, so printf-style loggers plug in directly —
+// logrus.Printf and zap's SugaredLogger.Infof match this signature as-is.
+func (inst *SOLInstance) SetTracef(f func(format string, args ...any)) {
+	inst.mu.Lock()
+	defer inst.mu.Unlock()
+	inst.tracef = f
 }
 
 // policyDelay asks the policy for the wait before the next attempt,
