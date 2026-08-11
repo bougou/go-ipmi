@@ -68,7 +68,7 @@ func handleGetChassisStatus(ctx context.Context, hctx *HandlerContext, _ []byte)
 func handleChassisControl(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {
 	ch := hctx.BMC.HAL().Chassis()
 	if ch == nil {
-		return nil, types.CodeCannotExecuteCommandNotSupported, nil
+		return nil, types.CodeNotSupported, nil
 	}
 
 	var typed chassis.ChassisControlRequest
@@ -100,7 +100,7 @@ func handleChassisControl(ctx context.Context, hctx *HandlerContext, req []byte)
 func handleChassisIdentify(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {
 	ch := hctx.BMC.HAL().Chassis()
 	if ch == nil {
-		return nil, types.CodeCannotExecuteCommandNotSupported, nil
+		return nil, types.CodeNotSupported, nil
 	}
 
 	seconds := uint8(15) // default interval per spec
@@ -141,7 +141,7 @@ func handleSetSystemBootOptions(ctx context.Context, hctx *HandlerContext, req [
 
 	ch := hctx.BMC.HAL().Chassis()
 	if ch == nil {
-		return nil, types.CodeCannotExecuteCommandNotSupported, nil
+		return nil, types.CodeNotSupported, nil
 	}
 
 	switch paramSelector {
@@ -196,7 +196,7 @@ func handleGetSystemBootOptions(ctx context.Context, hctx *HandlerContext, req [
 
 	ch := hctx.BMC.HAL().Chassis()
 	if ch == nil {
-		return nil, types.CodeCannotExecuteCommandNotSupported, nil
+		return nil, types.CodeNotSupported, nil
 	}
 
 	switch paramSelector {

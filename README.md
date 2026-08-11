@@ -7,6 +7,15 @@ development and tests, and the shared protocol types used by both. Public
 packages live under `pkg/`; start with `[pkg/client](./pkg/client)` for the
 usual remote-console path.
 
+## Compatibility
+
+This module has not reached `v1.0.0`. The public API may change between
+versions, including renamed packages, types, functions, and constants.
+Pin to a specific version or commit for production use.
+
+`v0` releases carry no backward-compatibility promise, per the
+[Go module versioning convention](https://go.dev/ref/mod#versions).
+
 ## Install
 
 ```bash

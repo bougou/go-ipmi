@@ -148,10 +148,11 @@ func TestStrCC(t *testing.T) {
 			} else if CommandSpecificCC(tt.cmd) != nil {
 				t.Errorf("CommandSpecificCC(%q) = non-nil, want nil when no command-specific codes", tt.cmd.Name)
 			}
-			if got := AllCC(tt.cmd)[tt.ccode]; tt.want != "0x80" && tt.want != "0x81" && got != tt.want {
+			cc := CompletionCode(tt.ccode)
+			if got := AllCC(tt.cmd)[cc]; tt.want != "0x80" && tt.want != "0x81" && got != tt.want {
 				// AllCC only has named entries; hex fallbacks are String()-only.
 				m := CommandSpecificCC(tt.cmd)
-				if _, ok := genericCC[tt.ccode]; ok || (m != nil && m[tt.ccode] != "") {
+				if _, ok := genericCC[cc]; ok || (m != nil && m[cc] != "") {
 					if got != tt.want {
 						t.Errorf("AllCC(%q)[0x%02x] = %q, want %q", tt.cmd.Name, tt.ccode, got, tt.want)
 					}

@@ -257,11 +257,11 @@ func TestStorageHandlers_NilHAL(t *testing.T) {
 	hctx := &HandlerContext{BMC: b}
 
 	_, cc, err := handleGetFRUInventoryAreaInfo(context.Background(), hctx, []byte{0})
-	if err != nil || cc != types.CodeCannotExecuteCommandNotSupported {
+	if err != nil || cc != types.CodeNotSupported {
 		t.Fatalf("fru info: cc=%v err=%v", cc, err)
 	}
 	_, cc, err = handleGetSDR(context.Background(), hctx, (&storage.GetSDRRequest{}).Pack())
-	if err != nil || cc != types.CodeCannotExecuteCommandNotSupported {
+	if err != nil || cc != types.CodeNotSupported {
 		t.Fatalf("get sdr: cc=%v err=%v", cc, err)
 	}
 }

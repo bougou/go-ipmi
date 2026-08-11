@@ -726,35 +726,6 @@ func formatStream[T any](seq iter.Seq[*Result[T]], headers []string, itemToRowFn
 	return nil
 }
 
-// buildCanIgnoreFn returns a `canIgnore` function that can be used to check if a err
-// is a ResponseError with CompletionCode in specified codes.
-// If so, the `canIgnore` function returns nil, otherwise it returns the original err.
-func buildCanIgnoreFn(codes ...uint8) func(err error) error {
-	return func(err error) error {
-		if isErrOfCompletionCodes(err, codes...) {
-			return nil
-		}
-		return err
-	}
-}
-
-func isErrOfCompletionCodes(err error, codes ...uint8) bool {
-	if err == nil {
-		return false
-	}
-
-	if respErr, ok := IsResponseError(err); ok {
-		cc := respErr.CompletionCode()
-		for _, code := range codes {
-			if uint8(cc) == code {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
 // Generic function to convert a slice of any type to a slice of any
 func convertToInterfaceSlice[T any](input []T) []any {
 	result := make([]any, len(input))

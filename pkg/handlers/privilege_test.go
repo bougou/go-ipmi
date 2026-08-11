@@ -24,7 +24,7 @@ func TestChassisControlRequiresOperatorPrivilege(t *testing.T) {
 	if err != nil {
 		t.Fatalf("dispatch: %v", err)
 	}
-	if cc != types.CodeCannotExecuteCommandSecurityRestrict {
+	if cc != types.CodeInsufficientPrivilege {
 		t.Fatalf("want insufficient privilege, got %02x", cc)
 	}
 }

@@ -142,14 +142,14 @@ func handleSetSessionPrivilegeLevel(_ context.Context, hctx *HandlerContext, req
 			return []byte{uint8(hctx.V15Session.PrivilegeLevel)}, types.CodeOK, nil
 		}
 		if requested > hctx.V15Session.MaxPrivilege {
-			return nil, types.CodeCannotExecuteCommandSecurityRestrict, nil
+			return nil, types.CodeInsufficientPrivilege, nil
 		}
 		hctx.V15Session.PrivilegeLevel = requested
 		return []byte{uint8(requested)}, types.CodeOK, nil
 	}
 
 	if hctx.Session == nil {
-		return nil, types.CodeCannotExecuteCommandNotSupported, nil
+		return nil, types.CodeNotSupported, nil
 	}
 
 	// Privilege 0 means "return current level" per spec.
@@ -157,7 +157,7 @@ func handleSetSessionPrivilegeLevel(_ context.Context, hctx *HandlerContext, req
 		return []byte{uint8(hctx.Session.PrivilegeLevel)}, types.CodeOK, nil
 	}
 	if requested > hctx.Session.MaxPrivilege {
-		return nil, types.CodeCannotExecuteCommandSecurityRestrict, nil
+		return nil, types.CodeInsufficientPrivilege, nil
 	}
 	hctx.Session.PrivilegeLevel = requested
 	return []byte{uint8(requested)}, types.CodeOK, nil

@@ -42,7 +42,7 @@ func checkCommandPrivilege(hctx *HandlerContext, netFn, cmd uint8) types.Complet
 		return types.CodeOK
 	}
 	if priv < MinimumPrivilege(netFn, cmd) {
-		return types.CodeCannotExecuteCommandSecurityRestrict
+		return types.CodeInsufficientPrivilege
 	}
 	return types.CodeOK
 }

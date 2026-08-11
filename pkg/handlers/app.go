@@ -69,7 +69,7 @@ func handleGetDeviceID(ctx context.Context, hctx *HandlerContext, _ []byte) ([]b
 func handleColdReset(ctx context.Context, hctx *HandlerContext, _ []byte) ([]byte, types.CompletionCode, error) {
 	ch := hctx.BMC.HAL().Chassis()
 	if ch == nil {
-		return nil, types.CodeCannotExecuteCommandNotSupported, nil
+		return nil, types.CodeNotSupported, nil
 	}
 	if err := ch.ColdReset(ctx); err != nil {
 		return nil, types.CodeUnspecifiedError, err
@@ -81,7 +81,7 @@ func handleColdReset(ctx context.Context, hctx *HandlerContext, _ []byte) ([]byt
 func handleWarmReset(ctx context.Context, hctx *HandlerContext, _ []byte) ([]byte, types.CompletionCode, error) {
 	ch := hctx.BMC.HAL().Chassis()
 	if ch == nil {
-		return nil, types.CodeCannotExecuteCommandNotSupported, nil
+		return nil, types.CodeNotSupported, nil
 	}
 	if err := ch.WarmReset(ctx); err != nil {
 		return nil, types.CodeUnspecifiedError, err

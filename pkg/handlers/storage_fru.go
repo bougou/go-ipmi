@@ -12,7 +12,7 @@ import (
 func handleGetFRUInventoryAreaInfo(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {
 	fru := hctx.BMC.FRUInventory()
 	if fru == nil {
-		return nil, types.CodeCannotExecuteCommandNotSupported, nil
+		return nil, types.CodeNotSupported, nil
 	}
 
 	var typed storage.GetFRUInventoryAreaInfoRequest
@@ -38,7 +38,7 @@ func handleGetFRUInventoryAreaInfo(ctx context.Context, hctx *HandlerContext, re
 func handleReadFRUData(ctx context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {
 	fru := hctx.BMC.FRUInventory()
 	if fru == nil {
-		return nil, types.CodeCannotExecuteCommandNotSupported, nil
+		return nil, types.CodeNotSupported, nil
 	}
 
 	var typed storage.ReadFRUDataRequest
