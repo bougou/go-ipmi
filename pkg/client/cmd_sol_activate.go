@@ -112,105 +112,50 @@ func (c *Client) SOLActivate(ctx context.Context, in io.Reader, out io.Writer, o
 		}
 	}()
 
-	inputCh := make(chan byte, 256)
-	errCh := make(chan error, 1)
-	go func() {
-		reader := bufio.NewReader(in)
-		for {
-			b, err := reader.ReadByte()
-			if err != nil {
-				errCh <- err
-				return
-			}
-			inputCh <- b
-		}
-	}()
-
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
 	defer signal.Stop(sigCh)
 
-	ticker := time.NewTicker(pollEvery)
-	defer ticker.Stop()
+	return c.runSOLStream(ctx, newSOLEscapeReader(in), out, pollEvery, sigCh)
+}
 
-	var localSeq uint8 = 1
-	var remoteSeq uint8
-	var pendingAckCount uint8
+type solEscapeReader struct {
+	reader *bufio.Reader
 
-	atLineStart := true
-	pendingEscape := false
+	atLineStart bool
+}
 
-	sendPacket := func(chars []byte) error {
-		req := &types.SOLPayloadRequest{
-			SOLPayloadPacket: types.SOLPayloadPacket{
-				SequenceNumber:         localSeq,
-				AckedSequenceNumber:    remoteSeq,
-				AcceptedCharacterCount: pendingAckCount,
-				CharacterData:          chars,
-			},
-		}
-		res, err := c.SOLPayload(ctx, req)
+func newSOLEscapeReader(in io.Reader) *solEscapeReader {
+	return &solEscapeReader{reader: bufio.NewReader(in), atLineStart: true}
+}
+
+func (r *solEscapeReader) Read(p []byte) (int, error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+
+	value, err := r.reader.ReadByte()
+	if err != nil {
+		return 0, err
+	}
+
+	if r.atLineStart && value == '~' {
+		next, err := r.reader.Peek(1)
 		if err != nil {
-			return err
+			return 0, err
 		}
-		localSeq++
-		if localSeq > 0x0f {
-			localSeq = 1
-		}
-		pendingAckCount = 0
 
-		remoteSeq = res.SequenceNumber & 0x0f
-		pendingAckCount = uint8(len(res.CharacterData))
-
-		if len(res.CharacterData) > 0 {
-			if _, err := out.Write(res.CharacterData); err != nil {
-				return err
-			}
+		if next[0] == '.' {
+			_, _ = r.reader.Discard(1)
+			return 0, io.EOF
 		}
-		return nil
+	} else {
+		r.atLineStart = value == '\r' || value == '\n'
 	}
 
-	if err := sendPacket(nil); err != nil {
-		return err
-	}
+	p[0] = value
 
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-sigCh:
-			return nil
-		case err := <-errCh:
-			if err == io.EOF {
-				return nil
-			}
-			return err
-		case b := <-inputCh:
-			if pendingEscape {
-				pendingEscape = false
-				if b == '.' {
-					return nil
-				}
-				if err := sendPacket([]byte{'~'}); err != nil {
-					return err
-				}
-			}
-
-			if atLineStart && b == '~' {
-				pendingEscape = true
-				continue
-			}
-
-			if err := sendPacket([]byte{b}); err != nil {
-				return err
-			}
-			atLineStart = b == '\r' || b == '\n'
-		case <-ticker.C:
-			if err := sendPacket(nil); err != nil {
-				return err
-			}
-		}
-	}
+	return 1, nil
 }
 
 type solTerminalConfig struct {
