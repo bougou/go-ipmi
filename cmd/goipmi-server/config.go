@@ -24,6 +24,10 @@ type runtimeConfig struct {
 	// Console selects the SOL console backend: ""/none = no console (SOL
 	// unadvertised), "pty" = allocate a PTY pair, otherwise a device path.
 	Console string
+	// Reconnect enables SOL console reconnection (default policy): after a
+	// console failure the server retries the HAL Open on an exponential
+	// backoff, keeping the SOL payload alive across the outage.
+	Reconnect bool
 }
 
 func loadRuntimeConfig() (runtimeConfig, error) {
@@ -32,6 +36,14 @@ func loadRuntimeConfig() (runtimeConfig, error) {
 		User:     envOr("GOIPMI_SERVER_USER", "ADMIN"),
 		Password: envOr("GOIPMI_SERVER_PASS", "ADMIN"),
 		Console:  envOr("GOIPMI_SERVER_CONSOLE", ""),
+	}
+
+	if v := strings.TrimSpace(os.Getenv("GOIPMI_SERVER_SOL_RECONNECT")); v != "" {
+		enabled, err := parseBoolEnv(v)
+		if err != nil {
+			return cfg, fmt.Errorf("GOIPMI_SERVER_SOL_RECONNECT: %w", err)
+		}
+		cfg.Reconnect = enabled
 	}
 
 	if raw := strings.TrimSpace(os.Getenv("GOIPMI_SERVER_CIPHER_SUITES")); raw != "" {
@@ -78,6 +90,9 @@ func applyRuntimeConfig(b *bmc.BMC, cfg runtimeConfig) {
 		bmc.WithV15Disabled()(b)
 	} else if len(cfg.V15AuthTypes) > 0 {
 		bmc.WithV15AuthTypes(cfg.V15AuthTypes)(b)
+	}
+	if cfg.Reconnect {
+		b.SOL.SetReconnectPolicy(&bmc.DefaultReconnectPolicy)
 	}
 }
 

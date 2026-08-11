@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -67,6 +68,12 @@ type fileConsoleConn struct {
 }
 
 func (c *fileConsoleConn) ReadAvailable(p []byte) (int, error) {
+	// Fault injection sits in front of the fd: it must make reads fail
+	// even when the underlying tty still has data, so the reconnect engine
+	// sees the same "console gone" it would with a dead link.
+	if consoleFaultInject.Load() {
+		return 0, errors.New("console fault injected (SIGUSR1)")
+	}
 	// poll(2) with a zero timeout, then a raw read. SetReadDeadline on
 	// *os.File cannot express this: the runtime poller reports an already
 	// elapsed deadline before attempting the syscall, so a "now" deadline
