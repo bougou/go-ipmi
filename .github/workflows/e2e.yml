@@ -18,14 +18,6 @@ jobs:
     name: E2E (make test-e2e)
     runs-on: ubuntu-latest
 
-    services:
-      # Client suite (goipmi → ipmi-simulator) defaults to 127.0.0.1:9623.
-      # The script can also auto-start Docker if this service is absent.
-      ipmi-simulator:
-        image: vaporio/ipmi-simulator:master
-        ports:
-          - 9623:623/udp
-
     steps:
       - uses: actions/checkout@v4
 

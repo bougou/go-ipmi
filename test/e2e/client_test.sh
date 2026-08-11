@@ -13,7 +13,7 @@
 #   GOIPMI_PORT       – IPMI peer port          (default: 623)
 #   GOIPMI_USER       – IPMI username           (default: ADMIN)
 #   GOIPMI_PASS       – IPMI password           (default: ADMIN)
-#   IPMI_SIM_IMAGE    – simulator Docker image  (default: vaporio/ipmi-simulator:master)
+#   IPMI_SIM_IMAGE    – simulator Docker image  (default: goipmi/ipmi-simulator-sol:e2e)
 #   GOIPMI_NO_DOCKER  – if set to 1, never auto-start Docker
 #
 # Requires: make build  (or: make test-e2e-client)
@@ -32,7 +32,9 @@ GOIPMI_HOST="${GOIPMI_HOST:-127.0.0.1}"
 GOIPMI_PORT="${GOIPMI_PORT:-9623}"
 GOIPMI_USER="${GOIPMI_USER:-ADMIN}"
 GOIPMI_PASS="${GOIPMI_PASS:-ADMIN}"
-IPMI_SIM_IMAGE="${IPMI_SIM_IMAGE:-vaporio/ipmi-simulator:master}"
+DEFAULT_IPMI_SIM_IMAGE="goipmi/ipmi-simulator-sol:e2e"
+IPMI_SIM_IMAGE="${IPMI_SIM_IMAGE:-${DEFAULT_IPMI_SIM_IMAGE}}"
+IPMI_SIM_CONTEXT="${E2E_DIR}/ipmi-simulator"
 SIM_CONTAINER="goipmi-e2e-sim"
 
 DOCKER_STARTED=false
@@ -68,6 +70,11 @@ ensure_peer() {
 		exit 1
 	fi
 
+	if [ "${IPMI_SIM_IMAGE}" = "${DEFAULT_IPMI_SIM_IMAGE}" ]; then
+		echo "==> Building SOL-enabled IPMI simulator ..."
+		docker build -t "${IPMI_SIM_IMAGE}" "${IPMI_SIM_CONTEXT}"
+	fi
+
 	echo "==> Starting ipmi-simulator (${IPMI_SIM_IMAGE}) ..."
 	docker run -d --name "${SIM_CONTAINER}" -p "${GOIPMI_PORT}:623/udp" "${IPMI_SIM_IMAGE}" >/dev/null
 	DOCKER_STARTED=true
@@ -84,6 +91,10 @@ ensure_peer() {
 	done
 	echo -e "${RED}ERROR: Simulator did not become ready in time.${NC}" >&2
 	exit 1
+}
+
+run_sol_activate() {
+	printf '~.' | "${GOIPMI_BASE[@]}" -I lanplus sol activate
 }
 
 # ---------------------------------------------------------------------------
@@ -108,6 +119,7 @@ echo "========================================"
 echo " IPMI v2.0 / RMCP+ (-I lanplus)"
 echo "========================================"
 e2e_run_chassis_cases failures "${GOIPMI_BASE[@]}" -I lanplus
+e2e_run_test "SOL activate" run_sol_activate || ((failures++)) || true
 
 echo ""
 echo "========================================"
