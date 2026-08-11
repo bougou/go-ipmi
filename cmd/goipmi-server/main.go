@@ -15,6 +15,9 @@
 //	GOIPMI_SERVER_TRACE           – set to 1/true to log every dispatched command to stderr (default: 0)
 //	GOIPMI_SERVER_CONSOLE         – SOL console backend: "pty" allocates a PTY pair (linux),
 //	                                a path opens that device (e.g. /dev/ttyS0); unset = no SOL
+//	GOIPMI_SERVER_SOL_RECONNECT   – set to 1/true to reconnect a failed SOL console
+//	                                automatically (default policy; default: 0/off)
+//	                                SIGUSR1/SIGUSR2 inject/clear a console fault (e2e, linux)
 package main
 
 import (
@@ -71,6 +74,11 @@ func run() error {
 		}
 		halImpl.SetConsole(consoleHAL)
 		consoleDesc = desc
+	}
+
+	if cfg.Console != "" {
+		// Console fault injection for e2e (see consoleFaultInject in fault_linux.go).
+		startConsoleFaultInjection()
 	}
 
 	b := bmc.New(info, guid, halImpl, bmc.WithClock(clock.Real))

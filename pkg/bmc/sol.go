@@ -7,6 +7,8 @@ package bmc
 import (
 	"context"
 	"errors"
+	"math"
+	"math/rand/v2"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -280,6 +282,75 @@ func (c *SOLConfig) resetVolatile() {
 	c.vBitRate = c.nvBitRate
 }
 
+// consoleReconnectOpenTimeout bounds each reconnect dial attempt. The pump
+// is the only driver of recovery, so a hung dial must not stall console
+// output indefinitely — deactivation waits on this tick via stopCh/stopped.
+const consoleReconnectOpenTimeout = 5 * time.Second
+
+// ReconnectPolicy controls when the pump retries attaching to a failed
+// console, after reconnection has been enabled via [SOLStore.SetReconnectPolicy].
+// By default reconnection is disabled: the payload stays active, reports
+// status bit [5] (Table 15-2), and recovers only via deactivate/reactivate —
+// the spec's own behavior.
+//
+// Field semantics follow k8s.io/apimachinery/pkg/util/wait.Backoff. The
+// delay for attempt n (n ≥ 1, counting from the first failure) is
+//
+//	Initial * Factor^(n-1), capped at Cap, plus a jitter of up to
+//	Jitter × the capped value.
+//
+// Console failures and reconnection are invisible to the remote console:
+// ipmitool keeps its SOL session alive with a Get Device ID keepalive every
+// 15s (ipmi_sol.c, SOL_KEEPALIVE_TIMEOUT) and only exits after 6 missed
+// keepalives (~90s), so the server may back off as long as its RMCP+ path
+// stays up. Keystrokes typed during the outage are lost either way:
+// ipmitool treats a NACK as delivered and never retransmits.
+type ReconnectPolicy struct {
+	// Initial is the delay after the first failure; 0 retries immediately.
+	Initial time.Duration
+	// Factor multiplies the delay on each failure (>= 1).
+	Factor float64
+	// Jitter adds a random delay of up to Jitter × the computed delay
+	// (0..1) to desynchronize concurrent reconnection attempts; 0 = none.
+	Jitter float64
+	// Cap bounds the delay; <= 0 means unbounded.
+	Cap time.Duration
+	// Steps bounds the number of reconnect attempts (1-based); once
+	// exhausted the instance gives up and behaves as if reconnection were
+	// disabled. 0 means retry forever.
+	Steps int
+}
+
+// DefaultReconnectPolicy is the built-in strategy: retry after 1s, then
+// double to a 30s cap, forever. VM-migration-scale outages (minutes) are
+// covered by the cap holding: attempts keep coming, just no more often
+// than every 30s.
+var DefaultReconnectPolicy = ReconnectPolicy{Initial: time.Second, Factor: 2, Cap: 30 * time.Second}
+
+// Delay returns the wait before attempt failures+1 after failures
+// consecutive failed attempts (failures ≥ 1), and whether reconnection
+// should be given up (Steps exhausted).
+func (p *ReconnectPolicy) Delay(failures int) (wait time.Duration, giveUp bool) {
+	if p == nil {
+		return 0, true
+	}
+	if p.Steps > 0 && failures >= p.Steps {
+		return 0, true
+	}
+	f := 1.0
+	if p.Factor > 1 {
+		f = math.Pow(p.Factor, float64(failures-1))
+	}
+	wait = p.Initial * time.Duration(f)
+	if p.Cap > 0 && wait > p.Cap {
+		wait = p.Cap
+	}
+	if p.Jitter > 0 {
+		wait += time.Duration(p.Jitter * float64(wait) * rand.Float64())
+	}
+	return wait, false
+}
+
 // SOLInstance is one activated SOL payload: the binding between an RMCP+
 // session and the system console, plus the payload-level sequence state of
 // Table 15-2. All methods are safe for concurrent use.
@@ -296,6 +367,9 @@ type SOLInstance struct {
 	encryptOutbound atomic.Bool
 
 	conn hal.ConsoleConn
+	// open re-attaches to the console after a failure; the HAL Open call that
+	// created the initial conn. The reconnect state machine is the only user.
+	open func(context.Context) (hal.ConsoleConn, error)
 	send SOLSendFunc // nil when the server injected no sender (unit tests)
 
 	clock   clock.Clock
@@ -317,6 +391,17 @@ type SOLInstance struct {
 	rx           []byte    // drained console output awaiting transmission
 	rxSince      time.Time // when the oldest rx byte arrived (accumulate interval)
 	broken       bool      // console conn failed; reported via status bit [5]
+
+	// Reconnect state, driven by the pump (the only goroutine that touches
+	// conn while broken). policy is the activation-time snapshot of the
+	// store's ReconnectPolicy (nil disables reconnection); failures counts
+	// consecutive failed attempts; reconnectAt is when the next attempt may
+	// run, zero until the first failure starts a cycle; giveUp latches once
+	// the policy's Steps are exhausted.
+	policy      *ReconnectPolicy
+	failures    int
+	reconnectAt time.Time
+	giveUp      bool
 }
 
 // nextSOLSeq advances a payload sequence number in 1..0x0f; 0h is reserved
@@ -343,18 +428,36 @@ type SOLStore struct {
 
 	senderFactory SOLSenderFactory // set by the server at construction
 
+	// policy decides console reconnect timing; nil (the default) disables
+	// reconnection. Snapshot per activation (see Activate), so the store's
+	// value may be changed between activations without locking the data
+	// plane.
+	policy *ReconnectPolicy
+
 	mu   sync.Mutex
 	inst *SOLInstance // nil when deactivated (SOLMaxInstances == 1)
 }
 
 // NewSOLStore creates a SOLStore. h may be nil or return a nil ConsoleHAL,
-// in which case SOL stays inactive and unadvertised.
+// in which case SOL stays inactive and unadvertised. Console reconnection
+// is disabled by default; enable it with [SOLStore.SetReconnectPolicy].
 func NewSOLStore(h hal.HAL, clk clock.Clock) *SOLStore {
 	s := &SOLStore{config: NewSOLConfig(), clock: clk}
 	if h != nil {
 		s.console = h.Console()
 	}
 	return s
+}
+
+// SetReconnectPolicy enables and configures console reconnection: after a
+// console failure the pump retries the HAL Open on the policy's schedule
+// (see [ReconnectPolicy]). A nil policy (the default) disables reconnection:
+// the payload reports status bit [5] and recovers only via
+// deactivate/reactivate. Takes effect on the next activation.
+func (s *SOLStore) SetReconnectPolicy(p *ReconnectPolicy) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.policy = p
 }
 
 // SetSenderFactory installs the factory used to build per-activation senders.
@@ -435,6 +538,7 @@ func (s *SOLStore) Activate(ctx context.Context, sess *Session, wantEnc, wantAut
 	inst := &SOLInstance{
 		SessionID: sess.BMCID,
 		conn:      conn,
+		open:      s.console.Open,
 		clock:     s.clock,
 		config:    s.config,
 		stopCh:    make(chan struct{}),
@@ -452,6 +556,10 @@ func (s *SOLStore) Activate(ctx context.Context, sess *Session, wantEnc, wantAut
 		_ = conn.Close()
 		return nil, ErrSOLAlreadyActive
 	}
+	// Snapshot the reconnect policy under the store lock; the pump reads it
+	// on this instance only, so later SetReconnectPolicy calls do not need
+	// to synchronize with the data plane.
+	inst.policy = s.policy
 	s.inst = inst
 	s.mu.Unlock()
 
@@ -659,11 +767,22 @@ func (inst *SOLInstance) pumpTick() {
 	accumulate, threshold, retryCount, retryInterval := inst.config.timing()
 
 	inst.mu.Lock()
+	now := inst.clock.Now()
+
+	// A failed console conn enters the reconnect state machine before any
+	// other pump work: recovery is the pump's job alone (ProcessPacket never
+	// touches conn while broken), so the data plane must not skip it behind
+	// a nil-conn check. reconnectLocked temporarily drops the lock while the
+	// HAL dials (a dial may block), then re-acquires it to install state.
+	if inst.broken {
+		inst.reconnectLocked(now)
+		inst.mu.Unlock()
+		return
+	}
 	defer inst.mu.Unlock()
 	if inst.conn == nil || inst.send == nil {
 		return
 	}
-	now := inst.clock.Now()
 
 	if inst.pending != nil {
 		if inst.suspended {
@@ -697,6 +816,73 @@ func (inst *SOLInstance) pumpTick() {
 		inst.makeOutboundLocked()
 		inst.sendLocked()
 	}
+}
+
+// reconnectLocked drives the console recovery state machine. Called by the
+// pump on every tick while broken, entered with inst.mu held:
+//
+//   - first entry: release the dead conn. ProcessPacket never touches conn
+//     while broken (it answers with NACK + status bit [5] instead), so
+//     replacing the conn here cannot race a keystroke write.
+//   - on each policy-determined expiry: ask the console HAL for a fresh
+//     conn. A successful attach clears broken and drops the pre-failure RX
+//     residue — bytes read before the failure belong to the old console
+//     session (e.g. a rebooted system) and must not reach the remote
+//     console. Pending outbound data is kept: the remote console still owns
+//     its ACK (Table 15-3), and the retry engine already decides its fate.
+//
+// A nil policy (reconnection disabled) releases the dead conn once and then
+// does nothing: the payload stays active with status bit [5] until the
+// remote console deactivates it.
+//
+// The HAL dial happens with the lock dropped: it may block for up to
+// consoleReconnectOpenTimeout, and holding inst.mu across it would stall
+// keystroke processing and status responses. State is only ever mutated
+// under the lock, so the unlock window is safe — broken stays true (only
+// this goroutine clears it) and ProcessPacket only inspects it.
+func (inst *SOLInstance) reconnectLocked(now time.Time) {
+	if inst.conn != nil {
+		_ = inst.conn.Close()
+		inst.conn = nil
+	}
+	if inst.policy == nil || inst.giveUp {
+		return // reconnection disabled, or Steps exhausted
+	}
+	if inst.reconnectAt.IsZero() {
+		// First failure: the policy decides the first retry delay.
+		inst.failures = 1
+		inst.reconnectAt = now.Add(inst.policyDelay())
+	}
+	if now.Before(inst.reconnectAt) {
+		return // still backing off
+	}
+	inst.mu.Unlock() // dial without the lock; re-acquire to install state
+	ctx, cancel := context.WithTimeout(context.Background(), consoleReconnectOpenTimeout)
+	conn, err := inst.open(ctx)
+	cancel()
+	inst.mu.Lock()
+	if err != nil {
+		inst.failures++
+		inst.reconnectAt = now.Add(inst.policyDelay())
+		return
+	}
+	inst.conn = conn
+	inst.broken = false
+	inst.failures = 0
+	inst.reconnectAt = time.Time{}
+	inst.giveUp = false
+	inst.rx = nil
+	inst.rxSince = time.Time{}
+}
+
+// policyDelay asks the policy for the wait before the next attempt,
+// latching giveUp once its Steps are exhausted. inst.mu must be held.
+func (inst *SOLInstance) policyDelay() time.Duration {
+	wait, giveUp := inst.policy.Delay(inst.failures)
+	if giveUp {
+		inst.giveUp = true
+	}
+	return wait
 }
 
 // sendLocked transmits the pending packet. inst.mu must be held.
@@ -771,7 +957,7 @@ func (s *SOLStore) ProcessPacket(ctx context.Context, sessionID uint32, in *type
 
 	inst.mu.Lock()
 	defer inst.mu.Unlock()
-	if inst.conn == nil {
+	if inst.conn == nil && !inst.broken {
 		return nil
 	}
 
@@ -822,12 +1008,12 @@ func (s *SOLStore) ProcessPacket(ctx context.Context, sessionID uint32, in *type
 			accepted = inst.lastAccepted
 			nack = inst.lastNACK
 		} else {
-			if in.ControlByte&0x10 != 0 { // bit [4]: generate BREAK
-				_ = inst.conn.SendBreak(ctx) // best effort; BREAK is advisory
-			}
 			if inst.broken {
 				nack = true
 			} else {
+				if in.ControlByte&0x10 != 0 { // bit [4]: generate BREAK
+					_ = inst.conn.SendBreak(ctx) // best effort; BREAK is advisory
+				}
 				n, err := inst.conn.Write(in.CharacterData)
 				accepted = uint8(n)
 				if err != nil {

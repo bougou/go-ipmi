@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/clock"
 	"github.com/bougou/go-ipmi/pkg/command/transport"
+	"github.com/bougou/go-ipmi/pkg/hal"
 	"github.com/bougou/go-ipmi/pkg/hal/mock"
 	"github.com/bougou/go-ipmi/pkg/server"
 	"github.com/bougou/go-ipmi/pkg/transport/udp"
@@ -41,12 +43,23 @@ func (b *lockedBuffer) String() string {
 // fake console attached, and connects a lanplus client to it.
 func newSOLTestServer(t *testing.T) (c *Client, b *bmc.BMC, fake *mock.FakeConsoleConn) {
 	t.Helper()
-
 	fake = &mock.FakeConsoleConn{}
+	c, b = newSOLTestServerWithConsole(t, &mock.Console{Conn: fake})
+	return c, b, fake
+}
+
+// newSOLTestServerWithConsole is newSOLTestServer with a caller-supplied
+// console HAL (e.g. one that swaps the attached console on reconnect).
+func newSOLTestServerWithConsole(t *testing.T, ch *mock.Console) (c *Client, b *bmc.BMC) {
+	t.Helper()
+
 	m := mock.New()
-	m.SetConsole(&mock.Console{Conn: fake})
+	m.SetConsole(ch)
 
 	b = bmc.New(bmc.DeviceInfo{IPMIVersion: 0x20}, [16]byte{}, m, bmc.WithClock(clock.Real))
+	// Reconnection is opt-in (disabled by default); the loopback tests that
+	// go through this helper all exercise the reconnect path.
+	b.SOL.SetReconnectPolicy(&bmc.DefaultReconnectPolicy)
 	user, err := b.Users.Add(2, "ADMIN")
 	if err != nil {
 		t.Fatalf("add user: %v", err)
@@ -76,7 +89,7 @@ func newSOLTestServer(t *testing.T) (c *Client, b *bmc.BMC, fake *mock.FakeConso
 	if err := c.Connect(ctx); err != nil {
 		t.Fatalf("client connect: %v", err)
 	}
-	return c, b, fake
+	return c, b
 }
 
 func waitForCondition(t *testing.T, what string, fn func() bool) {
@@ -196,4 +209,91 @@ func newSOLTestServerFromExisting(t *testing.T, c1 *Client) (c2 *Client, b *bmc.
 		t.Fatalf("client2 connect: %v", err)
 	}
 	return c2, nil, nil
+}
+
+// TestSOLReconnectLoopback verifies the remote console experiences a
+// transparent recovery: when the system console fails and the server
+// re-attaches to a fresh console, the SOL session keeps running with no
+// client action — output resumes, keystrokes flow, the payload stays active.
+func TestSOLReconnectLoopback(t *testing.T) {
+	fake1 := &mock.FakeConsoleConn{}
+	fake2 := &mock.FakeConsoleConn{}
+	opens := 0
+	ch := &mock.Console{OpenHook: func(context.Context) (hal.ConsoleConn, error) {
+		opens++
+		if opens == 1 {
+			return fake1, nil // activation
+		}
+		return fake2, nil // reconnects
+	}}
+	c, b := newSOLTestServerWithConsole(t, ch)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	inR, inW := io.Pipe()
+	out := &lockedBuffer{}
+
+	solErr := make(chan error, 1)
+	go func() {
+		solErr <- c.SOLActivate(ctx, inR, out, &SOLActivateOptions{PollInterval: 20 * time.Millisecond})
+	}()
+	waitForCondition(t, "SOL activation", func() bool {
+		return b.SOL.ActiveSessionID(1) != 0
+	})
+
+	// Normal round before the outage.
+	fake1.FeedRX([]byte("login: "))
+	waitForCondition(t, "console output at remote", func() bool {
+		return strings.Contains(out.String(), "login: ")
+	})
+	if _, err := inW.Write([]byte("root\r")); err != nil {
+		t.Fatalf("write input: %v", err)
+	}
+	waitForCondition(t, "keystrokes at console", func() bool {
+		return strings.Contains(fake1.TXString(), "root\r")
+	})
+
+	// Console dies mid-session; anything queued on it afterwards is stale
+	// residue that must not reach the remote console.
+	fake1.SetReadErr(errors.New("console died"))
+	fake1.FeedRX([]byte("stale"))
+
+	// Recovery is server-driven: the dead conn is released, a fresh one
+	// attached, and output resumes — with no client-side action.
+	waitForCondition(t, "console reconnect", fake1.IsClosed)
+	fake2.FeedRX([]byte("recovered: "))
+	waitForCondition(t, "console output after reconnect", func() bool {
+		return strings.Contains(out.String(), "recovered: ")
+	})
+	if strings.Contains(out.String(), "stale") {
+		t.Fatalf("stale pre-outage residue leaked to the remote console: %q", out.String())
+	}
+
+	// Keystrokes now land on the fresh console; the session is untouched.
+	if _, err := inW.Write([]byte("who\r")); err != nil {
+		t.Fatalf("write input after reconnect: %v", err)
+	}
+	waitForCondition(t, "keystrokes at reconnected console", func() bool {
+		return strings.Contains(fake2.TXString(), "who\r")
+	})
+	if b.SOL.ActiveSessionID(1) == 0 {
+		t.Fatal("payload deactivated by the reconnect")
+	}
+	select {
+	case err := <-solErr:
+		t.Fatalf("SOLActivate returned during reconnect: %v", err)
+	default:
+	}
+
+	// Clean deactivation still works at the end.
+	_ = inW.Close()
+	select {
+	case err := <-solErr:
+		if err != nil {
+			t.Fatalf("SOLActivate: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("SOLActivate did not return after input EOF")
+	}
 }

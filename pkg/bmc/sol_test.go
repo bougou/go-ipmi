@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -676,5 +677,456 @@ func TestSOLPumpRetryAndDrop(t *testing.T) {
 	}
 	if pkts[3].ControlByte&0x08 == 0 {
 		t.Fatalf("after drop: control %#02x missing transmit-overrun bit", pkts[3].ControlByte)
+	}
+}
+
+// --- console reconnect (recovery from a failed console conn) ---
+
+// newReconnectBMC builds a pump BMC whose console Open is driven by hook,
+// returning the BMC, an active session, and the async send capture.
+func newReconnectBMC(t *testing.T, hook func(context.Context) (hal.ConsoleConn, error)) (*BMC, *Session, *pumpCapture) {
+	t.Helper()
+	m := mock.New()
+	m.SetConsole(&mock.Console{OpenHook: hook})
+	b := New(DeviceInfo{}, [16]byte{}, m, WithClock(clock.Real))
+	// Reconnection is opt-in; the helper enables the default policy so the
+	// reconnect tests exercise the feature rather than the disabled default.
+	b.SOL.SetReconnectPolicy(&DefaultReconnectPolicy)
+	cap := &pumpCapture{}
+	b.SOL.SetSenderFactory(func(sess *Session, inst *SOLInstance) SOLSendFunc { return cap.send })
+	sess := newSOLTestSession(t, b)
+	sess.Addr = &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 5000}
+	return b, sess, cap
+}
+
+func waitForCondition(t *testing.T, cond func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		if cond() {
+			return
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatal("timed out waiting for condition")
+}
+
+func instBroken(inst *SOLInstance) bool {
+	inst.mu.Lock()
+	defer inst.mu.Unlock()
+	return inst.broken
+}
+
+// TestSOLReconnectRecovers verifies the full recovery cycle: a failing
+// console conn flips the instance broken (NACK + status bit [5]), the pump
+// re-attaches via the HAL Open, and the data plane resumes — with the
+// pre-failure RX residue dropped (it belongs to the dead console session).
+func TestSOLReconnectRecovers(t *testing.T) {
+	fake1 := &mock.FakeConsoleConn{}
+	fake2 := &mock.FakeConsoleConn{}
+	opens := 0
+	// release gates the first reconnect: the outage window is only one pump
+	// tick wide, so the test holds the reconnect until the broken-state
+	// behavior (NACK + status bit [5]) has been observed.
+	release := make(chan struct{})
+	var releaseOnce sync.Once
+	releaseReconnect := func() { releaseOnce.Do(func() { close(release) }) }
+	// Any failed assertion must not strand the pump (which CloseAll waits
+	// for), so the gate is always released before cleanup runs.
+	t.Cleanup(releaseReconnect)
+	b, sess, cap := newReconnectBMC(t, func(context.Context) (hal.ConsoleConn, error) {
+		opens++
+		if opens == 1 {
+			return fake1, nil // activation
+		}
+		<-release // hold the reconnect while the outage is verified
+		return fake2, nil
+	})
+	inst, err := b.SOL.Activate(context.Background(), sess, false, false)
+	if err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	t.Cleanup(b.SOL.CloseAll)
+
+	// One normal output round, acknowledged, so pending is non-empty when
+	// the console dies: the reconnect must keep that pending state.
+	fake1.FeedRX([]byte("hello"))
+	pkts := waitForPkt(t, cap, 1)
+	feed(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: pkts[0].SequenceNumber, AcceptedCharacterCount: 5})
+
+	// Console dies; anything queued on it afterwards is stale residue.
+	fake1.SetReadErr(errors.New("console died"))
+	fake1.FeedRX([]byte("stale"))
+
+	waitForCondition(t, func() bool { return instBroken(inst) })
+	out := feed(t, b.SOL, sess, &types.SOLPayloadPacket{SequenceNumber: 2, CharacterData: []byte("k")})
+	if !out.NACK {
+		t.Fatalf("keystroke during outage: NACK=%v, want true", out.NACK)
+	}
+	if out.ControlByte&0x20 == 0 {
+		t.Fatalf("keystroke during outage: control %#02x missing status bit [5]", out.ControlByte)
+	}
+
+	// Release the reconnect: it fires immediately, releasing the dead conn.
+	releaseReconnect()
+	waitForCondition(t, func() bool { return !instBroken(inst) })
+	if !fake1.IsClosed() {
+		t.Fatalf("dead console conn not closed")
+	}
+
+	// Keystrokes reach the fresh console, and its output flows on — the
+	// stale residue from the dead console is not forwarded.
+	feed(t, b.SOL, sess, &types.SOLPayloadPacket{SequenceNumber: 3, CharacterData: []byte("x")})
+	if got := fake2.TXString(); got != "x" {
+		t.Fatalf("keystroke after reconnect: TX %q, want %q", got, "x")
+	}
+	fake2.FeedRX([]byte("fresh"))
+	pkts = waitForPkt(t, cap, 2)
+	if string(pkts[1].CharacterData) != "fresh" {
+		t.Fatalf("after reconnect: data %q, want %q (stale residue must be dropped)", pkts[1].CharacterData, "fresh")
+	}
+
+	// Output continues after the reconnect. ACK the "fresh" packet first so
+	// the retry engine does not re-send it while the next chunk accumulates.
+	feed(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: pkts[1].SequenceNumber, AcceptedCharacterCount: 5})
+	fake2.FeedRX([]byte("second"))
+	waitForCondition(t, func() bool {
+		for _, p := range cap.all() {
+			if string(p.CharacterData) == "second" {
+				return true
+			}
+		}
+		return false
+	})
+}
+
+// TestSOLReconnectKeepsPending verifies the unacknowledged outbound packet
+// survives the reconnect: the remote console still owes its ACK
+// (Table 15-3), so the pump must keep it rather than treat the new console
+// as a fresh start.
+func TestSOLReconnectKeepsPending(t *testing.T) {
+	fake1 := &mock.FakeConsoleConn{}
+	fake2 := &mock.FakeConsoleConn{}
+	opens := 0
+	b, sess, cap := newReconnectBMC(t, func(context.Context) (hal.ConsoleConn, error) {
+		opens++
+		if opens == 1 {
+			return fake1, nil
+		}
+		return fake2, nil
+	})
+	inst, err := b.SOL.Activate(context.Background(), sess, false, false)
+	if err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	t.Cleanup(b.SOL.CloseAll)
+
+	// Keep the unacknowledged packet alive across the outage: the retry
+	// engine would drop it after its retries are exhausted (§15.11), which
+	// is unrelated to the reconnect — widen the window (200 × 10ms) and
+	// retry immediately so only the reconnect could be responsible for
+	// losing it.
+	if cc := b.SOL.Config().SetParam(4, []byte{200, 1}); cc != types.CodeOK {
+		t.Fatalf("set retry: CC %#02x", cc)
+	}
+	b.SOL.SetReconnectPolicy(&ReconnectPolicy{}) // Initial 0: reconnect immediately
+
+	fake1.FeedRX([]byte("abc"))
+	pkts := waitForPkt(t, cap, 1) // seq 1, unacknowledged
+	// Break the console via the keystroke path: while pending != nil the
+	// pump never reads the console, so a read failure could not flip broken
+	// before the retry engine dropped the pending packet — a write failure
+	// in ProcessPacket can, leaving pending untouched.
+	fake1.SetWriteErr(errors.New("console died"))
+	out := feed(t, b.SOL, sess, &types.SOLPayloadPacket{SequenceNumber: 2, CharacterData: []byte("k")})
+	if !out.NACK {
+		t.Fatalf("keystroke on failing console: NACK=%v, want true", out.NACK)
+	}
+	waitForCondition(t, func() bool { return instBroken(inst) })
+	waitForCondition(t, func() bool { return !instBroken(inst) })
+
+	inst.mu.Lock()
+	pending := inst.pending != nil
+	inst.mu.Unlock()
+	if !pending {
+		t.Fatalf("reconnect dropped the unacknowledged pending packet")
+	}
+
+	// The pre-outage ACK is still honored after the reconnect.
+	feed(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: pkts[0].SequenceNumber, AcceptedCharacterCount: 3})
+	inst.mu.Lock()
+	pending = inst.pending != nil
+	inst.mu.Unlock()
+	if pending {
+		t.Fatalf("pending not cleared by ACK after reconnect")
+	}
+}
+
+// TestSOLReconnectWriteErrorTriggers verifies that a failing console Write
+// (keystroke path) also starts the reconnect cycle.
+func TestSOLReconnectWriteErrorTriggers(t *testing.T) {
+	fake1 := &mock.FakeConsoleConn{}
+	fake2 := &mock.FakeConsoleConn{}
+	opens := 0
+	b, sess, _ := newReconnectBMC(t, func(context.Context) (hal.ConsoleConn, error) {
+		opens++
+		if opens == 1 {
+			return fake1, nil
+		}
+		return fake2, nil
+	})
+	inst, err := b.SOL.Activate(context.Background(), sess, false, false)
+	if err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	t.Cleanup(b.SOL.CloseAll)
+
+	fake1.SetWriteErr(errors.New("console write failed"))
+	out := feed(t, b.SOL, sess, &types.SOLPayloadPacket{SequenceNumber: 5, CharacterData: []byte("k")})
+	if !out.NACK {
+		t.Fatalf("keystroke on failing console: NACK=%v, want true", out.NACK)
+	}
+
+	waitForCondition(t, func() bool { return !instBroken(inst) })
+	if !fake1.IsClosed() {
+		t.Fatalf("dead console conn not closed")
+	}
+	feed(t, b.SOL, sess, &types.SOLPayloadPacket{SequenceNumber: 6, CharacterData: []byte("y")})
+	if got := fake2.TXString(); got != "y" {
+		t.Fatalf("keystroke after reconnect: TX %q, want %q", got, "y")
+	}
+}
+
+// TestSOLReconnectBackoff verifies the exponential backoff between failed
+// reconnect attempts: the first fires immediately, later failures double
+// the delay (bounded by consoleReconnectMax), and no attempt fires early.
+func TestSOLReconnectBackoff(t *testing.T) {
+	fake1 := &mock.FakeConsoleConn{}
+	var opens atomic.Int32
+	b, sess, _ := newReconnectBMC(t, func(context.Context) (hal.ConsoleConn, error) {
+		opens.Add(1)
+		if opens.Load() == 1 {
+			return fake1, nil
+		}
+		return nil, errors.New("console unreachable")
+	})
+	inst, err := b.SOL.Activate(context.Background(), sess, false, false)
+	if err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	t.Cleanup(b.SOL.CloseAll)
+
+	fake1.SetReadErr(errors.New("console died"))
+
+	// First attempt is immediate; its failure arms the 1s backoff.
+	waitForCondition(t, func() bool { return opens.Load() >= 2 })
+	inst.mu.Lock()
+	armed := inst.reconnectAt.Sub(inst.clock.Now())
+	inst.mu.Unlock()
+	if armed < 900*time.Millisecond || armed > 2*time.Second {
+		t.Fatalf("first backoff armed at %v, want ~1s", armed)
+	}
+
+	// No early retry while backing off.
+	time.Sleep(300 * time.Millisecond)
+	if opens.Load() > 2 {
+		t.Fatalf("reconnect fired early (opens=%d)", opens.Load())
+	}
+
+	// After the 1s backoff the second attempt fires, and its failure arms
+	// the next delay from the policy (1s, 2s, 4s, ... sequence).
+	waitForCondition(t, func() bool { return opens.Load() >= 3 })
+	inst.mu.Lock()
+	failures := inst.failures
+	armed = inst.reconnectAt.Sub(inst.clock.Now())
+	inst.mu.Unlock()
+	if failures != 3 {
+		t.Fatalf("failures after 2nd failure: %d, want 3", failures)
+	}
+	if armed < 1900*time.Millisecond {
+		t.Fatalf("second backoff armed at %v, want ~2s", armed)
+	}
+}
+
+// TestSOLReconnectDeactivateWhileBroken verifies deactivation completes
+// while the reconnect cycle is backing off (no hang, conn released).
+func TestSOLReconnectDeactivateWhileBroken(t *testing.T) {
+	fake1 := &mock.FakeConsoleConn{}
+	var opens atomic.Int32
+	b, sess, _ := newReconnectBMC(t, func(context.Context) (hal.ConsoleConn, error) {
+		opens.Add(1)
+		if opens.Load() == 1 {
+			return fake1, nil
+		}
+		return nil, errors.New("console unreachable")
+	})
+	if _, err := b.SOL.Activate(context.Background(), sess, false, false); err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+
+	fake1.SetReadErr(errors.New("console died"))
+	waitForCondition(t, func() bool { return opens.Load() >= 2 }) // backing off
+
+	done := make(chan error, 1)
+	go func() { done <- b.SOL.Deactivate(sess) }()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("deactivate: %v", err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("deactivate hung during reconnect backoff")
+	}
+	if !fake1.IsClosed() {
+		t.Fatalf("dead console conn not closed on deactivate")
+	}
+}
+
+func TestDefaultReconnectPolicy(t *testing.T) {
+	// Interval sequence: 1s initial, doubling capped at 30s; retries
+	// forever (Steps 0).
+	want := []time.Duration{time.Second, 2 * time.Second, 4 * time.Second, 8 * time.Second, 16 * time.Second, 30 * time.Second, 30 * time.Second}
+	for i, w := range want {
+		got, giveUp := DefaultReconnectPolicy.Delay(i + 1)
+		if got != w || giveUp {
+			t.Fatalf("Delay(%d): got %v giveUp=%v, want %v/false", i+1, got, giveUp, w)
+		}
+	}
+}
+
+// TestReconnectPolicySteps verifies Steps bounds the attempts and Jitter
+// stays within the declared range.
+func TestReconnectPolicySteps(t *testing.T) {
+	p := ReconnectPolicy{Initial: 100 * time.Millisecond, Factor: 2, Jitter: 0.5, Cap: time.Second, Steps: 3}
+	// 3 reconnect attempts: failures 1..2 keep going, failure 3 gives up.
+	for i := 1; i <= 2; i++ {
+		if _, giveUp := p.Delay(i); giveUp {
+			t.Fatalf("Delay(%d): gave up early", i)
+		}
+	}
+	if _, giveUp := p.Delay(3); !giveUp {
+		t.Fatal("Delay(3): want give-up past Steps")
+	}
+	// Jitter keeps the wait within [base, base*(1+Jitter)).
+	for i := 1; i <= 2; i++ {
+		base := p.Initial * time.Duration(1<<(i-1))
+		got, _ := p.Delay(i)
+		if got < base || got >= base+time.Duration(float64(base)*p.Jitter) {
+			t.Fatalf("Delay(%d) jittered to %v, want within [%v, %v)", i, got, base, base+time.Duration(float64(base)*p.Jitter))
+		}
+	}
+}
+
+// TestSOLReconnectDisabled verifies the opt-out (nil ReconnectPolicy):
+// the dead conn is released once, no further Open attempts happen, and the
+// payload keeps reporting status bit [5] until deactivation — the
+// spec-defined behavior without the reconnect enhancement.
+func TestSOLReconnectDisabled(t *testing.T) {
+	fake1 := &mock.FakeConsoleConn{}
+	var opens atomic.Int32
+	b, sess, _ := newReconnectBMC(t, func(context.Context) (hal.ConsoleConn, error) {
+		opens.Add(1)
+		return fake1, nil
+	})
+	b.SOL.SetReconnectPolicy(nil)
+	inst, err := b.SOL.Activate(context.Background(), sess, false, false)
+	if err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	t.Cleanup(b.SOL.CloseAll)
+
+	fake1.SetReadErr(errors.New("console died"))
+	waitForCondition(t, func() bool { return instBroken(inst) })
+
+	time.Sleep(300 * time.Millisecond)
+	if opens.Load() != 1 {
+		t.Fatalf("reconnect attempted despite disabled policy (opens=%d)", opens.Load())
+	}
+	if !fake1.IsClosed() {
+		t.Fatalf("dead console conn not released")
+	}
+
+	// The payload keeps answering with status bit [5] so the remote console
+	// can tell the outage apart from a dead BMC.
+	out := feed(t, b.SOL, sess, &types.SOLPayloadPacket{})
+	if out.ControlByte&0x20 == 0 {
+		t.Fatalf("disabled reconnect: control %#02x missing status bit [5]", out.ControlByte)
+	}
+}
+
+// TestSOLReconnectCustomPolicy verifies a caller-supplied ReconnectPolicy
+// drives both the first-retry decision and the later backoff, receiving the
+// consecutive failure count (1-based).
+func TestSOLReconnectCustomPolicy(t *testing.T) {
+	fake1 := &mock.FakeConsoleConn{}
+	fake2 := &mock.FakeConsoleConn{}
+	var opens atomic.Int32
+	b, sess, _ := newReconnectBMC(t, func(context.Context) (hal.ConsoleConn, error) {
+		opens.Add(1)
+		switch opens.Load() {
+		case 1:
+			return fake1, nil // activation
+		case 2:
+			return nil, errors.New("still down") // first retry fails
+		}
+		return fake2, nil // second retry succeeds
+	})
+	// Fixed 100ms retry schedule: the first retry waits 100ms (Initial),
+	// the second (which succeeds) another 100ms (Factor 1).
+	b.SOL.SetReconnectPolicy(&ReconnectPolicy{Initial: 100 * time.Millisecond, Factor: 1, Cap: 100 * time.Millisecond})
+	inst, err := b.SOL.Activate(context.Background(), sess, false, false)
+	if err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	t.Cleanup(b.SOL.CloseAll)
+
+	fake1.SetReadErr(errors.New("console died"))
+	// opens reaching 3 anchors both retries: the first failed, the second
+	// (100ms later) succeeded.
+	waitForCondition(t, func() bool { return opens.Load() >= 3 })
+	waitForCondition(t, func() bool { return !instBroken(inst) })
+	if !fake1.IsClosed() {
+		t.Fatalf("dead console conn not closed")
+	}
+	feed(t, b.SOL, sess, &types.SOLPayloadPacket{SequenceNumber: 7, CharacterData: []byte("z")})
+	if got := fake2.TXString(); got != "z" {
+		t.Fatalf("keystroke after custom-policy reconnect: TX %q, want %q", got, "z")
+	}
+}
+
+// TestSOLReconnectGiveUpAfterSteps verifies a policy with bounded Steps:
+// once the attempts are exhausted the instance stops reconnecting and
+// behaves like the disabled default (status bit [5], no further Opens).
+func TestSOLReconnectGiveUpAfterSteps(t *testing.T) {
+	fake1 := &mock.FakeConsoleConn{}
+	var opens atomic.Int32
+	b, sess, _ := newReconnectBMC(t, func(context.Context) (hal.ConsoleConn, error) {
+		opens.Add(1)
+		if opens.Load() == 1 {
+			return fake1, nil
+		}
+		return nil, errors.New("console unreachable")
+	})
+	// One immediate retry (Steps 1), then give up.
+	b.SOL.SetReconnectPolicy(&ReconnectPolicy{Steps: 1})
+	inst, err := b.SOL.Activate(context.Background(), sess, false, false)
+	if err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	t.Cleanup(b.SOL.CloseAll)
+
+	fake1.SetReadErr(errors.New("console died"))
+	// First retry fires immediately and fails; after that, no more.
+	waitForCondition(t, func() bool { return opens.Load() >= 2 })
+	time.Sleep(300 * time.Millisecond)
+	if opens.Load() > 2 {
+		t.Fatalf("reconnect continued past Steps (opens=%d)", opens.Load())
+	}
+	if !instBroken(inst) {
+		t.Fatal("instance recovered despite Steps exhaustion")
+	}
+	out := feed(t, b.SOL, sess, &types.SOLPayloadPacket{})
+	if out.ControlByte&0x20 == 0 {
+		t.Fatalf("after give-up: control %#02x missing status bit [5]", out.ControlByte)
 	}
 }

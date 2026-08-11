@@ -21,6 +21,8 @@
 #   GOIPMI_SERVER_PORT – port for the server to listen on (default: random)
 #   IPMITOOL_BIN       – path to ipmitool   (auto-detected if unset)
 #   IPMITOOL_IMAGE     – Docker image fallback (default: ghcr.io/halfcrazy/ipmitool:faea53b)
+#   SOL_RECONNECT      – enable server-side console reconnection and run the
+#                        outage/recovery suite (default: 1)
 #
 # Requires: make build  (or: make test-e2e-sol)
 #
@@ -97,6 +99,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
+SOL_RECONNECT="${SOL_RECONNECT:-1}"
+
 echo "==> Starting goipmi-server on :${GOIPMI_SERVER_PORT} with PTY console ..."
 # GOIPMI_SERVER_TRACE: per-packet SOL trace (sol< / sol> lines with
 # timestamps) goes to SERVER_LOG; failures below dump it.
@@ -104,6 +108,7 @@ GOIPMI_SERVER_PORT="${GOIPMI_SERVER_PORT}" \
 GOIPMI_SERVER_USER="${GOIPMI_USER}" \
 GOIPMI_SERVER_PASS="${GOIPMI_PASS}" \
 GOIPMI_SERVER_CONSOLE=pty \
+GOIPMI_SERVER_SOL_RECONNECT="${SOL_RECONNECT}" \
 GOIPMI_SERVER_TRACE=1 \
 	"${SERVER_BIN}" > "${SERVER_LOG}" 2>&1 &
 SERVER_PID=$!
@@ -313,6 +318,9 @@ run_interactive_suite() {
 	e2e_run_test "${label}: outbound (BMC → console)" case_outbound || ((FAILURES++)) || true
 	e2e_run_test "${label}: outbound streaming (40 lines)" case_streaming || ((FAILURES++)) || true
 	e2e_run_test "${label}: inbound (console → BMC)" case_inbound || ((FAILURES++)) || true
+	if [ "${SOL_RECONNECT}" = "1" ]; then
+		e2e_run_test "${label}: reconnect after console fault" reconnect_case || ((FAILURES++)) || true
+	fi
 	e2e_run_test "${label}: deactivate via ~." stop_client || ((FAILURES++)) || true
 	exec 9>&-
 }

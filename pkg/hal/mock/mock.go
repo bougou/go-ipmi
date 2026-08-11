@@ -332,6 +332,22 @@ type FakeConsoleConn struct {
 	WriteLimit int
 }
 
+// SetReadErr arms a read failure for the next ReadAvailable, safe for
+// concurrent use with a running SOL session (unlike direct ReadErr writes).
+func (f *FakeConsoleConn) SetReadErr(err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.ReadErr = err
+}
+
+// SetWriteErr arms a write failure for the next Write, safe for concurrent
+// use with a running SOL session (unlike direct WriteErr writes).
+func (f *FakeConsoleConn) SetWriteErr(err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.WriteErr = err
+}
+
 func (f *FakeConsoleConn) ReadAvailable(p []byte) (int, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
