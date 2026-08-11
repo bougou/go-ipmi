@@ -231,19 +231,24 @@ stop_client() { # ask the client to exit via the ~. escape, then reap
 # ---------------------------------------------------------------------------
 # The interactive suite, run once per available client
 # ---------------------------------------------------------------------------
-case_outbound() { # console output reaches the remote client
+case_outbound() { # console output reaches the remote client exactly once
 	printf 'E2E-OUT-%s\r\n' "${MODE}" > "${SLAVE}"
-	wait_for "${SOL_OUT}" "E2E-OUT-${MODE}" 50
+	# A retransmission (§15.9/§15.11) must not be re-delivered: the marker
+	# appears in the client's output exactly once. The goipmi --debug hex
+	# dumps carry no ASCII, so counts are unaffected by them.
+	wait_for "${SOL_OUT}" "E2E-OUT-${MODE}" 50 &&
+		[ "$(grep -c "E2E-OUT-${MODE}" "${SOL_OUT}")" -eq 1 ]
 }
 
-case_streaming() { # multi-packet output arrives complete and in order
+case_streaming() { # multi-packet output arrives complete, in order, once each
 	local i
 	for ((i = 1; i <= 40; i++)); do
 		printf 'stream-line-%02d\r\n' "${i}" > "${SLAVE}"
 	done
 	printf 'E2E-STREAM-END-%s\r\n' "${MODE}" > "${SLAVE}"
 	wait_for "${SOL_OUT}" "E2E-STREAM-END-${MODE}" 100 &&
-		grep -qa "stream-line-01" "${SOL_OUT}" && grep -qa "stream-line-40" "${SOL_OUT}"
+		[ "$(grep -c "stream-line-01" "${SOL_OUT}")" -eq 1 ] &&
+		[ "$(grep -c "stream-line-40" "${SOL_OUT}")" -eq 1 ]
 }
 
 case_inbound() { # remote keystrokes land on the system serial port
