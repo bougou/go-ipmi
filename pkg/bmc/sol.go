@@ -229,8 +229,8 @@ func (c *SOLConfig) SetParam(selector uint8, data []byte) types.CompletionCode {
 		if len(data) < 2 {
 			return types.CodeRequestDataLengthInvalid
 		}
-		if data[0] == 0 || data[1] == 0 {
-			return types.CodeRequestDataFieldInvalid // both fields are 1-based
+		if data[0] == 0 {
+			return types.CodeRequestDataFieldInvalid // accumulate interval is 1-based (00h reserved)
 		}
 		if data[1] > SOLMaxPayloadChars {
 			return types.CodeParameterOutOfRange
@@ -274,11 +274,24 @@ func (c *SOLConfig) timing() (accumulate time.Duration, threshold int, retryCoun
 	return accumulate, int(c.sendThreshold), int(c.retryCount), retryInterval
 }
 
-// resetVolatile implements §15.8: volatile settings are copied from the
-// non-volatile settings when the payload is first activated.
-func (c *SOLConfig) resetVolatile() {
+// markActivated implements §15.8: on payload activation the volatile bit
+// rate is reloaded from the non-volatile one, and Table 26-5 #7 records the
+// channel the activation arrived on.
+func (c *SOLConfig) markActivated(ch uint8) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.vBitRate = c.nvBitRate
+	c.payloadChannel = ch
+}
+
+// ResetVolatile clears the volatile SOL configuration — only #0 set in
+// progress and #6 volatile bit rate are volatile (Table 26-5) — as after a
+// BMC cold reset / power cycle, which aborts any parameter set in progress
+// (Table 26-3 "set complete" rule).
+func (c *SOLConfig) ResetVolatile() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.setInProgress = 0
 	c.vBitRate = c.nvBitRate
 }
 
@@ -563,7 +576,7 @@ func (s *SOLStore) Activate(ctx context.Context, sess *Session, wantEnc, wantAut
 	s.inst = inst
 	s.mu.Unlock()
 
-	s.config.resetVolatile()
+	s.config.markActivated(sess.Channel)
 	if inst.send != nil {
 		go inst.pump()
 	} else {
@@ -722,7 +735,6 @@ func (inst *SOLInstance) sendDeactivating() {
 	_ = inst.send(&types.SOLPayloadPacket{
 		AckedSequenceNumber:    inst.inSeq,
 		AcceptedCharacterCount: inst.lastAccepted,
-		NACK:                   true,
 		ControlByte:            0x10,
 	})
 }
@@ -893,14 +905,20 @@ func (inst *SOLInstance) sendLocked() {
 		AcceptedCharacterCount: inst.lastAccepted,
 		CharacterData:          inst.pending,
 	}
+	inst.applyStatusLocked(pkt)
+	_ = inst.send(pkt) // send failure keeps pending; the retry path owns it
+}
+
+// applyStatusLocked stamps the BMC→console status bits on out and consumes
+// the overrun latch. inst.mu must be held.
+func (inst *SOLInstance) applyStatusLocked(out *types.SOLPayloadPacket) {
 	if inst.broken {
-		pkt.ControlByte |= 0x20 // Table 15-2 status [5]: character transfer unavailable
+		out.ControlByte |= 0x20 // Table 15-2 status [5]: character transfer unavailable
 	}
 	if inst.overrun {
-		pkt.ControlByte |= 0x08 // Table 15-2 status [3]: characters dropped since the previous packet
+		out.ControlByte |= 0x08 // Table 15-2 status [3]: characters dropped since the previous packet
 		inst.overrun = false
 	}
-	_ = inst.send(pkt) // send failure keeps pending; the retry path owns it
 }
 
 // drainConsoleLocked moves immediately-available console output into rx.
@@ -925,14 +943,10 @@ func (inst *SOLInstance) drainConsoleLocked() {
 
 // makeOutboundLocked promotes buffered console output to the pending packet.
 // One outstanding packet at a time (Table 15-2): a new sequence number is
-// assigned only when nothing is unacknowledged. Returns the pending data
-// (nil when nothing may be sent). inst.mu must be held.
-func (inst *SOLInstance) makeOutboundLocked() []byte {
-	if inst.pending != nil {
-		return inst.pending
-	}
-	if len(inst.rx) == 0 {
-		return nil
+// assigned only when nothing is unacknowledged. inst.mu must be held.
+func (inst *SOLInstance) makeOutboundLocked() {
+	if inst.pending != nil || len(inst.rx) == 0 {
+		return
 	}
 	take := min(len(inst.rx), SOLMaxPayloadChars)
 	inst.pending = append([]byte{}, inst.rx[:take]...)
@@ -940,7 +954,6 @@ func (inst *SOLInstance) makeOutboundLocked() []byte {
 	inst.outSeq = nextSOLSeq(inst.outSeq)
 	inst.retries = 0
 	inst.pendingSince = inst.clock.Now()
-	return inst.pending
 }
 
 // ProcessPacket handles one inbound SOL payload packet from the owning
@@ -949,12 +962,16 @@ func (inst *SOLInstance) makeOutboundLocked() []byte {
 func (s *SOLStore) ProcessPacket(ctx context.Context, sessionID uint32, in *types.SOLPayloadPacket) *types.SOLPayloadPacket {
 	s.mu.Lock()
 	inst := s.inst
+	s.mu.Unlock()
 	if inst == nil || inst.SessionID != sessionID {
-		s.mu.Unlock()
 		return nil
 	}
-	s.mu.Unlock()
+	return inst.ProcessPacket(ctx, in)
+}
 
+// ProcessPacket handles one inbound SOL payload packet (spec v2.0
+// §15.9/§15.11, Table 15-3) and produces the response packet.
+func (inst *SOLInstance) ProcessPacket(ctx context.Context, in *types.SOLPayloadPacket) *types.SOLPayloadPacket {
 	inst.mu.Lock()
 	defer inst.mu.Unlock()
 	if inst.conn == nil && !inst.broken {
@@ -966,11 +983,10 @@ func (s *SOLStore) ProcessPacket(ctx context.Context, sessionID uint32, in *type
 	// The console is acknowledging our pending outbound packet (Table 15-3).
 	if in.AckedSequenceNumber != 0 && inst.pending != nil && in.AckedSequenceNumber == inst.outSeq {
 		switch {
-		case in.NACK:
-			// Suspend NACK: stop sending/retrying the pending packet until a
+		case in.NACK && in.AcceptedCharacterCount == 0:
+			// Suspend NACK (Table 15-3): the console cannot accept SOL data
+			// right now. Stop sending/retrying the pending packet until a
 			// Partial/Completion ACK, Resume ACK, or Flush Outbound arrives.
-			// (A console→BMC NACK with a non-zero count is not defined by
-			// Table 15-3; suspending is the lossless reading.)
 			inst.suspended = true
 		case in.AcceptedCharacterCount == 0:
 			inst.suspended = false // Resume ACK: pending rides this response
@@ -978,8 +994,17 @@ func (s *SOLStore) ProcessPacket(ctx context.Context, sessionID uint32, in *type
 			inst.pending = nil // Completion ACK
 			inst.suspended = false
 		default:
-			// Partial ACK: retransmit the unaccepted remainder (Table 15-3).
+			// Partial ACK — a NACK with a non-zero count reads the same
+			// (rev 1.1: NACK means "some or all data could not be accepted",
+			// count meaningful): retransmit the unaccepted remainder as a
+			// fresh packet. A same-sequence resend would look like the
+			// original packet to consoles deduping by sequence number, and
+			// ipmitool's character-offset logic would see zero new bytes in
+			// a shorter retransmission (§15.11), so the remainder advances
+			// the sequence number.
 			inst.pending = inst.pending[in.AcceptedCharacterCount:]
+			inst.outSeq = nextSOLSeq(inst.outSeq)
+			inst.retries = 0
 			inst.suspended = false
 		}
 	}
@@ -993,8 +1018,9 @@ func (s *SOLStore) ProcessPacket(ctx context.Context, sessionID uint32, in *type
 		inst.rx = nil
 		inst.suspended = false
 	}
-	// Flush Inbound (bit [1]) needs no action: inbound keystrokes are written
-	// to the system console synchronously, so no BMC-side buffer exists.
+	// Flush Inbound (bit [1]) needs no instance-side action: keystrokes are
+	// written to the system console synchronously, and the server layer
+	// drops the session's not-yet-processed queued packets on flush.
 
 	// Inbound operations and character data. ACK-only packets (seq 0h) carry
 	// no data and are never acknowledged (§15.11).
@@ -1049,14 +1075,6 @@ func (s *SOLStore) ProcessPacket(ctx context.Context, sessionID uint32, in *type
 	out.AckedSequenceNumber = inst.inSeq
 	out.AcceptedCharacterCount = accepted
 	out.NACK = nack
-	if inst.broken {
-		// Status bit [5]: character transfer is unavailable (Table 15-2,
-		// BMC→console status), e.g. system powered down or console gone.
-		out.ControlByte |= 0x20
-	}
-	if inst.overrun {
-		out.ControlByte |= 0x08 // status [3]: characters dropped since the previous packet
-		inst.overrun = false
-	}
+	inst.applyStatusLocked(out)
 	return out
 }

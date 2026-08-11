@@ -52,12 +52,7 @@ func (h *HAL) I2C() hal.I2CHAL         { return h.i2c }
 
 // Console returns the console installed by [HAL.SetConsole], or nil when the
 // simulated target has no redirectable serial port.
-func (h *HAL) Console() hal.ConsoleHAL {
-	if h.console == nil {
-		return nil
-	}
-	return h.console
-}
+func (h *HAL) Console() hal.ConsoleHAL { return h.console }
 
 // SetConsole installs the console sub-interface returned by [HAL.Console].
 // Tests typically pass [*Console]; production wiring may pass any

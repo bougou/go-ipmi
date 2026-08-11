@@ -19,14 +19,15 @@ func MinimumPrivilege(netFn, cmd uint8) bmc.PrivilegeLevel {
 		switch cmd {
 		case CmdColdReset, CmdWarmReset:
 			return bmc.PrivilegeLevelAdministrator
-		case 0x4c: // Set User Payload Access, like Set User Access (§24.6)
+		case 0x4c: // Set User Payload Access (§24.6, Table 24-8): user administration
 			return bmc.PrivilegeLevelAdministrator
 		default:
 			return bmc.PrivilegeLevelUser
 		}
 	case NetFnTransportRequest:
-		// SOL configuration writes mirror LAN configuration writes; the
-		// Activate Payload privilege itself comes from SOL parameter #2.
+		// Set SOL Configuration Parameters (§26.2) is a configuration write
+		// like Set LAN Configuration Parameters; the Activate Payload
+		// privilege itself comes from SOL parameter #2 (Table 26-5).
 		if cmd == 0x21 { // Set SOL Configuration Parameters
 			return bmc.PrivilegeLevelAdministrator
 		}

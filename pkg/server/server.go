@@ -179,21 +179,11 @@ func NewServer(b *bmc.BMC, conn transport.PacketConn, opts ...ServerOption) *Ser
 	// authentication exactly like command responses.
 	b.SOL.SetSenderFactory(func(sess *bmc.Session, inst *bmc.SOLInstance) bmc.SOLSendFunc {
 		return func(pkt *types.SOLPayloadPacket) error {
-			payload := pkt.Pack()
-			var flags uint8
-			if inst.OutboundEncrypted() && len(sess.K2) >= 16 {
-				enc, err := crypto.EncryptAESPayload(payload, sess.K2, crypto.RandomBytes(16))
-				if err != nil {
-					return err
-				}
-				payload = enc
-				flags |= protocol.PayloadEncryptedFlag
-			}
 			if s.solDebug {
 				fmt.Fprintf(os.Stderr, "%s sol> sess=%x seq=%d ack=%d accept=%d nack=%v ctrl=%#02x data=%q (async %s)\n",
 					solStamp(), sess.BMCID, pkt.SequenceNumber, pkt.AckedSequenceNumber, pkt.AcceptedCharacterCount, pkt.NACK, pkt.ControlByte, pkt.CharacterData, sess.Addr)
 			}
-			s.sendSessionPayload(sess.Addr, sess, srvPayloadSOL, flags, payload)
+			s.respondInSession(sess.Addr, sess, srvPayloadSOL, inst.OutboundEncrypted(), pkt.Pack())
 			return nil
 		}
 	})
@@ -448,7 +438,7 @@ func (s *Server) runSOLWorker(sessionID uint32, q chan solJob) {
 			if err != nil {
 				continue // session went away; payload auto-deactivates (§24.2)
 			}
-			s.processSOLJob(sess, job)
+			s.processSOLJob(sess, job, q)
 		case <-idle.C():
 			s.solMu.Lock()
 			if len(q) == 0 {
@@ -477,8 +467,11 @@ func acceptInbound(sess *bmc.Session, pkt []byte, addr net.Addr, inboundSeq uint
 	return true
 }
 
-// processSOLJob verifies and dispatches one queued SOL packet.
-func (s *Server) processSOLJob(sess *bmc.Session, job solJob) {
+// processSOLJob verifies and dispatches one queued SOL packet. A Flush
+// Inbound (Table 15-2 bit [1]) additionally drops the packets still queued
+// behind it: keystrokes the console asked to discard must not reach the
+// system console later.
+func (s *Server) processSOLJob(sess *bmc.Session, job solJob, q chan solJob) {
 	_, inboundSeq, _, flags, payload, ok := protocol.ParseRMCPPlusHeader(job.pkt)
 	if !ok {
 		return
@@ -500,7 +493,26 @@ func (s *Server) processSOLJob(sess *bmc.Session, job solJob) {
 		return
 	}
 
-	s.dispatchSOLSession(context.Background(), job.addr, sess, payload, encrypted)
+	if s.dispatchSOLSession(context.Background(), job.addr, sess, payload, encrypted) {
+		if n := drainSOLQueue(q); n > 0 && s.solDebug {
+			fmt.Fprintf(os.Stderr, "%s sol! sess=%x flush inbound: dropped %d queued packet(s)\n",
+				solStamp(), sess.BMCID, n)
+		}
+	}
+}
+
+// drainSOLQueue drops all packets currently queued for a session, returning
+// how many were dropped.
+func drainSOLQueue(q chan solJob) int {
+	n := 0
+	for {
+		select {
+		case <-q:
+			n++
+		default:
+			return n
+		}
+	}
 }
 
 // dispatchIPMIPreSession handles IPMI commands that arrive before a session exists.
@@ -546,34 +558,37 @@ func (s *Server) dispatchIPMISession(ctx context.Context, addr net.Addr, sess *b
 // constrains only BMC→console data, so a console sending cleartext on an
 // encrypted activation is served as-is; §13.29 decryption applies whenever
 // the packet carries the encrypted flag. Outbound data keeps the negotiated
-// outbound protection (§24.4 / Table 24-4).
-func (s *Server) dispatchSOLSession(ctx context.Context, addr net.Addr, sess *bmc.Session, payload []byte, encrypted bool) {
+// outbound protection (§24.4 / Table 24-4). It reports whether the packet
+// carried the Flush Inbound operation (Table 15-2 bit [1]).
+func (s *Server) dispatchSOLSession(ctx context.Context, addr net.Addr, sess *bmc.Session, payload []byte, encrypted bool) (flushed bool) {
 	inst := s.bmc.SOL.InstanceBySession(sess.BMCID)
 	if inst == nil {
-		return
+		return false
 	}
 
 	plain, ok := decryptSessionPayload(sess, payload, encrypted)
 	if !ok {
-		return
+		return false
 	}
 	var in types.SOLPayloadPacket
 	if err := in.Unpack(plain); err != nil {
-		return
+		return false
 	}
+	flushed = in.ControlByte&0x02 != 0
 	if s.solDebug {
 		fmt.Fprintf(os.Stderr, "%s sol< sess=%x seq=%d ack=%d accept=%d nack=%v ctrl=%#02x data=%q\n",
 			solStamp(), sess.BMCID, in.SequenceNumber, in.AckedSequenceNumber, in.AcceptedCharacterCount, in.NACK, in.ControlByte, in.CharacterData)
 	}
 	out := s.bmc.SOL.ProcessPacket(ctx, sess.BMCID, &in)
 	if out == nil {
-		return
+		return flushed
 	}
 	if s.solDebug {
 		fmt.Fprintf(os.Stderr, "%s sol> sess=%x seq=%d ack=%d accept=%d nack=%v ctrl=%#02x data=%q\n",
 			solStamp(), sess.BMCID, out.SequenceNumber, out.AckedSequenceNumber, out.AcceptedCharacterCount, out.NACK, out.ControlByte, out.CharacterData)
 	}
 	s.respondInSession(addr, sess, srvPayloadSOL, inst.OutboundEncrypted(), out.Pack())
+	return flushed
 }
 
 // decryptSessionPayload returns the plaintext of an in-session payload,
