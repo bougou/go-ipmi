@@ -2,10 +2,9 @@
 
 Native Go implementation of IPMI. It does not shell out to `ipmitool`.
 
-The library covers a remote/in-band client, a reference BMC useful for local
-development and tests, and the shared protocol types used by both. Public
-packages live under `pkg/`; start with `[pkg/client](./pkg/client)` for the
-usual remote-console path.
+The library provides an IPMI client (remote and in-band) and a reference IPMI
+server (BMC) for local development and tests, plus the protocol types they share.
+Public APIs live under `pkg/`. To use the client, start with `pkg/client`.
 
 ## Compatibility
 
@@ -94,4 +93,4 @@ against real BMCs. It is a verification front-end, not a drop-in replacement.
 - [DCMI v1.5](https://www.intel.com/content/dam/www/public/us/en/documents/technical-specifications/dcmi-v1-5-rev-spec.pdf)
 - [PC SDRAM SPD](https://cdn.hackaday.io/files/10119432931296/Spdsd12b.pdf)
 
-Checked-in copies (including IPMI v1.5) are under `[specs/](./specs/)`.
+Checked-in copies (including IPMI v1.5) are under [specs/](./specs/).

@@ -4,19 +4,14 @@
 import "github.com/bougou/go-ipmi/pkg/client"
 ```
 
-Wire types and formatters are in [`pkg/types`](../pkg/types). Per-command
-request/response structs are under [`pkg/command/<netfn>`](../pkg/command).
-Every command method takes `context.Context` as its first argument (since
-v0.6.0).
-
 ## Interfaces
 
-| Interface | How | Notes |
-| --------- | --- | ----- |
-| `lanplus` (default) | `client.NewClient(host, port, user, pass)` | IPMI v2.0 / RMCP+ over UDP |
-| `lan` | `c.WithInterface(client.InterfaceLan)` | IPMI v1.5 over UDP |
-| `open` | `client.NewOpenClient()` | System interface: Linux OpenIPMI, Windows Microsoft_IPMI |
-| `tool` | `client.NewToolClient(path)` | Runs an `ipmitool` binary or wrapper |
+| Interface           | How                                        | Notes                                                    |
+| ------------------- | ------------------------------------------ | -------------------------------------------------------- |
+| `lanplus` (default) | `client.NewClient(host, port, user, pass)` | IPMI v2.0 / RMCP+ over UDP                               |
+| `lan`               | `c.WithInterface(client.InterfaceLan)`     | IPMI v1.5 over UDP                                       |
+| `open`              | `client.NewOpenClient()`                   | System interface: Linux OpenIPMI, Windows Microsoft_IPMI |
+| `tool`              | `client.NewToolClient(path)`               | Runs an `ipmitool` binary or wrapper                     |
 
 ```go
 c, err := client.NewClient(host, port, user, pass)
@@ -83,21 +78,21 @@ if err := c.Connect(ctx); err != nil {
 defer c.Close(ctx)
 ```
 
-Backends live in [`pkg/open`](../pkg/open): Linux talks to `/dev/ipmiN` via
+Backends live in `pkg/open`: Linux talks to `/dev/ipmiN` via
 ioctl; Windows uses the Microsoft_IPMI WMI provider (COM by default, with a
 PowerShell fallback).
 
 ## Options
 
-| Method | Effect |
-| ------ | ------ |
-| `WithDebug` | Session / packet logging |
-| `WithInterface` | `lan` / `lanplus` / `open` / `tool` |
-| `WithTimeout`, `WithRetry` | Transport timing |
-| `WithCipherSuiteID` | Preferred RMCP+ cipher suites |
-| `WithMaxPrivilegeLevel` | Cap session privilege |
-| `WithOpenBackend` | Windows open backend selection |
-| `WithUDPProxy` | Dial through a UDP proxy |
+| Method                     | Effect                              |
+| -------------------------- | ----------------------------------- |
+| `WithDebug`                | Session / packet logging            |
+| `WithInterface`            | `lan` / `lanplus` / `open` / `tool` |
+| `WithTimeout`, `WithRetry` | Transport timing                    |
+| `WithCipherSuiteID`        | Preferred RMCP+ cipher suites       |
+| `WithMaxPrivilegeLevel`    | Cap session privilege               |
+| `WithOpenBackend`          | Windows open backend selection      |
+| `WithUDPProxy`             | Dial through a UDP proxy            |
 
 ## Spec commands vs helpers
 

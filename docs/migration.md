@@ -25,15 +25,13 @@ c.WithInterface(client.InterfaceLanplus)
 
 `*Client` methods (`Connect`, `GetDeviceID`, …) keep the same names.
 
-
 | Was under `ipmi`                                   | Now                                                |
 | -------------------------------------------------- | -------------------------------------------------- |
 | `NewClient`, `Interface*`, `RenderTable`, …        | `pkg/client`                                       |
 | `PrivilegeLevel`, `FormatSELs`, `CipherSuiteID`, … | `pkg/types`                                        |
 | `GetDeviceIDRequest`, …                            | `pkg/command/<netfn>` (e.g. `pkg/command/app`)     |
 | `RAKPMessage1`, Open Session types, …              | `pkg/rmcpplus`                                     |
-| *(server APIs did not exist in v0.8.x)*            | `pkg/server`, `pkg/bmc`, `pkg/handlers`, `pkg/hal` |
-
+| _(server APIs did not exist in v0.8.x)_            | `pkg/server`, `pkg/bmc`, `pkg/handlers`, `pkg/hal` |
 
 Most programs only need `pkg/client`. Pull in `pkg/types` (or a
 `pkg/command/...` package) when you reference types or formatters that used to

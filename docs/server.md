@@ -3,13 +3,13 @@
 The reference BMC is meant for development, simulation, and end-to-end tests.
 It is not a substitute for production BMC firmware.
 
-| Package | Responsibility |
-| ------- | -------------- |
-| [`pkg/server`](../pkg/server) | Serve loop, session framing, dispatch |
-| [`pkg/bmc`](../pkg/bmc) | Users, channels, sessions, device info |
-| [`pkg/handlers`](../pkg/handlers) | Per-command handlers |
-| [`pkg/hal`](../pkg/hal) | Hardware abstraction; `hal/mock` for tests |
-| [`pkg/transport`](../pkg/transport) | `PacketConn`; `transport/udp` for UDP |
+| Package         | Responsibility                             |
+| --------------- | ------------------------------------------ |
+| `pkg/server`    | Serve loop, session framing, dispatch      |
+| `pkg/bmc`       | Users, channels, sessions, device info     |
+| `pkg/handlers`  | Per-command handlers                       |
+| `pkg/hal`       | Hardware abstraction; `hal/mock` for tests |
+| `pkg/transport` | `PacketConn`; `transport/udp` for UDP      |
 
 One UDP port serves both IPMI v2.0 / RMCP+ (`-I lanplus`) and IPMI v1.5
 (`-I lan`, e.g. `-A MD5`).
@@ -21,15 +21,15 @@ make build
 ./_output/goipmi-server
 ```
 
-| Variable | Default | Meaning |
-| -------- | ------- | ------- |
-| `GOIPMI_SERVER_PORT` | `623` | UDP listen port |
-| `GOIPMI_SERVER_USER` | `ADMIN` | Username |
-| `GOIPMI_SERVER_PASS` | `ADMIN` | Password |
-| `GOIPMI_SERVER_CIPHER_SUITES` | `3,17` | Advertised RMCP+ cipher suite IDs |
-| `GOIPMI_SERVER_V15_AUTH_TYPES` | `md5` | v1.5 auth types: `none`, `md2`, `md5`, `password`, `oem` |
-| `GOIPMI_SERVER_V15` | `1` | `0` / `false` disables v1.5; lanplus stays up |
-| `GOIPMI_SERVER_TRACE` | `0` | Log dispatched commands to stderr |
+| Variable                       | Default | Meaning                                                  |
+| ------------------------------ | ------- | -------------------------------------------------------- |
+| `GOIPMI_SERVER_PORT`           | `623`   | UDP listen port                                          |
+| `GOIPMI_SERVER_USER`           | `ADMIN` | Username                                                 |
+| `GOIPMI_SERVER_PASS`           | `ADMIN` | Password                                                 |
+| `GOIPMI_SERVER_CIPHER_SUITES`  | `3,17`  | Advertised RMCP+ cipher suite IDs                        |
+| `GOIPMI_SERVER_V15_AUTH_TYPES` | `md5`   | v1.5 auth types: `none`, `md2`, `md5`, `password`, `oem` |
+| `GOIPMI_SERVER_V15`            | `1`     | `0` / `false` disables v1.5; lanplus stays up            |
+| `GOIPMI_SERVER_TRACE`          | `0`     | Log dispatched commands to stderr                        |
 
 ```bash
 ./_output/goipmi -I lanplus -H 127.0.0.1 -p 623 -U ADMIN -P ADMIN mc info

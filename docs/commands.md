@@ -8,7 +8,6 @@ An `ipmitool` subcommand may map to one IPMI command or to a sequence of them
 commands are marked with `*`. See [Contributing](../CONTRIBUTING.md) for how
 commands are structured in code.
 
-
 ## IPM Device Global Commands
 
 | Method                             | Status             | corresponding ipmitool usage  |
@@ -55,12 +54,12 @@ commands are structured in code.
 | GetBTInterfaceCapabilities     | :white_check_mark: |                              |
 | GetSystemGUID                  | :white_check_mark: | mc guid                      |
 | SetSystemInfoParam             | :white_check_mark: |                              |
-| SetSystemInfoParamFor (*)      | :white_check_mark: |                              |
+| SetSystemInfoParamFor (\*)     | :white_check_mark: |                              |
 | GetSystemInfoParam             | :white_check_mark: |                              |
-| GetSystemInfoParamFor (*)      | :white_check_mark: |                              |
-| GetSystemInfoParams (*)        | :white_check_mark: |                              |
-| GetSystemInfoParamsFor (*)     | :white_check_mark: |                              |
-| GetSystemInfo (*)              | :white_check_mark: |                              |
+| GetSystemInfoParamFor (\*)     | :white_check_mark: |                              |
+| GetSystemInfoParams (\*)       | :white_check_mark: |                              |
+| GetSystemInfoParamsFor (\*)    | :white_check_mark: |                              |
+| GetSystemInfo (\*)             | :white_check_mark: |                              |
 | GetChannelAuthCapabilities     | :white_check_mark: |                              |
 | GetSessionChallenge            | :white_check_mark: |                              |
 | ActivateSession                | :white_check_mark: |                              |
@@ -73,13 +72,13 @@ commands are structured in code.
 | GetChannelInfo                 | :white_check_mark: | channel info                 |
 | SetUserAccess                  | :white_check_mark: |                              |
 | GetUserAccess                  | :white_check_mark: | user summary                 |
-| GetUsers (*)                   | :white_check_mark: | user list                    |
+| GetUsers (\*)                  | :white_check_mark: | user list                    |
 | SetUsername                    | :white_check_mark: | user set name                |
-| DisableUser (*)                | :white_check_mark: | user disable                 |
-| EnableUser (*)                 | :white_check_mark: | user enable                  |
+| DisableUser (\*)               | :white_check_mark: | user disable                 |
+| EnableUser (\*)                | :white_check_mark: | user enable                  |
 | GetUsername                    | :white_check_mark: |                              |
 | SetUserPassword                | :white_check_mark: | user set password            |
-| TestUserPassword (*)           | :white_check_mark: | user test                    |
+| TestUserPassword (\*)          | :white_check_mark: | user test                    |
 | ActivatePayload                | :white_check_mark: |                              |
 | DeactivatePayload              | :white_check_mark: |                              |
 | GetPayloadActivationStatus     | :white_check_mark: |                              |
@@ -107,13 +106,13 @@ commands are structured in code.
 | SetChassisCapabilities             | :white_check_mark: |                                                   |
 | SetPowerRestorePolicy              | :white_check_mark: | chassis policy list/always-on/previous/always-off |
 | GetSystemRestartCause              | :white_check_mark: | chassis restart_cause                             |
-| SetBootParamBootFlags (*)          | :white_check_mark: | chassis bootdev                                   |
-| SetBootDevice (*)                  | :white_check_mark: | chassis bootdev                                   |
+| SetBootParamBootFlags (\*)         | :white_check_mark: | chassis bootdev                                   |
+| SetBootDevice (\*)                 | :white_check_mark: | chassis bootdev                                   |
 | SetSystemBootOptionsParam          | :white_check_mark: | chassis bootparam set                             |
 | GetSystemBootOptionsParam          | :white_check_mark: | chassis bootparam get                             |
-| GetSystemBootOptionsParamFor (*)   | :white_check_mark: | chassis bootparam get                             |
-| GetSystemBootOptionsParams (*)     | :white_check_mark: | chassis bootparam get                             |
-| GetSystemBootOptionsParamsFor (*)  | :white_check_mark: | chassis bootparam get                             |
+| GetSystemBootOptionsParamFor (\*)  | :white_check_mark: | chassis bootparam get                             |
+| GetSystemBootOptionsParams (\*)    | :white_check_mark: | chassis bootparam get                             |
+| GetSystemBootOptionsParamsFor (\*) | :white_check_mark: | chassis bootparam get                             |
 | SetFrontPanelEnables               | :white_check_mark: |                                                   |
 | SetPowerCycleInterval              | :white_check_mark: |                                                   |
 | GetPOHCounter                      | :white_check_mark: | chassis poh                                       |
@@ -134,9 +133,9 @@ commands are structured in code.
 | ArmPEFPostponeTimer        | :white_check_mark: |                              |
 | SetPEFConfigParam          | :white_check_mark: |                              |
 | GetPEFConfigParam          | :white_check_mark: |                              |
-| GetPEFConfigParamFor (*)   | :white_check_mark: |                              |
-| GetPEFConfigParams (*)     | :white_check_mark: |                              |
-| GetPEFConfigParamsFor (*)  | :white_check_mark: |                              |
+| GetPEFConfigParamFor (\*)  | :white_check_mark: |                              |
+| GetPEFConfigParams (\*)    | :white_check_mark: |                              |
+| GetPEFConfigParamsFor (\*) | :white_check_mark: |                              |
 | SetLastProcessedEventId    | :white_check_mark: |                              |
 | GetLastProcessedEventId    | :white_check_mark: |                              |
 | AlertImmediate             | :white_check_mark: |                              |
@@ -162,12 +161,12 @@ commands are structured in code.
 | SetSensorType                  | :white_check_mark: |                              |
 | GetSensorType                  | :white_check_mark: |                              |
 | SetSensorReadingAndEventStatus | :white_check_mark: |                              |
-| GetSensors (*)                 | :white_check_mark: | sensor list                  |
-| GetSensorsAny (*)              | :white_check_mark: | sensor list                  |
-| GetSensorsStream (*)           | :white_check_mark: | sensor list                  |
-| GetSensorsAnyStream (*)        | :white_check_mark: | sensor list                  |
-| GetSensorByID (*)              | :white_check_mark: |                              |
-| GetSensorByName (*)            | :white_check_mark: | sensor get                   |
+| GetSensors (\*)                | :white_check_mark: | sensor list                  |
+| GetSensorsAny (\*)             | :white_check_mark: | sensor list                  |
+| GetSensorsStream (\*)          | :white_check_mark: | sensor list                  |
+| GetSensorsAnyStream (\*)       | :white_check_mark: | sensor list                  |
+| GetSensorByID (\*)             | :white_check_mark: |                              |
+| GetSensorByName (\*)           | :white_check_mark: | sensor get                   |
 
 ## FRU Device Commands
 
@@ -176,8 +175,8 @@ commands are structured in code.
 | GetFRUInventoryAreaInfo | :white_check_mark: |                              |
 | ReadFRUData             | :white_check_mark: |                              |
 | WriteFRUData            | :white_check_mark: |                              |
-| GetFRU (*)              | :white_check_mark: | fru print                    |
-| GetFRUs (*)             | :white_check_mark: | fru print                    |
+| GetFRU (\*)             | :white_check_mark: | fru print                    |
+| GetFRUs (\*)            | :white_check_mark: | fru print                    |
 
 ## SDR Device Commands
 
@@ -187,10 +186,10 @@ commands are structured in code.
 | GetSDRRepoAllocInfo     | :white_check_mark: | sdr info                     |
 | ReserveSDRRepo          |                    |                              |
 | GetSDR                  | :white_check_mark: |                              |
-| GetSDRs (*)             | :white_check_mark: |                              |
-| GetSDRsStream (*)       | :white_check_mark: |                              |
-| GetSDRBySensorID (*)    | :white_check_mark: |                              |
-| GetSDRBySensorName (*)  | :white_check_mark: |                              |
+| GetSDRs (\*)            | :white_check_mark: |                              |
+| GetSDRsStream (\*)      | :white_check_mark: |                              |
+| GetSDRBySensorID (\*)   | :white_check_mark: |                              |
+| GetSDRBySensorName (\*) | :white_check_mark: |                              |
 | AddSDR                  |                    |                              |
 | PartialAddSDR           |                    |                              |
 | DeleteSDR               |                    |                              |
@@ -227,12 +226,12 @@ commands are structured in code.
 | Method                     | Status             | corresponding ipmitool usage |
 | -------------------------- | ------------------ | ---------------------------- |
 | SetLanConfigParam          | :white_check_mark: | lan set                      |
-| SetLanConfigParamFor (*)   | :white_check_mark: | lan set                      |
+| SetLanConfigParamFor (\*)  | :white_check_mark: | lan set                      |
 | GetLanConfigParam          | :white_check_mark: |                              |
-| GetLanConfigParamFor (*)   | :white_check_mark: | lan print                    |
-| GetLanConfigParams (*)     | :white_check_mark: | lan print                    |
-| GetLanConfigParamsFor (*)  | :white_check_mark: | lan print                    |
-| GetLanConfig (*)           | :white_check_mark: | lan print                    |
+| GetLanConfigParamFor (\*)  | :white_check_mark: | lan print                    |
+| GetLanConfigParams (\*)    | :white_check_mark: | lan print                    |
+| GetLanConfigParamsFor (\*) | :white_check_mark: | lan print                    |
+| GetLanConfig (\*)          | :white_check_mark: | lan print                    |
 | SuspendARPs                | :white_check_mark: |                              |
 | GetIPStatistics            | :white_check_mark: |                              |
 
@@ -254,13 +253,13 @@ commands are structured in code.
 | GetUserCallbackOptions     |                    |                              |
 | SetSerialRoutingMux        |                    |                              |
 | SOLActivating              | :white_check_mark: |                              |
-| SOLActivate (*)            | :white_check_mark: | sol activate                 |
+| SOLActivate (\*)           | :white_check_mark: | sol activate                 |
 | SetSOLConfigParam          | :white_check_mark: |                              |
-| SetSOLConfigParamFor (*)   | :white_check_mark: |                              |
+| SetSOLConfigParamFor (\*)  | :white_check_mark: |                              |
 | GetSOLConfigParam          | :white_check_mark: |                              |
-| GetSOLConfigParamFor (*)   | :white_check_mark: |                              |
-| GetSOLConfigParams (*)     | :white_check_mark: | sol info                     |
-| GetSOLConfigParamsFor (*)  | :white_check_mark: | sol info                     |
+| GetSOLConfigParamFor (\*)  | :white_check_mark: |                              |
+| GetSOLConfigParams (\*)    | :white_check_mark: | sol info                     |
+| GetSOLConfigParamsFor (\*) | :white_check_mark: | sol info                     |
 
 ## Command Forwarding Commands
 
@@ -327,15 +326,15 @@ commands are structured in code.
 | Method                          | Status             | corresponding ipmitool usage |
 | ------------------------------- | ------------------ | ---------------------------- |
 | GetDCMICapParam                 | :white_check_mark: | dcmi discovery               |
-| GetDCMICapParamFor (*)          | :white_check_mark: | dcmi discovery               |
-| GetDCMICapParams (*)            | :white_check_mark: | dcmi discovery               |
-| GetDCMICapParamsFor (*)         | :white_check_mark: | dcmi discovery               |
+| GetDCMICapParamFor (\*)         | :white_check_mark: | dcmi discovery               |
+| GetDCMICapParams (\*)           | :white_check_mark: | dcmi discovery               |
+| GetDCMICapParamsFor (\*)        | :white_check_mark: | dcmi discovery               |
 | GetDCMIPowerReading             | :white_check_mark: | dcmi power reading           |
 | GetDCMIPowerLimit               | :white_check_mark: | dcmi power get_limit         |
 | SetDCMIPowerLimit               | :white_check_mark: | dcmi power set_limit         |
 | ActivateDCMIPowerLimit          | :white_check_mark: | dcmi activate/deactivate     |
 | GetDCMIAssetTag                 | :white_check_mark: | dcmi asset_tag               |
-| GetDCMIAssetTagFull (*)         | :white_check_mark: | dcmi asset_tag               |
+| GetDCMIAssetTagFull (\*)        | :white_check_mark: | dcmi asset_tag               |
 | GetDCMISensorInfo               | :white_check_mark: | dcmi sensors                 |
 | SetDCMIAssetTag                 | :white_check_mark: | dcmi set_asset_tag           |
 | GetDCMIMgmtControllerIdentifier | :white_check_mark: | dcmi get_mc_id_string        |
@@ -345,6 +344,6 @@ commands are structured in code.
 | GetDCMITemperatureReadings      | :white_check_mark: | dcmi get_temp_reading        |
 | SetDCMIConfigParam              | :white_check_mark: | dcmi set_conf_param          |
 | GetDCMIConfigParam              | :white_check_mark: | dcmi get_conf_param          |
-| GetDCMIConfigParamFor (*)       | :white_check_mark: | dcmi get_conf_param          |
-| GetDCMIConfigParams (*)         | :white_check_mark: | dcmi get_conf_param          |
-| GetDCMIConfigParamsFor (*)      | :white_check_mark: | dcmi get_conf_param          |
+| GetDCMIConfigParamFor (\*)      | :white_check_mark: | dcmi get_conf_param          |
+| GetDCMIConfigParams (\*)        | :white_check_mark: | dcmi get_conf_param          |
+| GetDCMIConfigParamsFor (\*)     | :white_check_mark: | dcmi get_conf_param          |
