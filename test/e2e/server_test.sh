@@ -10,7 +10,7 @@
 #                         client e2e / CI ipmi-simulator on 9623)
 #   IPMITOOL_BIN       – path to ipmitool   (auto-detected if unset)
 #   IPMITOOL_IMAGE     – Docker image to use when ipmitool is not found
-#                         (default: ghcr.io/halfcrazy/ipmitool:eecd64f)
+#                         (default: ghcr.io/halfcrazy/ipmitool:faea53b)
 #
 # Requires: make build  (or: make test-e2e-server)
 #
@@ -28,7 +28,7 @@ e2e_init
 GOIPMI_SERVER_PORT="${GOIPMI_SERVER_PORT:-$((9700 + RANDOM % 1000))}"
 GOIPMI_USER="${GOIPMI_USER:-ADMIN}"
 GOIPMI_PASS="${GOIPMI_PASS:-ADMIN}"
-IPMITOOL_IMAGE="${IPMITOOL_IMAGE:-ghcr.io/halfcrazy/ipmitool:eecd64f}"
+IPMITOOL_IMAGE="${IPMITOOL_IMAGE:-ghcr.io/halfcrazy/ipmitool:faea53b}"
 
 # ---------------------------------------------------------------------------
 # Find or choose an ipmitool
