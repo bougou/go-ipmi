@@ -41,7 +41,7 @@ PORT_EXTENDED="${GOIPMI_SERVER_PORT_EXTENDED:-$((11100 + RANDOM % 1000))}"
 PORT_CROSS="${GOIPMI_SERVER_PORT_CROSS:-$((11300 + RANDOM % 1000))}"
 USER="${GOIPMI_USER:-ADMIN}"
 PASS="${GOIPMI_PASS:-ADMIN}"
-IPMITOOL_IMAGE="${IPMITOOL_IMAGE:-ghcr.io/halfcrazy/ipmitool:eecd64f}"
+IPMITOOL_IMAGE="${IPMITOOL_IMAGE:-ghcr.io/halfcrazy/ipmitool:faea53b}"
 
 # ---------------------------------------------------------------------------
 # Find or choose an ipmitool (local install, else Docker image).

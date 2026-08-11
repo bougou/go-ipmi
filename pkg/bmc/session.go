@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"net"
 	"sync"
 	"time"
 
@@ -66,6 +67,21 @@ type Session struct {
 	InboundSeq  uint32
 	OutboundSeq uint32
 
+	// Addr is the remote console's transport address, refreshed on every
+	// inbound packet. Asynchronous traffic (SOL data push, §15.3) targets it.
+	Addr net.Addr
+
+	// seqMu serializes outbound sequence assignment: command responses and
+	// asynchronous SOL packets share one space (§15.5) and are sent from
+	// different goroutines.
+	seqMu sync.Mutex
+
+	// ProcMu serializes per-session packet processing. The server spawns a
+	// goroutine per inbound packet; without this lock, a burst of packets
+	// from one session is processed in scheduler order — scrambling SOL
+	// keystroke bytes and racing the inbound-seq check-then-set.
+	ProcMu sync.Mutex
+
 	// Session keys derived during RAKP.
 	SIK []byte
 	K1  []byte
@@ -96,6 +112,13 @@ type SessionStore struct {
 	max      int
 	timeout  time.Duration
 	clock    clock.Clock
+
+	// onRemove fires whenever a session leaves the store (Close or
+	// eviction). The BMC wires this to payload deactivation: when a session
+	// terminates, payloads active under it are automatically deactivated
+	// (spec v2.0 §24.2). It is invoked with the store lock held and must not
+	// call back into the store.
+	onRemove func(bmcID uint32)
 }
 
 // NewSessionStore creates a SessionStore limited to [MaxSessions] concurrent sessions
@@ -195,7 +218,21 @@ func (s *SessionStore) Close(bmcID uint32) error {
 		return fmt.Errorf("session 0x%08x: %w", bmcID, ErrNoSession)
 	}
 	delete(s.sessions, bmcID)
+	s.fireRemoveLocked(bmcID)
 	return nil
+}
+
+// SetOnRemove registers the hook fired when a session leaves the store.
+func (s *SessionStore) SetOnRemove(fn func(bmcID uint32)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.onRemove = fn
+}
+
+func (s *SessionStore) fireRemoveLocked(bmcID uint32) {
+	if s.onRemove != nil {
+		s.onRemove(bmcID)
+	}
 }
 
 // EvictExpired removes all sessions that have been inactive beyond the timeout.
@@ -212,6 +249,7 @@ func (s *SessionStore) evictExpiredLocked() int {
 	for id, sess := range s.sessions {
 		if now.Sub(sess.LastActivity) > s.timeout+DefaultInactivityTimeoutTolerance {
 			delete(s.sessions, id)
+			s.fireRemoveLocked(id)
 			n++
 		}
 	}
@@ -233,6 +271,7 @@ func (s *SessionStore) evictOldestPendingLocked() bool {
 		return false
 	}
 	delete(s.sessions, oldest.BMCID)
+	s.fireRemoveLocked(oldest.BMCID)
 	return true
 }
 
@@ -252,6 +291,16 @@ func InboundSeqValid(last, seq uint32) bool {
 	}
 	diff := int64(seq) - int64(last)
 	return diff >= -16 && diff <= 15
+}
+
+// NextOutboundSeq returns the session sequence number for the next outbound
+// packet, advancing the counter shared by command responses and async SOL
+// packets (§15.5).
+func (sess *Session) NextOutboundSeq() uint32 {
+	sess.seqMu.Lock()
+	defer sess.seqMu.Unlock()
+	sess.OutboundSeq++
+	return sess.OutboundSeq
 }
 
 func randomUint32() (uint32, error) {

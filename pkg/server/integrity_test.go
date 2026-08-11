@@ -38,13 +38,13 @@ func TestSendRMCPPlusSessionAddsIntegrityTrailer(t *testing.T) {
 	srv := &Server{conn: conn}
 	sess := &bmc.Session{
 		ConsoleID:    0x11223344,
-		OutboundSeq:  7,
+		OutboundSeq:  6, // sendSessionPayload advances to 7
 		IntegrityAlg: types.IntegrityAlg_HMAC_SHA1_96,
 		K1:           []byte("0123456789abcdefghij"),
 	}
 	payload := []byte{0x20, 0x18, 0xc8, 0x81, 0x00}
 
-	srv.sendRMCPPlusSession(testAddr("console"), srvPayloadIPMI, 0, sess, payload)
+	srv.sendSessionPayload(testAddr("console"), sess, srvPayloadIPMI, 0, payload)
 
 	if len(conn.writes) != 1 {
 		t.Fatalf("want one packet, got %d", len(conn.writes))

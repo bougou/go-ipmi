@@ -20,6 +20,10 @@ type runtimeConfig struct {
 	V15AuthTypes []bmc.V15AuthType // nil = default (md5)
 	V15Disabled  bool
 	Trace        bool
+
+	// Console selects the SOL console backend: ""/none = no console (SOL
+	// unadvertised), "pty" = allocate a PTY pair, otherwise a device path.
+	Console string
 }
 
 func loadRuntimeConfig() (runtimeConfig, error) {
@@ -27,6 +31,7 @@ func loadRuntimeConfig() (runtimeConfig, error) {
 		Port:     envOr("GOIPMI_SERVER_PORT", "623"),
 		User:     envOr("GOIPMI_SERVER_USER", "ADMIN"),
 		Password: envOr("GOIPMI_SERVER_PASS", "ADMIN"),
+		Console:  envOr("GOIPMI_SERVER_CONSOLE", ""),
 	}
 
 	if raw := strings.TrimSpace(os.Getenv("GOIPMI_SERVER_CIPHER_SUITES")); raw != "" {
@@ -76,13 +81,16 @@ func applyRuntimeConfig(b *bmc.BMC, cfg runtimeConfig) {
 	}
 }
 
-func printRuntimeBanner(cfg runtimeConfig, b *bmc.BMC) {
+func printRuntimeBanner(cfg runtimeConfig, b *bmc.BMC, consoleDesc string) {
 	fmt.Printf("goipmi-server: listening on :%s (user=%s)\n", cfg.Port, cfg.User)
 	fmt.Printf("goipmi-server: IPMI v2.0 (lanplus) cipher suites: %v\n", b.ResolvedCipherSuites())
 	if b.V15LANEnabled() {
 		fmt.Printf("goipmi-server: IPMI v1.5 (lan) auth types: %s\n", bmc.FormatV15AuthTypes(b.ResolvedV15AuthTypes()))
 	} else {
 		fmt.Println("goipmi-server: IPMI v1.5 (lan) disabled")
+	}
+	if consoleDesc != "" {
+		fmt.Printf("goipmi-server: console %s\n", consoleDesc)
 	}
 	if cfg.Trace {
 		fmt.Println("goipmi-server: per-command trace enabled (stderr)")

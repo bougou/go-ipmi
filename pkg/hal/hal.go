@@ -19,6 +19,7 @@ package hal
 
 import (
 	"context"
+	"io"
 
 	"github.com/bougou/go-ipmi/pkg/types"
 )
@@ -38,6 +39,9 @@ type HAL interface {
 	GPIO() GPIOHAL
 	// I2C returns raw I2C bus access for sensors or EEPROMs, or nil.
 	I2C() I2CHAL
+	// Console returns the system serial console used by SOL payloads
+	// (spec v2.0 §15), or nil when the target has no redirectable console.
+	Console() ConsoleHAL
 	// Close releases all hardware resources.
 	Close() error
 }
@@ -131,6 +135,39 @@ type I2CHAL interface {
 	Read(ctx context.Context, bus int, addr uint8, reg uint8, length int) ([]byte, error)
 	// Write performs a register write to an I2C device.
 	Write(ctx context.Context, bus int, addr uint8, reg uint8, data []byte) error
+}
+
+// ConsoleHAL exposes the managed system's serial console for SOL
+// (Serial over LAN) payload redirection (spec v2.0 §15).
+type ConsoleHAL interface {
+	// Open attaches to the system serial console and returns its byte stream.
+	// It is called when a remote console activates the SOL payload
+	// (Activate Payload command, spec v2.0 §24.1) and the returned conn is
+	// closed when the payload is deactivated or the owning session ends.
+	//
+	// Opening an already-attached console must fail: a shared serial port
+	// cannot serve two activations (spec v2.0 §15.3 serial port sharing).
+	Open(ctx context.Context) (ConsoleConn, error)
+}
+
+// ConsoleConn is a bidirectional byte stream to the system serial console.
+//
+// ReadAvailable rather than io.Reader: the SOL data plane drains console
+// output synchronously while answering remote-console packets (spec v2.0
+// §15.9 character accumulation happens at the BMC), so reads must never
+// block. Implementations typically wrap a [net.Conn] or *os.File with an
+// immediate read deadline.
+type ConsoleConn interface {
+	io.WriteCloser
+
+	// ReadAvailable copies immediately-pending console output into p and
+	// returns (0, nil) when no data is waiting. It must not block.
+	ReadAvailable(p []byte) (int, error)
+
+	// SendBreak transmits a ~300 ms serial BREAK to the baseboard (spec
+	// v2.0 Table 15-2 operation bit [4]). Implementations whose transport
+	// has no BREAK concept (e.g. a websocket) return ErrNotSupported.
+	SendBreak(ctx context.Context) error
 }
 
 // ErrNotSupported is returned by HAL methods when the hardware does not

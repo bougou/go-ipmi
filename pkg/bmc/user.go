@@ -43,6 +43,40 @@ type User struct {
 
 	// ChannelAccess holds per-channel access settings keyed by channel number.
 	ChannelAccess map[uint8]UserChannelAccess
+
+	// PayloadAccess holds per-channel payload activation rights keyed by
+	// channel number (spec v2.0 §24.6/§24.7).
+	PayloadAccess map[uint8]*UserPayloadAccess
+}
+
+// UserPayloadAccess records a user's payload activation rights on one
+// channel, mirroring the bitfields of spec v2.0 Table 24-8/24-9.
+type UserPayloadAccess struct {
+	// Standard1 mirrors "Standard Payload enables 1": bit [1] = SOL.
+	Standard1 uint8
+	// OEM1 mirrors "OEM Payload Enables 1".
+	OEM1 uint8
+}
+
+// defaultStandardPayload1 enables SOL for new entries: payload access
+// defaults to allowed, matching how ChannelAccess defaults to enabled.
+const defaultStandardPayload1 = 0x02
+
+// SOLEnabled reports whether the user may activate the SOL payload.
+func (a *UserPayloadAccess) SOLEnabled() bool { return a.Standard1&0x02 != 0 }
+
+// PayloadAccessFor returns the user's payload access entry for channel,
+// creating it with default rights (SOL enabled) on first use.
+func (u *User) PayloadAccessFor(channel uint8) *UserPayloadAccess {
+	if u.PayloadAccess == nil {
+		u.PayloadAccess = make(map[uint8]*UserPayloadAccess)
+	}
+	a, ok := u.PayloadAccess[channel]
+	if !ok {
+		a = &UserPayloadAccess{Standard1: defaultStandardPayload1}
+		u.PayloadAccess[channel] = a
+	}
+	return a
 }
 
 // SetPassword copies up to MaxPasswordLen bytes from raw into the User's password field.

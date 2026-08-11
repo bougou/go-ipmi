@@ -55,6 +55,19 @@ func NewRegistry() *Registry {
 	}
 }
 
+// RegisterAllHandlers adds every standard command handler to r. Keeping the
+// full set behind one call prevents callers that build their own registry
+// (custom middleware, OEM overrides) from silently missing command groups
+// added later.
+func RegisterAllHandlers(r *Registry) {
+	RegisterAppHandlers(r)
+	RegisterSessionHandlers(r)
+	RegisterChassisHandlers(r)
+	RegisterStorageHandlers(r)
+	RegisterPayloadHandlers(r)
+	RegisterSOLHandlers(r)
+}
+
 // Register adds or replaces the handler for c, whose NetFn must be the
 // *request* NetFn (even value).  c is remembered so that dispatching the
 // command reports it through [HandlerContext.Command]; pass one of the
