@@ -65,14 +65,14 @@ const (
 
 	// Activate Payload command completion codes (v2.0§24.1, Table 24-2).
 	CodeActivatePayloadAlreadyActive                   CompletionCode = 0x80
-	CodeActivatePayloadTypeDisabled                                   = 0x81
-	CodeActivatePayloadActivationLimitReached                         = 0x82
-	CodeActivatePayloadCannotActivateWithEncryption                   = 0x83
-	CodeActivatePayloadCannotActivateWithoutEncryption                = 0x84
+	CodeActivatePayloadTypeDisabled                    CompletionCode = 0x81
+	CodeActivatePayloadActivationLimitReached          CompletionCode = 0x82
+	CodeActivatePayloadCannotActivateWithEncryption    CompletionCode = 0x83
+	CodeActivatePayloadCannotActivateWithoutEncryption CompletionCode = 0x84
 
 	// Deactivate Payload command completion codes (v2.0§24.2, Table 24-3).
 	CodeDeactivatePayloadAlreadyDeactivated CompletionCode = 0x80
-	CodeDeactivatePayloadTypeDisabled                      = 0x81
+	CodeDeactivatePayloadTypeDisabled       CompletionCode = 0x81
 )
 
 // String return description of generic completion code.
