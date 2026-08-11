@@ -116,9 +116,12 @@ func TestSOLSessionLoopback(t *testing.T) {
 	inR, inW := io.Pipe()
 	out := &lockedBuffer{}
 
+	// Poll slower than the server's 50ms retry interval (§15.11): the retry
+	// engine must fire between polls so async retransmissions exist — a fast
+	// poller would ack every packet before a retry could be sent.
 	solErr := make(chan error, 1)
 	go func() {
-		solErr <- c.SOLActivate(ctx, inR, out, &SOLActivateOptions{PollInterval: 20 * time.Millisecond})
+		solErr <- c.SOLActivate(ctx, inR, out, &SOLActivateOptions{PollInterval: 100 * time.Millisecond})
 	}()
 
 	waitForCondition(t, "SOL activation", func() bool {
@@ -140,6 +143,16 @@ func TestSOLSessionLoopback(t *testing.T) {
 	waitForCondition(t, "keystrokes at console", func() bool {
 		return strings.Contains(fake.TXString(), "root\r")
 	})
+
+	// §15.9/§15.11: a retransmission reuses its sequence number, so the
+	// receiver must not re-deliver it. The server pushes console data both
+	// async and piggybacked on poll responses, and retries unacked packets;
+	// the client must consume only the response to its current poll and
+	// display the data exactly once. The keystroke round-trip above spans
+	// several poll cycles, so any duplicate delivery has settled by now.
+	if got := strings.Count(out.String(), "login: "); got != 1 {
+		t.Fatalf("console output delivered %d times, want exactly once: %q", got, out.String())
+	}
 
 	// Input EOF ends the session and deactivates the payload (client defer),
 	// which closes the console conn.

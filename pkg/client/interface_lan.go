@@ -179,6 +179,50 @@ func (c *Client) tryMatchIPMILANResponse(recv []byte, wantSeq, wantCmd uint8) (b
 	return true, nil
 }
 
+// tryMatchSOLResponse returns true if recv is an RMCP+ SOL payload packet
+// acknowledging the pending request. Every SOL packet is acknowledged by
+// echoing the acknowledged packet's sequence number (spec v2.0 §15.9/§15.11),
+// so the response to the request with sequence number wantAck always carries
+// AckedSequenceNumber == wantAck. Async retransmissions of earlier packets
+// (which reuse the original sequence number per §15.9 and are sent before the
+// request was processed) carry older acked sequence numbers and are discarded
+// here — consuming them as the response would re-display already-delivered
+// character data and lag the ACK bookkeeping.
+func (c *Client) tryMatchSOLResponse(recv []byte, wantAck uint8) (bool, error) {
+	rmcp := &types.Rmcp{}
+	if err := rmcp.Unpack(recv); err != nil {
+		c.DebugfYellow("drop recv: rmcp unpack failed: %s\n", err)
+		c.DebugBytes("dropped recv (rmcp unpack failed)", recv, 16)
+		return false, nil
+	}
+	if rmcp.Session20 == nil {
+		return false, nil
+	}
+	hdr := rmcp.Session20.SessionHeader20
+	if hdr.PayloadType != types.PayloadTypeSOL {
+		return false, nil
+	}
+	payload := rmcp.Session20.SessionPayload
+	if hdr.PayloadEncrypted {
+		d, err := c.decryptPayload(payload)
+		if err != nil {
+			c.DebugfYellow("drop recv: decrypt SOL payload failed: %s\n", err)
+			return false, nil
+		}
+		payload = d
+	}
+	var sol types.SOLPayloadPacket
+	if err := sol.Unpack(payload); err != nil {
+		c.DebugfYellow("drop recv: SOL payload unpack failed: %s\n", err)
+		return false, nil
+	}
+	if sol.AckedSequenceNumber != wantAck {
+		c.DebugfYellow("drop recv: SOL ack mismatch (got ack %d, want ack %d)\n", sol.AckedSequenceNumber, wantAck)
+		return false, nil
+	}
+	return true, nil
+}
+
 func (c *Client) exchangeLAN(ctx context.Context, request types.Request, response types.Response) error {
 	c.Debug(">> Command Request", request)
 
@@ -189,6 +233,13 @@ func (c *Client) exchangeLAN(ctx context.Context, request types.Request, respons
 		wantSeq = c.session.ipmiSeq
 		wantCmd = request.Command().ID
 		c.unlock()
+	}
+	// SOL responses are matched by the acked sequence number echoing the
+	// request's sequence number (§15.9/§15.11), not by rqSeq/cmd.
+	var wantSOLAck uint8
+	solReq, isSOL := request.(*types.SOLPayloadRequest)
+	if isSOL {
+		wantSOLAck = solReq.SequenceNumber
 	}
 
 	rmcp, err := c.BuildRmcpRequest(ctx, request)
@@ -207,12 +258,21 @@ func (c *Client) exchangeLAN(ctx context.Context, request types.Request, respons
 	for attempt := 1; attempt <= attempts; attempt++ {
 		c.Debugf("attempt %d/%d, ", attempt, attempts)
 
-		if applyIPMIMatch {
+		switch {
+		case applyIPMIMatch:
 			matcher := func(p []byte) (bool, error) {
 				return c.tryMatchIPMILANResponse(p, wantSeq, wantCmd)
 			}
 			recv, err = c.udpClient.ExchangeUntilMatch(ctx, bytes.NewReader(sent), matcher)
-		} else {
+		case isSOL:
+			// The socket also carries the server's unsolicited SOL
+			// retransmissions; a bare Exchange would consume one of those as
+			// the response to this request.
+			matcher := func(p []byte) (bool, error) {
+				return c.tryMatchSOLResponse(p, wantSOLAck)
+			}
+			recv, err = c.udpClient.ExchangeUntilMatch(ctx, bytes.NewReader(sent), matcher)
+		default:
 			recv, err = c.udpClient.Exchange(ctx, bytes.NewReader(sent))
 		}
 		lastErr = err
