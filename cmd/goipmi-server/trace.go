@@ -17,10 +17,7 @@ import (
 func tracingRegistry() *handlers.Registry {
 	reg := handlers.NewRegistry()
 	reg.Use(traceCommands)
-	handlers.RegisterAppHandlers(reg)
-	handlers.RegisterSessionHandlers(reg)
-	handlers.RegisterChassisHandlers(reg)
-	handlers.RegisterStorageHandlers(reg)
+	handlers.RegisterAllHandlers(reg)
 	return reg
 }
 

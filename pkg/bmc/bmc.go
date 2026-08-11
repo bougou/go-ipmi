@@ -58,6 +58,9 @@ type BMC struct {
 
 	// SDRRepo tracks SDR repository reservation state (v2.0§33.11).
 	SDRRepo *SDRRepoStore
+	// SOL holds the SOL payload configuration (v2.0 Table 26-5) and the
+	// active SOL instance state machine (v2.0 §15).
+	SOL *SOLStore
 	// sdrRepo is the lazily-initialised SDR record repository (v2.0§33).
 	sdrRepo     *SDRRepository
 	sdrRepoOnce sync.Once
@@ -188,6 +191,9 @@ func New(info DeviceInfo, guid [16]byte, h hal.HAL, opts ...Option) *BMC {
 	}
 	b.Sessions = NewSessionStore(b.clock)
 	b.V15Sessions = NewV15SessionStore(b.clock)
+	b.SOL = NewSOLStore(h, b.clock)
+	// Session termination automatically deactivates its payloads (v2.0§24.2).
+	b.Sessions.SetOnRemove(b.SOL.DeactivateBySession)
 	return b
 }
 

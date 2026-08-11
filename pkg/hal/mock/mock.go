@@ -23,10 +23,15 @@ type HAL struct {
 	network *Network
 	gpio    *GPIO
 	i2c     *I2C
+	console hal.ConsoleHAL
 }
 
 // New returns a [HAL] with all sub-interfaces initialised.
 // Each sub-type is also exported individually for targeted embedding.
+//
+// The console sub-interface is left unset: most simulated targets have no
+// redirectable serial port, so [HAL.Console] returns nil until [HAL.SetConsole]
+// installs one.
 func New() *HAL {
 	return &HAL{
 		chassis: &Chassis{},
@@ -44,7 +49,22 @@ func (h *HAL) Storage() hal.StorageHAL { return h.storage }
 func (h *HAL) Network() hal.NetworkHAL { return h.network }
 func (h *HAL) GPIO() hal.GPIOHAL       { return h.gpio }
 func (h *HAL) I2C() hal.I2CHAL         { return h.i2c }
-func (h *HAL) Close() error            { return nil }
+
+// Console returns the console installed by [HAL.SetConsole], or nil when the
+// simulated target has no redirectable serial port.
+func (h *HAL) Console() hal.ConsoleHAL {
+	if h.console == nil {
+		return nil
+	}
+	return h.console
+}
+
+// SetConsole installs the console sub-interface returned by [HAL.Console].
+// Tests typically pass [*Console]; production wiring may pass any
+// [hal.ConsoleHAL] implementation.
+func (h *HAL) SetConsole(c hal.ConsoleHAL) { h.console = c }
+
+func (h *HAL) Close() error { return nil }
 
 // --- Chassis ---
 
@@ -260,6 +280,118 @@ func (g *GPIO) Watch(_ context.Context, pin string, cb func(bool)) (func(), erro
 		}
 	}
 	return cancel, nil
+}
+
+// --- Console ---
+
+// Console is the mock [hal.ConsoleHAL].
+type Console struct {
+	mu sync.Mutex
+
+	// Conn is returned by Open when OpenHook is nil. Nil means "no console
+	// hardware": Open then returns hal.ErrNotSupported.
+	Conn hal.ConsoleConn
+
+	// OpenHook allows tests to inject custom behaviour (e.g. fail the open).
+	OpenHook func(ctx context.Context) (hal.ConsoleConn, error)
+
+	// OpenCount records how many activations attached to the console.
+	OpenCount int
+}
+
+func (c *Console) Open(ctx context.Context) (hal.ConsoleConn, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.OpenCount++
+	if c.OpenHook != nil {
+		return c.OpenHook(ctx)
+	}
+	if c.Conn == nil {
+		return nil, hal.ErrNotSupported
+	}
+	return c.Conn, nil
+}
+
+// FakeConsoleConn is an in-memory [hal.ConsoleConn] for tests.
+type FakeConsoleConn struct {
+	mu sync.Mutex
+
+	// RX holds console output waiting to be drained by ReadAvailable.
+	RX []byte
+	// TX records everything written toward the system console.
+	TX []byte
+
+	Closed   bool
+	Breaks   int
+	WriteErr error
+	ReadErr  error
+
+	// WriteLimit, when > 0, caps how many bytes a single Write accepts,
+	// forcing the partial accepts (and NACKs) a flow-controlled serial
+	// controller produces.
+	WriteLimit int
+}
+
+func (f *FakeConsoleConn) ReadAvailable(p []byte) (int, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.ReadErr != nil {
+		return 0, f.ReadErr
+	}
+	n := copy(p, f.RX)
+	f.RX = f.RX[n:]
+	return n, nil
+}
+
+func (f *FakeConsoleConn) Write(p []byte) (int, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.WriteErr != nil {
+		return 0, f.WriteErr
+	}
+	if f.WriteLimit > 0 && len(p) > f.WriteLimit {
+		p = p[:f.WriteLimit]
+	}
+	f.TX = append(f.TX, p...)
+	return len(p), nil
+}
+
+func (f *FakeConsoleConn) Close() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.Closed = true
+	return nil
+}
+
+func (f *FakeConsoleConn) SendBreak(_ context.Context) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.Breaks++
+	return nil
+}
+
+// FeedRX appends bytes to the pending console output, as if the system had
+// written them to its serial port. Safe for concurrent use with a running
+// SOL session, unlike direct RX mutation.
+func (f *FakeConsoleConn) FeedRX(p []byte) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.RX = append(f.RX, p...)
+}
+
+// TXString returns everything written toward the system console so far.
+func (f *FakeConsoleConn) TXString() string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return string(f.TX)
+}
+
+// IsClosed reports whether Close was called. Safe for concurrent use with a
+// running SOL session, unlike direct Closed reads.
+func (f *FakeConsoleConn) IsClosed() bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.Closed
 }
 
 // --- I2C ---

@@ -77,3 +77,7 @@ func (c *Conn) WriteTo(data []byte, addr net.Addr) (int, error) {
 }
 
 func (c *Conn) Close() error { return c.conn.Close() }
+
+// LocalAddr returns the bound address, e.g. so the server can learn the RMCP
+// port it serves for Activate Payload responses (spec v2.0 Table 24-2).
+func (c *Conn) LocalAddr() net.Addr { return c.conn.LocalAddr() }

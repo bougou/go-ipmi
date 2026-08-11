@@ -62,6 +62,7 @@ dependencies:
 #   make test-e2e-self           — goipmi → goipmi-server
 #   make test-e2e-chassis-codec  — typed chassis codec / boot options
 #   make test-e2e-cipher         — RMCP+ cipher suite coverage
+#   make test-e2e-sol            — ipmitool sol activate → PTY console
 #   make test-e2e                — run all suites (CI uses this)
 
 test-e2e-client: build
@@ -79,4 +80,7 @@ test-e2e-chassis-codec: build
 test-e2e-cipher: build
 	./test/e2e/cipher_suite_test.sh
 
-test-e2e: test-e2e-client test-e2e-server test-e2e-self test-e2e-chassis-codec test-e2e-cipher
+test-e2e-sol: build
+	./test/e2e/sol_test.sh
+
+test-e2e: test-e2e-client test-e2e-server test-e2e-self test-e2e-chassis-codec test-e2e-cipher test-e2e-sol

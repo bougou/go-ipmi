@@ -13,6 +13,8 @@
 //	GOIPMI_SERVER_V15_AUTH_TYPES  – v1.5 auth types: none,md2,md5,password,oem (default: md5)
 //	GOIPMI_SERVER_V15             – set to 0/false to disable v1.5 while keeping lanplus (default: 1)
 //	GOIPMI_SERVER_TRACE           – set to 1/true to log every dispatched command to stderr (default: 0)
+//	GOIPMI_SERVER_CONSOLE         – SOL console backend: "pty" allocates a PTY pair (linux),
+//	                                a path opens that device (e.g. /dev/ttyS0); unset = no SOL
 package main
 
 import (
@@ -61,6 +63,16 @@ func run() error {
 	halImpl := mock.New()
 	seedReferenceStorage(context.Background(), halImpl)
 
+	consoleDesc := ""
+	if cfg.Console != "" {
+		consoleHAL, desc, err := openConsoleHAL(cfg.Console)
+		if err != nil {
+			return fmt.Errorf("console: %w", err)
+		}
+		halImpl.SetConsole(consoleHAL)
+		consoleDesc = desc
+	}
+
 	b := bmc.New(info, guid, halImpl, bmc.WithClock(clock.Real))
 	applyRuntimeConfig(b, cfg)
 
@@ -84,7 +96,7 @@ func run() error {
 
 	var opts []server.ServerOption
 	if cfg.Trace {
-		opts = append(opts, server.WithHandlerRegistry(tracingRegistry()))
+		opts = append(opts, server.WithHandlerRegistry(tracingRegistry()), server.WithSOLDebug())
 	}
 	srv := server.NewServer(b, conn, opts...)
 
@@ -96,7 +108,7 @@ func run() error {
 		srv.Close()
 	}()
 
-	printRuntimeBanner(cfg, b)
+	printRuntimeBanner(cfg, b, consoleDesc)
 
 	if err := srv.Serve(ctx); err != nil && !errors.Is(err, context.Canceled) {
 		return fmt.Errorf("serve: %w", err)

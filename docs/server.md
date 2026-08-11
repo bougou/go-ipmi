@@ -30,6 +30,7 @@ make build
 | `GOIPMI_SERVER_V15_AUTH_TYPES` | `md5`   | v1.5 auth types: `none`, `md2`, `md5`, `password`, `oem` |
 | `GOIPMI_SERVER_V15`            | `1`     | `0` / `false` disables v1.5; lanplus stays up            |
 | `GOIPMI_SERVER_TRACE`          | `0`     | Log dispatched commands to stderr                        |
+| `GOIPMI_SERVER_CONSOLE`        | unset   | SOL console backend: `pty` allocates a PTY pair, a path opens that device (e.g. `/dev/ttyS0`); unset = no SOL |
 
 ```bash
 ./_output/goipmi -I lanplus -H 127.0.0.1 -p 623 -U ADMIN -P ADMIN mc info
