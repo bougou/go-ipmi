@@ -313,17 +313,19 @@ func TestSOLProcessOutboundData(t *testing.T) {
 		t.Fatalf("resume: seq=%d data=%q, want 1/%q", out.SequenceNumber, out.CharacterData, "hello")
 	}
 
-	// Partial ACK of 2 chars (Table 15-3): retransmit only the remainder.
+	// Partial ACK of 2 chars (Table 15-3): retransmit the remainder as a
+	// fresh packet — a same-sequence resend would yield zero new bytes to
+	// consoles computing new data by character offset (§15.11).
 	out = feed(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: 1, AcceptedCharacterCount: 2})
-	if out.SequenceNumber != 1 || string(out.CharacterData) != "llo" {
-		t.Fatalf("partial resend: seq=%d data=%q, want 1/%q", out.SequenceNumber, out.CharacterData, "llo")
+	if out.SequenceNumber != 2 || string(out.CharacterData) != "llo" {
+		t.Fatalf("partial resend: seq=%d data=%q, want 2/%q", out.SequenceNumber, out.CharacterData, "llo")
 	}
 
 	// Completion ACK frees the sequence; fresh output gets the next number.
 	fake.RX = []byte("world")
-	out = feed(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: 1, AcceptedCharacterCount: 3})
-	if out.SequenceNumber != 2 || string(out.CharacterData) != "world" {
-		t.Fatalf("next: seq=%d data=%q, want 2/%q", out.SequenceNumber, out.CharacterData, "world")
+	out = feed(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: 2, AcceptedCharacterCount: 3})
+	if out.SequenceNumber != 3 || string(out.CharacterData) != "world" {
+		t.Fatalf("next: seq=%d data=%q, want 3/%q", out.SequenceNumber, out.CharacterData, "world")
 	}
 }
 
@@ -546,7 +548,7 @@ func TestSOLPumpAsyncPush(t *testing.T) {
 	}
 }
 
-// TestSOLDeactivateSendsStatus verifies the one-time NACK packet with
+// TestSOLDeactivateSendsStatus verifies the one-time status packet with
 // status bit [4] (Table 15-2 footnote 2) issued on deactivation paths.
 func TestSOLDeactivateSendsStatus(t *testing.T) {
 	fake := &mock.FakeConsoleConn{}
@@ -560,8 +562,8 @@ func TestSOLDeactivateSendsStatus(t *testing.T) {
 		t.Fatalf("deactivate: %v", err)
 	}
 	pkts := cap.all()
-	if len(pkts) != 1 || !pkts[0].NACK || pkts[0].ControlByte&0x10 == 0 || pkts[0].SequenceNumber != 0 {
-		t.Fatalf("deactivation packet: %+v, want ACK-only NACK with status [4]", pkts)
+	if len(pkts) != 1 || pkts[0].NACK || pkts[0].ControlByte&0x10 == 0 || pkts[0].SequenceNumber != 0 {
+		t.Fatalf("deactivation packet: %+v, want ACK-only with status [4]", pkts)
 	}
 
 	// Session termination (Close Session path, §24.2) issues the same status.
@@ -572,8 +574,8 @@ func TestSOLDeactivateSendsStatus(t *testing.T) {
 		t.Fatalf("close session: %v", err)
 	}
 	pkts = cap.all()
-	if len(pkts) != 2 || !pkts[1].NACK || pkts[1].ControlByte&0x10 == 0 {
-		t.Fatalf("session-close packet: %+v, want NACK with status [4]", pkts[1:])
+	if len(pkts) != 2 || pkts[1].NACK || pkts[1].ControlByte&0x10 == 0 {
+		t.Fatalf("session-close packet: %+v, want status [4]", pkts[1:])
 	}
 }
 

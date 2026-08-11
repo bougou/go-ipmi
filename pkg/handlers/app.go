@@ -74,6 +74,10 @@ func handleColdReset(ctx context.Context, hctx *HandlerContext, _ []byte) ([]byt
 	if err := ch.ColdReset(ctx); err != nil {
 		return nil, types.CodeUnspecifiedError, err
 	}
+	// A BMC cold reset aborts any SOL parameter set in progress: the
+	// volatile SOL configuration (#0 set in progress, #6 bit rate) returns
+	// to its power-up state (Table 26-3, Table 26-5).
+	hctx.BMC.SOL.Config().ResetVolatile()
 	return nil, types.CodeOK, nil
 }
 
