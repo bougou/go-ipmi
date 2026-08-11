@@ -178,6 +178,13 @@ func NewServer(b *bmc.BMC, conn transport.PacketConn, opts ...ServerOption) *Ser
 	// activation a sender that applies the session's encryption and
 	// authentication exactly like command responses.
 	b.SOL.SetSenderFactory(func(sess *bmc.Session, inst *bmc.SOLInstance) bmc.SOLSendFunc {
+		if s.solDebug {
+			// Console lifecycle events (reconnect) ride the same trace
+			// facility as the packet lines.
+			inst.SetTracef(func(format string, args ...any) {
+				fmt.Fprintf(os.Stderr, "%s "+format, append([]any{solStamp()}, args...)...)
+			})
+		}
 		return func(pkt *types.SOLPayloadPacket) error {
 			if s.solDebug {
 				fmt.Fprintf(os.Stderr, "%s sol> sess=%x seq=%d ack=%d accept=%d nack=%v ctrl=%#02x data=%q (async %s)\n",

@@ -3,7 +3,9 @@ package bmc
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -952,6 +954,52 @@ func TestSOLReconnectBackoff(t *testing.T) {
 
 // TestSOLReconnectDeactivateWhileBroken verifies deactivation completes
 // while the reconnect cycle is backing off (no hang, conn released).
+// TestSOLReconnectTrace verifies the reconnect emits a trace line naming the
+// failed-attempt count, so an operator watching the trace can see the console
+// came back after an outage.
+func TestSOLReconnectTrace(t *testing.T) {
+	fake1 := &mock.FakeConsoleConn{}
+	fake2 := &mock.FakeConsoleConn{}
+	opens := 0
+	b, sess, _ := newReconnectBMC(t, func(context.Context) (hal.ConsoleConn, error) {
+		opens++
+		if opens == 1 {
+			return fake1, nil
+		}
+		return fake2, nil
+	})
+	// Fast policy so the test does not wait out the 1s default backoff.
+	b.SOL.SetReconnectPolicy(&ReconnectPolicy{Initial: 10 * time.Millisecond})
+
+	var (
+		mu    sync.Mutex
+		lines []string
+	)
+	inst, err := b.SOL.Activate(context.Background(), sess, false, false)
+	if err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	t.Cleanup(b.SOL.CloseAll)
+	inst.SetTracef(func(format string, args ...any) {
+		mu.Lock()
+		defer mu.Unlock()
+		lines = append(lines, fmt.Sprintf(format, args...))
+	})
+
+	fake1.SetReadErr(errors.New("console died"))
+	waitForCondition(t, func() bool { return instBroken(inst) })
+	waitForCondition(t, func() bool {
+		mu.Lock()
+		defer mu.Unlock()
+		return len(lines) > 0
+	})
+	mu.Lock()
+	defer mu.Unlock()
+	if !strings.Contains(lines[0], "console reconnected after 1 failed attempt") {
+		t.Fatalf("reconnect trace = %q, want failure count 1", lines[0])
+	}
+}
+
 func TestSOLReconnectDeactivateWhileBroken(t *testing.T) {
 	fake1 := &mock.FakeConsoleConn{}
 	var opens atomic.Int32
