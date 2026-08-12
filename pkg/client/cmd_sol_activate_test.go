@@ -12,11 +12,14 @@ func TestSOLEscapeReader(t *testing.T) {
 		input string
 		want  string
 	}{
-		{name: "terminate", input: "~."},
-		{name: "terminate after newline", input: "data\n~.", want: "data\n"},
+		{name: "terminate", input: "~X"},
+		{name: "terminate after newline", input: "data\n~X", want: "data\n"},
 		{name: "ordinary tilde", input: "~x", want: "~x"},
-		{name: "repeated escape prefix", input: "~~.", want: "~"},
-		{name: "transparent outside line start", input: "data~.", want: "data~."},
+		{name: "single tilde dot", input: "~.", want: "~."},
+		{name: "transparent outside line start", input: "data~X", want: "data~X"},
+		{name: "insufficient characters", input: "~", want: "~"},
+		{name: "tilde and lowercase x", input: "~x", want: "~x"},
+		{name: "tilde and other char", input: "~?", want: "~?"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := io.ReadAll(newSOLEscapeReader(strings.NewReader(tt.input)))

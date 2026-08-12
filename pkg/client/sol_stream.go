@@ -61,7 +61,6 @@ func readSOLInput(ctx context.Context, in io.Reader) <-chan solConsoleInput {
 			}
 		}
 	}()
-
 	return events
 }
 

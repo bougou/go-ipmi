@@ -30,6 +30,18 @@ type SOLActivateOptions struct {
 const (
 	defaultPayloadInstance = uint8(1)
 	defaultPollInterval    = 100 * time.Millisecond
+
+	//SOLEscapeSequence is the escape sequence to terminate SOL session.
+	// Must be used at the start of a line.
+	//
+	// We use ~X instead of ~. because ~. is the default SSH escape sequence
+	// to disconnect. When running goipmi over an SSH connection, using ~.
+	// would terminate the SSH connection instead of just the SOL session.
+	// This choice avoids conflicts and allows the SOL session to exit cleanly
+	// while keeping the SSH connection intact.
+	SOLEscapeSequence     = "~X"
+	solEscapePrefix      = '~'
+	solEscapeTerminator  = 'X'
 )
 
 func solActivatePollInterval(opts *SOLActivateOptions) time.Duration {
@@ -139,16 +151,22 @@ func (r *solEscapeReader) Read(p []byte) (int, error) {
 		return 0, err
 	}
 
-	if r.atLineStart && value == '~' {
+	if r.atLineStart && value == solEscapePrefix {
+		// Check for SOLEscapeSequence escape sequence
 		next, err := r.reader.Peek(1)
 		if err != nil {
-			return 0, err
+			// Not enough characters, treat ~ as literal
+			r.atLineStart = false
+			p[0] = value
+			return 1, nil
 		}
 
-		if next[0] == '.' {
+		if next[0] == solEscapeTerminator {
 			_, _ = r.reader.Discard(1)
 			return 0, io.EOF
 		}
+		// Not a complete escape sequence, treat ~ as literal
+		r.atLineStart = false
 	} else {
 		r.atLineStart = value == '\r' || value == '\n'
 	}
@@ -173,7 +191,7 @@ func defaultOnActivated(terminalConfig *solTerminalConfig, payloadInstance uint8
 	_, _ = fmt.Fprintf(out, "Payload VLAN ID      : %d\n", res.PayloadVLANID)
 
 	if terminalConfig.ttyInteractive {
-		_, _ = io.WriteString(out, "Connected. Use ~. to terminate.\n")
+		_, _ = fmt.Fprintf(out, "Connected. Use %s to terminate.\n", SOLEscapeSequence)
 		if terminalConfig.enableTTYRaw != nil {
 			if enableErr := terminalConfig.enableTTYRaw(); enableErr != nil {
 				_, _ = fmt.Fprintf(os.Stderr, "warning: failed to switch terminal to raw mode: %v\n", enableErr)
@@ -182,7 +200,7 @@ func defaultOnActivated(terminalConfig *solTerminalConfig, payloadInstance uint8
 			}
 		}
 	} else {
-		_, _ = io.WriteString(out, "Connected. Use ~. to terminate (line-buffered mode).\n")
+		_, _ = fmt.Fprintf(out, "Connected. Use %s to terminate (line-buffered mode).\n", SOLEscapeSequence)
 	}
 }
 
