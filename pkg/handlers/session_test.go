@@ -48,12 +48,10 @@ func TestHandleRAKP1RejectsUnauthorizedPrivilege(t *testing.T) {
 		MaxPrivilege: bmc.PrivilegeLevelUser,
 		Enabled:      true,
 	}
-	sess, err := b.Sessions.Allocate(0x01020304, types.AuthAlg_HMAC_SHA1, types.IntegrityAlg_HMAC_SHA1_96, types.CryptAlg_AES_CBC_128)
+	sess, err := b.Sessions.Allocate(0x01020304, types.AuthAlg_HMAC_SHA1, types.IntegrityAlg_HMAC_SHA1_96, types.CryptAlg_AES_CBC_128, bmc.PrivilegeLevelAdministrator, lanChannelNumber)
 	if err != nil {
 		t.Fatalf("allocate session: %v", err)
 	}
-	sess.Channel = lanChannelNumber
-	sess.MaxPrivilege = bmc.PrivilegeLevelAdministrator
 
 	resp, err := HandleRAKP1(context.Background(), b, rakp1Payload(sess.BMCID, bmc.PrivilegeLevelAdministrator, "operator"))
 	if err != nil {
@@ -79,12 +77,10 @@ func TestHandleRAKP1AcceptsAuthorizedPrivilege(t *testing.T) {
 		MaxPrivilege: bmc.PrivilegeLevelAdministrator,
 		Enabled:      true,
 	}
-	sess, err := b.Sessions.Allocate(0x01020304, types.AuthAlg_HMAC_SHA1, types.IntegrityAlg_HMAC_SHA1_96, types.CryptAlg_AES_CBC_128)
+	sess, err := b.Sessions.Allocate(0x01020304, types.AuthAlg_HMAC_SHA1, types.IntegrityAlg_HMAC_SHA1_96, types.CryptAlg_AES_CBC_128, bmc.PrivilegeLevelAdministrator, lanChannelNumber)
 	if err != nil {
 		t.Fatalf("allocate session: %v", err)
 	}
-	sess.Channel = lanChannelNumber
-	sess.MaxPrivilege = bmc.PrivilegeLevelAdministrator
 
 	resp, err := HandleRAKP1(context.Background(), b, rakp1Payload(sess.BMCID, bmc.PrivilegeLevelAdministrator, "ADMIN"))
 	if err != nil {
@@ -93,7 +89,9 @@ func TestHandleRAKP1AcceptsAuthorizedPrivilege(t *testing.T) {
 	if len(resp) < 40 || resp[1] != 0x00 {
 		t.Fatalf("want successful RAKP2 response, got %x", resp)
 	}
-	if sess.User != user {
+	// Users.GetByName returns a snapshot copy, so compare by identity fields
+	// rather than pointer equality.
+	if sess.User == nil || sess.User.Name != user.Name || sess.User.ID != user.ID {
 		t.Fatalf("session user was not recorded")
 	}
 }
@@ -378,7 +376,7 @@ func TestComputeRAKP4AuthCode_UsesAuthAlgorithm(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			sess, err := b.Sessions.Allocate(0x11223344, tc.auth, tc.integ, types.CryptAlg_None)
+			sess, err := b.Sessions.Allocate(0x11223344, tc.auth, tc.integ, types.CryptAlg_None, bmc.PrivilegeLevelAdministrator, lanChannelNumber)
 			if err != nil {
 				t.Fatalf("allocate session: %v", err)
 			}

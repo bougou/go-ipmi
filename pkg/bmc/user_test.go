@@ -103,29 +103,48 @@ func TestUserVerifyPassword(t *testing.T) {
 }
 
 // TestUserPayloadAccessConcurrent hammers one account's payload access table
-// from many goroutines: two sessions authenticated as the same user (or a
-// session plus the SOL activation path) can issue Set/Get Payload Access
-// concurrently, and the lazily-created per-channel map must survive — an
-// unlocked map write is a fatal "concurrent map writes" runtime error.
+// from many goroutines through the store: two sessions authenticated as the
+// same user (or a session plus the SOL activation path) can issue Set/Get
+// Payload Access concurrently. Writers go through [UserStore.Update] and
+// readers through the snapshot copies [UserStore.Get] hands out, which is the
+// concurrency contract the server relies on.
 func TestUserPayloadAccessConcurrent(t *testing.T) {
-	u := &User{}
+	s := NewUserStore()
+	if _, err := s.Add(2, "payload"); err != nil {
+		t.Fatal(err)
+	}
 	var wg sync.WaitGroup
 	for i := 0; i < 16; i++ {
 		wg.Add(2)
 		go func() {
 			defer wg.Done()
 			for j := 0; j < 50; j++ {
+				u, err := s.Get(2)
+				if err != nil {
+					t.Error(err)
+					return
+				}
 				u.PayloadAccessFor(1).SOLEnabled()
 			}
 		}()
 		go func() {
 			defer wg.Done()
 			for j := 0; j < 50; j++ {
-				u.SetPayloadAccess(1, true, 2, 0)
+				if err := s.Update(2, func(u *User) error {
+					u.SetPayloadAccess(1, true, 2, 0)
+					return nil
+				}); err != nil {
+					t.Error(err)
+					return
+				}
 			}
 		}()
 	}
 	wg.Wait()
+	u, err := s.Get(2)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !u.PayloadAccessFor(1).SOLEnabled() {
 		t.Fatal("SOL access bit lost under concurrency")
 	}

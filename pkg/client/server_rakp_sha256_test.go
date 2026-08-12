@@ -28,12 +28,11 @@ func TestRAKP_SHA256_CrossValidation(t *testing.T) {
 	b := newSHA256TestBMC(t, username, password)
 
 	sess, err := b.Sessions.Allocate(consoleID,
-		types.AuthAlg_HMAC_SHA256, types.IntegrityAlg_HMAC_SHA256_128, types.CryptAlg_AES_CBC_128)
+		types.AuthAlg_HMAC_SHA256, types.IntegrityAlg_HMAC_SHA256_128, types.CryptAlg_AES_CBC_128,
+		bmc.PrivilegeLevelAdministrator, 1)
 	if err != nil {
 		t.Fatalf("allocate session: %v", err)
 	}
-	sess.Channel = 1
-	sess.MaxPrivilege = bmc.PrivilegeLevelAdministrator
 
 	// Build RAKP1 with a fixed console random for reproducibility.
 	var consoleRand [16]byte
@@ -188,7 +187,7 @@ func TestRAKP4_CrossValidation_AuthAlgorithm(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			b := newSHA256TestBMC(t, username, password)
 
-			sess, err := b.Sessions.Allocate(consoleID, tc.authAlg, tc.integrityAlg, types.CryptAlg_None)
+			sess, err := b.Sessions.Allocate(consoleID, tc.authAlg, tc.integrityAlg, types.CryptAlg_None, bmc.PrivilegeLevelAdministrator, 1)
 			if err != nil {
 				t.Fatalf("allocate session: %v", err)
 			}

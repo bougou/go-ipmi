@@ -220,14 +220,15 @@ func handleSetUserPayloadAccess(ctx context.Context, hctx *HandlerContext, data 
 		return nil, types.CodeRequestDataFieldInvalid, nil // 10b/11b reserved (Table 24-8)
 	}
 	userID := data[1] & 0x3f
-	user, err := hctx.BMC.Users.Get(userID)
-	if err != nil {
+	// The read-modify-write runs on the live user under the store's write
+	// lock, so it is atomic against a concurrent Set/Get on another session
+	// authenticated as the same user.
+	if err := hctx.BMC.Users.Update(userID, func(u *bmc.User) error {
+		u.SetPayloadAccess(resolveChannel(hctx, data[0]&0x0f), op == 0, data[2], data[4])
+		return nil
+	}); err != nil {
 		return nil, types.CodeRequestDataFieldInvalid, nil
 	}
-	// The update runs under the user's payload-access lock: the read-modify-
-	// write must be atomic against a concurrent Set/Get on another session
-	// authenticated as the same user.
-	user.SetPayloadAccess(resolveChannel(hctx, data[0]&0x0f), op == 0, data[2], data[4])
 	return nil, types.CodeOK, nil
 }
 

@@ -211,15 +211,18 @@ func HandleOpenSession(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, er
 		return buildOpenSessionError(tag, consoleID, code), nil
 	}
 
-	sess, err := b.Sessions.Allocate(consoleID, authAlg, intAlg, cryptAlg)
+	maxPrivilege := bmc.PrivilegeLevel(maxPriv)
+	if maxPrivilege == 0 {
+		maxPrivilege = bmc.PrivilegeLevelAdministrator
+	}
+
+	// Allocate fully initializes the session (including MaxPrivilege and
+	// Channel) before inserting it into the store, so no lock-free field write
+	// happens after it becomes reachable.
+	sess, err := b.Sessions.Allocate(consoleID, authAlg, intAlg, cryptAlg, maxPrivilege, lanChannelNumber)
 	if err != nil {
 		return buildOpenSessionError(tag, consoleID, 0x01), nil // Insufficient resources
 	}
-	sess.MaxPrivilege = bmc.PrivilegeLevel(maxPriv)
-	if sess.MaxPrivilege == 0 {
-		sess.MaxPrivilege = bmc.PrivilegeLevelAdministrator
-	}
-	sess.Channel = lanChannelNumber
 
 	authPayload, integPayload, cryptPayload := rmcpplus.NewAlgorithmPayloads(authAlg, intAlg, cryptAlg)
 	resp := &rmcpplus.OpenSessionResponse{
@@ -264,6 +267,20 @@ func HandleRAKP1(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, error) {
 	if err != nil {
 		return rakp2Error(tag, 0, 0x02), nil // Invalid Session ID
 	}
+	// Hold ProcMu across every session field read/write below. Handshake
+	// packets are dispatched outside the server's in-session path (they carry
+	// no session ID in the RMCP+ header), so this handler must serialize
+	// itself: duplicate RAKP1s for one pending session otherwise race on the
+	// nonces and derived keys. ProcMu-then-store-lock is the allowed order;
+	// the Close calls below take only the store lock.
+	//
+	// Deliberately no activity refresh here: RAKP1 carries no authenticator,
+	// so refreshing would let anyone who saw a session ID keep that session
+	// alive with replayed handshake packets. The inactivity budget stamped at
+	// allocation bounds the whole handshake instead, and it is orders of
+	// magnitude more than three round trips need.
+	sess.ProcMu.Lock()
+	defer sess.ProcMu.Unlock()
 	if sess.State != bmc.SessionStatePending {
 		return rakp2Error(tag, sess.ConsoleID, 0x08), nil // Inactive Session ID
 	}
@@ -338,6 +355,11 @@ func HandleRAKP3(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, error) {
 	if err != nil {
 		return rakp4Error(tag, 0, 0x02), nil // Invalid Session ID
 	}
+	// Hold ProcMu across all session field reads/writes and key derivation.
+	// See HandleRAKP1 for the lock-order rationale and for why the handshake
+	// deliberately never refreshes session activity.
+	sess.ProcMu.Lock()
+	defer sess.ProcMu.Unlock()
 
 	// If the console sent a non-zero status in RAKP3, it means the console
 	// rejected RAKP2.  Close the session and return an error response.
@@ -369,7 +391,9 @@ func HandleRAKP3(ctx context.Context, b *bmc.BMC, data []byte) ([]byte, error) {
 	if err := deriveSessKeys(sess, b); err != nil {
 		return rakp4Error(tag, sess.ConsoleID, 0xFF), err
 	}
-	sess.State = bmc.SessionStateActive
+	if err := b.Sessions.Activate(bmcSessionID); err != nil {
+		return rakp4Error(tag, sess.ConsoleID, 0x02), nil // Invalid Session ID
+	}
 	sess.PrivilegeLevel = sess.MaxPrivilege
 
 	// Compute RAKP4 auth code using SIK as HMAC key.

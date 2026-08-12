@@ -58,7 +58,24 @@ const (
 )
 
 // V15Session holds IPMI v1.5 session state.
+//
+// Concurrency: it follows the same pattern as the v2.0 [Session]. ProcMu
+// serializes per-session packet processing and guards the per-packet fields
+// written during dispatch: the sequence counters, InboundRcvd, and
+// PrivilegeLevel. SessionID, State, and MaxPrivilege are written after
+// publication only by [V15SessionStore.Activate], which runs under the store
+// lock while its caller holds ProcMu, so a reader under either lock observes a
+// consistent value (the Count* helpers read them under the store lock).
+// LastActivity is guarded by the store lock and refreshed via
+// [V15SessionStore.Touch]. TempSessionID, AuthType, Challenge, Channel, User,
+// and CreatedAt are set before the session is published and never written
+// again. ProcMu may be held while taking the store lock, never the reverse.
 type V15Session struct {
+	// ProcMu serializes per-session packet processing. The server spawns a
+	// goroutine per inbound packet; without this lock, concurrent packets of
+	// one session race on the sequence window check-then-set and the counters.
+	ProcMu sync.Mutex
+
 	TempSessionID uint32
 	SessionID     uint32
 	State         V15SessionState
@@ -100,6 +117,8 @@ func NewV15SessionStore(clk clock.Clock) *V15SessionStore {
 }
 
 // CreatePending allocates a pending v1.5 session after Get Session Challenge.
+// The session is fully initialized before it is inserted into the map, so no
+// unguarded field write happens after it becomes reachable to other goroutines.
 func (s *V15SessionStore) CreatePending(authType V15AuthType, user *User, challenge [16]byte, channel uint8) (*V15Session, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -138,7 +157,11 @@ func (s *V15SessionStore) CreatePending(authType V15AuthType, user *User, challe
 	return sess, nil
 }
 
-// Get returns a session by its current lookup ID without updating activity.
+// Get returns a session by its current lookup ID. It is a pure lookup: activity
+// is refreshed separately via [V15SessionStore.Touch], only once a packet has
+// passed authentication and sequence validation. Refreshing on lookup would let
+// packets that fail validation, or that merely name a session ID, keep the
+// session alive forever.
 func (s *V15SessionStore) Get(id uint32) (*V15Session, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -149,14 +172,14 @@ func (s *V15SessionStore) Get(id uint32) (*V15Session, error) {
 	return sess, nil
 }
 
-// Touch records valid session activity for inactivity timeout (spec v1.5§6.11.13 / v2.0§6.12.15).
-func (s *V15SessionStore) Touch(sess *V15Session) {
-	if sess == nil {
-		return
-	}
+// Touch refreshes the session's inactivity clock. The server calls it for every
+// packet that passed authentication and sequence validation.
+func (s *V15SessionStore) Touch(id uint32) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	sess.LastActivity = s.clock.Now()
+	if sess, ok := s.sessions[id]; ok {
+		sess.LastActivity = s.clock.Now()
+	}
 }
 
 // CountActiveSessions returns the number of active v1.5 sessions.
@@ -210,11 +233,21 @@ func (s *V15SessionStore) CountActiveSessionsWithMaxPrivilegeAtLeast(min Privile
 // empty receive bitmap — otherwise the first packet (seq == inboundSeq) is
 // rejected as a duplicate and clients such as ipmitool stall for a full LAN
 // timeout before retrying with inboundSeq+1.
+//
+// Precondition: the caller must hold pending's ProcMu. Activate mutates fields
+// of an already-published session (SessionID, State, MaxPrivilege,
+// PrivilegeLevel, the seq counters, and LastActivity) under the store lock;
+// per-packet readers hold ProcMu and the store's Count* and eviction scans
+// hold the store lock, so with the writer holding both, a reader under either
+// lock observes a consistent session.
+//
+// A session evicted between lookup and activation is reported as not pending
+// rather than silently re-inserted.
 func (s *V15SessionStore) Activate(pending *V15Session, permanentID, inboundSeq, outboundSeq uint32, maxPrivilege PrivilegeLevel) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if pending.State != V15SessionStatePending {
+	if pending.State != V15SessionStatePending || s.sessions[pending.TempSessionID] != pending {
 		return errors.New("session is not pending")
 	}
 	delete(s.sessions, pending.TempSessionID)
@@ -264,13 +297,17 @@ func (s *V15SessionStore) Close(id uint32) error {
 	return nil
 }
 
-// EvictExpired removes inactive v1.5 sessions past the timeout.
+// EvictExpired removes inactive v1.5 sessions past the timeout. Eviction reads
+// LastActivity and deletes under the store lock only; it never takes a
+// session's ProcMu, so a handler holding one can trigger eviction safely.
 func (s *V15SessionStore) EvictExpired() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.evictExpiredLocked()
 }
 
+// evictExpiredLocked removes sessions inactive beyond the timeout. s.mu must be
+// held.
 func (s *V15SessionStore) evictExpiredLocked() int {
 	now := s.clock.Now()
 	limit := s.timeout + DefaultInactivityTimeoutTolerance
@@ -284,6 +321,8 @@ func (s *V15SessionStore) evictExpiredLocked() int {
 	return n
 }
 
+// evictOldestPendingLocked removes the oldest pending session, returning true
+// if one was removed. s.mu must be held.
 func (s *V15SessionStore) evictOldestPendingLocked() bool {
 	var oldest *V15Session
 	var oldestID uint32

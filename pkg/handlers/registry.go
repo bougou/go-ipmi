@@ -41,6 +41,12 @@ func makeKey(netFn, cmd uint8) commandKey {
 }
 
 // Registry maps (NetFn, Cmd) pairs to [Handler] implementations.
+//
+// Concurrency: all registration ([Registry.Register], [Registry.RegisterFunc],
+// [Registry.Use], [Registry.Merge]) must complete before the server starts
+// serving. The registry is read-only during dispatch and is not synchronized,
+// so registering after [server.Server.Serve] has begun races with in-flight
+// packet handling.
 type Registry struct {
 	handlers   map[commandKey]Handler
 	commands   map[commandKey]types.Command

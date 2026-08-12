@@ -22,8 +22,21 @@ import (
 )
 
 // HandlerContext carries per-request BMC state to a [Handler].
-// All fields are read-only from the handler's perspective; mutations must go
-// through the store methods (which are goroutine-safe).
+//
+// Concurrency contract:
+//   - Session / V15Session: the server holds the session's ProcMu for the
+//     entire dispatch, so a handler may read and write these session fields
+//     directly (only Set Session Privilege Level does, on PrivilegeLevel).
+//     Registry-dispatched handlers must NOT take ProcMu themselves; it is
+//     already held, and the mutex is not reentrant. The RAKP handlers
+//     ([HandleOpenSession], [HandleRAKP1], [HandleRAKP3]) are the exception:
+//     they are dispatched outside the in-session path and take ProcMu
+//     themselves, so calling them from a registry-dispatched handler
+//     self-deadlocks.
+//   - User / Channel: independent snapshot copies, safe to read without locking
+//     but not connected to the store. To change a user or channel at runtime,
+//     use [bmc.UserStore.Update] or [bmc.ChannelStore.Set].
+//   - BMC: goroutine-safe; mutate shared state only through its store methods.
 type HandlerContext struct {
 	// Command identifies the request being dispatched.  [Registry.Dispatch]
 	// fills it in from the command table, so middleware and handlers can name

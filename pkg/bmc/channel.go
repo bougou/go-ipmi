@@ -83,7 +83,9 @@ func NewChannelStore() *ChannelStore {
 	return s
 }
 
-// Get returns the channel at number n, or [ErrChannelNotFound].
+// Get returns a snapshot copy of the channel at number n, or
+// [ErrChannelNotFound]. [Channel] is all scalar fields, so the copy is a
+// complete, independent snapshot; mutate the store via [ChannelStore.Set].
 func (s *ChannelStore) Get(n uint8) (*Channel, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -91,23 +93,27 @@ func (s *ChannelStore) Get(n uint8) (*Channel, error) {
 	if !ok {
 		return nil, fmt.Errorf("channel %d: %w", n, ErrChannelNotFound)
 	}
-	return ch, nil
+	cp := *ch
+	return &cp, nil
 }
 
-// Set adds or replaces the channel at number n.
+// Set adds or replaces the channel at number n, storing a private copy so the
+// caller cannot mutate stored state afterwards.
 func (s *ChannelStore) Set(ch *Channel) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.channels[ch.Number] = ch
+	cp := *ch
+	s.channels[cp.Number] = &cp
 }
 
-// All returns a snapshot of all configured channels.
+// All returns snapshot copies of all configured channels.
 func (s *ChannelStore) All() []*Channel {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	out := make([]*Channel, 0, len(s.channels))
 	for _, ch := range s.channels {
-		out = append(out, ch)
+		cp := *ch
+		out = append(out, &cp)
 	}
 	return out
 }

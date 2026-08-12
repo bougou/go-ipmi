@@ -45,8 +45,8 @@ func computeRAKP4AuthCode(sess *bmc.Session, b *bmc.BMC) ([]byte, error) {
 // deriveSessKeys computes SIK, K1, and K2 from the session parameters per spec §13.31-13.32.
 func deriveSessKeys(sess *bmc.Session, b *bmc.BMC) error {
 	var sikKey []byte
-	if len(b.KG) > 0 {
-		sikKey = b.KG
+	if kg := b.ResolvedKG(); len(kg) > 0 {
+		sikKey = kg
 	} else {
 		sikKey = paddedPassword(sess)
 	}
