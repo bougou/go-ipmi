@@ -67,9 +67,9 @@ const (
 // lock while its caller holds ProcMu, so a reader under either lock observes a
 // consistent value (the Count* helpers read them under the store lock).
 // LastActivity is guarded by the store lock and refreshed via
-// [V15SessionStore.Touch]. TempSessionID, AuthType, Challenge, Channel, User,
-// and CreatedAt are set before the session is published and never written
-// again. ProcMu may be held while taking the store lock, never the reverse.
+// [V15SessionStore.Touch]. TempSessionID, Handle, AuthType, Challenge, Channel,
+// User, and CreatedAt are set before the session is published and never
+// written again. ProcMu may be held while taking the store lock, never the reverse.
 type V15Session struct {
 	// ProcMu serializes per-session packet processing. The server spawns a
 	// goroutine per inbound packet; without this lock, concurrent packets of
@@ -78,7 +78,11 @@ type V15Session struct {
 
 	TempSessionID uint32
 	SessionID     uint32
-	State         V15SessionState
+	// Handle is the one-byte session handle Get Session Info reports
+	// (spec v2.0§22.20). Assigned at creation, unique among the store's live
+	// sessions, never 0x00 ("no session") or the reserved 0xFF.
+	Handle uint8
+	State  V15SessionState
 
 	AuthType  V15AuthType
 	Challenge [16]byte
@@ -104,6 +108,8 @@ type V15SessionStore struct {
 	max      int
 	timeout  time.Duration
 	clock    clock.Clock
+	// nextHandle seeds session handle assignment; see allocHandleLocked.
+	nextHandle uint8
 }
 
 // NewV15SessionStore creates a V15SessionStore with the default limits.
@@ -145,6 +151,7 @@ func (s *V15SessionStore) CreatePending(authType V15AuthType, user *User, challe
 	now := s.clock.Now()
 	sess := &V15Session{
 		TempSessionID: tempID,
+		Handle:        s.allocHandleLocked(),
 		State:         V15SessionStatePending,
 		AuthType:      authType,
 		Challenge:     challenge,
@@ -155,6 +162,29 @@ func (s *V15SessionStore) CreatePending(authType V15AuthType, user *User, challe
 	}
 	s.sessions[tempID] = sess
 	return sess, nil
+}
+
+// allocHandleLocked returns the next free one-byte session handle: a rotating
+// counter skipping 0x00 ("no session"), the reserved 0xFF, and any handle a
+// live session holds. s.mu must be held; the store capacity is far below 254,
+// so a free value always exists.
+func (s *V15SessionStore) allocHandleLocked() uint8 {
+	for {
+		s.nextHandle++
+		if s.nextHandle == 0 || s.nextHandle == 0xFF {
+			s.nextHandle = 1
+		}
+		taken := false
+		for _, sess := range s.sessions {
+			if sess.Handle == s.nextHandle {
+				taken = true
+				break
+			}
+		}
+		if !taken {
+			return s.nextHandle
+		}
+	}
 }
 
 // Get returns a session by its current lookup ID. It is a pure lookup: activity
@@ -180,6 +210,14 @@ func (s *V15SessionStore) Touch(id uint32) {
 	if sess, ok := s.sessions[id]; ok {
 		sess.LastActivity = s.clock.Now()
 	}
+}
+
+// Cap returns the maximum number of concurrent v1.5 sessions the store can
+// hold, i.e. the number of slots in the session table.
+func (s *V15SessionStore) Cap() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.max
 }
 
 // CountActiveSessions returns the number of active v1.5 sessions.

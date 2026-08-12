@@ -61,3 +61,45 @@ func TestActivateSessionRejectsReservedPrivilegeZero(t *testing.T) {
 		t.Fatalf("want param out of range for privilege 0, got %02x", cc)
 	}
 }
+
+// TestPreSessionRejectsPrivilegedCommands proves an unauthenticated LAN packet
+// (no session) cannot invoke a privileged command such as Set User Password.
+// Without the gate a remote attacker could create an administrator account and
+// then log in normally. It drives the real registry so the check is exercised
+// through the same wrapper every dispatch path uses, and asserts no user slot
+// was created as a side effect.
+func TestPreSessionRejectsPrivilegedCommands(t *testing.T) {
+	b := newTestBMC()
+	reg := NewRegistry()
+	RegisterAllHandlers(reg)
+	ctx := context.Background()
+
+	setPassword := make([]byte, 18)
+	setPassword[0] = 4    // user slot
+	setPassword[1] = 0x02 // set password
+	copy(setPassword[2:], "attacker")
+
+	// Session-less (pre-session LAN): rejected, and the user store is untouched.
+	_, cc, _ := reg.Dispatch(ctx, &HandlerContext{BMC: b}, NetFnAppRequest, CmdSetUserPassword, setPassword)
+	if cc != types.CodeInsufficientPrivilege {
+		t.Errorf("pre-session Set User Password cc = 0x%02x, want insufficient privilege", uint8(cc))
+	}
+	if _, err := b.Users.Get(4); err == nil {
+		t.Error("pre-session Set User Password created a user slot")
+	}
+
+	// The pre-session exempt commands stay reachable without a session.
+	_, cc, _ = reg.Dispatch(ctx, &HandlerContext{BMC: b}, NetFnAppRequest, CmdGetChannelAuthCapabilities, []byte{0x0e, 0x04})
+	if cc != types.CodeOK {
+		t.Errorf("pre-session Get Channel Auth Caps cc = 0x%02x, want OK", uint8(cc))
+	}
+
+	// An authenticated Administrator session runs the command normally.
+	admin := &HandlerContext{BMC: b, Session: &bmc.Session{PrivilegeLevel: bmc.PrivilegeLevelAdministrator}}
+	if _, cc, _ := reg.Dispatch(ctx, admin, NetFnAppRequest, CmdSetUserPassword, setPassword); cc != types.CodeOK {
+		t.Errorf("admin-session Set User Password cc = 0x%02x, want OK", uint8(cc))
+	}
+	if _, err := b.Users.Get(4); err != nil {
+		t.Errorf("admin-session Set User Password did not create the slot: %v", err)
+	}
+}

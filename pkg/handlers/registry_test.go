@@ -4,8 +4,17 @@ import (
 	"context"
 	"testing"
 
+	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
+
+// authedCtx is a HandlerContext with an active Administrator session, so the
+// privilege gate lets a privileged command through and these tests exercise
+// only the registry's dispatch plumbing. A session-less context would be
+// rejected before reaching the handler.
+func authedCtx() *HandlerContext {
+	return &HandlerContext{Session: &bmc.Session{PrivilegeLevel: bmc.PrivilegeLevelAdministrator}}
+}
 
 func TestRegistry_Dispatch(t *testing.T) {
 	tests := []struct {
@@ -60,7 +69,7 @@ func TestRegistry_Dispatch(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := NewRegistry()
 			tc.setup(r)
-			resp, cc, _ := r.Dispatch(context.Background(), &HandlerContext{}, tc.netFn, tc.cmd, nil)
+			resp, cc, _ := r.Dispatch(context.Background(), authedCtx(), tc.netFn, tc.cmd, nil)
 			if cc != tc.wantCC {
 				t.Errorf("cc: want %d, got %d", tc.wantCC, cc)
 			}
@@ -188,8 +197,8 @@ func TestRegistry_Merge(t *testing.T) {
 
 	a.Merge(b)
 
-	_, cc1, _ := a.Dispatch(context.Background(), &HandlerContext{}, 0x06, 0x01, nil)
-	_, cc2, _ := a.Dispatch(context.Background(), &HandlerContext{}, 0x06, 0x02, nil)
+	_, cc1, _ := a.Dispatch(context.Background(), authedCtx(), 0x06, 0x01, nil)
+	_, cc2, _ := a.Dispatch(context.Background(), authedCtx(), 0x06, 0x02, nil)
 
 	if cc1 != types.CodeOK || cc2 != types.CodeOK {
 		t.Errorf("after merge both keys should be present: cc1=%d cc2=%d", cc1, cc2)

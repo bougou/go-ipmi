@@ -108,6 +108,10 @@ type IPConfig struct {
 	Gateway [4]byte
 	MAC     [6]byte
 	DHCP    bool
+	// Port is the primary RMCP port the BMC listens on (Get LAN Configuration
+	// Parameters param #8). Zero means the standard 623; a non-zero value lets a
+	// BMC that listens on a non-standard port advertise it to in-band software.
+	Port uint16
 }
 
 // NetworkHAL configures the BMC's own network interface.

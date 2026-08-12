@@ -39,7 +39,12 @@ func checkCommandPrivilege(hctx *HandlerContext, netFn, cmd uint8) types.Complet
 	}
 	priv, ok := sessionPrivilege(hctx)
 	if !ok {
-		return types.CodeOK
+		// No active session. Only the pre-session exempt commands above
+		// (channel-auth discovery and session setup) may run without one; every
+		// other command requires an authenticated session. This is what stops an
+		// unauthenticated LAN caller from invoking account management, chassis
+		// power, and the like by sending a session-less packet.
+		return types.CodeInsufficientPrivilege
 	}
 	if priv < MinimumPrivilege(netFn, cmd) {
 		return types.CodeInsufficientPrivilege

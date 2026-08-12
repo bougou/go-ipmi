@@ -53,6 +53,10 @@ type Session struct {
 	BMCID uint32
 	// ConsoleID is the session ID chosen by the remote console.
 	ConsoleID uint32
+	// Handle is the one-byte session handle Get Session Info reports
+	// (spec v2.0§22.20). Assigned at allocation, unique among the store's live
+	// sessions, never 0x00 ("no session") or the reserved 0xFF.
+	Handle uint8
 
 	State SessionState
 
@@ -124,6 +128,8 @@ type SessionStore struct {
 	max      int
 	timeout  time.Duration
 	clock    clock.Clock
+	// nextHandle seeds session handle assignment; see allocHandleLocked.
+	nextHandle uint8
 
 	// onRemove fires whenever a session leaves the store (Close or
 	// eviction). The BMC wires this to payload deactivation: when a session
@@ -213,6 +219,7 @@ func (s *SessionStore) Allocate(consoleID uint32, authAlg types.AuthAlg, integri
 	sess := &Session{
 		BMCID:        bmcID,
 		ConsoleID:    consoleID,
+		Handle:       s.allocHandleLocked(),
 		State:        SessionStatePending,
 		AuthAlg:      authAlg,
 		IntegrityAlg: integrityAlg,
@@ -224,6 +231,30 @@ func (s *SessionStore) Allocate(consoleID uint32, authAlg types.AuthAlg, integri
 	}
 	s.sessions[bmcID] = sess
 	return sess, nil
+}
+
+// allocHandleLocked returns the next free one-byte session handle: a rotating
+// counter skipping 0x00 ("no session"), the reserved 0xFF, and any handle a
+// live session holds. Two colliding handles would make Get Session Info
+// ambiguous about which session it describes. s.mu must be held; the store
+// capacity is far below 254, so a free value always exists.
+func (s *SessionStore) allocHandleLocked() uint8 {
+	for {
+		s.nextHandle++
+		if s.nextHandle == 0 || s.nextHandle == 0xFF {
+			s.nextHandle = 1
+		}
+		taken := false
+		for _, sess := range s.sessions {
+			if sess.Handle == s.nextHandle {
+				taken = true
+				break
+			}
+		}
+		if !taken {
+			return s.nextHandle
+		}
+	}
 }
 
 // Get returns the session for bmcID, or [ErrNoSession]. It is a pure lookup:
@@ -356,6 +387,14 @@ func (s *SessionStore) Count() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return len(s.sessions)
+}
+
+// Cap returns the maximum number of concurrent sessions the store can hold,
+// i.e. the number of slots in the session table.
+func (s *SessionStore) Cap() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.max
 }
 
 // InboundSeqValid checks whether seq is within the acceptable sliding window

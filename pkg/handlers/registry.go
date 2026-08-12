@@ -72,6 +72,8 @@ func RegisterAllHandlers(r *Registry) {
 	RegisterStorageHandlers(r)
 	RegisterPayloadHandlers(r)
 	RegisterSOLHandlers(r)
+	RegisterUserHandlers(r)
+	RegisterTransportHandlers(r)
 }
 
 // Register adds or replaces the handler for c, whose NetFn must be the

@@ -117,6 +117,22 @@ func (s *Server) dispatchIPMIv15Auth(addr net.Addr, pkt []byte, sess *types.Sess
 	v15Sess.ProcMu.Lock()
 	defer v15Sess.ProcMu.Unlock()
 
+	// A 20-byte-password account cannot authenticate over v1.5 (spec v2.0§22.30):
+	// v1.5 carries only 16 bytes. Reject before any path that emits an
+	// authenticated response, and respond UNauthenticated, so no v1.5 AuthCode
+	// is ever generated from a truncation of the 20-byte secret (straight
+	// password would send the truncated bytes outright; MD2/MD5 would hand out
+	// an offline verifier for them). This is the sole v1.5 activation
+	// chokepoint, so it covers named and null (User 1) accounts alike. The name
+	// itself is valid, so Get Session Challenge accepted it; the refusal
+	// surfaces here, at authentication.
+	if !handlers.V15Usable(v15Sess.User) {
+		if v15Sess.State == bmc.V15SessionStatePending && cmd == handlers.CmdActivateSession {
+			s.sendIPMIv15CommandCC(addr, pkt, v15Sess, netFn, cmd, seq, handlers.CCV15InvalidSessionID, false)
+		}
+		return
+	}
+
 	authType := bmc.V15AuthType(hdr.AuthType)
 	if authType != v15Sess.AuthType {
 		if v15Sess.State == bmc.V15SessionStatePending && cmd == handlers.CmdActivateSession {
