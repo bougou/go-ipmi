@@ -24,6 +24,11 @@ test: fmt vet
 			--cover --coverprofile cover.out --trace --progress  $(TEST_ARGS)\
 			./pkg/... ./cmd/...
 
+# Run tests with the race detector. The server spawns a goroutine per packet and
+# shares session/config state across them, so race coverage is worth keeping.
+test-race:
+	go test -race -timeout 120s ./pkg/... ./cmd/...
+
 # Build goipmi and goipmi-server binaries
 build: fmt vet
 	go build -ldflags "$(LDFLAGS)" -o $(OUTPUT_DIR)/goipmi ./cmd/goipmi

@@ -85,7 +85,10 @@ type Session struct {
 	// ProcMu serializes per-session packet processing. The server spawns a
 	// goroutine per inbound packet; without this lock, a burst of packets
 	// from one session is processed in scheduler order — scrambling SOL
-	// keystroke bytes and racing the inbound-seq check-then-set.
+	// keystroke bytes and racing the inbound-seq check-then-set. The RAKP
+	// handlers take it too: duplicate handshake messages for one pending
+	// session otherwise race on the nonces, derived keys, and state below.
+	// ProcMu may be held while taking the store lock, never the reverse.
 	ProcMu sync.Mutex
 
 	// Session keys derived during RAKP.
@@ -106,7 +109,10 @@ type Session struct {
 	// Channel this session arrived on.
 	Channel uint8
 
-	// Timing
+	// Timing. LastActivity is guarded by the store lock: it is refreshed via
+	// [SessionStore.Touch] when a validated packet is processed and read by
+	// eviction, both under that lock. CreatedAt is set before the session is
+	// published into the store and never written again.
 	CreatedAt    time.Time
 	LastActivity time.Time
 }
@@ -165,7 +171,12 @@ func NewSessionStoreWithOptions(clk clock.Clock, opts ...SessionStoreOption) *Se
 // Allocate creates a new pending session and returns it.
 // If capacity is reached, it evicts the oldest pending session (LRU per spec).
 // Returns [ErrSessionFull] only when all slots are occupied by active sessions.
-func (s *SessionStore) Allocate(consoleID uint32, authAlg types.AuthAlg, integrityAlg types.IntegrityAlg, cryptAlg types.CryptAlg) (*Session, error) {
+//
+// maxPriv and channel are stored before the session is inserted into the map so
+// the struct is fully initialized before it becomes reachable to other
+// goroutines; callers must not write session fields after Allocate returns
+// without holding [Session.ProcMu].
+func (s *SessionStore) Allocate(consoleID uint32, authAlg types.AuthAlg, integrityAlg types.IntegrityAlg, cryptAlg types.CryptAlg, maxPriv PrivilegeLevel, channel uint8) (*Session, error) {
 	s.mu.Lock()
 
 	// Collect the evicted IDs so their removal hooks (payload deactivation,
@@ -206,6 +217,8 @@ func (s *SessionStore) Allocate(consoleID uint32, authAlg types.AuthAlg, integri
 		AuthAlg:      authAlg,
 		IntegrityAlg: integrityAlg,
 		CryptAlg:     cryptAlg,
+		MaxPrivilege: maxPriv,
+		Channel:      channel,
 		CreatedAt:    now,
 		LastActivity: now,
 	}
@@ -213,8 +226,11 @@ func (s *SessionStore) Allocate(consoleID uint32, authAlg types.AuthAlg, integri
 	return sess, nil
 }
 
-// Get returns the session for bmcID, or [ErrNoSession].
-// It also updates [Session.LastActivity].
+// Get returns the session for bmcID, or [ErrNoSession]. It is a pure lookup:
+// activity is refreshed separately via [SessionStore.Touch], only once a packet
+// has passed integrity and sequence validation. Refreshing on lookup would let
+// packets that fail validation, or that merely name a session ID, keep the
+// session alive forever.
 func (s *SessionStore) Get(bmcID uint32) (*Session, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -222,8 +238,38 @@ func (s *SessionStore) Get(bmcID uint32) (*Session, error) {
 	if !ok {
 		return nil, fmt.Errorf("session 0x%08x: %w", bmcID, ErrNoSession)
 	}
-	sess.LastActivity = s.clock.Now()
 	return sess, nil
+}
+
+// Touch refreshes the session's inactivity clock. The server calls it for every
+// packet that passed integrity and sequence validation. Handshake packets never
+// touch: RAKP messages carry no authenticator, so the inactivity budget stamped
+// at allocation bounds the whole handshake instead.
+func (s *SessionStore) Touch(bmcID uint32) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if sess, ok := s.sessions[bmcID]; ok {
+		sess.LastActivity = s.clock.Now()
+	}
+}
+
+// Activate marks the session active after RAKP completes, or returns
+// [ErrNoSession] when the session was evicted in the meantime (capacity
+// pressure evicts the oldest pending session, which can be one whose RAKP3 is
+// in flight); activating the orphaned struct would hand the console a
+// successful RAKP4 for a session that no longer exists. It takes the store
+// lock because the pending-session eviction scan reads State under it, while
+// the caller holds [Session.ProcMu], so a reader under either lock observes a
+// consistent value.
+func (s *SessionStore) Activate(bmcID uint32) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sess, ok := s.sessions[bmcID]
+	if !ok {
+		return fmt.Errorf("session 0x%08x: %w", bmcID, ErrNoSession)
+	}
+	sess.State = SessionStateActive
+	return nil
 }
 
 // Close marks a session as closed and removes it from the store.

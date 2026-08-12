@@ -3,6 +3,7 @@ package bmc
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"sync"
 )
 
@@ -45,14 +46,10 @@ type User struct {
 	ChannelAccess map[uint8]UserChannelAccess
 
 	// PayloadAccess holds per-channel payload activation rights keyed by
-	// channel number (spec v2.0 §24.6/§24.7). Guarded by payloadMu: entries
-	// are created and updated by the payload-access commands while SOL
-	// activation reads them, and two sessions authenticated as the same
-	// user (or a session plus the SOL activation path) can do so
-	// concurrently — an unlocked map write is a fatal "concurrent map
-	// writes" runtime error.
-	payloadMu     sync.Mutex
-	PayloadAccess map[uint8]*UserPayloadAccess
+	// channel number (spec v2.0 §24.6/§24.7). Like every other mutable User
+	// field it follows the store's snapshot discipline: lookups hand out
+	// deep copies, and a runtime change goes through [UserStore.Update].
+	PayloadAccess map[uint8]UserPayloadAccess
 }
 
 // UserPayloadAccess records a user's payload activation rights on one
@@ -69,26 +66,24 @@ type UserPayloadAccess struct {
 const defaultStandardPayload1 = 0x02
 
 // SOLEnabled reports whether the user may activate the SOL payload.
-func (a *UserPayloadAccess) SOLEnabled() bool { return a.Standard1&0x02 != 0 }
+func (a UserPayloadAccess) SOLEnabled() bool { return a.Standard1&0x02 != 0 }
 
-// PayloadAccessFor returns a snapshot of the user's payload access entry for
-// channel, creating it with default rights (SOL enabled) on first use. A copy
-// is returned so readers never race a concurrent Set Payload Access update on
-// the live entry.
-func (u *User) PayloadAccessFor(channel uint8) *UserPayloadAccess {
-	u.payloadMu.Lock()
-	defer u.payloadMu.Unlock()
-	a := *u.getOrCreatePayloadAccess(channel)
-	return &a
+// PayloadAccessFor returns the user's payload access entry for channel, or the
+// default rights (SOL enabled) when none was ever set.
+func (u *User) PayloadAccessFor(channel uint8) UserPayloadAccess {
+	if a, ok := u.PayloadAccess[channel]; ok {
+		return a
+	}
+	return UserPayloadAccess{Standard1: defaultStandardPayload1}
 }
 
 // SetPayloadAccess applies an enable/disable update to the user's payload
 // access entry for channel (spec v2.0 Table 24-8: on enable, 1-bits set and
-// 0-bits leave unchanged; on disable, 1-bits clear).
+// 0-bits leave unchanged; on disable, 1-bits clear). Like any other User
+// mutation, call it at construction time or on the live user inside a
+// [UserStore.Update] callback, never on a store-returned snapshot.
 func (u *User) SetPayloadAccess(channel uint8, enable bool, standard1, oem1 uint8) {
-	u.payloadMu.Lock()
-	defer u.payloadMu.Unlock()
-	a := u.getOrCreatePayloadAccess(channel)
+	a := u.PayloadAccessFor(channel)
 	if enable {
 		a.Standard1 |= standard1
 		a.OEM1 |= oem1
@@ -96,20 +91,10 @@ func (u *User) SetPayloadAccess(channel uint8, enable bool, standard1, oem1 uint
 		a.Standard1 &^= standard1
 		a.OEM1 &^= oem1
 	}
-}
-
-// getOrCreatePayloadAccess returns the user's live entry for channel, creating
-// it with default rights (SOL enabled) on first use. u.payloadMu must be held.
-func (u *User) getOrCreatePayloadAccess(channel uint8) *UserPayloadAccess {
 	if u.PayloadAccess == nil {
-		u.PayloadAccess = make(map[uint8]*UserPayloadAccess)
+		u.PayloadAccess = make(map[uint8]UserPayloadAccess)
 	}
-	a, ok := u.PayloadAccess[channel]
-	if !ok {
-		a = &UserPayloadAccess{Standard1: defaultStandardPayload1}
-		u.PayloadAccess[channel] = a
-	}
-	return a
+	u.PayloadAccess[channel] = a
 }
 
 // SetPassword copies up to MaxPasswordLen bytes from raw into the User's password field.
@@ -154,7 +139,23 @@ func NewUserStore() *UserStore {
 	return s
 }
 
-// Add creates a new user at the given ID.
+// copyUser returns a deep copy of u: the struct value (Password is a value
+// array, Name a string, both safe to copy) plus fresh access maps. The copy
+// shares no mutable state with the stored user, so callers may read it without
+// holding any lock.
+func copyUser(u *User) *User {
+	if u == nil {
+		return nil
+	}
+	cp := *u
+	cp.ChannelAccess = maps.Clone(u.ChannelAccess)
+	cp.PayloadAccess = maps.Clone(u.PayloadAccess)
+	return &cp
+}
+
+// Add creates a new user at the given ID and returns the live [*User] for
+// construction-time seeding. Mutating the returned pointer is only safe before
+// the server starts serving; use [UserStore.Update] for runtime changes.
 // Returns [ErrInvalidUserID] for IDs outside 1-63, or [ErrUsernameTaken] if
 // name is non-empty and already in use.
 func (s *UserStore) Add(id uint8, name string) (*User, error) {
@@ -181,7 +182,8 @@ func (s *UserStore) Add(id uint8, name string) (*User, error) {
 	return u, nil
 }
 
-// Get returns the user at the given ID, or [ErrUserNotFound].
+// Get returns a snapshot copy of the user at the given ID, or [ErrUserNotFound].
+// The returned [*User] is a private copy; mutate the store via [UserStore.Update].
 func (s *UserStore) Get(id uint8) (*User, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -189,24 +191,25 @@ func (s *UserStore) Get(id uint8) (*User, error) {
 	if !ok {
 		return nil, fmt.Errorf("user %d: %w", id, ErrUserNotFound)
 	}
-	return u, nil
+	return copyUser(u), nil
 }
 
-// GetByName returns the user with the given name, or [ErrUserNotFound].
-// An empty name matches the anonymous user (ID 1).
+// GetByName returns a snapshot copy of the user with the given name, or
+// [ErrUserNotFound]. An empty name matches the anonymous user (ID 1).
 func (s *UserStore) GetByName(name string) (*User, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, u := range s.users {
 		if u.Name == name {
-			return u, nil
+			return copyUser(u), nil
 		}
 	}
 	return nil, fmt.Errorf("user %q: %w", name, ErrUserNotFound)
 }
 
-// FindEnabledByNameOnChannel scans user IDs 1..MaxUsers in order and returns
-// the first enabled user with a matching name and channel access (spec v1.5§18.24 / v2.0§22.27).
+// FindEnabledByNameOnChannel scans user IDs 1..MaxUsers in order and returns a
+// snapshot copy of the first enabled user with a matching name and channel
+// access (spec v1.5§18.24 / v2.0§22.27).
 func (s *UserStore) FindEnabledByNameOnChannel(name string, channel uint8) (*User, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -222,9 +225,27 @@ func (s *UserStore) FindEnabledByNameOnChannel(name string, channel uint8) (*Use
 		if !ok || !access.Enabled {
 			continue
 		}
-		return u, nil
+		return copyUser(u), nil
 	}
 	return nil, fmt.Errorf("user %q on channel %d: %w", name, channel, ErrUserNotFound)
+}
+
+// Update runs fn against the live [*User] for id under the store write lock, the
+// race-free way to mutate a user at runtime (e.g. from a Set User Password
+// handler). Returns [ErrUserNotFound] if id is not present.
+//
+// fn runs with the store lock held: it must not call back into the store (that
+// self-deadlocks on the non-reentrant lock) and must not retain the [*User]
+// past its return, since using the live pointer outside the lock recreates the
+// race the snapshot lookups exist to prevent.
+func (s *UserStore) Update(id uint8, fn func(*User) error) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	u, ok := s.users[id]
+	if !ok {
+		return fmt.Errorf("user %d: %w", id, ErrUserNotFound)
+	}
+	return fn(u)
 }
 
 // Delete removes a user by ID.  User 1 (anonymous) cannot be deleted.

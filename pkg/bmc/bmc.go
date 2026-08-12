@@ -36,14 +36,30 @@ type DeviceInfo struct {
 type BMC struct {
 	Info DeviceInfo
 	GUID [16]byte
-	KG   []byte // BMC key (Kg); nil means "one-key" mode using Kuid only
 
-	// CipherSuites is the set of RMCP+ cipher suites the server advertises and
+	// cfgMu guards the runtime-reconfigurable config fields kg, cipherSuites,
+	// v15AuthTypes, and v15Disabled. Readers on the packet hot path take the
+	// read lock and copy out; the options and setters take the write lock. The
+	// fields are unexported so every access provably goes through it.
+	cfgMu sync.RWMutex
+
+	// kg is the BMC key (Kg); nil means "one-key" mode using Kuid only.
+	// Set via [WithKG], read via [BMC.ResolvedKG] and [BMC.HasKG].
+	kg []byte
+
+	// cipherSuites is the set of RMCP+ cipher suites the server advertises and
 	// accepts during the Open Session handshake. Defaults to
 	// [DefaultCipherSuites] when nil. Each suite must be supported by the
 	// reference server (see [SupportedCipherSuite]); this is validated in
-	// [WithCipherSuites].
-	CipherSuites []types.CipherSuiteID
+	// [WithCipherSuites] and [BMC.SetCipherSuites]. Read it via
+	// [BMC.ResolvedCipherSuites].
+	cipherSuites []types.CipherSuiteID
+
+	// v15AuthTypes lists the v1.5 authentication types this BMC advertises and
+	// accepts. Set via [WithV15AuthTypes], read via [BMC.ResolvedV15AuthTypes].
+	v15AuthTypes []V15AuthType
+	// v15Disabled disables IPMI v1.5 LAN sessions when true.
+	v15Disabled bool
 
 	Users    *UserStore
 	Channels *ChannelStore
@@ -51,10 +67,6 @@ type BMC struct {
 
 	// V15Sessions tracks IPMI v1.5 LAN sessions (separate from RMCP+ sessions).
 	V15Sessions *V15SessionStore
-	// V15AuthTypes lists the v1.5 authentication types this BMC advertises and accepts.
-	V15AuthTypes []V15AuthType
-	// v15Disabled disables IPMI v1.5 LAN sessions when true.
-	v15Disabled bool
 
 	// SDRRepo tracks SDR repository reservation state (v2.0§33.11).
 	SDRRepo *SDRRepoStore
@@ -80,9 +92,28 @@ type Option func(*BMC)
 func WithKG(kg []byte) Option {
 	return func(b *BMC) {
 		if len(kg) > 0 {
-			b.KG = kg
+			b.cfgMu.Lock()
+			b.kg = append([]byte(nil), kg...)
+			b.cfgMu.Unlock()
 		}
 	}
+}
+
+// ResolvedKG returns a copy of the BMC key (Kg), or nil in one-key mode.
+func (b *BMC) ResolvedKG() []byte {
+	b.cfgMu.RLock()
+	defer b.cfgMu.RUnlock()
+	if len(b.kg) == 0 {
+		return nil
+	}
+	return append([]byte(nil), b.kg...)
+}
+
+// HasKG reports whether a BMC key (Kg) is configured, without copying it.
+func (b *BMC) HasKG() bool {
+	b.cfgMu.RLock()
+	defer b.cfgMu.RUnlock()
+	return len(b.kg) > 0
 }
 
 // WithClock injects a custom [clock.Clock].  Defaults to [clock.Real].
@@ -94,42 +125,66 @@ func WithClock(c clock.Clock) Option {
 // and accepts. Pass nil/empty to restore [DefaultV15AuthTypes].
 func WithV15AuthTypes(types []V15AuthType) Option {
 	return func(b *BMC) {
+		b.cfgMu.Lock()
+		defer b.cfgMu.Unlock()
 		if len(types) == 0 {
-			b.V15AuthTypes = nil
+			b.v15AuthTypes = nil
 			return
 		}
-		b.V15AuthTypes = append(b.V15AuthTypes[:0:0], types...)
+		b.v15AuthTypes = append(b.v15AuthTypes[:0:0], types...)
 		b.v15Disabled = false
 	}
 }
 
 // WithV15Disabled turns off IPMI v1.5 LAN session support. RMCP+ (v2.0) is unaffected.
 func WithV15Disabled() Option {
-	return func(b *BMC) { b.v15Disabled = true }
+	return func(b *BMC) {
+		b.cfgMu.Lock()
+		b.v15Disabled = true
+		b.cfgMu.Unlock()
+	}
 }
 
 // V15LANEnabled reports whether the BMC advertises and accepts IPMI v1.5 sessions.
 func (b *BMC) V15LANEnabled() bool {
-	return b != nil && !b.v15Disabled && len(b.ResolvedV15AuthTypes()) > 0
+	if b == nil {
+		return false
+	}
+	b.cfgMu.RLock()
+	defer b.cfgMu.RUnlock()
+	return !b.v15Disabled && len(b.resolvedV15AuthTypesLocked()) > 0
 }
 
-// ResolvedV15AuthTypes returns the v1.5 auth type list, defaulting to MD5.
-func (b *BMC) ResolvedV15AuthTypes() []V15AuthType {
+// resolvedV15AuthTypesLocked returns the internal v1.5 auth type list (not a
+// copy) and must be called with cfgMu held.
+func (b *BMC) resolvedV15AuthTypesLocked() []V15AuthType {
 	if b.v15Disabled {
 		return nil
 	}
-	if len(b.V15AuthTypes) > 0 {
-		return b.V15AuthTypes
+	if len(b.v15AuthTypes) > 0 {
+		return b.v15AuthTypes
 	}
 	return DefaultV15AuthTypes
 }
 
+// ResolvedV15AuthTypes returns a copy of the v1.5 auth type list, defaulting to MD5.
+func (b *BMC) ResolvedV15AuthTypes() []V15AuthType {
+	b.cfgMu.RLock()
+	defer b.cfgMu.RUnlock()
+	return append([]V15AuthType(nil), b.resolvedV15AuthTypesLocked()...)
+}
+
 // V15AuthTypeEnabled reports whether authType is configured on this BMC.
 func (b *BMC) V15AuthTypeEnabled(authType V15AuthType) bool {
-	if !b.V15LANEnabled() {
+	if b == nil {
 		return false
 	}
-	for _, t := range b.ResolvedV15AuthTypes() {
+	b.cfgMu.RLock()
+	defer b.cfgMu.RUnlock()
+	if b.v15Disabled {
+		return false
+	}
+	for _, t := range b.resolvedV15AuthTypesLocked() {
 		if t == authType {
 			return true
 		}
@@ -147,13 +202,15 @@ func WithCipherSuites(ids []types.CipherSuiteID) Option {
 	}
 }
 
-// ResolvedCipherSuites returns the cipher suite list to use for advertisement,
-// falling back to [DefaultCipherSuites] when none was configured.
+// ResolvedCipherSuites returns a copy of the cipher suite list to use for
+// advertisement, falling back to [DefaultCipherSuites] when none was configured.
 func (b *BMC) ResolvedCipherSuites() []types.CipherSuiteID {
-	if len(b.CipherSuites) > 0 {
-		return b.CipherSuites
+	b.cfgMu.RLock()
+	defer b.cfgMu.RUnlock()
+	if len(b.cipherSuites) > 0 {
+		return append([]types.CipherSuiteID(nil), b.cipherSuites...)
 	}
-	return DefaultCipherSuites
+	return append([]types.CipherSuiteID(nil), DefaultCipherSuites...)
 }
 
 // SetCipherSuites replaces the configured cipher suite list. Each ID must be
@@ -165,11 +222,17 @@ func (b *BMC) SetCipherSuites(ids []types.CipherSuiteID) {
 
 func (b *BMC) setCipherSuites(ids []types.CipherSuiteID) {
 	if len(ids) == 0 {
-		b.CipherSuites = nil
+		b.cfgMu.Lock()
+		b.cipherSuites = nil
+		b.cfgMu.Unlock()
 		return
 	}
+	// Validate before taking the lock; validateCipherSuites panics on an
+	// unsupported suite, so we never install a partially-validated list.
 	validateCipherSuites(ids)
-	b.CipherSuites = append(b.CipherSuites[:0:0], ids...)
+	b.cfgMu.Lock()
+	b.cipherSuites = append(b.cipherSuites[:0:0], ids...)
+	b.cfgMu.Unlock()
 }
 
 // New creates a BMC with sane defaults.

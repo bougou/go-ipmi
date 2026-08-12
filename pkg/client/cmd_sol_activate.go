@@ -39,9 +39,9 @@ const (
 	// would terminate the SSH connection instead of just the SOL session.
 	// This choice avoids conflicts and allows the SOL session to exit cleanly
 	// while keeping the SSH connection intact.
-	SOLEscapeSequence     = "~X"
-	solEscapePrefix      = '~'
-	solEscapeTerminator  = 'X'
+	SOLEscapeSequence   = "~X"
+	solEscapePrefix     = '~'
+	solEscapeTerminator = 'X'
 )
 
 func solActivatePollInterval(opts *SOLActivateOptions) time.Duration {

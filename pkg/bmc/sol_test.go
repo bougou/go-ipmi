@@ -22,7 +22,7 @@ import (
 // payload access on channel 1.
 func newSOLTestSession(t *testing.T, b *BMC) *Session {
 	t.Helper()
-	sess, err := b.Sessions.Allocate(0xA5A5A5A5, types.AuthAlg_HMAC_SHA1, types.IntegrityAlg_HMAC_SHA1_96, types.CryptAlg_AES_CBC_128)
+	sess, err := b.Sessions.Allocate(0xA5A5A5A5, types.AuthAlg_HMAC_SHA1, types.IntegrityAlg_HMAC_SHA1_96, types.CryptAlg_AES_CBC_128, PrivilegeLevelAdministrator, 1)
 	if err != nil {
 		t.Fatalf("allocate session: %v", err)
 	}

@@ -102,7 +102,9 @@ const solWorkerIdleTimeout = 90 * time.Second
 type ServerOption func(*Server)
 
 // WithHandlerRegistry replaces the default handler registry.
-// Use this to add OEM commands or override built-in handlers.
+// Use this to add OEM commands or override built-in handlers. All registration
+// on r must be complete before [Server.Serve] is called; the registry is
+// read-only and unsynchronized during dispatch.
 func WithHandlerRegistry(r *handlers.Registry) ServerOption {
 	return func(s *Server) { s.reg = r }
 }
@@ -394,7 +396,7 @@ func (s *Server) handleRMCPPlus(addr net.Addr, pkt []byte) {
 		// per-packet goroutines.
 		sess.ProcMu.Lock()
 		defer sess.ProcMu.Unlock()
-		if !acceptInbound(sess, pkt, addr, inboundSeq, authenticated) {
+		if !s.acceptInbound(sess, pkt, addr, inboundSeq, authenticated) {
 			return
 		}
 		s.dispatchIPMISession(ctx, addr, sess, payload, encrypted)
@@ -480,9 +482,12 @@ func (s *Server) runSOLWorker(sessionID uint32, q chan solJob) {
 }
 
 // acceptInbound verifies one in-session packet's integrity and session
-// sequence window, recording the sender address on success. sess.ProcMu
-// must be held: the window check-then-set is only atomic under it.
-func acceptInbound(sess *bmc.Session, pkt []byte, addr net.Addr, inboundSeq uint32, authenticated bool) bool {
+// sequence window, recording the sender address and refreshing the session's
+// inactivity clock on success. Only packets accepted here count as activity:
+// refreshing on lookup instead would let unvalidated packets keep a session
+// alive. sess.ProcMu must be held: the window check-then-set is only atomic
+// under it.
+func (s *Server) acceptInbound(sess *bmc.Session, pkt []byte, addr net.Addr, inboundSeq uint32, authenticated bool) bool {
 	if !verifyRMCPPlusIntegrity(pkt, sess, authenticated) {
 		return false
 	}
@@ -491,6 +496,7 @@ func acceptInbound(sess *bmc.Session, pkt []byte, addr net.Addr, inboundSeq uint
 	}
 	sess.InboundSeq = inboundSeq
 	sess.SetAddr(addr)
+	s.bmc.Sessions.Touch(sess.BMCID)
 	return true
 }
 
@@ -510,7 +516,7 @@ func (s *Server) processSOLJob(sess *bmc.Session, job solJob, q chan solJob) {
 	// is the only SOL processor per session, and holding it would serialize
 	// the data plane against command responses of the same session.
 	sess.ProcMu.Lock()
-	accepted := acceptInbound(sess, job.pkt, job.addr, inboundSeq, authenticated)
+	accepted := s.acceptInbound(sess, job.pkt, job.addr, inboundSeq, authenticated)
 	sess.ProcMu.Unlock()
 	if !accepted {
 		if s.solDebug {
@@ -555,6 +561,8 @@ func (s *Server) dispatchIPMIPreSession(ctx context.Context, addr net.Addr, payl
 }
 
 // dispatchIPMISession handles IPMI commands within an authenticated session.
+// The caller must hold sess.ProcMu; this method reads and writes session fields
+// and dispatches session commands that may do the same.
 func (s *Server) dispatchIPMISession(ctx context.Context, addr net.Addr, sess *bmc.Session, payload []byte, encrypted bool) {
 	ipmiPayload, ok := decryptSessionPayload(sess, payload, encrypted)
 	if !ok {

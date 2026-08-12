@@ -50,3 +50,20 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: make vet
+
+  test:
+    name: go test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      # Always run with the race detector: it is a superset of a plain run, and
+      # the server shares session/config state across a goroutine per packet.
+      - name: Run tests
+        run: make test-race

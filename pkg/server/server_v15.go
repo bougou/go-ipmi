@@ -64,7 +64,14 @@ func (s *Server) dispatchIPMIv15SessionUnauth(addr net.Addr, pkt []byte, sess *t
 	}
 
 	v15Sess, err := s.bmc.V15Sessions.Get(hdr.SessionID)
-	if err != nil || v15Sess.State != bmc.V15SessionStateActive {
+	if err != nil {
+		return
+	}
+	// The seq window check and dispatch must be atomic per session: packets of
+	// one session are dispatched from per-packet goroutines.
+	v15Sess.ProcMu.Lock()
+	defer v15Sess.ProcMu.Unlock()
+	if v15Sess.State != bmc.V15SessionStateActive {
 		return
 	}
 
@@ -85,7 +92,7 @@ func (s *Server) dispatchIPMIv15SessionUnauth(addr net.Addr, pkt []byte, sess *t
 
 	ctx := context.Background()
 	respData, cc, _ := s.reg.Dispatch(ctx, hctx, netFn, cmd, data)
-	s.bmc.V15Sessions.Touch(v15Sess)
+	s.bmc.V15Sessions.Touch(hdr.SessionID)
 
 	ipmiResp := protocol.BuildIPMIResponse(netFn, cmd, seq, uint8(cc), respData)
 	outboundSeq := v15Sess.NextOutboundSeq()
@@ -103,6 +110,12 @@ func (s *Server) dispatchIPMIv15Auth(addr net.Addr, pkt []byte, sess *types.Sess
 	if err != nil {
 		return
 	}
+	// Hold ProcMu across seq validate/accept, auth verify, dispatch (which may
+	// activate the session, taking the store lock in the allowed
+	// ProcMu-then-store order), activity update, outbound-seq allocation, and
+	// send.
+	v15Sess.ProcMu.Lock()
+	defer v15Sess.ProcMu.Unlock()
 
 	authType := bmc.V15AuthType(hdr.AuthType)
 	if authType != v15Sess.AuthType {
@@ -165,7 +178,10 @@ func (s *Server) dispatchIPMIv15Auth(addr net.Addr, pkt []byte, sess *types.Sess
 
 	ctx := context.Background()
 	respData, cc, _ := s.reg.Dispatch(ctx, hctx, netFn, cmd, data)
-	s.bmc.V15Sessions.Touch(v15Sess)
+	// For a successful Activate Session this lookup misses, because the store
+	// just re-keyed the session to its permanent ID; that is fine, activation
+	// itself stamps the activity.
+	s.bmc.V15Sessions.Touch(hdr.SessionID)
 
 	ipmiResp := protocol.BuildIPMIResponse(netFn, cmd, seq, uint8(cc), respData)
 	outboundSeq := v15Sess.NextOutboundSeq()
