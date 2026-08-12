@@ -214,3 +214,82 @@ func TestV15InboundSeqDuplicateRejected(t *testing.T) {
 		t.Fatal("duplicate seq should be rejected")
 	}
 }
+
+// TestLookupV15UserValidatesNameOnly proves Get Session Challenge's user
+// lookup succeeds for a valid, enabled name regardless of the stored password
+// size: it validates the name and channel access, not the credential class.
+// The 20-byte-password rejection (spec v2.0§22.30) is enforced later, at the
+// AuthCode verification during Activate Session, so it does not masquerade here
+// as an "invalid user name".
+func TestLookupV15UserValidatesNameOnly(t *testing.T) {
+	b := newTestBMC()
+	user, err := b.Users.Add(2, "op20")
+	if err != nil {
+		t.Fatal(err)
+	}
+	user.SetPassword([]byte("abcdefghijklmnopqrst")) // 20 bytes -> Password20
+	user.Enabled = true
+	user.ChannelAccess[lanChannelNumber] = bmc.UserChannelAccess{
+		MaxPrivilege: bmc.PrivilegeLevelAdministrator,
+		Enabled:      true,
+	}
+
+	uname := make([]byte, 16)
+	copy(uname, "op20")
+	if _, cc, ok := lookupV15User(b, uname, lanChannelNumber); !ok {
+		t.Fatalf("valid name rejected at lookup, cc=0x%02x", cc)
+	}
+}
+
+// TestLookupV15NullUserCoveredByCredentialGate guards the null-user (User 1)
+// path, the case the fix's second half is about. A null username resolves to
+// User 1 and the lookup accepts it (the anonymous name is valid), so the
+// 20-byte rejection cannot live in the lookup; it must come from the shared
+// credential gate. This asserts both halves: the null lookup returns User 1,
+// and [V15Usable] rejects that User 1 when it carries a 20-byte password, which
+// is exactly what the single auth chokepoint applies to the session's user.
+func TestLookupV15NullUserCoveredByCredentialGate(t *testing.T) {
+	b := newTestBMC()
+	if err := b.Users.Update(1, func(u *bmc.User) error {
+		u.SetPassword([]byte("abcdefghijklmnopqrst")) // 20 bytes -> Password20
+		u.Enabled = true
+		u.ChannelAccess[lanChannelNumber] = bmc.UserChannelAccess{
+			MaxPrivilege: bmc.PrivilegeLevelAdministrator,
+			Enabled:      true,
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	nullName := make([]byte, 16) // all zeros = null user (User 1)
+	user, cc, ok := lookupV15User(b, nullName, lanChannelNumber)
+	if !ok {
+		t.Fatalf("null-user lookup rejected, cc=0x%02x", cc)
+	}
+	if user.ID != 1 {
+		t.Fatalf("null user resolved to slot %d, want User 1", user.ID)
+	}
+	if V15Usable(user) {
+		t.Fatal("null User 1 with a 20-byte password must not be v1.5-usable")
+	}
+}
+
+// TestV15Usable pins the v1.5 credential-class gate: a 20-byte-password account
+// (and a nil user) cannot authenticate a v1.5 session, a 16-byte one can.
+func TestV15Usable(t *testing.T) {
+	if V15Usable(nil) {
+		t.Error("nil user must not be v1.5-usable")
+	}
+
+	u := &bmc.User{}
+	u.SetPassword([]byte("s3cr3t")) // <=16 bytes: 16-byte class
+	if !V15Usable(u) {
+		t.Error("16-byte-password user must be v1.5-usable")
+	}
+
+	u.SetPassword([]byte("abcdefghijklmnopqrst")) // >16 bytes: 20-byte class
+	if V15Usable(u) {
+		t.Error("20-byte-password user must not be v1.5-usable")
+	}
+}

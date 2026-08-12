@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 
+	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
@@ -32,6 +33,7 @@ func RegisterAppHandlers(r *Registry) {
 	r.RegisterFunc(types.CommandWarmReset, handleWarmReset)
 	r.RegisterFunc(types.CommandGetSelfTestResults, handleGetSelfTestResults)
 	r.RegisterFunc(types.CommandGetDeviceGUID, handleGetDeviceGUID)
+	r.RegisterFunc(types.CommandGetChannelInfo, handleGetChannelInfo)
 }
 
 // handleGetDeviceID implements Get Device ID (App 0x01).
@@ -108,4 +110,110 @@ func handleGetDeviceGUID(_ context.Context, hctx *HandlerContext, _ []byte) ([]b
 	resp := make([]byte, 16)
 	copy(resp, g[:])
 	return resp, types.CodeOK, nil
+}
+
+// ---------------------------------------------------------------------------
+// Get Channel Info
+// ---------------------------------------------------------------------------
+
+// Channel session-support encodings (response byte 4, bits [7:6]) per IPMI spec
+// Table 22-30. The full set is session-less (0), single-session (1),
+// multi-session (2) and session-based (3); the reference server only reports the
+// first and third.
+const (
+	channelSessionLess  uint8 = 0x00 // no sessions (e.g. the system interface)
+	channelMultiSession uint8 = 0x02 // multiple concurrent sessions (LAN)
+)
+
+// ipmiForumIANA is the IPMI-forum IANA enterprise number reported as the channel
+// protocol vendor for the standard IPMB protocol. It is sent LS-byte first as a
+// 3-byte field (0xF2 0x1B 0x00).
+const ipmiForumIANA uint32 = 7154
+
+// handleGetChannelInfo implements Get Channel Info (App 0x42).
+//
+// The response is built from the BMC's [bmc.ChannelStore] rather than from
+// hardcoded media or numbers, so it stays truthful as channels are reconfigured.
+// The channel-number request field may be 0x0E ("this channel"), which resolves
+// to the channel the request arrived on. An unknown channel returns
+// CodeRequestDataFieldInvalid. Response format follows Table 22-30 of the IPMI
+// 2.0 spec.
+//
+// Two fields are deliberate simplifications: the per-channel active-session
+// count is reported as 0 (session occupancy is deferred to Get Session Info),
+// and the protocol and session-support fields are derived from the channel
+// medium. That derivation is faithful for the modeled LAN and system-interface
+// channels but only approximate for other media a caller might configure.
+func handleGetChannelInfo(_ context.Context, hctx *HandlerContext, req []byte) ([]byte, types.CompletionCode, error) {
+	if len(req) < 1 {
+		return nil, types.CodeRequestDataTruncated, nil
+	}
+	if hctx == nil || hctx.BMC == nil {
+		return nil, types.CodeNotSupported, nil
+	}
+
+	chNum := req[0] & 0x0F
+	if chNum == types.ChannelNumberSelf {
+		// 0x0E means "the channel this request was received on". The server
+		// records that channel on the context; fall back to the LAN channel when
+		// it is absent (e.g. requests over the system interface in a bare setup).
+		if hctx.Channel != nil {
+			chNum = hctx.Channel.Number
+		} else {
+			chNum = lanChannelNumber
+		}
+	}
+
+	ch, err := hctx.BMC.Channels.Get(chNum)
+	if err != nil {
+		return nil, types.CodeRequestDataFieldInvalid, nil
+	}
+
+	resp := make([]byte, 9)
+	resp[0] = ch.Number
+	resp[1] = uint8(ch.Medium)
+	resp[2] = uint8(channelProtocolForMedium(ch.Medium))
+	// Byte 4: bits [7:6] session support, bits [5:0] active session count. All
+	// sessions live on the LAN channel (the only session-based channel this
+	// server models), so its count is both tables' occupancy; other channels
+	// are session-less and report zero. The RMCP+ table's occupancy stands in
+	// for its active count for the reason given in Get Session Info.
+	sessions := 0
+	if ch.Number == lanChannelNumber {
+		sessions = hctx.BMC.Sessions.Count() + hctx.BMC.V15Sessions.CountActiveSessions()
+	}
+	resp[3] = channelSessionSupportForMedium(ch.Medium)<<6 | clampSessionCount(sessions)
+	// Bytes 5:7: channel protocol vendor ID (IANA), LS-first.
+	resp[4] = uint8(ipmiForumIANA & 0xFF)
+	resp[5] = uint8((ipmiForumIANA >> 8) & 0xFF)
+	resp[6] = uint8((ipmiForumIANA >> 16) & 0xFF)
+	// Bytes 8:9: auxiliary channel info. For the system interface these carry
+	// the SMS and event-message-buffer interrupt types, where 0x00 means IRQ 0;
+	// 0xFF is the defined "no interrupt / unspecified" value (Table 22-24). For
+	// a LAN channel the bytes are unused and zero.
+	if ch.Medium == bmc.ChannelMediumSystemIF {
+		resp[7] = 0xFF
+		resp[8] = 0xFF
+	}
+	return resp, types.CodeOK, nil
+}
+
+// channelProtocolForMedium maps a channel medium to the message protocol it
+// speaks. LAN and IPMB-based channels carry IPMB-formatted messages; the system
+// interface uses KCS.
+func channelProtocolForMedium(m bmc.ChannelMedium) types.ChannelProtocol {
+	if m == bmc.ChannelMediumSystemIF {
+		return types.ChannelProtocolKCS
+	}
+	return types.ChannelProtocolIPMB
+}
+
+// channelSessionSupportForMedium reports whether a channel is session-based. LAN
+// channels support multiple concurrent sessions; other media (notably the
+// system interface) are session-less.
+func channelSessionSupportForMedium(m bmc.ChannelMedium) uint8 {
+	if m == bmc.ChannelMediumLAN {
+		return channelMultiSession
+	}
+	return channelSessionLess
 }

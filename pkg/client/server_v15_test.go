@@ -212,3 +212,46 @@ func newV15TestBMC(t *testing.T, username, password string) *bmc.BMC {
 	}
 	return b
 }
+
+// TestV15ConnectRejects20BytePassword drives a real IPMI v1.5 (-A MD5) session
+// against an account whose password was stored as a 20-byte password, and
+// proves the session cannot be established. Such a password is IPMI 2.0 only
+// (spec v2.0§22.30): allowing v1.5 here would verify the AuthCode against a
+// 16-byte truncation of the secret. The refusal surfaces at Activate Session,
+// not as an "invalid user name" at Get Session Challenge, since the name is
+// valid.
+func TestV15ConnectRejects20BytePassword(t *testing.T) {
+	const (
+		username = "ADMIN"
+		password = "passwordlongerthan16" // 20 bytes -> stored as 20-byte password
+	)
+
+	b := newV15TestBMC(t, username, password)
+
+	pc, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 0})
+	if err != nil {
+		t.Fatalf("udp listen: %v", err)
+	}
+	t.Cleanup(func() { _ = pc.Close() })
+
+	addr := pc.LocalAddr().(*net.UDPAddr) //nolint:forcetypeassert
+	srv := server.NewServer(b, udp.Wrap(pc))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	go func() { _ = srv.Serve(ctx) }()
+
+	c, err := NewClient(addr.IP.String(), addr.Port, username, password)
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	c.WithInterface(InterfaceLan).
+		WithTimeout(2 * time.Second).
+		WithRetry(0)
+	c.session.authType = types.AuthTypeMD5
+
+	if err := c.Connect(context.Background()); err == nil {
+		_ = c.Close(context.Background())
+		t.Fatal("v1.5 Connect succeeded for a 20-byte-password account, want failure")
+	}
+}

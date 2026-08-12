@@ -17,21 +17,33 @@ func MinimumPrivilege(netFn, cmd uint8) bmc.PrivilegeLevel {
 		}
 	case NetFnAppRequest:
 		switch cmd {
-		case CmdColdReset, CmdWarmReset:
+		case CmdColdReset, CmdWarmReset,
+			CmdSetUserAccess, CmdSetUsername, CmdSetUserPassword:
+			// Resetting the BMC and writing user configuration require
+			// Administrator (spec Appendix G). Set User Password in particular
+			// must never be reachable from a lesser-privileged session.
 			return bmc.PrivilegeLevelAdministrator
 		case 0x4c: // Set User Payload Access (§24.6, Table 24-8): user administration
 			return bmc.PrivilegeLevelAdministrator
+		case CmdGetUserAccess, CmdGetUsername:
+			// Reading user configuration requires Operator (spec Appendix G).
+			return bmc.PrivilegeLevelOperator
 		default:
 			return bmc.PrivilegeLevelUser
 		}
 	case NetFnTransportRequest:
-		// Set SOL Configuration Parameters (§26.2) is a configuration write
-		// like Set LAN Configuration Parameters; the Activate Payload
-		// privilege itself comes from SOL parameter #2 (Table 26-5).
-		if cmd == 0x21 { // Set SOL Configuration Parameters
+		switch cmd {
+		case 0x21:
+			// Set SOL Configuration Parameters (§26.2) is a configuration write
+			// like Set LAN Configuration Parameters; the Activate Payload
+			// privilege itself comes from SOL parameter #2 (Table 26-5).
 			return bmc.PrivilegeLevelAdministrator
+		case CmdGetLanConfigParam:
+			// Get LAN Configuration Parameters requires Operator (spec Appendix G).
+			return bmc.PrivilegeLevelOperator
+		default:
+			return bmc.PrivilegeLevelUser
 		}
-		return bmc.PrivilegeLevelUser
 	default:
 		return bmc.PrivilegeLevelUser
 	}

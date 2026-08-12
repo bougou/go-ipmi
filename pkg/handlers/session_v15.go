@@ -159,7 +159,23 @@ func lookupV15User(b *bmc.BMC, username []byte, channel uint8) (*bmc.User, types
 	if err != nil {
 		return nil, ccV15InvalidUserName, false
 	}
+	// The 20-byte-password rejection (spec v2.0§22.30) is not applied here:
+	// this command validates the user name and channel access only, both of
+	// which are fine. The credential class is enforced where the v1.5 AuthCode
+	// is actually verified (see [V15Usable] and its caller), so the failure
+	// surfaces as an authentication failure at Activate Session rather than a
+	// misleading "invalid user name" here.
 	return user, types.CodeOK, true
+}
+
+// V15Usable reports whether user may authenticate an IPMI v1.5 session. A
+// password stored with the 20-byte size tag exists only in IPMI 2.0
+// (spec v2.0§22.30), so it cannot: v1.5 carries a 16-byte password, and
+// authenticating a 20-byte-password account over v1.5 would verify against a
+// 16-byte truncation of the secret. Enforced at the point the v1.5 AuthCode is
+// verified, so it covers both named and null (User 1) accounts.
+func V15Usable(user *bmc.User) bool {
+	return user != nil && !user.Password20
 }
 
 func trimV15Username(username []byte) string {

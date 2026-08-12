@@ -30,6 +30,10 @@ type UserChannelAccess struct {
 	CallbackOnly bool
 	// Enabled controls whether the user is allowed on this channel at all.
 	Enabled bool
+	// LinkAuth records the link-authentication enable bit (spec v2.0§22.26).
+	// Nothing enforces it on a LAN channel; it is stored so Get User Access
+	// round-trips what Set User Access accepted.
+	LinkAuth bool
 }
 
 // User represents a single BMC user account.
@@ -40,7 +44,12 @@ type User struct {
 	// Password is stored as a 20-byte padded value per the IPMI 2.0 spec.
 	// Index 0 is valid; a zero-length slice means no password is set.
 	Password [MaxPasswordLen]byte
-	Enabled  bool
+	// Password20 records whether the password was stored with the 20-byte size
+	// tag (spec v2.0§22.30). The size is part of the credential: a test with the
+	// other size must fail, and a 20-byte password exists only in IPMI 2.0, so
+	// it must not authenticate a v1.5 session.
+	Password20 bool
+	Enabled    bool
 
 	// ChannelAccess holds per-channel access settings keyed by channel number.
 	ChannelAccess map[uint8]UserChannelAccess
@@ -97,11 +106,15 @@ func (u *User) SetPayloadAccess(channel uint8, enable bool, standard1, oem1 uint
 	u.PayloadAccess[channel] = a
 }
 
-// SetPassword copies up to MaxPasswordLen bytes from raw into the User's password field.
+// SetPassword copies up to MaxPasswordLen bytes from raw into the User's
+// password field. The size class is inferred from the input length: anything
+// longer than 16 bytes is a 20-byte (IPMI 2.0 only) password. Pass the
+// wire-tagged length unmodified so the class survives trailing zero bytes.
 func (u *User) SetPassword(raw []byte) {
 	var p [MaxPasswordLen]byte
 	copy(p[:], raw)
 	u.Password = p
+	u.Password20 = len(raw) > 16
 }
 
 // PasswordV15Padded returns the user's password zero-padded to 16 bytes per
@@ -122,13 +135,41 @@ func (u *User) VerifyPassword(raw []byte) bool {
 
 // UserStore is a thread-safe registry of BMC users.
 type UserStore struct {
-	mu    sync.RWMutex
-	users map[uint8]*User
+	mu sync.RWMutex
+	// maxUsers is the highest user ID the store advertises (Get User Access
+	// byte 1, spec v2.0§22.27). It bounds the slot range enumerators walk and
+	// is immutable after construction, so it needs no locking.
+	maxUsers uint8
+	users    map[uint8]*User
+}
+
+// UserStoreOption configures a [UserStore] at construction time.
+type UserStoreOption func(*UserStore)
+
+// WithMaxUsers sets the highest user ID the store advertises via Get User
+// Access. n is clamped to the spec range 1..[MaxUsers]; the default is
+// [MaxUsers] (63).
+func WithMaxUsers(n uint8) UserStoreOption {
+	return func(s *UserStore) {
+		if n < 1 {
+			n = 1
+		}
+		if n > MaxUsers {
+			n = MaxUsers
+		}
+		s.maxUsers = n
+	}
 }
 
 // NewUserStore creates a UserStore with the mandatory anonymous user (ID 1).
-func NewUserStore() *UserStore {
-	s := &UserStore{users: make(map[uint8]*User, 4)}
+func NewUserStore(opts ...UserStoreOption) *UserStore {
+	s := &UserStore{
+		maxUsers: MaxUsers,
+		users:    make(map[uint8]*User, 4),
+	}
+	for _, o := range opts {
+		o(s)
+	}
 	// Slot 1 is always the anonymous/null user per spec section 6.9.1.
 	s.users[1] = &User{
 		ID:            1,
@@ -137,6 +178,13 @@ func NewUserStore() *UserStore {
 		ChannelAccess: make(map[uint8]UserChannelAccess),
 	}
 	return s
+}
+
+// MaxUserCount returns the highest user ID the store advertises (default
+// [MaxUsers]). Get User Access reports this so in-band enumerators know how many
+// slots to walk.
+func (s *UserStore) MaxUserCount() uint8 {
+	return s.maxUsers
 }
 
 // copyUser returns a deep copy of u: the struct value (Password is a value
@@ -156,10 +204,12 @@ func copyUser(u *User) *User {
 // Add creates a new user at the given ID and returns the live [*User] for
 // construction-time seeding. Mutating the returned pointer is only safe before
 // the server starts serving; use [UserStore.Update] for runtime changes.
-// Returns [ErrInvalidUserID] for IDs outside 1-63, or [ErrUsernameTaken] if
-// name is non-empty and already in use.
+// Returns [ErrInvalidUserID] for IDs outside the store's advertised range, or
+// [ErrUsernameTaken] if name is non-empty and already in use. Bounding by the
+// advertised maximum keeps the whole store consistent: no slot can exist that
+// enumerators cannot see but authentication still finds.
 func (s *UserStore) Add(id uint8, name string) (*User, error) {
-	if id < 1 || id > MaxUsers {
+	if id < 1 || id > s.maxUsers {
 		return nil, ErrInvalidUserID
 	}
 	s.mu.Lock()
@@ -196,24 +246,30 @@ func (s *UserStore) Get(id uint8) (*User, error) {
 
 // GetByName returns a snapshot copy of the user with the given name, or
 // [ErrUserNotFound]. An empty name matches the anonymous user (ID 1).
+//
+// Slots are scanned in ID order, so the lookup is deterministic even when
+// several slots share a name: user-management commands can create additional
+// empty-named slots at runtime, and iterating the map directly would make the
+// RAKP null-user lookup resolve to a random one of them.
 func (s *UserStore) GetByName(name string) (*User, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	for _, u := range s.users {
-		if u.Name == name {
+	for id := uint8(1); id <= s.maxUsers; id++ {
+		if u, ok := s.users[id]; ok && u.Name == name {
 			return copyUser(u), nil
 		}
 	}
 	return nil, fmt.Errorf("user %q: %w", name, ErrUserNotFound)
 }
 
-// FindEnabledByNameOnChannel scans user IDs 1..MaxUsers in order and returns a
+// FindEnabledByNameOnChannel scans user IDs in order up to the store maximum
+// and returns a
 // snapshot copy of the first enabled user with a matching name and channel
 // access (spec v1.5§18.24 / v2.0§22.27).
 func (s *UserStore) FindEnabledByNameOnChannel(name string, channel uint8) (*User, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	for id := uint8(1); id <= MaxUsers; id++ {
+	for id := uint8(1); id <= s.maxUsers; id++ {
 		u, ok := s.users[id]
 		if !ok || !u.Enabled {
 			continue
@@ -248,6 +304,43 @@ func (s *UserStore) Update(id uint8, fn func(*User) error) error {
 	return fn(u)
 }
 
+// Upsert applies fn to the user in slot id under a single write-lock hold,
+// creating the slot first (respecting the store max) when it does not exist.
+// This is the atomic create-or-mutate path handlers use so two concurrent
+// creates on the same empty slot cannot interleave and lose a field, which a
+// separate Add-then-Update sequence would allow.
+//
+// fn runs against a working copy, so a rejected mutation leaves stored state
+// untouched: the slot is committed only when fn returns nil and the resulting
+// non-empty name does not collide with a different slot. A colliding name is
+// rejected with [ErrUsernameTaken] to keep name-based session lookup
+// deterministic. Returns [ErrInvalidUserID] for an id outside 1..max.
+func (s *UserStore) Upsert(id uint8, fn func(*User) error) error {
+	if id < 1 || id > s.maxUsers {
+		return ErrInvalidUserID
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	next := &User{ID: id, ChannelAccess: make(map[uint8]UserChannelAccess)}
+	if cur, ok := s.users[id]; ok {
+		next = copyUser(cur)
+	}
+	if err := fn(next); err != nil {
+		return err
+	}
+	if next.Name != "" {
+		for otherID, u := range s.users {
+			if otherID != id && u.Name == next.Name {
+				return ErrUsernameTaken
+			}
+		}
+	}
+	next.ID = id
+	s.users[id] = next
+	return nil
+}
+
 // Delete removes a user by ID.  User 1 (anonymous) cannot be deleted.
 func (s *UserStore) Delete(id uint8) error {
 	if id == 1 {
@@ -267,6 +360,21 @@ func (s *UserStore) Count() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return len(s.users)
+}
+
+// CountEnabled returns the number of enabled users, in one pass under one read
+// lock. Get User Access reports this on every query, and counting through
+// per-slot snapshot lookups would deep-copy the whole table each time.
+func (s *UserStore) CountEnabled() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	n := 0
+	for _, u := range s.users {
+		if u.Enabled {
+			n++
+		}
+	}
+	return n
 }
 
 // PrivilegeLevel mirrors [types.PrivilegeLevel] so bmc stays free of wire-type
