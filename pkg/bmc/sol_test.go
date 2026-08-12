@@ -146,7 +146,7 @@ func TestSOLActivateRules(t *testing.T) {
 	t.Run("user payload access revoked", func(t *testing.T) {
 		b, _ := newConsoleBMC(t)
 		sess := newSOLTestSession(t, b)
-		sess.User.PayloadAccessFor(1).Standard1 = 0 // SOL bit cleared
+		sess.User.SetPayloadAccess(1, false, 2, 0) // SOL bit cleared
 		if _, err := b.SOL.Activate(ctx, sess, false, false); !errors.Is(err, ErrSOLPrivilege) {
 			t.Fatalf("got %v, want ErrSOLPrivilege", err)
 		}
@@ -827,10 +827,11 @@ func TestSOLReconnectKeepsPending(t *testing.T) {
 
 	// Keep the unacknowledged packet alive across the outage: the retry
 	// engine would drop it after its retries are exhausted (§15.11), which
-	// is unrelated to the reconnect — widen the window (200 × 10ms) and
-	// retry immediately so only the reconnect could be responsible for
-	// losing it.
-	if cc := b.SOL.Config().SetParam(4, []byte{200, 1}); cc != types.CodeOK {
+	// is unrelated to the reconnect — widen the window so only the
+	// reconnect could be responsible for losing it. The retry count is a
+	// 3-bit field (Table 26-5 #4), so the maximum is 7 retries × a 2.55 s
+	// interval ≈ 18 s, far beyond the test's duration.
+	if cc := b.SOL.Config().SetParam(4, []byte{7, 255}); cc != types.CodeOK {
 		t.Fatalf("set retry: CC %#02x", cc)
 	}
 	b.SOL.SetReconnectPolicy(&ReconnectPolicy{}) // Initial 0: reconnect immediately
@@ -901,54 +902,86 @@ func TestSOLReconnectWriteErrorTriggers(t *testing.T) {
 	}
 }
 
-// TestSOLReconnectBackoff verifies the exponential backoff between failed
-// reconnect attempts: the first fires immediately, later failures double
-// the delay (bounded by consoleReconnectMax), and no attempt fires early.
+// TestSOLReconnectBackoff verifies the exponential backoff of the reconnect
+// state machine: the first failure arms Delay(1), no attempt fires before
+// the armed time, and each failed attempt doubles the wait. reconnectLocked
+// takes the current time as a parameter, so the sequence is driven directly
+// with explicit times — no wall-clock measurement, which is what made the
+// pump-driven version flaky under load.
 func TestSOLReconnectBackoff(t *testing.T) {
 	fake1 := &mock.FakeConsoleConn{}
-	var opens atomic.Int32
-	b, sess, _ := newReconnectBMC(t, func(context.Context) (hal.ConsoleConn, error) {
-		opens.Add(1)
-		if opens.Load() == 1 {
+	opens := 0
+	m := mock.New()
+	m.SetConsole(&mock.Console{OpenHook: func(context.Context) (hal.ConsoleConn, error) {
+		opens++
+		if opens == 1 {
 			return fake1, nil
 		}
 		return nil, errors.New("console unreachable")
-	})
+	}})
+	b := New(DeviceInfo{}, [16]byte{}, m, WithClock(clock.Real))
+	// No sender factory: the pump never starts, so reconnectLocked below is
+	// the only driver of the state machine.
+	b.SOL.SetReconnectPolicy(&DefaultReconnectPolicy)
+	sess := newSOLTestSession(t, b)
 	inst, err := b.SOL.Activate(context.Background(), sess, false, false)
 	if err != nil {
 		t.Fatalf("activate: %v", err)
 	}
 	t.Cleanup(b.SOL.CloseAll)
 
-	fake1.SetReadErr(errors.New("console died"))
-
-	// First attempt is immediate; its failure arms the 1s backoff.
-	waitForCondition(t, func() bool { return opens.Load() >= 2 })
+	// Mark the console broken as the pump would after a read failure.
 	inst.mu.Lock()
-	armed := inst.reconnectAt.Sub(inst.clock.Now())
+	inst.broken = true
 	inst.mu.Unlock()
-	if armed < 900*time.Millisecond || armed > 2*time.Second {
-		t.Fatalf("first backoff armed at %v, want ~1s", armed)
-	}
 
-	// No early retry while backing off.
-	time.Sleep(300 * time.Millisecond)
-	if opens.Load() > 2 {
-		t.Fatalf("reconnect fired early (opens=%d)", opens.Load())
-	}
+	t0 := b.Clock().Now()
 
-	// After the 1s backoff the second attempt fires, and its failure arms
-	// the next delay from the policy (1s, 2s, 4s, ... sequence).
-	waitForCondition(t, func() bool { return opens.Load() >= 3 })
+	// First failure: releases the dead conn and arms Delay(1) = 1s.
 	inst.mu.Lock()
-	failures := inst.failures
-	armed = inst.reconnectAt.Sub(inst.clock.Now())
+	inst.reconnectLocked(t0)
 	inst.mu.Unlock()
-	if failures != 3 {
-		t.Fatalf("failures after 2nd failure: %d, want 3", failures)
+	if opens != 1 || inst.failures != 1 {
+		t.Fatalf("after first failure: opens=%d failures=%d, want 1/1", opens, inst.failures)
 	}
-	if armed < 1900*time.Millisecond {
-		t.Fatalf("second backoff armed at %v, want ~2s", armed)
+	if !inst.reconnectAt.Equal(t0.Add(time.Second)) {
+		t.Fatalf("first backoff armed at %v, want 1s", inst.reconnectAt.Sub(t0))
+	}
+	if !fake1.IsClosed() {
+		t.Fatal("dead console conn not closed")
+	}
+
+	// No attempt fires before reconnectAt.
+	inst.mu.Lock()
+	inst.reconnectLocked(t0.Add(100 * time.Millisecond))
+	inst.mu.Unlock()
+	if opens != 1 {
+		t.Fatalf("reconnect fired early (opens=%d)", opens)
+	}
+
+	// The attempt at reconnectAt fails and doubles the wait: Delay(2) = 2s.
+	// The re-arm is computed from the post-dial clock (the dial is instant
+	// here), so the armed time is t0 + 1s + ε + 2s — assert the range
+	// rather than exact equality.
+	inst.mu.Lock()
+	inst.reconnectLocked(t0.Add(time.Second))
+	inst.mu.Unlock()
+	if opens != 2 || inst.failures != 2 {
+		t.Fatalf("after 2nd failure: opens=%d failures=%d, want 2/2", opens, inst.failures)
+	}
+	if !inst.reconnectAt.After(t0.Add(2*time.Second)) || inst.reconnectAt.After(t0.Add(2*time.Second+100*time.Millisecond)) {
+		t.Fatalf("second backoff armed at %v, want ~2s after the failed attempt", inst.reconnectAt.Sub(t0))
+	}
+
+	// Next failure quadruples: Delay(3) = 4s.
+	inst.mu.Lock()
+	inst.reconnectLocked(t0.Add(3 * time.Second))
+	inst.mu.Unlock()
+	if opens != 3 || inst.failures != 3 {
+		t.Fatalf("after 3rd failure: opens=%d failures=%d, want 3/3", opens, inst.failures)
+	}
+	if !inst.reconnectAt.After(t0.Add(4*time.Second)) || inst.reconnectAt.After(t0.Add(4*time.Second+100*time.Millisecond)) {
+		t.Fatalf("third backoff armed at %v, want ~4s after the failed attempt", inst.reconnectAt.Sub(t0))
 	}
 }
 
@@ -1042,23 +1075,31 @@ func TestDefaultReconnectPolicy(t *testing.T) {
 			t.Fatalf("Delay(%d): got %v giveUp=%v, want %v/false", i+1, got, giveUp, w)
 		}
 	}
+	// Far past the int64-nanosecond overflow point of the raw
+	// Initial*Factor^(n-1) multiply (~35 failures), the delay must stay
+	// clamped at the cap — a wrapped value would be negative, i.e. already
+	// in the past, turning the backoff into a busy retry loop.
+	if got, giveUp := DefaultReconnectPolicy.Delay(100); got != 30*time.Second || giveUp {
+		t.Fatalf("Delay(100): got %v giveUp=%v, want 30s/false", got, giveUp)
+	}
 }
 
 // TestReconnectPolicySteps verifies Steps bounds the attempts and Jitter
 // stays within the declared range.
 func TestReconnectPolicySteps(t *testing.T) {
 	p := ReconnectPolicy{Initial: 100 * time.Millisecond, Factor: 2, Jitter: 0.5, Cap: time.Second, Steps: 3}
-	// 3 reconnect attempts: failures 1..2 keep going, failure 3 gives up.
-	for i := 1; i <= 2; i++ {
+	// 3 reconnect attempts: failures 1..3 keep going, failure 4 gives up
+	// (failures includes the console failure that started the cycle).
+	for i := 1; i <= 3; i++ {
 		if _, giveUp := p.Delay(i); giveUp {
 			t.Fatalf("Delay(%d): gave up early", i)
 		}
 	}
-	if _, giveUp := p.Delay(3); !giveUp {
-		t.Fatal("Delay(3): want give-up past Steps")
+	if _, giveUp := p.Delay(4); !giveUp {
+		t.Fatal("Delay(4): want give-up past Steps")
 	}
 	// Jitter keeps the wait within [base, base*(1+Jitter)).
-	for i := 1; i <= 2; i++ {
+	for i := 1; i <= 3; i++ {
 		base := p.Initial * time.Duration(1<<(i-1))
 		got, _ := p.Delay(i)
 		if got < base || got >= base+time.Duration(float64(base)*p.Jitter) {
@@ -1178,5 +1219,74 @@ func TestSOLReconnectGiveUpAfterSteps(t *testing.T) {
 	out := feed(t, b.SOL, sess, &types.SOLPayloadPacket{})
 	if out.ControlByte&0x20 == 0 {
 		t.Fatalf("after give-up: control %#02x missing status bit [5]", out.ControlByte)
+	}
+}
+
+// TestSOLReconnectSlowDialReArms verifies the next attempt is re-armed from
+// when a slow dial finished, not from the pre-dial tick time: a dial that
+// burns most of the wait must not leave reconnectAt in the past and
+// collapse the backoff into back-to-back attempts.
+func TestSOLReconnectSlowDialReArms(t *testing.T) {
+	opens := 0
+	m := mock.New()
+	m.SetConsole(&mock.Console{OpenHook: func(context.Context) (hal.ConsoleConn, error) {
+		opens++
+		if opens == 1 {
+			return &mock.FakeConsoleConn{}, nil
+		}
+		time.Sleep(300 * time.Millisecond) // slow dial: burns 300ms of Delay(1)
+		return nil, errors.New("console unreachable")
+	}})
+	b := New(DeviceInfo{}, [16]byte{}, m, WithClock(clock.Real))
+	b.SOL.SetReconnectPolicy(&DefaultReconnectPolicy)
+	sess := newSOLTestSession(t, b)
+	inst, err := b.SOL.Activate(context.Background(), sess, false, false)
+	if err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	t.Cleanup(b.SOL.CloseAll)
+
+	inst.mu.Lock()
+	inst.broken = true
+	inst.mu.Unlock()
+
+	t0 := b.Clock().Now()
+
+	inst.mu.Lock()
+	inst.reconnectLocked(t0) // first failure: arms Delay(1) = 1s
+	inst.mu.Unlock()
+
+	// Dial at the forged now = t0 + 1s; the hook blocks 300ms then fails.
+	// The re-arm must be Delay(2) from the post-dial time, so the gap to
+	// wall time right after the call is still ~2s — re-arming from the
+	// pre-dial now would leave ~1s of the wait already consumed (the forged
+	// 1s gap), measured here as a gap well under 2s.
+	inst.mu.Lock()
+	inst.reconnectLocked(t0.Add(time.Second))
+	inst.mu.Unlock()
+	if gap := time.Until(inst.reconnectAt); gap < 2*time.Second-50*time.Millisecond {
+		t.Fatalf("reconnectAt %v (gap %v), want ~2s from the post-dial time", inst.reconnectAt, gap)
+	}
+}
+
+// TestSOLAckOnlyReplaysAcceptedCount verifies the response to an ACK-only
+// packet echoes the accepted count of the data packet it acknowledges
+// (Table 15-3): reporting 0 for a non-empty packet would make a strict
+// console resend already-delivered keystrokes.
+func TestSOLAckOnlyReplaysAcceptedCount(t *testing.T) {
+	b, _ := newConsoleBMC(t)
+	sess := newSOLTestSession(t, b)
+	if _, err := b.SOL.Activate(context.Background(), sess, false, false); err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	t.Cleanup(b.SOL.CloseAll)
+
+	out := feed(t, b.SOL, sess, &types.SOLPayloadPacket{SequenceNumber: 3, CharacterData: []byte("abc")})
+	if out.AckedSequenceNumber != 3 || out.AcceptedCharacterCount != 3 {
+		t.Fatalf("data response: acked=%d accept=%d, want 3/3", out.AckedSequenceNumber, out.AcceptedCharacterCount)
+	}
+	out = feed(t, b.SOL, sess, &types.SOLPayloadPacket{})
+	if out.AckedSequenceNumber != 3 || out.AcceptedCharacterCount != 3 {
+		t.Fatalf("ack-only response: acked=%d accept=%d, want 3/3", out.AckedSequenceNumber, out.AcceptedCharacterCount)
 	}
 }

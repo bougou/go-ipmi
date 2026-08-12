@@ -118,3 +118,17 @@ func TestLoadRuntimeConfigDisableV15(t *testing.T) {
 		t.Fatal("expected v1.5 disabled after apply")
 	}
 }
+
+// TestLoadRuntimeConfigConsoleNone verifies the documented "none" spelling
+// of "no console" normalizes to the empty string instead of being opened as
+// a device path (which would fail startup with ENOENT).
+func TestLoadRuntimeConfigConsoleNone(t *testing.T) {
+	t.Setenv("GOIPMI_SERVER_CONSOLE", "none")
+	cfg, err := loadRuntimeConfig()
+	if err != nil {
+		t.Fatalf("loadRuntimeConfig: %v", err)
+	}
+	if cfg.Console != "" {
+		t.Fatalf("console %q, want empty after none normalization", cfg.Console)
+	}
+}

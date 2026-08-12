@@ -186,11 +186,14 @@ func NewServer(b *bmc.BMC, conn transport.PacketConn, opts ...ServerOption) *Ser
 			})
 		}
 		return func(pkt *types.SOLPayloadPacket) error {
+			// The pump runs outside ProcMu (and must not take it — see
+			// Session.addrMu), so the console address is read under addrMu.
+			addr := sess.GetAddr()
 			if s.solDebug {
 				fmt.Fprintf(os.Stderr, "%s sol> sess=%x seq=%d ack=%d accept=%d nack=%v ctrl=%#02x data=%q (async %s)\n",
-					solStamp(), sess.BMCID, pkt.SequenceNumber, pkt.AckedSequenceNumber, pkt.AcceptedCharacterCount, pkt.NACK, pkt.ControlByte, pkt.CharacterData, sess.Addr)
+					solStamp(), sess.BMCID, pkt.SequenceNumber, pkt.AckedSequenceNumber, pkt.AcceptedCharacterCount, pkt.NACK, pkt.ControlByte, pkt.CharacterData, addr)
 			}
-			s.respondInSession(sess.Addr, sess, srvPayloadSOL, inst.OutboundEncrypted(), pkt.Pack())
+			s.respondInSession(addr, sess, srvPayloadSOL, inst.OutboundEncrypted(), pkt.Pack())
 			return nil
 		}
 	})
@@ -235,9 +238,17 @@ func (s *Server) Serve(ctx context.Context) error {
 }
 
 // solSessionPacket reports whether pkt is an in-session RMCP+ SOL payload
-// packet, returning its session ID. ParseRMCPPlusHeader bounds-checks the
-// header; session-ID 0h packets (pre-session traffic) are not SOL.
+// packet, returning its session ID. Only RMCP+ (v2.0) packets carry a
+// session layer: a v1.5 LAN packet's sequence/session bytes alias the RMCP+
+// header layout well enough that ParseRMCPPlusHeader would misread it as
+// SOL (payload type 1) and the command would be queued and dropped — so the
+// message class and the auth-type byte (0x06 = RMCP+) that handleIPMI uses
+// are required first. ParseRMCPPlusHeader bounds-checks the header;
+// session-ID 0h packets (pre-session traffic) are not SOL.
 func solSessionPacket(pkt []byte) (uint32, bool) {
+	if len(pkt) < 5 || pkt[3]&0x1F != 0x07 || pkt[4] != 0x06 {
+		return 0, false
+	}
 	sessionID, _, payloadType, _, _, ok := protocol.ParseRMCPPlusHeader(pkt)
 	return sessionID, ok && sessionID != 0 && payloadType == protocol.PayloadSOL
 }
@@ -443,7 +454,16 @@ func (s *Server) runSOLWorker(sessionID uint32, q chan solJob) {
 			idle.Reset(solWorkerIdleTimeout)
 			sess, err := s.bmc.Sessions.Get(sessionID)
 			if err != nil {
-				continue // session went away; payload auto-deactivates (§24.2)
+				// Session unknown (forged packet) or gone. Session IDs are
+				// minted only during the RAKP handshake, so an ID that is
+				// unknown now can never become valid: retiring the queue
+				// immediately, rather than idle-waiting solWorkerIdleTimeout,
+				// stops unauthenticated packets from accumulating one
+				// goroutine + buffered channel per claimed ID for 90 s each.
+				s.solMu.Lock()
+				delete(s.solQueues, sessionID)
+				s.solMu.Unlock()
+				return
 			}
 			s.processSOLJob(sess, job, q)
 		case <-idle.C():
@@ -470,7 +490,7 @@ func acceptInbound(sess *bmc.Session, pkt []byte, addr net.Addr, inboundSeq uint
 		return false
 	}
 	sess.InboundSeq = inboundSeq
-	sess.Addr = addr
+	sess.SetAddr(addr)
 	return true
 }
 

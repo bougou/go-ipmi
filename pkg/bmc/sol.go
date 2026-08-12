@@ -347,17 +347,29 @@ func (p *ReconnectPolicy) Delay(failures int) (wait time.Duration, giveUp bool) 
 	if p == nil {
 		return 0, true
 	}
-	if p.Steps > 0 && failures >= p.Steps {
+	// failures counts the console failure that started the cycle plus every
+	// failed dial (reconnectLocked seeds it at 1 on first entry), so a dial
+	// is allowed while failures <= Steps — Steps bounds the number of dials,
+	// not the seed.
+	if p.Steps > 0 && failures > p.Steps {
 		return 0, true
 	}
 	f := 1.0
 	if p.Factor > 1 {
 		f = math.Pow(p.Factor, float64(failures-1))
 	}
-	wait = p.Initial * time.Duration(f)
-	if p.Cap > 0 && wait > p.Cap {
-		wait = p.Cap
+	// Compute in float seconds and clamp to Cap before converting to
+	// Duration: the raw Initial * Factor^(n-1) multiply overflows int64
+	// nanoseconds once the factor passes ~2^34, and a wrapped (negative)
+	// wait is already in the past — the Cap clamp never applies, turning
+	// the backoff into a busy retry loop. Float math also avoids the
+	// integer truncation that freezes non-integer Factor values (e.g. 1.5)
+	// on the first doubling steps.
+	secs := p.Initial.Seconds() * f
+	if p.Cap > 0 && secs > p.Cap.Seconds() {
+		secs = p.Cap.Seconds()
 	}
+	wait = time.Duration(secs * float64(time.Second))
 	if p.Jitter > 0 {
 		wait += time.Duration(p.Jitter * float64(wait) * rand.Float64())
 	}
@@ -562,7 +574,7 @@ func (s *SOLStore) Activate(ctx context.Context, sess *Session, wantEnc, wantAut
 		stopped:   make(chan struct{}),
 	}
 	inst.encryptOutbound.Store(encrypted)
-	if s.senderFactory != nil && sess.Addr != nil {
+	if s.senderFactory != nil && sess.GetAddr() != nil {
 		inst.send = s.senderFactory(sess, inst)
 	}
 
@@ -879,7 +891,11 @@ func (inst *SOLInstance) reconnectLocked(now time.Time) {
 	inst.mu.Lock()
 	if err != nil {
 		inst.failures++
-		inst.reconnectAt = now.Add(inst.policyDelay())
+		// Re-arm from when the attempt finished, not the tick's pre-dial
+		// time: a dial that burned most of the wait would otherwise leave
+		// reconnectAt already in the past, collapsing the backoff into
+		// back-to-back attempts no matter how large the delay has grown.
+		inst.reconnectAt = inst.clock.Now().Add(inst.policyDelay())
 		return
 	}
 	inst.conn = conn
@@ -1073,6 +1089,12 @@ func (inst *SOLInstance) ProcessPacket(ctx context.Context, in *types.SOLPayload
 			inst.lastAccepted = accepted
 			inst.lastNACK = nack
 		}
+	} else {
+		// ACK-only packet (seq 0h, §15.11): the acked echo names the last
+		// accepted data packet, so replay its accepted count — reporting 0
+		// would read as "packet N accepted nothing" (Table 15-3) and make
+		// a strict console resend packet N's already-delivered keystrokes.
+		accepted = inst.lastAccepted
 	}
 
 	// Outbound character data rides the response: polling-style consoles
