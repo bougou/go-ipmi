@@ -171,6 +171,75 @@ func TestSOLSessionLoopback(t *testing.T) {
 	waitForCondition(t, "console conn close", fake.IsClosed)
 }
 
+type rejectingConsole struct {
+	mock.FakeConsoleConn
+
+	mu sync.Mutex
+
+	rejects int
+	writes  int
+}
+
+func (c *rejectingConsole) Write(p []byte) (int, error) {
+	c.mu.Lock()
+	if len(p) == 0 {
+		c.mu.Unlock()
+		return 0, nil
+	}
+	c.writes++
+	if c.rejects != 0 {
+		if c.rejects > 0 {
+			c.rejects--
+		}
+		c.mu.Unlock()
+		return 0, nil
+	}
+	c.mu.Unlock()
+	return c.FakeConsoleConn.Write(p)
+}
+
+func (c *rejectingConsole) state() (writes int, tx string) {
+	c.mu.Lock()
+	writes = c.writes
+	c.mu.Unlock()
+	return writes, c.TXString()
+}
+
+func TestSOLStreamRetriesUnacceptedData(t *testing.T) {
+	console := &rejectingConsole{rejects: 1}
+	c, _ := newSOLTestServerWithConsole(t, &mock.Console{Conn: console})
+
+	err := c.SOLActivate(context.Background(), strings.NewReader("x"), io.Discard, &SOLActivateOptions{
+		PollInterval: time.Hour,
+	})
+	if err != nil {
+		t.Fatalf("SOLActivate() error = %v", err)
+	}
+
+	writes, tx := console.state()
+	if writes != 2 || tx != "x" {
+		t.Fatalf("console writes = %d, data = %q, want 2 writes and %q", writes, tx, "x")
+	}
+}
+
+func TestSOLStreamBoundsUnacceptedDataRetries(t *testing.T) {
+	console := &rejectingConsole{rejects: -1}
+	c, _ := newSOLTestServerWithConsole(t, &mock.Console{Conn: console})
+
+	err := c.SOLActivate(context.Background(), strings.NewReader("x"), io.Discard, &SOLActivateOptions{
+		PollInterval: time.Hour,
+	})
+	if err == nil || !strings.Contains(err.Error(), "did not accept") {
+		t.Fatalf("SOLActivate() error = %v, want bounded data transmission error", err)
+	}
+
+	writes, tx := console.state()
+	if writes != defaultSOLTransmitRetryCount+1 || tx != "" {
+		t.Fatalf("console writes = %d, data = %q, want %d writes and no data",
+			writes, tx, defaultSOLTransmitRetryCount+1)
+	}
+}
+
 // TestSOLActivateConflict verifies that a second activation while SOL is
 // active fails with 80h (payload already active on another session,
 // Table 24-2).
