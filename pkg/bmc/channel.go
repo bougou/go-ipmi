@@ -36,7 +36,13 @@ const (
 
 // Channel holds the configuration for a single IPMI channel.
 type Channel struct {
-	Number     uint8
+	Number uint8
+	// Medium is the channel's physical medium. It is security-relevant: the
+	// handler privilege check treats a session-less request on a
+	// [ChannelMediumSystemIF] channel as locally authorized (the system
+	// interface is inherently local), so labeling a network-reachable channel
+	// as the system interface, or attaching a session to the system-interface
+	// channel, would grant unauthenticated callers full privilege.
 	Medium     ChannelMedium
 	AccessMode ChannelAccessMode
 	// MaxPrivilege is the maximum privilege level allowed on this channel.

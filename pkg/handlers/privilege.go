@@ -39,11 +39,17 @@ func checkCommandPrivilege(hctx *HandlerContext, netFn, cmd uint8) types.Complet
 	}
 	priv, ok := sessionPrivilege(hctx)
 	if !ok {
-		// No active session. Only the pre-session exempt commands above
-		// (channel-auth discovery and session setup) may run without one; every
-		// other command requires an authenticated session. This is what stops an
-		// unauthenticated LAN caller from invoking account management, chassis
-		// power, and the like by sending a session-less packet.
+		// No active session. The system interface is inherently local (physical
+		// access is the authorization) and carries no session, so an in-band
+		// request runs at full privilege the way real hardware treats its KCS/BT
+		// interface. Every other session-less request is a pre-session LAN
+		// packet: only the exempt commands above (channel-auth discovery and
+		// session setup) may run there, so account management, chassis power,
+		// and the like are rejected rather than executed for an unauthenticated
+		// remote caller.
+		if hctx != nil && hctx.Channel != nil && hctx.Channel.Medium == bmc.ChannelMediumSystemIF {
+			return types.CodeOK
+		}
 		return types.CodeInsufficientPrivilege
 	}
 	if priv < MinimumPrivilege(netFn, cmd) {

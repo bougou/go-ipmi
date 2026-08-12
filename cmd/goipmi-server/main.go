@@ -12,6 +12,8 @@
 //	GOIPMI_SERVER_CIPHER_SUITES   – RMCP+ cipher suite IDs, comma-separated (default: 3,17)
 //	GOIPMI_SERVER_V15_AUTH_TYPES  – v1.5 auth types: none,md2,md5,password,oem (default: md5)
 //	GOIPMI_SERVER_V15             – set to 0/false to disable v1.5 while keeping lanplus (default: 1)
+//	GOIPMI_SERVER_VM_SOCKET       – unix socket to also serve the OpenIPMI VM protocol
+//	                                (QEMU ipmi-bmc-extern), sharing one BMC; unset = off
 //	GOIPMI_SERVER_TRACE           – set to 1/true to log every dispatched command to stderr (default: 0)
 //	GOIPMI_SERVER_CONSOLE         – SOL console backend: "pty" allocates a PTY pair (linux),
 //	                                a path opens that device (e.g. /dev/ttyS0); unset = no SOL
@@ -24,17 +26,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/clock"
 	"github.com/bougou/go-ipmi/pkg/hal"
 	"github.com/bougou/go-ipmi/pkg/hal/mock"
+	"github.com/bougou/go-ipmi/pkg/handlers"
 	"github.com/bougou/go-ipmi/pkg/server"
 	"github.com/bougou/go-ipmi/pkg/transport/udp"
 	"github.com/bougou/go-ipmi/pkg/types"
+	"github.com/bougou/go-ipmi/pkg/vmproto"
 )
 
 func main() {
@@ -102,9 +108,14 @@ func run() error {
 	}
 	defer conn.Close()
 
+	// One registry shared by both frontends when tracing, so VM-protocol
+	// commands are traced too (the trace contract is "every dispatched
+	// command"). It is read-only during dispatch, so sharing it is safe.
+	var traceReg *handlers.Registry
 	var opts []server.ServerOption
 	if cfg.Trace {
-		opts = append(opts, server.WithHandlerRegistry(tracingRegistry()), server.WithSOLDebug())
+		traceReg = tracingRegistry()
+		opts = append(opts, server.WithHandlerRegistry(traceReg), server.WithSOLDebug())
 	}
 	srv := server.NewServer(b, conn, opts...)
 
@@ -116,12 +127,63 @@ func run() error {
 		srv.Close()
 	}()
 
+	// Optionally serve the OpenIPMI VM protocol on a unix socket alongside the
+	// network server, sharing one BMC so an in-band (QEMU) client and an
+	// out-of-band (LAN) client observe the same state.
+	if cfg.VMSocket != "" {
+		if err := prepareVMSocket(cfg.VMSocket); err != nil {
+			return err
+		}
+		ln, err := net.Listen("unix", cfg.VMSocket)
+		if err != nil {
+			return fmt.Errorf("listen vm socket %s: %w", cfg.VMSocket, err)
+		}
+		defer ln.Close()
+		defer os.Remove(cfg.VMSocket) //nolint:errcheck
+
+		var vmOpts []vmproto.VMServerOption
+		if traceReg != nil {
+			vmOpts = append(vmOpts, vmproto.WithVMHandlerRegistry(traceReg))
+		}
+		vmSrv := vmproto.NewVMServer(b, vmOpts...)
+		go func() {
+			if err := vmSrv.Serve(ctx, ln); err != nil && !errors.Is(err, context.Canceled) {
+				fmt.Fprintf(os.Stderr, "goipmi-server: vm protocol serve: %v\n", err)
+			}
+		}()
+	}
+
 	printRuntimeBanner(cfg, b, consoleDesc)
 
 	if err := srv.Serve(ctx); err != nil && !errors.Is(err, context.Canceled) {
 		return fmt.Errorf("serve: %w", err)
 	}
 	fmt.Println("goipmi-server: stopped")
+	return nil
+}
+
+// prepareVMSocket clears a stale unix socket at path so the server can bind it,
+// but refuses to touch anything else: a typo must not delete a regular file,
+// and a second server must not unlink a live socket and hijack its pathname.
+func prepareVMSocket(path string) error {
+	info, err := os.Stat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil // nothing in the way
+	}
+	if err != nil {
+		return fmt.Errorf("stat vm socket %s: %w", path, err)
+	}
+	if info.Mode()&os.ModeSocket == 0 {
+		return fmt.Errorf("vm socket path %s exists and is not a socket, refusing to overwrite", path)
+	}
+	// It is a socket: if a server is listening, refuse; otherwise it is stale.
+	if conn, derr := net.DialTimeout("unix", path, 200*time.Millisecond); derr == nil {
+		conn.Close() //nolint:errcheck
+		return fmt.Errorf("vm socket %s is already in use", path)
+	}
+	if err := os.Remove(path); err != nil {
+		return fmt.Errorf("remove stale vm socket %s: %w", path, err)
+	}
 	return nil
 }
 

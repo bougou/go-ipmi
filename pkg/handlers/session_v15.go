@@ -33,6 +33,17 @@ func handleGetSessionChallenge(_ context.Context, hctx *HandlerContext, req []by
 		return nil, types.CodeUnspecifiedError, nil
 	}
 
+	// Session establishment is a LAN-channel command. A request arriving on any
+	// other channel (the context channel is nil for genuine pre-session LAN
+	// packets and set only by session-less frontends such as the system
+	// interface) must not allocate LAN session slots: the pending-session table
+	// evicts its oldest entry under pressure, so in-band software could
+	// otherwise evict a remote console's in-flight handshake at will. Real BMCs
+	// do not serve session-establishment commands on the system interface.
+	if hctx.Channel != nil && hctx.Channel.Medium != bmc.ChannelMediumLAN {
+		return nil, types.CodeRequestDataFieldInvalid, nil
+	}
+
 	authType := bmc.V15AuthType(req[0] & 0x0F)
 	if !hctx.BMC.V15AuthTypeEnabled(authType) {
 		return nil, types.CodeParameterOutOfRange, nil
