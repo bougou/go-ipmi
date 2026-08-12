@@ -40,6 +40,9 @@ func readSOLInput(ctx context.Context, in io.Reader) <-chan solConsoleInput {
 		reader := bufio.NewReader(in)
 		for {
 			value, err := reader.ReadByte()
+			if ctx.Err() != nil {
+				return
+			}
 			event := solConsoleInput{value: value, err: err}
 			select {
 			case events <- event:
@@ -63,7 +66,10 @@ func (c *Client) runSOLStream(
 	pollInterval time.Duration,
 	interrupt <-chan os.Signal,
 ) error {
-	input := readSOLInput(ctx, in)
+	inputCtx, cancelInput := context.WithCancel(ctx)
+	defer cancelInput()
+
+	input := readSOLInput(inputCtx, in)
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 
