@@ -29,10 +29,11 @@ test: fmt vet
 test-race:
 	go test -race -timeout 120s ./pkg/... ./cmd/...
 
-# Build goipmi and goipmi-server binaries
+# Build goipmi, goipmi-server, and goipmi-vmprobe binaries
 build: fmt vet
 	go build -ldflags "$(LDFLAGS)" -o $(OUTPUT_DIR)/goipmi ./cmd/goipmi
 	go build -o $(OUTPUT_DIR)/goipmi-server ./cmd/goipmi-server
+	go build -o $(OUTPUT_DIR)/goipmi-vmprobe ./cmd/goipmi-vmprobe
 
 # Cross compiler
 build-all: fmt vet
@@ -68,6 +69,7 @@ dependencies:
 #   make test-e2e-chassis-codec  — typed chassis codec / boot options
 #   make test-e2e-cipher         — RMCP+ cipher suite coverage
 #   make test-e2e-sol            — ipmitool sol activate → PTY console
+#   make test-e2e-vmproto        — goipmi-vmprobe → goipmi-server VM socket
 #   make test-e2e                — run all suites (CI uses this)
 
 test-e2e-client: build
@@ -88,4 +90,7 @@ test-e2e-cipher: build
 test-e2e-sol: build
 	./test/e2e/sol_test.sh
 
-test-e2e: test-e2e-client test-e2e-server test-e2e-self test-e2e-chassis-codec test-e2e-cipher test-e2e-sol
+test-e2e-vmproto: build
+	./test/e2e/vmproto_test.sh
+
+test-e2e: test-e2e-client test-e2e-server test-e2e-self test-e2e-chassis-codec test-e2e-cipher test-e2e-sol test-e2e-vmproto

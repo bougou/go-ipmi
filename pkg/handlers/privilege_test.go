@@ -103,3 +103,37 @@ func TestPreSessionRejectsPrivilegedCommands(t *testing.T) {
 		t.Errorf("admin-session Set User Password did not create the slot: %v", err)
 	}
 }
+
+// TestCheckCommandPrivilegeSessionless pins the session-less authorization
+// boundary directly, since the sibling PR's tightening and the VM frontend's
+// carve-out both depend on it. A session-less request is authorized only on the
+// inherently-local system interface; on a LAN or unspecified channel a
+// non-exempt command is rejected, which is what stops an unauthenticated remote
+// caller from reaching account management or chassis power. An exempt
+// pre-session command runs regardless.
+func TestCheckCommandPrivilegeSessionless(t *testing.T) {
+	sysIF := &bmc.Channel{Number: 0x0F, Medium: bmc.ChannelMediumSystemIF}
+	lan := &bmc.Channel{Number: lanChannelNumber, Medium: bmc.ChannelMediumLAN}
+
+	tests := []struct {
+		name  string
+		hctx  *HandlerContext
+		netFn uint8
+		cmd   uint8
+		want  types.CompletionCode
+	}{
+		{"in-band non-exempt allowed", &HandlerContext{Channel: sysIF}, NetFnAppRequest, CmdSetUserPassword, types.CodeOK},
+		{"lan non-exempt rejected", &HandlerContext{Channel: lan}, NetFnAppRequest, CmdSetUserPassword, types.CodeInsufficientPrivilege},
+		{"no-channel non-exempt rejected", &HandlerContext{}, NetFnAppRequest, CmdSetUserPassword, types.CodeInsufficientPrivilege},
+		{"lan chassis control rejected", &HandlerContext{Channel: lan}, NetFnChassisRequest, CmdChassisControl, types.CodeInsufficientPrivilege},
+		{"exempt command allowed pre-session", &HandlerContext{Channel: lan}, NetFnAppRequest, CmdGetChannelAuthCapabilities, types.CodeOK},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if cc := checkCommandPrivilege(tc.hctx, tc.netFn, tc.cmd); cc != tc.want {
+				t.Errorf("cc = 0x%02x, want 0x%02x", uint8(cc), uint8(tc.want))
+			}
+		})
+	}
+}

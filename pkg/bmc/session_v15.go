@@ -220,6 +220,14 @@ func (s *V15SessionStore) Cap() int {
 	return s.max
 }
 
+// Count returns the number of sessions currently in the store, pending or
+// active, mirroring [SessionStore.Count].
+func (s *V15SessionStore) Count() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return len(s.sessions)
+}
+
 // CountActiveSessions returns the number of active v1.5 sessions.
 func (s *V15SessionStore) CountActiveSessions() int {
 	s.mu.Lock()

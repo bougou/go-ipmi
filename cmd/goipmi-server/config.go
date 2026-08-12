@@ -21,6 +21,11 @@ type runtimeConfig struct {
 	V15Disabled  bool
 	Trace        bool
 
+	// VMSocket is a unix socket path on which to also serve the OpenIPMI VM
+	// protocol (QEMU's ipmi-bmc-extern), sharing one BMC with the network
+	// server. Empty = VM protocol not served.
+	VMSocket string
+
 	// Console selects the SOL console backend: ""/none = no console (SOL
 	// unadvertised), "pty" = allocate a PTY pair, otherwise a device path.
 	Console string
@@ -35,6 +40,7 @@ func loadRuntimeConfig() (runtimeConfig, error) {
 		Port:     envOr("GOIPMI_SERVER_PORT", "623"),
 		User:     envOr("GOIPMI_SERVER_USER", "ADMIN"),
 		Password: envOr("GOIPMI_SERVER_PASS", "ADMIN"),
+		VMSocket: envOr("GOIPMI_SERVER_VM_SOCKET", ""),
 		Console:  envOr("GOIPMI_SERVER_CONSOLE", ""),
 	}
 	// "none" is the documented spelling of "no console" (see Console); the
@@ -109,6 +115,9 @@ func printRuntimeBanner(cfg runtimeConfig, b *bmc.BMC, consoleDesc string) {
 		fmt.Printf("goipmi-server: IPMI v1.5 (lan) auth types: %s\n", bmc.FormatV15AuthTypes(b.ResolvedV15AuthTypes()))
 	} else {
 		fmt.Println("goipmi-server: IPMI v1.5 (lan) disabled")
+	}
+	if cfg.VMSocket != "" {
+		fmt.Printf("goipmi-server: OpenIPMI VM protocol on unix socket %s\n", cfg.VMSocket)
 	}
 	if consoleDesc != "" {
 		fmt.Printf("goipmi-server: console %s\n", consoleDesc)

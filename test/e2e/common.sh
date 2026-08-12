@@ -4,6 +4,7 @@
 E2E_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GOIPMI="${E2E_DIR}/../../_output/goipmi"
 SERVER_BIN="${E2E_DIR}/../../_output/goipmi-server"
+VMPROBE_BIN="${E2E_DIR}/../../_output/goipmi-vmprobe"
 
 e2e_init() {
 	RED='\033[0;31m'

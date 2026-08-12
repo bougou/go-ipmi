@@ -42,12 +42,17 @@ _output
 # e2e binaries produced by `make build` (see test/e2e/common.sh)
 /_output/goipmi
 /_output/goipmi-server
+/_output/goipmi-vmprobe
 
 # local build artifacts under cmd/ (do not prefix with ./ — gitignore treats
 # the leading dot as a literal directory name and the pattern won't match)
 cmd/goipmi/goipmi
 cmd/goipmi/goipmi.exe
 cmd/testtools/
+# stray binaries from `go build ./cmd/<x>` without -o (land in repo root)
+/goipmi
+/goipmi-server
+/goipmi-vmprobe
 
 # local dist/ output of cross-built binaries
 /dist/

@@ -154,13 +154,10 @@ func WithV15Disabled() ServerOption {
 // A default [handlers.Registry] populated with all standard commands is used
 // unless overridden via [WithHandlerRegistry].
 func NewServer(b *bmc.BMC, conn transport.PacketConn, opts ...ServerOption) *Server {
-	reg := handlers.NewRegistry()
-	handlers.RegisterAllHandlers(reg)
-
 	s := &Server{
 		bmc:       b,
 		conn:      conn,
-		reg:       reg,
+		reg:       newDefaultRegistry(),
 		clk:       b.Clock(),
 		bufSize:   defaultBufferSize,
 		solQueues: make(map[uint32]chan solJob),
@@ -200,6 +197,16 @@ func NewServer(b *bmc.BMC, conn transport.PacketConn, opts ...ServerOption) *Ser
 		}
 	})
 	return s
+}
+
+// newDefaultRegistry builds a [handlers.Registry] populated with every standard
+// command handler. It is the registry each server frontend uses unless the
+// caller overrides it, so the RMCP+ and VM protocol frontends dispatch through
+// an identical command set.
+func newDefaultRegistry() *handlers.Registry {
+	reg := handlers.NewRegistry()
+	handlers.RegisterAllHandlers(reg)
+	return reg
 }
 
 // Serve reads packets from the transport and dispatches them until ctx is
