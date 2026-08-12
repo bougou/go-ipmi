@@ -45,7 +45,13 @@ type User struct {
 	ChannelAccess map[uint8]UserChannelAccess
 
 	// PayloadAccess holds per-channel payload activation rights keyed by
-	// channel number (spec v2.0 §24.6/§24.7).
+	// channel number (spec v2.0 §24.6/§24.7). Guarded by payloadMu: entries
+	// are created and updated by the payload-access commands while SOL
+	// activation reads them, and two sessions authenticated as the same
+	// user (or a session plus the SOL activation path) can do so
+	// concurrently — an unlocked map write is a fatal "concurrent map
+	// writes" runtime error.
+	payloadMu     sync.Mutex
 	PayloadAccess map[uint8]*UserPayloadAccess
 }
 
@@ -65,9 +71,36 @@ const defaultStandardPayload1 = 0x02
 // SOLEnabled reports whether the user may activate the SOL payload.
 func (a *UserPayloadAccess) SOLEnabled() bool { return a.Standard1&0x02 != 0 }
 
-// PayloadAccessFor returns the user's payload access entry for channel,
-// creating it with default rights (SOL enabled) on first use.
+// PayloadAccessFor returns a snapshot of the user's payload access entry for
+// channel, creating it with default rights (SOL enabled) on first use. A copy
+// is returned so readers never race a concurrent Set Payload Access update on
+// the live entry.
 func (u *User) PayloadAccessFor(channel uint8) *UserPayloadAccess {
+	u.payloadMu.Lock()
+	defer u.payloadMu.Unlock()
+	a := *u.getOrCreatePayloadAccess(channel)
+	return &a
+}
+
+// SetPayloadAccess applies an enable/disable update to the user's payload
+// access entry for channel (spec v2.0 Table 24-8: on enable, 1-bits set and
+// 0-bits leave unchanged; on disable, 1-bits clear).
+func (u *User) SetPayloadAccess(channel uint8, enable bool, standard1, oem1 uint8) {
+	u.payloadMu.Lock()
+	defer u.payloadMu.Unlock()
+	a := u.getOrCreatePayloadAccess(channel)
+	if enable {
+		a.Standard1 |= standard1
+		a.OEM1 |= oem1
+	} else {
+		a.Standard1 &^= standard1
+		a.OEM1 &^= oem1
+	}
+}
+
+// getOrCreatePayloadAccess returns the user's live entry for channel, creating
+// it with default rights (SOL enabled) on first use. u.payloadMu must be held.
+func (u *User) getOrCreatePayloadAccess(channel uint8) *UserPayloadAccess {
 	if u.PayloadAccess == nil {
 		u.PayloadAccess = make(map[uint8]*UserPayloadAccess)
 	}

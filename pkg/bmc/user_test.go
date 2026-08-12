@@ -1,6 +1,9 @@
 package bmc
 
-import "testing"
+import (
+	"sync"
+	"testing"
+)
 
 func TestUserStore(t *testing.T) {
 	tests := []struct {
@@ -96,5 +99,34 @@ func TestUserVerifyPassword(t *testing.T) {
 				t.Errorf("want %v, got %v", tc.want, got)
 			}
 		})
+	}
+}
+
+// TestUserPayloadAccessConcurrent hammers one account's payload access table
+// from many goroutines: two sessions authenticated as the same user (or a
+// session plus the SOL activation path) can issue Set/Get Payload Access
+// concurrently, and the lazily-created per-channel map must survive — an
+// unlocked map write is a fatal "concurrent map writes" runtime error.
+func TestUserPayloadAccessConcurrent(t *testing.T) {
+	u := &User{}
+	var wg sync.WaitGroup
+	for i := 0; i < 16; i++ {
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 50; j++ {
+				u.PayloadAccessFor(1).SOLEnabled()
+			}
+		}()
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 50; j++ {
+				u.SetPayloadAccess(1, true, 2, 0)
+			}
+		}()
+	}
+	wg.Wait()
+	if !u.PayloadAccessFor(1).SOLEnabled() {
+		t.Fatal("SOL access bit lost under concurrency")
 	}
 }

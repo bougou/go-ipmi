@@ -180,14 +180,19 @@ func (c *Client) tryMatchIPMILANResponse(recv []byte, wantSeq, wantCmd uint8) (b
 }
 
 // tryMatchSOLResponse returns true if recv is an RMCP+ SOL payload packet
-// acknowledging the pending request. Every SOL packet is acknowledged by
-// echoing the acknowledged packet's sequence number (spec v2.0 §15.9/§15.11),
-// so the response to the request with sequence number wantAck always carries
+// acknowledging the pending request. A data request is acknowledged by
+// echoing its sequence number (spec v2.0 §15.9/§15.11), so the response to
+// the request with sequence number wantAck always carries
 // AckedSequenceNumber == wantAck. Async retransmissions of earlier packets
 // (which reuse the original sequence number per §15.9 and are sent before the
 // request was processed) carry older acked sequence numbers and are discarded
 // here — consuming them as the response would re-display already-delivered
 // character data and lag the ACK bookkeeping.
+//
+// ACK-only requests (sequence 0h) carry no number for the BMC to echo: it
+// answers with the last accepted data sequence instead (which is non-zero
+// once any keystroke has flowed), so no acked-based filter exists and the
+// first SOL packet on the wire is taken as their response.
 func (c *Client) tryMatchSOLResponse(recv []byte, wantAck uint8) (bool, error) {
 	rmcp := &types.Rmcp{}
 	if err := rmcp.Unpack(recv); err != nil {
@@ -216,7 +221,7 @@ func (c *Client) tryMatchSOLResponse(recv []byte, wantAck uint8) (bool, error) {
 		c.DebugfYellow("drop recv: SOL payload unpack failed: %s\n", err)
 		return false, nil
 	}
-	if sol.AckedSequenceNumber != wantAck {
+	if wantAck != 0 && sol.AckedSequenceNumber != wantAck {
 		c.DebugfYellow("drop recv: SOL ack mismatch (got ack %d, want ack %d)\n", sol.AckedSequenceNumber, wantAck)
 		return false, nil
 	}
@@ -235,7 +240,9 @@ func (c *Client) exchangeLAN(ctx context.Context, request types.Request, respons
 		c.unlock()
 	}
 	// SOL responses are matched by the acked sequence number echoing the
-	// request's sequence number (§15.9/§15.11), not by rqSeq/cmd.
+	// request's sequence number (§15.9/§15.11), not by rqSeq/cmd. ACK-only
+	// requests (sequence 0h) get no echo and match the first SOL packet
+	// (see tryMatchSOLResponse).
 	var wantSOLAck uint8
 	solReq, isSOL := request.(*types.SOLPayloadRequest)
 	if isSOL {

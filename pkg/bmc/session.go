@@ -69,7 +69,13 @@ type Session struct {
 
 	// Addr is the remote console's transport address, refreshed on every
 	// inbound packet. Asynchronous traffic (SOL data push, §15.3) targets it.
-	Addr net.Addr
+	// Guarded by addrMu; use [Session.SetAddr] / [Session.GetAddr] rather
+	// than touching the field directly. The SOL pump reads it from a
+	// goroutine that must not take ProcMu (a packet handler holding ProcMu
+	// can wait on the pump during deactivation — the reverse order would
+	// deadlock), while packet handling writes it under ProcMu.
+	addrMu sync.Mutex
+	Addr   net.Addr
 
 	// seqMu serializes outbound sequence assignment: command responses and
 	// asynchronous SOL packets share one space (§15.5) and are sent from
@@ -116,8 +122,10 @@ type SessionStore struct {
 	// onRemove fires whenever a session leaves the store (Close or
 	// eviction). The BMC wires this to payload deactivation: when a session
 	// terminates, payloads active under it are automatically deactivated
-	// (spec v2.0 §24.2). It is invoked with the store lock held and must not
-	// call back into the store.
+	// (spec v2.0 §24.2). It is invoked without the store lock: payload
+	// teardown can block (an SOL instance close waits for its pump
+	// goroutine, which may be mid reconnect dial), and holding the lock
+	// across that would freeze every session lookup and allocation.
 	onRemove func(bmcID uint32)
 }
 
@@ -159,13 +167,21 @@ func NewSessionStoreWithOptions(clk clock.Clock, opts ...SessionStoreOption) *Se
 // Returns [ErrSessionFull] only when all slots are occupied by active sessions.
 func (s *SessionStore) Allocate(consoleID uint32, authAlg types.AuthAlg, integrityAlg types.IntegrityAlg, cryptAlg types.CryptAlg) (*Session, error) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 
-	s.evictExpiredLocked()
+	// Collect the evicted IDs so their removal hooks (payload deactivation,
+	// which can block) run after the lock is released — even on the error
+	// paths below, the evicted sessions are gone and must be cleaned up.
+	removed := s.evictExpiredLocked()
+	defer func() {
+		s.mu.Unlock()
+		s.fireRemoveAll(removed)
+	}()
 
 	if len(s.sessions) >= s.max {
 		// Evict oldest pending session if any exist.
-		if !s.evictOldestPendingLocked() {
+		if id, ok := s.evictOldestPendingLocked(); ok {
+			removed = append(removed, id)
+		} else {
 			return nil, ErrSessionFull
 		}
 	}
@@ -213,12 +229,13 @@ func (s *SessionStore) Get(bmcID uint32) (*Session, error) {
 // Close marks a session as closed and removes it from the store.
 func (s *SessionStore) Close(bmcID uint32) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	if _, ok := s.sessions[bmcID]; !ok {
+		s.mu.Unlock()
 		return fmt.Errorf("session 0x%08x: %w", bmcID, ErrNoSession)
 	}
 	delete(s.sessions, bmcID)
-	s.fireRemoveLocked(bmcID)
+	s.mu.Unlock()
+	s.fireRemove(bmcID)
 	return nil
 }
 
@@ -229,9 +246,20 @@ func (s *SessionStore) SetOnRemove(fn func(bmcID uint32)) {
 	s.onRemove = fn
 }
 
-func (s *SessionStore) fireRemoveLocked(bmcID uint32) {
+// fireRemove invokes the removal hook for one session ID outside the store
+// lock; the hook may block (SOL teardown waits on the pump), so it must never
+// run under s.mu.
+func (s *SessionStore) fireRemove(bmcID uint32) {
 	if s.onRemove != nil {
 		s.onRemove(bmcID)
+	}
+}
+
+// fireRemoveAll invokes the removal hook for every ID collected by a locked
+// eviction pass.
+func (s *SessionStore) fireRemoveAll(ids []uint32) {
+	for _, id := range ids {
+		s.fireRemove(id)
 	}
 }
 
@@ -239,26 +267,29 @@ func (s *SessionStore) fireRemoveLocked(bmcID uint32) {
 // Called periodically by the server.
 func (s *SessionStore) EvictExpired() int {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.evictExpiredLocked()
+	removed := s.evictExpiredLocked()
+	s.mu.Unlock()
+	s.fireRemoveAll(removed)
+	return len(removed)
 }
 
-func (s *SessionStore) evictExpiredLocked() int {
+// evictExpiredLocked removes sessions inactive beyond the timeout and returns
+// their IDs. s.mu must be held.
+func (s *SessionStore) evictExpiredLocked() []uint32 {
 	now := s.clock.Now()
-	n := 0
+	var removed []uint32
 	for id, sess := range s.sessions {
 		if now.Sub(sess.LastActivity) > s.timeout+DefaultInactivityTimeoutTolerance {
 			delete(s.sessions, id)
-			s.fireRemoveLocked(id)
-			n++
+			removed = append(removed, id)
 		}
 	}
-	return n
+	return removed
 }
 
-// evictOldestPendingLocked removes the oldest pending session.
-// Returns false if no pending sessions exist.
-func (s *SessionStore) evictOldestPendingLocked() bool {
+// evictOldestPendingLocked removes the oldest pending session and returns its
+// ID. ok=false when no pending sessions exist. s.mu must be held.
+func (s *SessionStore) evictOldestPendingLocked() (uint32, bool) {
 	var oldest *Session
 	for _, sess := range s.sessions {
 		if sess.State == SessionStatePending {
@@ -268,11 +299,10 @@ func (s *SessionStore) evictOldestPendingLocked() bool {
 		}
 	}
 	if oldest == nil {
-		return false
+		return 0, false
 	}
 	delete(s.sessions, oldest.BMCID)
-	s.fireRemoveLocked(oldest.BMCID)
-	return true
+	return oldest.BMCID, true
 }
 
 // Count returns the number of sessions currently in the store.
@@ -291,6 +321,22 @@ func InboundSeqValid(last, seq uint32) bool {
 	}
 	diff := int64(seq) - int64(last)
 	return diff >= -16 && diff <= 15
+}
+
+// SetAddr records the console's transport address under the guard. The
+// server calls it on every accepted inbound packet.
+func (sess *Session) SetAddr(addr net.Addr) {
+	sess.addrMu.Lock()
+	sess.Addr = addr
+	sess.addrMu.Unlock()
+}
+
+// GetAddr returns the console's transport address, safe to call from any
+// goroutine (the SOL pump targets asynchronous data at it).
+func (sess *Session) GetAddr() net.Addr {
+	sess.addrMu.Lock()
+	defer sess.addrMu.Unlock()
+	return sess.Addr
 }
 
 // NextOutboundSeq returns the session sequence number for the next outbound

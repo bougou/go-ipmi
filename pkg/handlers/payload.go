@@ -224,14 +224,10 @@ func handleSetUserPayloadAccess(ctx context.Context, hctx *HandlerContext, data 
 	if err != nil {
 		return nil, types.CodeRequestDataFieldInvalid, nil
 	}
-	access := user.PayloadAccessFor(resolveChannel(hctx, data[0]&0x0f))
-	if op == 0 { // ENABLE: 1-bits enable, 0-bits leave unchanged
-		access.Standard1 |= data[2]
-		access.OEM1 |= data[4]
-	} else { // DISABLE
-		access.Standard1 &^= data[2]
-		access.OEM1 &^= data[4]
-	}
+	// The update runs under the user's payload-access lock: the read-modify-
+	// write must be atomic against a concurrent Set/Get on another session
+	// authenticated as the same user.
+	user.SetPayloadAccess(resolveChannel(hctx, data[0]&0x0f), op == 0, data[2], data[4])
 	return nil, types.CodeOK, nil
 }
 
@@ -251,7 +247,10 @@ func handleGetChannelPayloadSupport(ctx context.Context, hctx *HandlerContext, d
 	if len(data) < 1 {
 		return nil, types.CodeRequestDataLengthInvalid, nil
 	}
-	resp := make([]byte, 3)
+	// §24.8 response: standard payload enables 1-2, session-setup payload
+	// enables 1-2, OEM payload enables 1-2, then two reserved bytes — 8 in
+	// total; spec-conformant clients reject shorter replies.
+	resp := make([]byte, 8)
 	// Standard payload types 0-7: IPMI Message is always carried; SOL only
 	// when a console exists and the type is enabled (Table 26-5 #1).
 	resp[0] = 0x01

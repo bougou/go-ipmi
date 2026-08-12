@@ -37,6 +37,12 @@ func loadRuntimeConfig() (runtimeConfig, error) {
 		Password: envOr("GOIPMI_SERVER_PASS", "ADMIN"),
 		Console:  envOr("GOIPMI_SERVER_CONSOLE", ""),
 	}
+	// "none" is the documented spelling of "no console" (see Console); the
+	// HAL layer only understands the empty string, and a raw "none" would
+	// otherwise be opened as a device path and fail startup.
+	if cfg.Console == "none" {
+		cfg.Console = ""
+	}
 
 	if v := strings.TrimSpace(os.Getenv("GOIPMI_SERVER_SOL_RECONNECT")); v != "" {
 		enabled, err := parseBoolEnv(v)
