@@ -11,7 +11,7 @@ import (
 
 func TestSOLOutputStreamSuppressesRetransmittedData(t *testing.T) {
 	var out bytes.Buffer
-	stream := solOutputStream{writer: &out}
+	stream := solStream{output: &out}
 
 	for _, response := range []*types.SOLPayloadResponse{
 		{SOLPayloadPacket: types.SOLPayloadPacket{SequenceNumber: 15, CharacterData: []byte("abc")}},
@@ -20,7 +20,7 @@ func TestSOLOutputStreamSuppressesRetransmittedData(t *testing.T) {
 		{SOLPayloadPacket: types.SOLPayloadPacket{SequenceNumber: 15, CharacterData: []byte("abcde")}},
 		{SOLPayloadPacket: types.SOLPayloadPacket{SequenceNumber: 1, CharacterData: []byte("f")}},
 	} {
-		if err := stream.process(response); err != nil {
+		if err := stream.processOutput(response); err != nil {
 			t.Fatalf("process() error = %v", err)
 		}
 	}
@@ -77,8 +77,8 @@ func TestSOLOutputStreamRejectsInvalidResponse(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			stream := solOutputStream{writer: io.Discard, sequenceNumber: 1, acceptedCharCount: 3}
-			err := stream.process(tt.response)
+			stream := solStream{output: io.Discard, remoteSequenceNumber: 1, acceptedCharCount: 3}
+			err := stream.processOutput(tt.response)
 			if err == nil || !strings.Contains(err.Error(), tt.want) {
 				t.Fatalf("process() error = %v, want %q", err, tt.want)
 			}

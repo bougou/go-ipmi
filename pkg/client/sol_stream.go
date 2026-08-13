@@ -43,11 +43,16 @@ type solConsoleInput struct {
 	err   error
 }
 
-// solOutputStream tracks the state of the SOL output stream.
-type solOutputStream struct {
-	writer            io.Writer
-	sequenceNumber    uint8
-	acceptedCharCount uint8
+type solStream struct {
+	client       *Client
+	input        io.Reader
+	output       io.Writer
+	pollInterval time.Duration
+	interrupt    <-chan os.Signal
+
+	localSequenceNumber  uint8
+	remoteSequenceNumber uint8
+	acceptedCharCount    uint8
 }
 
 // nextSOLSequenceNumber returns the next SOL sequence number, wrapping from 15 to 1.
@@ -60,7 +65,7 @@ func nextSOLSequenceNumber(sequenceNumber uint8) uint8 {
 	return sequenceNumber
 }
 
-func (s *solOutputStream) process(response *types.SOLPayloadResponse) error {
+func (s *solStream) processOutput(response *types.SOLPayloadResponse) error {
 	if response == nil {
 		return fmt.Errorf("nil SOL payload response")
 	}
@@ -92,22 +97,22 @@ func (s *solOutputStream) process(response *types.SOLPayloadResponse) error {
 	writeOffset := 0
 	switch {
 	// No BMC output sequence has been received yet.
-	case s.sequenceNumber == 0:
-	case sequenceNumber == s.sequenceNumber:
+	case s.remoteSequenceNumber == 0:
+	case sequenceNumber == s.remoteSequenceNumber:
 		// A retransmission may append data. Write only bytes not previously delivered.
 		if len(data) < int(s.acceptedCharCount) {
 			return fmt.Errorf("BMC shortened retried SOL sequence %d from %d to %d bytes",
 				sequenceNumber, s.acceptedCharCount, len(data))
 		}
 		writeOffset = int(s.acceptedCharCount)
-	case sequenceNumber != nextSOLSequenceNumber(s.sequenceNumber):
+	case sequenceNumber != nextSOLSequenceNumber(s.remoteSequenceNumber):
 		// A gap means BMC output was lost before it reached the writer.
-		return fmt.Errorf("unexpected BMC SOL sequence %d after %d", sequenceNumber, s.sequenceNumber)
+		return fmt.Errorf("unexpected BMC SOL sequence %d after %d", sequenceNumber, s.remoteSequenceNumber)
 	}
 
 	dataToWrite := data[writeOffset:]
 	if len(dataToWrite) > 0 {
-		n, err := s.writer.Write(dataToWrite)
+		n, err := s.output.Write(dataToWrite)
 		if err != nil {
 			return fmt.Errorf("write SOL output: %w", err)
 		}
@@ -116,7 +121,7 @@ func (s *solOutputStream) process(response *types.SOLPayloadResponse) error {
 			return fmt.Errorf("write SOL output: %w", io.ErrShortWrite)
 		}
 	}
-	s.sequenceNumber = sequenceNumber
+	s.remoteSequenceNumber = sequenceNumber
 	s.acceptedCharCount = uint8(len(data))
 
 	return nil
@@ -153,85 +158,94 @@ func (c *Client) runSOLStream(
 	pollInterval time.Duration,
 	interrupt <-chan os.Signal,
 ) error {
+	stream := &solStream{
+		client:              c,
+		input:               in,
+		output:              out,
+		pollInterval:        pollInterval,
+		interrupt:           interrupt,
+		localSequenceNumber: 1,
+	}
+	return stream.run(ctx)
+}
+
+func (s *solStream) sendPacket(ctx context.Context, chars []byte) (*types.SOLPayloadResponse, error) {
+	req := &types.SOLPayloadRequest{
+		SOLPayloadPacket: types.SOLPayloadPacket{
+			SequenceNumber:         s.localSequenceNumber,
+			AckedSequenceNumber:    s.remoteSequenceNumber,
+			AcceptedCharacterCount: s.acceptedCharCount,
+			CharacterData:          chars,
+		},
+	}
+	res, err := s.client.SOLPayload(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	s.localSequenceNumber = nextSOLSequenceNumber(s.localSequenceNumber)
+
+	if err := s.processOutput(res); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (s *solStream) sendData(ctx context.Context, chars []byte) error {
+	pending := chars
+	noProgressRetries := 0
+	for len(pending) > 0 {
+		// Retry only the data the BMC did not accept, using a fresh SOL sequence.
+		res, err := s.sendPacket(ctx, pending)
+		if err != nil {
+			return err
+		}
+
+		// The accepted count applies only to the data in this request.
+		accepted := int(res.AcceptedCharacterCount)
+		if accepted > len(pending) {
+			return fmt.Errorf("BMC acknowledged %d characters for a %d-byte SOL packet", accepted, len(pending))
+		}
+
+		if accepted > 0 {
+			// Any progress resets the consecutive no-progress retry budget.
+			noProgressRetries = 0
+		} else {
+			noProgressRetries++
+		}
+
+		// Remove the accepted data from the pending buffer.
+		pending = pending[accepted:]
+		if len(pending) == 0 {
+			return nil
+		}
+
+		// If the BMC did not accept any data, retry up to a limit.
+		if noProgressRetries > defaultSOLTransmitRetryCount {
+			return fmt.Errorf("BMC did not accept %d SOL data byte(s) after %d retries",
+				len(pending), defaultSOLTransmitRetryCount)
+		}
+
+		// Wait before retrying.
+		timer := time.NewTimer(defaultSOLTransmitRetryInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
+		}
+	}
+	return nil
+}
+
+func (s *solStream) run(ctx context.Context) error {
 	inputCtx, cancelInput := context.WithCancel(ctx)
 	defer cancelInput()
 
-	input := readSOLInput(inputCtx, in)
-	ticker := time.NewTicker(pollInterval)
+	input := readSOLInput(inputCtx, s.input)
+	ticker := time.NewTicker(s.pollInterval)
 	defer ticker.Stop()
 
-	var localSeq uint8 = 1
-	output := solOutputStream{writer: out}
-
-	sendPacket := func(chars []byte) (*types.SOLPayloadResponse, error) {
-		req := &types.SOLPayloadRequest{
-			SOLPayloadPacket: types.SOLPayloadPacket{
-				SequenceNumber:         localSeq,
-				AckedSequenceNumber:    output.sequenceNumber,
-				AcceptedCharacterCount: output.acceptedCharCount,
-				CharacterData:          chars,
-			},
-		}
-		res, err := c.SOLPayload(ctx, req)
-		if err != nil {
-			return nil, err
-		}
-		localSeq = nextSOLSequenceNumber(localSeq)
-
-		if err := output.process(res); err != nil {
-			return nil, err
-		}
-		return res, nil
-	}
-
-	sendData := func(chars []byte) error {
-		pending := chars
-		noProgressRetries := 0
-		for len(pending) > 0 {
-			// Retry only the data the BMC did not accept, using a fresh SOL sequence.
-			res, err := sendPacket(pending)
-			if err != nil {
-				return err
-			}
-
-			// The accepted count applies only to the data in this request.
-			accepted := int(res.AcceptedCharacterCount)
-			if accepted > len(pending) {
-				return fmt.Errorf("BMC acknowledged %d characters for a %d-byte SOL packet", accepted, len(pending))
-			}
-
-			if accepted > 0 {
-				// Any progress resets the consecutive no-progress retry budget.
-				noProgressRetries = 0
-			} else {
-				noProgressRetries++
-			}
-
-			// Remove the accepted data from the pending buffer.
-			pending = pending[accepted:]
-			if len(pending) == 0 {
-				return nil
-			}
-
-			// If the BMC did not accept any data, retry up to a limit.
-			if noProgressRetries > defaultSOLTransmitRetryCount {
-				return fmt.Errorf("BMC did not accept %d SOL data byte(s) after %d retries",
-					len(pending), defaultSOLTransmitRetryCount)
-			}
-
-			// Wait before retrying.
-			timer := time.NewTimer(defaultSOLTransmitRetryInterval)
-			select {
-			case <-ctx.Done():
-				timer.Stop()
-				return ctx.Err()
-			case <-timer.C:
-			}
-		}
-		return nil
-	}
-
-	if _, err := sendPacket(nil); err != nil {
+	if _, err := s.sendPacket(ctx, nil); err != nil {
 		return err
 	}
 
@@ -239,7 +253,7 @@ func (c *Client) runSOLStream(
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-interrupt:
+		case <-s.interrupt:
 			return nil
 		case consoleInput := <-input:
 			if consoleInput.err != nil {
@@ -249,11 +263,11 @@ func (c *Client) runSOLStream(
 				return consoleInput.err
 			}
 
-			if err := sendData([]byte{consoleInput.value}); err != nil {
+			if err := s.sendData(ctx, []byte{consoleInput.value}); err != nil {
 				return err
 			}
 		case <-ticker.C:
-			if _, err := sendPacket(nil); err != nil {
+			if _, err := s.sendPacket(ctx, nil); err != nil {
 				return err
 			}
 		}
