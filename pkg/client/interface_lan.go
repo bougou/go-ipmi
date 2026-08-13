@@ -183,11 +183,9 @@ func (c *Client) tryMatchIPMILANResponse(recv []byte, wantSeq, wantCmd uint8) (b
 // acknowledging the pending request. A data request is acknowledged by
 // echoing its sequence number (spec v2.0 §15.9/§15.11), so the response to
 // the request with sequence number wantAck always carries
-// AckedSequenceNumber == wantAck. Async retransmissions of earlier packets
-// (which reuse the original sequence number per §15.9 and are sent before the
-// request was processed) carry older acked sequence numbers and are discarded
-// here — consuming them as the response would re-display already-delivered
-// character data and lag the ACK bookkeeping.
+// AckedSequenceNumber == wantAck. Asynchronous BMC output may acknowledge an
+// earlier request, so it is preserved for the active stream to process after
+// the pending request completes.
 //
 // ACK-only requests (sequence 0h) carry no number for the BMC to echo: it
 // answers with the last accepted data sequence instead (which is non-zero
@@ -222,6 +220,9 @@ func (c *Client) tryMatchSOLResponse(recv []byte, wantAck uint8) (bool, error) {
 		return false, nil
 	}
 	if wantAck != 0 && sol.AckedSequenceNumber != wantAck {
+		if sol.SequenceNumber != 0 {
+			c.deliverSOLOutput(&types.SOLPayloadResponse{SOLPayloadPacket: sol})
+		}
 		c.DebugfYellow("drop recv: SOL ack mismatch (got ack %d, want ack %d)\n", sol.AckedSequenceNumber, wantAck)
 		return false, nil
 	}

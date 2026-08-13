@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/bougou/go-ipmi/pkg/types"
@@ -23,8 +24,13 @@ const (
 	defaultSOLTransmitRetryInterval     = 100 * time.Millisecond
 	defaultSOLAcknowledgementRetryCount = 3
 	solSequenceMask                     = 0x0f
-	solStatusDeactivating               = 1 << 4 // IPMI v2.0 Table 15-2, status bit 4
-	solStatusTransmitOverrun            = 1 << 3 // IPMI v2.0 Table 15-2, status bit 3
+	// Sequence numbers wrap from 15 to 1, so 0 is not part of the cycle and the
+	// cycle holds 15 values. A packet more than half the cycle ahead of the last
+	// one received is read as trailing it rather than skipping past it.
+	solSequenceSpace         = 15
+	solSequenceHalfSpace     = solSequenceSpace / 2
+	solStatusDeactivating    = 1 << 4 // IPMI v2.0 Table 15-2, status bit 4
+	solStatusTransmitOverrun = 1 << 3 // IPMI v2.0 Table 15-2, status bit 3
 )
 
 // SOLStream exchanges console data over an already active SOL payload. Input is transmitted
@@ -54,6 +60,10 @@ type solStream struct {
 	localSequenceNumber  uint8
 	remoteSequenceNumber uint8
 	acceptedCharCount    uint8
+	outputAckPending     bool
+
+	pendingOutputMu sync.Mutex
+	pendingOutput   []*types.SOLPayloadResponse
 }
 
 // nextSOLSequenceNumber returns the next SOL sequence number, wrapping from 15 to 1.
@@ -64,6 +74,14 @@ func nextSOLSequenceNumber(sequenceNumber uint8) uint8 {
 	}
 
 	return sequenceNumber
+}
+
+// solSequenceDistance returns how many steps separate sequenceNumber from
+// previous, counting forward through the wrapping sequence space. Both must be
+// valid data sequence numbers (1 to 15). A result above solSequenceHalfSpace
+// means sequenceNumber trails previous.
+func solSequenceDistance(sequenceNumber, previous uint8) uint8 {
+	return uint8((int(sequenceNumber) - int(previous) + solSequenceSpace) % solSequenceSpace)
 }
 
 func (s *solStream) processOutput(response *types.SOLPayloadResponse) error {
@@ -106,7 +124,15 @@ func (s *solStream) processOutput(response *types.SOLPayloadResponse) error {
 				sequenceNumber, s.acceptedCharCount, len(data))
 		}
 		writeOffset = int(s.acceptedCharCount)
-	case sequenceNumber != nextSOLSequenceNumber(s.remoteSequenceNumber):
+	case sequenceNumber == nextSOLSequenceNumber(s.remoteSequenceNumber):
+	case solSequenceDistance(sequenceNumber, s.remoteSequenceNumber) > solSequenceHalfSpace:
+		// The BMC retransmits unacknowledged output (spec v2.0 §15.9) reusing the
+		// original sequence number, so a packet trailing the current one is a
+		// duplicate sent before our acknowledgement arrived. Its data was already
+		// delivered, and it says nothing about what the BMC has since accepted, so
+		// drop it without disturbing the acknowledgement bookkeeping.
+		return nil
+	default:
 		// A gap means BMC output was lost before it reached the writer.
 		return fmt.Errorf("unexpected BMC SOL sequence %d after %d", sequenceNumber, s.remoteSequenceNumber)
 	}
@@ -124,8 +150,48 @@ func (s *solStream) processOutput(response *types.SOLPayloadResponse) error {
 	}
 	s.remoteSequenceNumber = sequenceNumber
 	s.acceptedCharCount = uint8(len(data))
+	s.outputAckPending = true
 
 	return nil
+}
+
+func (c *Client) registerSOLStream(stream *solStream) error {
+	c.lock()
+	defer c.unlock()
+	if c.activeSOLStream != nil {
+		return fmt.Errorf("SOL stream is already active")
+	}
+	c.activeSOLStream = stream
+	return nil
+}
+
+func (c *Client) unregisterSOLStream() {
+	c.lock()
+	defer c.unlock()
+	c.activeSOLStream = nil
+}
+
+func (c *Client) deliverSOLOutput(response *types.SOLPayloadResponse) {
+	c.lock()
+	stream := c.activeSOLStream
+	c.unlock()
+	if stream != nil {
+		stream.queueOutput(response)
+	}
+}
+
+func (s *solStream) queueOutput(response *types.SOLPayloadResponse) {
+	s.pendingOutputMu.Lock()
+	defer s.pendingOutputMu.Unlock()
+	s.pendingOutput = append(s.pendingOutput, response)
+}
+
+func (s *solStream) takePendingOutput() []*types.SOLPayloadResponse {
+	s.pendingOutputMu.Lock()
+	defer s.pendingOutputMu.Unlock()
+	responses := s.pendingOutput
+	s.pendingOutput = nil
+	return responses
 }
 
 func readSOLInput(ctx context.Context, in io.Reader) <-chan solConsoleInput {
@@ -167,6 +233,11 @@ func (c *Client) runSOLStream(
 		interrupt:           interrupt,
 		localSequenceNumber: 1,
 	}
+	if err := c.registerSOLStream(stream); err != nil {
+		return err
+	}
+	defer c.unregisterSOLStream()
+
 	return stream.run(ctx)
 }
 
@@ -184,6 +255,14 @@ func (s *solStream) exchangePacket(ctx context.Context, chars []byte) (*types.SO
 		return nil, err
 	}
 	s.localSequenceNumber = nextSOLSequenceNumber(s.localSequenceNumber)
+	// The request carried the acknowledgement for output received so far.
+	s.outputAckPending = false
+
+	for _, pending := range s.takePendingOutput() {
+		if err := s.processOutput(pending); err != nil {
+			return nil, err
+		}
+	}
 
 	if err := s.processOutput(res); err != nil {
 		return nil, err
@@ -192,23 +271,20 @@ func (s *solStream) exchangePacket(ctx context.Context, chars []byte) (*types.SO
 }
 
 // acknowledgeOutput immediately acknowledges and drains BMC console output.
-func (s *solStream) acknowledgeOutput(ctx context.Context, response *types.SOLPayloadResponse) error {
+func (s *solStream) acknowledgeOutput(ctx context.Context) error {
 	repeatedResponses := 0
-	for response.SequenceNumber&solSequenceMask != 0 {
+	for s.outputAckPending {
 		previousSequenceNumber := s.remoteSequenceNumber
 		previousAcceptedCharCount := s.acceptedCharCount
 
 		// A nonzero empty packet carries the acknowledgement and requires a response from the BMC.
-		var err error
-		response, err = s.exchangePacket(ctx, nil)
+		_, err := s.exchangePacket(ctx, nil)
 		if err != nil {
 			return err
 		}
-		if response.SequenceNumber&solSequenceMask == 0 {
-			return nil
-		}
 
-		if s.remoteSequenceNumber == previousSequenceNumber &&
+		if s.outputAckPending &&
+			s.remoteSequenceNumber == previousSequenceNumber &&
 			s.acceptedCharCount == previousAcceptedCharCount {
 			repeatedResponses++
 			if repeatedResponses > defaultSOLAcknowledgementRetryCount {
@@ -227,7 +303,7 @@ func (s *solStream) sendPacket(ctx context.Context, chars []byte) (*types.SOLPay
 	if err != nil {
 		return nil, err
 	}
-	if err := s.acknowledgeOutput(ctx, response); err != nil {
+	if err := s.acknowledgeOutput(ctx); err != nil {
 		return nil, err
 	}
 	return response, nil

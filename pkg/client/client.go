@@ -84,6 +84,9 @@ type Client struct {
 	// starts from defaultFRUReadSize and remembers reductions across chunks.
 	fruMaxReadSize uint8
 
+	// activeSOLStream is protected by l.
+	activeSOLStream *solStream
+
 	// openBackendPref selects which Windows Open Interface transport to use
 	// when Interface == InterfaceOpen. Valid values: "" / "auto" (default;
 	// try native COM, fall back to PowerShell), "wmi-com", "wmi-ps".
