@@ -21,6 +21,9 @@ type SOLStreamOptions struct {
 const (
 	defaultSOLTransmitRetryCount    = 3
 	defaultSOLTransmitRetryInterval = 100 * time.Millisecond
+	solSequenceMask                 = 0x0f
+	solStatusDeactivating           = 1 << 4 // IPMI v2.0 Table 15-2, status bit 4
+	solStatusTransmitOverrun        = 1 << 3 // IPMI v2.0 Table 15-2, status bit 3
 )
 
 // SOLStream exchanges console data over an already active SOL payload. Input is transmitted
@@ -38,6 +41,85 @@ func (c *Client) SOLStream(ctx context.Context, in io.Reader, out io.Writer, opt
 type solConsoleInput struct {
 	value byte
 	err   error
+}
+
+// solOutputStream tracks the state of the SOL output stream.
+type solOutputStream struct {
+	writer            io.Writer
+	sequenceNumber    uint8
+	acceptedCharCount uint8
+}
+
+// nextSOLSequenceNumber returns the next SOL sequence number, wrapping from 15 to 1.
+func nextSOLSequenceNumber(sequenceNumber uint8) uint8 {
+	sequenceNumber = (sequenceNumber + 1) & solSequenceMask
+	if sequenceNumber == 0 {
+		return 1
+	}
+
+	return sequenceNumber
+}
+
+func (s *solOutputStream) process(response *types.SOLPayloadResponse) error {
+	if response == nil {
+		return fmt.Errorf("nil SOL payload response")
+	}
+
+	// These status bits mean the stream cannot deliver complete console output.
+	if response.ControlByte&solStatusDeactivating != 0 {
+		return fmt.Errorf("BMC reported SOL deactivation")
+	}
+
+	if response.ControlByte&solStatusTransmitOverrun != 0 {
+		return fmt.Errorf("BMC reported SOL transmit overrun, console output was lost")
+	}
+
+	sequenceNumber := response.SequenceNumber & solSequenceMask
+	data := response.CharacterData
+	// Sequence number zero acknowledges console input and must not carry BMC output.
+	if sequenceNumber == 0 {
+		if len(data) != 0 {
+			return fmt.Errorf("BMC sent %d SOL data bytes with ACK-only sequence 0", len(data))
+		}
+		return nil
+	}
+
+	// AcceptedCharacterCount is one byte, so larger packets cannot be acknowledged.
+	if len(data) > 255 {
+		return fmt.Errorf("BMC sent %d SOL data bytes, acknowledgement count is limited to 255", len(data))
+	}
+
+	writeOffset := 0
+	switch {
+	// No BMC output sequence has been received yet.
+	case s.sequenceNumber == 0:
+	case sequenceNumber == s.sequenceNumber:
+		// A retransmission may append data. Write only bytes not previously delivered.
+		if len(data) < int(s.acceptedCharCount) {
+			return fmt.Errorf("BMC shortened retried SOL sequence %d from %d to %d bytes",
+				sequenceNumber, s.acceptedCharCount, len(data))
+		}
+		writeOffset = int(s.acceptedCharCount)
+	case sequenceNumber != nextSOLSequenceNumber(s.sequenceNumber):
+		// A gap means BMC output was lost before it reached the writer.
+		return fmt.Errorf("unexpected BMC SOL sequence %d after %d", sequenceNumber, s.sequenceNumber)
+	}
+
+	dataToWrite := data[writeOffset:]
+	if len(dataToWrite) > 0 {
+		n, err := s.writer.Write(dataToWrite)
+		if err != nil {
+			return fmt.Errorf("write SOL output: %w", err)
+		}
+
+		if n != len(dataToWrite) {
+			return fmt.Errorf("write SOL output: %w", io.ErrShortWrite)
+		}
+	}
+	s.sequenceNumber = sequenceNumber
+	s.acceptedCharCount = uint8(len(data))
+
+	return nil
 }
 
 func readSOLInput(ctx context.Context, in io.Reader) <-chan solConsoleInput {
@@ -79,15 +161,14 @@ func (c *Client) runSOLStream(
 	defer ticker.Stop()
 
 	var localSeq uint8 = 1
-	var remoteSeq uint8
-	var pendingAckCount uint8
+	output := solOutputStream{writer: out}
 
 	sendPacket := func(chars []byte) (*types.SOLPayloadResponse, error) {
 		req := &types.SOLPayloadRequest{
 			SOLPayloadPacket: types.SOLPayloadPacket{
 				SequenceNumber:         localSeq,
-				AckedSequenceNumber:    remoteSeq,
-				AcceptedCharacterCount: pendingAckCount,
+				AckedSequenceNumber:    output.sequenceNumber,
+				AcceptedCharacterCount: output.acceptedCharCount,
 				CharacterData:          chars,
 			},
 		}
@@ -95,19 +176,10 @@ func (c *Client) runSOLStream(
 		if err != nil {
 			return nil, err
 		}
-		localSeq++
-		if localSeq > 0x0f {
-			localSeq = 1
-		}
-		pendingAckCount = 0
+		localSeq = nextSOLSequenceNumber(localSeq)
 
-		remoteSeq = res.SequenceNumber & 0x0f
-		pendingAckCount = uint8(len(res.CharacterData))
-
-		if len(res.CharacterData) > 0 {
-			if _, err := out.Write(res.CharacterData); err != nil {
-				return nil, err
-			}
+		if err := output.process(res); err != nil {
+			return nil, err
 		}
 		return res, nil
 	}
