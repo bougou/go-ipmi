@@ -171,6 +171,37 @@ func TestSOLSessionLoopback(t *testing.T) {
 	waitForCondition(t, "console conn close", fake.IsClosed)
 }
 
+func TestSOLStreamImmediatelyAcknowledgesOutput(t *testing.T) {
+	c, _, fake := newSOLTestServer(t)
+	ctx := context.Background()
+	if _, err := c.ActivatePayload(ctx, &transport.ActivatePayloadRequest{
+		PayloadType:     types.PayloadTypeSOL,
+		PayloadInstance: 1,
+	}); err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = c.DeactivatePayload(ctx, &transport.DeactivatePayloadRequest{
+			PayloadType:     types.PayloadTypeSOL,
+			PayloadInstance: 1,
+		})
+	})
+
+	want := bytes.Repeat([]byte("x"), 2*bmc.SOLMaxPayloadChars+1)
+	fake.FeedRX(want)
+
+	var out bytes.Buffer
+	err := c.SOLStream(ctx, strings.NewReader(""), &out, &SOLStreamOptions{
+		PollInterval: time.Hour,
+	})
+	if err != nil {
+		t.Fatalf("SOLStream() error = %v", err)
+	}
+	if !bytes.Equal(out.Bytes(), want) {
+		t.Fatalf("SOL output length = %d, want %d", out.Len(), len(want))
+	}
+}
+
 type rejectingConsole struct {
 	mock.FakeConsoleConn
 
