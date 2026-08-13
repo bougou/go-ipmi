@@ -19,11 +19,12 @@ type SOLStreamOptions struct {
 }
 
 const (
-	defaultSOLTransmitRetryCount    = 3
-	defaultSOLTransmitRetryInterval = 100 * time.Millisecond
-	solSequenceMask                 = 0x0f
-	solStatusDeactivating           = 1 << 4 // IPMI v2.0 Table 15-2, status bit 4
-	solStatusTransmitOverrun        = 1 << 3 // IPMI v2.0 Table 15-2, status bit 3
+	defaultSOLTransmitRetryCount        = 3
+	defaultSOLTransmitRetryInterval     = 100 * time.Millisecond
+	defaultSOLAcknowledgementRetryCount = 3
+	solSequenceMask                     = 0x0f
+	solStatusDeactivating               = 1 << 4 // IPMI v2.0 Table 15-2, status bit 4
+	solStatusTransmitOverrun            = 1 << 3 // IPMI v2.0 Table 15-2, status bit 3
 )
 
 // SOLStream exchanges console data over an already active SOL payload. Input is transmitted
@@ -169,7 +170,7 @@ func (c *Client) runSOLStream(
 	return stream.run(ctx)
 }
 
-func (s *solStream) sendPacket(ctx context.Context, chars []byte) (*types.SOLPayloadResponse, error) {
+func (s *solStream) exchangePacket(ctx context.Context, chars []byte) (*types.SOLPayloadResponse, error) {
 	req := &types.SOLPayloadRequest{
 		SOLPayloadPacket: types.SOLPayloadPacket{
 			SequenceNumber:         s.localSequenceNumber,
@@ -188,6 +189,48 @@ func (s *solStream) sendPacket(ctx context.Context, chars []byte) (*types.SOLPay
 		return nil, err
 	}
 	return res, nil
+}
+
+// acknowledgeOutput immediately acknowledges and drains BMC console output.
+func (s *solStream) acknowledgeOutput(ctx context.Context, response *types.SOLPayloadResponse) error {
+	repeatedResponses := 0
+	for response.SequenceNumber&solSequenceMask != 0 {
+		previousSequenceNumber := s.remoteSequenceNumber
+		previousAcceptedCharCount := s.acceptedCharCount
+
+		// A nonzero empty packet carries the acknowledgement and requires a response from the BMC.
+		var err error
+		response, err = s.exchangePacket(ctx, nil)
+		if err != nil {
+			return err
+		}
+		if response.SequenceNumber&solSequenceMask == 0 {
+			return nil
+		}
+
+		if s.remoteSequenceNumber == previousSequenceNumber &&
+			s.acceptedCharCount == previousAcceptedCharCount {
+			repeatedResponses++
+			if repeatedResponses > defaultSOLAcknowledgementRetryCount {
+				return fmt.Errorf("BMC repeated SOL sequence %d after %d acknowledgement retries",
+					s.remoteSequenceNumber, defaultSOLAcknowledgementRetryCount)
+			}
+		} else {
+			repeatedResponses = 0
+		}
+	}
+	return nil
+}
+
+func (s *solStream) sendPacket(ctx context.Context, chars []byte) (*types.SOLPayloadResponse, error) {
+	response, err := s.exchangePacket(ctx, chars)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.acknowledgeOutput(ctx, response); err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 func (s *solStream) sendData(ctx context.Context, chars []byte) error {
