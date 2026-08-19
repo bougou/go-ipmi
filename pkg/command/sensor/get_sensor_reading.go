@@ -105,24 +105,28 @@ func (res *GetSensorReadingResponse) Unpack(msg []byte) error {
 	return nil
 }
 
+// ThresholdStatus returns the threshold status of the sensor, that is, the most
+// severe threshold the reading has crossed. A reading beyond a non-recoverable
+// threshold is normally reported as being beyond the critical and non-critical
+// ones as well, so the checks are ordered from the most severe to the least.
 func (r *GetSensorReadingResponse) ThresholdStatus() types.SensorThresholdStatus {
+	if r.Above_UNR {
+		return types.SensorThresholdStatus_UNR
+	}
+	if r.Below_LNR {
+		return types.SensorThresholdStatus_LNR
+	}
 	if r.Above_UCR {
 		return types.SensorThresholdStatus_UCR
 	}
-	if r.Above_UNC {
-		return types.SensorThresholdStatus_UCR
-	}
-	if r.Above_UNR {
-		return types.SensorThresholdStatus_UCR
-	}
 	if r.Below_LCR {
-		return types.SensorThresholdStatus_UCR
+		return types.SensorThresholdStatus_LCR
+	}
+	if r.Above_UNC {
+		return types.SensorThresholdStatus_UNC
 	}
 	if r.Below_LNC {
-		return types.SensorThresholdStatus_UCR
-	}
-	if r.Below_LNR {
-		return types.SensorThresholdStatus_UCR
+		return types.SensorThresholdStatus_LNC
 	}
 	return types.SensorThresholdStatus_OK
 }
