@@ -10,11 +10,14 @@ type SetWatchdogTimerRequest struct {
 	DontStopTimer bool
 	TimerUse      TimerUse
 
-	PreTimeoutInterrupt   PreTimeoutInterrupt
-	TimeoutAction         TimeoutAction
+	PreTimeoutInterrupt PreTimeoutInterrupt
+	TimeoutAction       TimeoutAction
+	// PreTimeoutIntervalSec is the pre-timeout interval in seconds.
 	PreTimeoutIntervalSec uint8
 
-	ExpirationFlags  uint8
+	ExpirationFlags uint8
+	// InitialCountdown is the initial countdown value in 100ms units, that is,
+	// WatchdogCountdownUnitsPerSecond units per second.
 	InitialCountdown uint16
 }
 
