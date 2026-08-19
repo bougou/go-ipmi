@@ -25,6 +25,13 @@ const (
 	SessionHeader15SizeMin int = 10
 )
 
+// RMCP+ Session Header 20 payload type flag bits (IPMI 2.0 spec Table 13-8, IPMI Session Header, Payload Type field).
+// These bits are ORed into the payload type byte alongside the PayloadType value.
+const (
+	PayloadFlagEncrypted     uint8 = 0x80 // bit 7: payload is encrypted
+	PayloadFlagAuthenticated uint8 = 0x40 // bit 6: payload has integrity trailer
+)
+
 // SessionHeader15 for IPMI 1.5
 // see 22.12, Table 13.
 //

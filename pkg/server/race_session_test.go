@@ -51,7 +51,7 @@ func raceOpenSessionSuite0(t *testing.T, c *net.UDPConn, consoleID uint32) uint3
 		IntegrityPayload:               integP,
 		ConfidentialityPayload:         cryptP,
 	}
-	raceMustWrite(t, c, protocol.BuildRMCPPlusPacket(protocol.PayloadOpenSessionRequest, 0, 0, 0, req.Pack()))
+	raceMustWrite(t, c, protocol.BuildRMCPPlusPacket(uint8(types.PayloadTypeRmcpOpenSessionRequest), 0, 0, 0, req.Pack()))
 
 	var resp rmcpplus.OpenSessionResponse
 	if err := resp.Unpack(raceMustReadPayload(t, c)); err != nil {
@@ -72,7 +72,7 @@ func raceDoRAKPNone(t *testing.T, c *net.UDPConn, bmcID uint32) {
 		UsernameLength:                 uint8(len(raceUser)),
 		Username:                       []byte(raceUser),
 	}
-	raceMustWrite(t, c, protocol.BuildRMCPPlusPacket(protocol.PayloadRAKPMessage1, 0, 0, 0, m1.Pack()))
+	raceMustWrite(t, c, protocol.BuildRMCPPlusPacket(uint8(types.PayloadTypeRAKPMessage1), 0, 0, 0, m1.Pack()))
 	var msg2 rmcpplus.RAKPMessage2
 	msg2.AuthAlg = types.AuthAlg_None
 	if err := msg2.Unpack(raceMustReadPayload(t, c)); err != nil {
@@ -86,7 +86,7 @@ func raceDoRAKPNone(t *testing.T, c *net.UDPConn, bmcID uint32) {
 		RmcpStatusCode:         types.RmcpStatusCodeNoErrors,
 		ManagedSystemSessionID: bmcID,
 	}
-	raceMustWrite(t, c, protocol.BuildRMCPPlusPacket(protocol.PayloadRAKPMessage3, 0, 0, 0, m3.Pack()))
+	raceMustWrite(t, c, protocol.BuildRMCPPlusPacket(uint8(types.PayloadTypeRAKPMessage3), 0, 0, 0, m3.Pack()))
 	var msg4 rmcpplus.RAKPMessage4
 	msg4.AuthAlg = types.AuthAlg_None
 	if err := msg4.Unpack(raceMustReadPayload(t, c)); err != nil {
@@ -127,7 +127,7 @@ func TestActiveSessionSeqRace(t *testing.T) {
 	raceDoRAKPNone(t, hs, bmcID)
 	_ = hs.Close()
 
-	sessPkt := protocol.BuildRMCPPlusPacket(protocol.PayloadIPMI, 0, bmcID, 1, raceGetDeviceIDPayload())
+	sessPkt := protocol.BuildRMCPPlusPacket(uint8(types.PayloadTypeIPMI), 0, bmcID, 1, raceGetDeviceIDPayload())
 
 	var wg sync.WaitGroup
 	var responded atomic.Bool
@@ -169,7 +169,7 @@ func raceRAKP1Packet(bmcSessionID uint32, tag uint8) []byte {
 		UsernameLength:                 uint8(len(raceUser)),
 		Username:                       []byte(raceUser),
 	}
-	return protocol.BuildRMCPPlusPacket(protocol.PayloadRAKPMessage1, 0, 0, 0, msg.Pack())
+	return protocol.BuildRMCPPlusPacket(uint8(types.PayloadTypeRAKPMessage1), 0, 0, 0, msg.Pack())
 }
 
 // raceOpenSessionSHA1 opens a suite-3 session (used only to obtain a pending
@@ -185,7 +185,7 @@ func raceOpenSessionSHA1(t *testing.T, cl *net.UDPConn, consoleID uint32) uint32
 		IntegrityPayload:               integP,
 		ConfidentialityPayload:         cryptP,
 	}
-	raceMustWrite(t, cl, protocol.BuildRMCPPlusPacket(protocol.PayloadOpenSessionRequest, 0, 0, 0, req.Pack()))
+	raceMustWrite(t, cl, protocol.BuildRMCPPlusPacket(uint8(types.PayloadTypeRmcpOpenSessionRequest), 0, 0, 0, req.Pack()))
 	var resp rmcpplus.OpenSessionResponse
 	if err := resp.Unpack(raceMustReadPayload(t, cl)); err != nil {
 		t.Fatal(err)

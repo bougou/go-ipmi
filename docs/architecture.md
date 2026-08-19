@@ -15,10 +15,10 @@ github.com/bougou/go-ipmi/
 │   ├── goipmi/           # ipmitool-style CLI (library check-out tool)
 │   └── goipmi-server/    # reference BMC
 ├── pkg/
-│   ├── types/            # wire types, constants, pack/unpack
+│   ├── types/            # wire types, constants, pack/unpack (data structures)
 │   ├── crypto/           # AES / HMAC / RAKP / v1.5 AuthCode
-│   ├── rmcpplus/         # Open Session + RAKP codecs
-│   ├── protocol/         # payload IDs and framing helpers
+│   ├── rmcpplus/         # RMCP+ session-establishment payloads (OpenSession, RAKP)
+│   ├── protocol/         # stateless wire-format helpers (ASF ping, IPMB framing)
 │   ├── command/          # request/response types by NetFn
 │   │   ├── app/
 │   │   ├── chassis/
@@ -55,6 +55,17 @@ cmd/goipmi-server ─ pkg/server ─ handlers ─ bmc ─ hal
 A client builds a session (`Connect`), then issues typed methods or raw
 `Exchange` calls. The server binds a `transport.PacketConn`, owns BMC state
 through `bmc.BMC`, and dispatches into `handlers`.
+
+## RMCP+ wire format: three-package split
+
+The RMCP+ (IPMI 2.0) wire format is split across three packages, each owning a
+distinct layer of the protocol:
+
+| Package    | Layer             | Contents                                                                                          |
+| ---------- | ----------------- | ------------------------------------------------------------------------------------------------- |
+| `types`    | Data structures   | RMCP/ASF header structs, `PayloadType` enum, `PayloadFlag*` constants, session header pack/unpack |
+| `protocol` | Stateless framing | ASF ping/pong, IPMB framing, IPMI 1.5 request/response, RMCP+ packet build/parse                  |
+| `rmcpplus` | Session payloads  | `OpenSessionRequest/Response`, `RAKPMessage1–4`, algorithm negotiation helpers                    |
 
 ## Spec references in code
 

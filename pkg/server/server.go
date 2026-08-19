@@ -33,16 +33,16 @@ import (
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// Payload type aliases from pkg/protocol for readability within this file.
+// Payload type aliases from pkg/types for readability within this file.
 const (
-	srvPayloadIPMI                = protocol.PayloadIPMI
-	srvPayloadSOL                 = protocol.PayloadSOL
-	srvPayloadOpenSessionResponse = protocol.PayloadOpenSessionResponse
-	srvPayloadOpenSessionRequest  = protocol.PayloadOpenSessionRequest
-	srvPayloadRAKPMessage1        = protocol.PayloadRAKPMessage1
-	srvPayloadRAKPMessage2        = protocol.PayloadRAKPMessage2
-	srvPayloadRAKPMessage3        = protocol.PayloadRAKPMessage3
-	srvPayloadRAKPMessage4        = protocol.PayloadRAKPMessage4
+	srvPayloadIPMI                = uint8(types.PayloadTypeIPMI)
+	srvPayloadSOL                 = uint8(types.PayloadTypeSOL)
+	srvPayloadOpenSessionResponse = uint8(types.PayloadTypeRmcpOpenSessionResponse)
+	srvPayloadOpenSessionRequest  = uint8(types.PayloadTypeRmcpOpenSessionRequest)
+	srvPayloadRAKPMessage1        = uint8(types.PayloadTypeRAKPMessage1)
+	srvPayloadRAKPMessage2        = uint8(types.PayloadTypeRAKPMessage2)
+	srvPayloadRAKPMessage3        = uint8(types.PayloadTypeRAKPMessage3)
+	srvPayloadRAKPMessage4        = uint8(types.PayloadTypeRAKPMessage4)
 )
 
 const defaultBufferSize = 4096
@@ -259,7 +259,7 @@ func solSessionPacket(pkt []byte) (uint32, bool) {
 		return 0, false
 	}
 	sessionID, _, payloadType, _, _, ok := protocol.ParseRMCPPlusHeader(pkt)
-	return sessionID, ok && sessionID != 0 && payloadType == protocol.PayloadSOL
+	return sessionID, ok && sessionID != 0 && payloadType == uint8(types.PayloadTypeSOL)
 }
 
 // Close shuts down the server and its transport.
@@ -361,8 +361,8 @@ func (s *Server) handleRMCPPlus(addr net.Addr, pkt []byte) {
 	if !ok {
 		return
 	}
-	encrypted := flags&protocol.PayloadEncryptedFlag != 0
-	authenticated := flags&protocol.PayloadAuthenticatedFlag != 0
+	encrypted := flags&types.PayloadFlagEncrypted != 0
+	authenticated := flags&types.PayloadFlagAuthenticated != 0
 
 	ctx := context.Background()
 
@@ -516,8 +516,8 @@ func (s *Server) processSOLJob(sess *bmc.Session, job solJob, q chan solJob) {
 	if !ok {
 		return
 	}
-	encrypted := flags&protocol.PayloadEncryptedFlag != 0
-	authenticated := flags&protocol.PayloadAuthenticatedFlag != 0
+	encrypted := flags&types.PayloadFlagEncrypted != 0
+	authenticated := flags&types.PayloadFlagAuthenticated != 0
 
 	// Unlike IPMI commands, the SOL dispatch runs outside ProcMu: the worker
 	// is the only SOL processor per session, and holding it would serialize
@@ -661,7 +661,7 @@ func (s *Server) respondInSession(addr net.Addr, sess *bmc.Session, payloadType 
 			return
 		}
 		finalPayload = enc
-		flags |= protocol.PayloadEncryptedFlag
+		flags |= types.PayloadFlagEncrypted
 	}
 	s.sendSessionPayload(addr, sess, payloadType, flags, finalPayload)
 }
@@ -671,7 +671,7 @@ func (s *Server) respondInSession(addr net.Addr, sess *bmc.Session, payloadType 
 // SOL packets alike.
 func (s *Server) sendSessionPayload(addr net.Addr, sess *bmc.Session, payloadType, flags uint8, payload []byte) {
 	if sess.IntegrityAlg != types.IntegrityAlg_None {
-		flags |= protocol.PayloadAuthenticatedFlag
+		flags |= types.PayloadFlagAuthenticated
 	}
 	pkt := protocol.BuildRMCPPlusPacket(payloadType, flags, sess.ConsoleID, sess.NextOutboundSeq(), payload)
 	var ok bool

@@ -8,6 +8,7 @@ import (
 	"github.com/bougou/go-ipmi/pkg/bmc"
 	"github.com/bougou/go-ipmi/pkg/hal/mock"
 	"github.com/bougou/go-ipmi/pkg/protocol"
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 // TestSOLQueueRetiresForUnknownSession verifies a forged SOL packet for a
@@ -59,7 +60,7 @@ func TestSOLSessionPacketRejectsV15(t *testing.T) {
 	}
 
 	// A genuine in-session RMCP+ SOL packet still classifies.
-	sol := protocol.BuildRMCPPlusPacket(protocol.PayloadSOL, 0, 0x1234, 1, []byte{0x01})
+	sol := protocol.BuildRMCPPlusPacket(uint8(types.PayloadTypeSOL), 0, 0x1234, 1, []byte{0x01})
 	id, ok := solSessionPacket(sol)
 	if !ok || id != 0x1234 {
 		t.Fatalf("RMCP+ SOL packet: ok=%v id=%#x, want true/0x1234", ok, id)

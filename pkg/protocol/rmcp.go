@@ -2,33 +2,15 @@ package protocol
 
 import "encoding/binary"
 
-// RMCP+ payload type constants (IPMI 2.0 spec Table 13-16).
-const (
-	PayloadIPMI                = uint8(0x00)
-	PayloadSOL                 = uint8(0x01)
-	PayloadOEM                 = uint8(0x02)
-	PayloadOpenSessionRequest  = uint8(0x10)
-	PayloadOpenSessionResponse = uint8(0x11)
-	PayloadRAKPMessage1        = uint8(0x12)
-	PayloadRAKPMessage2        = uint8(0x13)
-	PayloadRAKPMessage3        = uint8(0x14)
-	PayloadRAKPMessage4        = uint8(0x15)
-)
-
-// PayloadEncryptedFlag is ORed into the payload-type byte when the payload is
-// AES-CBC-128 encrypted (bit 7).
-const PayloadEncryptedFlag = uint8(0x80)
-
-// PayloadAuthenticatedFlag is ORed into the payload-type byte when an HMAC
-// integrity trailer is appended (bit 6).
-const PayloadAuthenticatedFlag = uint8(0x40)
-
 // BuildRMCPPlusPacket assembles a complete RMCP+ (IPMI 2.0) wire packet.
 //
 //	RMCP header  (4 bytes): version=0x06, reserved, seq=0xFF, class=0x07
 //	Session20 header (12 bytes): authType=0x06, payloadType|flags,
 //	  sessionID(LE), seqNum(LE), payloadLen(LE)
 //	Payload (len bytes)
+//
+// The payloadType and flags parameters are raw bytes; callers typically pass
+// uint8(types.PayloadTypeIPMI) | types.PayloadFlagAuthenticated.
 func BuildRMCPPlusPacket(payloadType, payloadFlags uint8, sessionID, seq uint32, payload []byte) []byte {
 	pkt := make([]byte, 4+12+len(payload))
 	// RMCP header

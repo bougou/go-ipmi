@@ -50,7 +50,7 @@ func TestSendRMCPPlusSessionAddsIntegrityTrailer(t *testing.T) {
 		t.Fatalf("want one packet, got %d", len(conn.writes))
 	}
 	pkt := conn.writes[0]
-	if pkt[5]&protocol.PayloadAuthenticatedFlag == 0 {
+	if pkt[5]&types.PayloadFlagAuthenticated == 0 {
 		t.Fatalf("authenticated bit was not set: payload type byte=0x%02x", pkt[5])
 	}
 	if !verifyRMCPPlusIntegrity(pkt, sess, true) {
@@ -69,7 +69,7 @@ func TestVerifyRMCPPlusIntegrityRequiresAuthenticatedFlag(t *testing.T) {
 		IntegrityAlg: types.IntegrityAlg_HMAC_SHA1_96,
 		K1:           []byte("0123456789abcdefghij"),
 	}
-	pkt := protocol.BuildRMCPPlusPacket(srvPayloadIPMI, protocol.PayloadAuthenticatedFlag, 1, 1, []byte{0x01, 0x02})
+	pkt := protocol.BuildRMCPPlusPacket(srvPayloadIPMI, types.PayloadFlagAuthenticated, 1, 1, []byte{0x01, 0x02})
 	pkt, ok := appendRMCPPlusIntegrity(pkt, sess)
 	if !ok {
 		t.Fatalf("appendRMCPPlusIntegrity failed")
@@ -91,7 +91,7 @@ func TestRMCPPlusIntegrity_SHA256_128(t *testing.T) {
 	payload := []byte{0x20, 0x18, 0xc8, 0x81, 0x00}
 
 	pkt, ok := appendRMCPPlusIntegrity(protocol.BuildRMCPPlusPacket(
-		srvPayloadIPMI, protocol.PayloadAuthenticatedFlag, sess.ConsoleID, sess.OutboundSeq, payload), sess)
+		srvPayloadIPMI, types.PayloadFlagAuthenticated, sess.ConsoleID, sess.OutboundSeq, payload), sess)
 	if !ok {
 		t.Fatalf("appendRMCPPlusIntegrity failed for SHA256-128")
 	}
