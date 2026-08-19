@@ -19,18 +19,39 @@ func (req *GetWatchdogTimerRequest) Command() types.Command {
 	return types.CommandGetWatchdogTimer
 }
 
+// WatchdogCountdownUnitsPerSecond is the number of countdown units per second
+// used by the Set/Get Watchdog Timer commands, which express countdown values
+// in 100ms units (IPMI v2.0, 27.6 and 27.7). Note that the pre-timeout
+// interval is expressed in seconds, not in these units.
+const WatchdogCountdownUnitsPerSecond = 10
+
 type GetWatchdogTimerResponse struct {
 	DontLog        bool
 	TimerIsStarted bool
 	TimerUse       TimerUse
 
-	PreTimeoutInterrupt   PreTimeoutInterrupt
-	TimeoutAction         TimeoutAction
+	PreTimeoutInterrupt PreTimeoutInterrupt
+	TimeoutAction       TimeoutAction
+	// PreTimeoutIntervalSec is the pre-timeout interval in seconds.
 	PreTimeoutIntervalSec uint8
 
-	ExpirationFlags  uint8
+	ExpirationFlags uint8
+	// InitialCountdown is the initial countdown value in 100ms units.
+	// See InitialCountdownSec for the value in seconds.
 	InitialCountdown uint16
+	// PresentCountdown is the present countdown value in 100ms units.
+	// See PresentCountdownSec for the value in seconds.
 	PresentCountdown uint16
+}
+
+// InitialCountdownSec returns the initial countdown value in seconds.
+func (res *GetWatchdogTimerResponse) InitialCountdownSec() float64 {
+	return float64(res.InitialCountdown) / WatchdogCountdownUnitsPerSecond
+}
+
+// PresentCountdownSec returns the present countdown value in seconds.
+func (res *GetWatchdogTimerResponse) PresentCountdownSec() float64 {
+	return float64(res.PresentCountdown) / WatchdogCountdownUnitsPerSecond
 }
 
 func (res *GetWatchdogTimerResponse) Unpack(msg []byte) error {
@@ -59,8 +80,8 @@ func (res *GetWatchdogTimerResponse) Format() string {
 		fmt.Sprintf("Watchdog Timer Actions : %s (%#02x)\n", res.TimeoutAction, uint8(res.TimeoutAction)) +
 		fmt.Sprintf("Pre-timeout interval   : %d seconds\n", res.PreTimeoutIntervalSec) +
 		fmt.Sprintf("Timer Expiration Flags : %#02x\n", res.ExpirationFlags) +
-		fmt.Sprintf("Initial Countdown      : %d sec\n", res.InitialCountdown) +
-		fmt.Sprintf("Present Countdown      : %d sec\n", res.PresentCountdown)
+		fmt.Sprintf("Initial Countdown      : %.1f sec\n", res.InitialCountdownSec()) +
+		fmt.Sprintf("Present Countdown      : %.1f sec\n", res.PresentCountdownSec())
 }
 
 type TimerUse uint8
