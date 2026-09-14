@@ -21,6 +21,12 @@ func (c *Client) GetIPStatistics(ctx context.Context, channelNumber uint8, clear
 func (c *Client) ActivatePayload(ctx context.Context, request *transport.ActivatePayloadRequest) (response *transport.ActivatePayloadResponse, err error) {
 	response = &transport.ActivatePayloadResponse{}
 	err = c.Exchange(ctx, request, response)
+	// Retain the BMC's inbound payload limit so SOLStream can size input batches.
+	if err == nil && request.PayloadType == types.PayloadTypeSOL {
+		c.lock()
+		c.session.v20.solInboundPayloadSize = response.InboundPayloadSize
+		c.unlock()
+	}
 	return
 }
 

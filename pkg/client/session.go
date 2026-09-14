@@ -88,6 +88,9 @@ type v20 struct {
 
 	accumulatedPayloadSize uint32
 
+	// SOL inbound payload size reported by ActivatePayload
+	solInboundPayloadSize uint16
+
 	// for xRC4 encryption
 	rc4EncryptIV [16]byte
 	rc4DecryptIV [16]byte

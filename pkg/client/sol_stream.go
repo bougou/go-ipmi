@@ -51,11 +51,12 @@ type solConsoleInput struct {
 }
 
 type solStream struct {
-	client       *Client
-	input        io.Reader
-	output       io.Writer
-	pollInterval time.Duration
-	interrupt    <-chan os.Signal
+	client        *Client
+	input         io.Reader
+	output        io.Writer
+	pollInterval  time.Duration
+	interrupt     <-chan os.Signal
+	maxInputChars int
 
 	localSequenceNumber  uint8
 	remoteSequenceNumber uint8
@@ -225,12 +226,19 @@ func (c *Client) runSOLStream(
 	pollInterval time.Duration,
 	interrupt <-chan os.Signal,
 ) error {
+	// Table 24-2 includes the four-byte SOL header in the inbound payload size.
+	// Table 15-2 limits the acknowledged character count to 255. Keep one-byte
+	// input when activation did not provide a usable size.
+	c.lock()
+	maxInputChars := max(1, min(int(c.session.v20.solInboundPayloadSize)-4, 255))
+	c.unlock()
 	stream := &solStream{
 		client:              c,
 		input:               in,
 		output:              out,
 		pollInterval:        pollInterval,
 		interrupt:           interrupt,
+		maxInputChars:       maxInputChars,
 		localSequenceNumber: 1,
 	}
 	if err := c.registerSOLStream(stream); err != nil {
@@ -375,15 +383,29 @@ func (s *solStream) run(ctx context.Context) error {
 		case <-s.interrupt:
 			return nil
 		case consoleInput := <-input:
+			chars := make([]byte, 0, s.maxInputChars)
+		collectInput:
+			for consoleInput.err == nil {
+				chars = append(chars, consoleInput.value)
+				if len(chars) == s.maxInputChars {
+					break
+				}
+				// Batch queued input without waiting for another keystroke.
+				select {
+				case consoleInput = <-input:
+				default:
+					break collectInput
+				}
+			}
+			// Deliver queued data before reporting EOF or another reader error.
+			if err := s.sendData(ctx, chars); err != nil {
+				return err
+			}
 			if consoleInput.err != nil {
 				if consoleInput.err == io.EOF {
 					return nil
 				}
 				return consoleInput.err
-			}
-
-			if err := s.sendData(ctx, []byte{consoleInput.value}); err != nil {
-				return err
 			}
 		case <-ticker.C:
 			if _, err := s.sendPacket(ctx, nil); err != nil {
