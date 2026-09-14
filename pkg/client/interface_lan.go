@@ -428,18 +428,26 @@ func (c *Client) closeLAN(ctx context.Context) error {
 	// close session, it always needs to be done or we will have a resource leak.
 	// For example a timed-out or unreachable BMC must not leave the socket open.
 	var sessionID uint32
+	var sessionActive bool
 	if c.v20 {
 		sessionID = c.session.v20.bmcSessionID
+		sessionActive = c.session.v20.state == types.SessionStateActive
 	} else {
 		sessionID = c.session.v15.sessionID
+		sessionActive = c.session.v15.active
 	}
 
-	request := &app.CloseSessionRequest{
-		SessionID: sessionID,
-	}
-	_, sessionErr := c.CloseSession(ctx, request)
-	if sessionErr != nil {
-		sessionErr = fmt.Errorf("CloseSession failed, err: %w", sessionErr)
+	// Only active sessions can carry CloseSession. Check protocol state because
+	// Connect can fail after activation while setting the session privilege level.
+	var sessionErr error
+	if sessionActive {
+		request := &app.CloseSessionRequest{
+			SessionID: sessionID,
+		}
+		_, sessionErr = c.CloseSession(ctx, request)
+		if sessionErr != nil {
+			sessionErr = fmt.Errorf("CloseSession failed, err: %w", sessionErr)
+		}
 	}
 
 	connectionErr := c.udpClient.Close()
