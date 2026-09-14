@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"github.com/bougou/go-ipmi/pkg/bmc"
@@ -137,7 +138,13 @@ func TestSOLSessionLoopback(t *testing.T) {
 
 	// Console→BMC: keystrokes from the remote console must land on the
 	// system serial port.
-	if _, err := inW.Write([]byte("root\r")); err != nil {
+	if _, err := inW.Write([]byte("r")); err != nil {
+		t.Fatalf("write input: %v", err)
+	}
+	waitForCondition(t, "single keystroke before more input", func() bool {
+		return fake.TXString() == "r"
+	})
+	if _, err := inW.Write([]byte("oot\r")); err != nil {
 		t.Fatalf("write input: %v", err)
 	}
 	waitForCondition(t, "keystrokes at console", func() bool {
@@ -207,8 +214,11 @@ type rejectingConsole struct {
 
 	mu sync.Mutex
 
-	rejects int
-	writes  int
+	rejects       int
+	writes        int
+	acceptLimit   int
+	maxWrite      int
+	partialWrites int
 }
 
 func (c *rejectingConsole) Write(p []byte) (int, error) {
@@ -218,12 +228,17 @@ func (c *rejectingConsole) Write(p []byte) (int, error) {
 		return 0, nil
 	}
 	c.writes++
+	c.maxWrite = max(c.maxWrite, len(p))
 	if c.rejects != 0 {
 		if c.rejects > 0 {
 			c.rejects--
 		}
 		c.mu.Unlock()
 		return 0, nil
+	}
+	if c.acceptLimit > 0 && len(p) > c.acceptLimit {
+		p = p[:c.acceptLimit]
+		c.partialWrites++
 	}
 	c.mu.Unlock()
 	return c.FakeConsoleConn.Write(p)
@@ -234,6 +249,65 @@ func (c *rejectingConsole) state() (writes int, tx string) {
 	writes = c.writes
 	c.mu.Unlock()
 	return writes, c.TXString()
+}
+
+func TestSOLStreamBatchesInput(t *testing.T) {
+	for _, tt := range []struct {
+		name        string
+		payloadSize uint16
+		maxChars    int
+		acceptLimit int
+		readErr     error
+	}{
+		{name: "negotiated size", payloadSize: 255, maxChars: 251},
+		{name: "small payload", payloadSize: 12, maxChars: 8},
+		{name: "acknowledgement limit", payloadSize: 1024, maxChars: 255},
+		{name: "unknown size", maxChars: 1},
+		{name: "header only", payloadSize: 4, maxChars: 1},
+		{name: "partial acceptance", payloadSize: 255, maxChars: 251, acceptLimit: 100},
+		{name: "reader error after data", payloadSize: 255, maxChars: 251, readErr: io.ErrUnexpectedEOF},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			console := &rejectingConsole{acceptLimit: tt.acceptLimit}
+			c, _ := newSOLTestServerWithConsole(t, &mock.Console{Conn: console})
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			t.Cleanup(func() { _ = c.Close(context.Background()) })
+			activation, err := c.ActivatePayload(ctx, &transport.ActivatePayloadRequest{
+				PayloadType: types.PayloadTypeSOL, PayloadInstance: 1,
+			})
+			if err != nil {
+				t.Fatalf("ActivatePayload() error = %v", err)
+			}
+			if c.session.v20.solInboundPayloadSize != activation.InboundPayloadSize {
+				t.Fatal("ActivatePayload did not retain the inbound payload size")
+			}
+			// Exercise other advertised limits without changing the reference BMC.
+			c.session.v20.solInboundPayloadSize = tt.payloadSize
+
+			want := strings.Repeat("a~X\n", 140)
+			var input io.Reader = iotest.DataErrReader(strings.NewReader(want))
+			if tt.readErr != nil {
+				input = io.MultiReader(strings.NewReader(want), iotest.ErrReader(tt.readErr))
+			}
+			err = c.SOLStream(ctx, input, io.Discard, &SOLStreamOptions{PollInterval: time.Hour})
+			if !errors.Is(err, tt.readErr) {
+				t.Fatalf("SOLStream() error = %v, want %v", err, tt.readErr)
+			}
+			if got := console.TXString(); got != want {
+				t.Fatalf("console received %q, want %q", got, want)
+			}
+			console.mu.Lock()
+			maxWrite, partialWrites := console.maxWrite, console.partialWrites
+			console.mu.Unlock()
+			if maxWrite > tt.maxChars || (tt.maxChars > 1 && maxWrite <= 1) {
+				t.Fatalf("largest input packet = %d characters, want batching bounded by %d", maxWrite, tt.maxChars)
+			}
+			if tt.acceptLimit > 0 && partialWrites == 0 {
+				t.Fatal("no packet exercised partial acceptance")
+			}
+		})
+	}
 }
 
 func TestSOLStreamRetriesUnacceptedData(t *testing.T) {
