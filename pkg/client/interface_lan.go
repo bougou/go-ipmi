@@ -140,12 +140,27 @@ func (c *Client) tryMatchSOLResponse(recv []byte, wantAck uint8) (bool, error) {
 	return true, nil
 }
 
+// lanCloseContextKey lets only the shutdown operation send CloseSession after
+// normal commands have been stopped.
+type lanCloseContextKey struct{}
+
 func (c *Client) exchangeLAN(ctx context.Context, request types.Request, response types.Response) error {
+	closed := c.lanClosed
+	if ctx.Value(lanCloseContextKey{}) == c {
+		closed = nil
+	}
 	select {
 	case c.lanExchange <- struct{}{}:
 		defer func() { <-c.lanExchange }()
 	case <-ctx.Done():
 		return fmt.Errorf("wait for LAN exchange: %w", ctx.Err())
+	case <-closed:
+		return net.ErrClosed
+	}
+	select {
+	case <-closed:
+		return net.ErrClosed
+	default:
 	}
 	if err := ctx.Err(); err != nil {
 		return fmt.Errorf("start LAN exchange: %w", err)
@@ -309,7 +324,7 @@ func (c *Client) Connect15(ctx context.Context) error {
 	}
 
 	// The Connect context bounds setup. Client.Close owns the established session lifetime.
-	go c.keepSessionAlive(context.WithoutCancel(ctx), DefaultKeepAliveIntervalSec)
+	c.startSessionKeepalive(ctx, DefaultKeepAliveIntervalSec)
 
 	return nil
 
@@ -396,7 +411,7 @@ func (c *Client) Connect20(ctx context.Context) error {
 	}
 
 	// The Connect context bounds setup. Client.Close owns the established session lifetime.
-	go c.keepSessionAlive(context.WithoutCancel(ctx), DefaultKeepAliveIntervalSec)
+	c.startSessionKeepalive(ctx, DefaultKeepAliveIntervalSec)
 
 	return nil
 }
@@ -429,14 +444,46 @@ func (c *Client) ConnectAuto(ctx context.Context) error {
 	return fmt.Errorf("client does not support IPMI v1.5 and IPMI v.20")
 }
 
-// closeLAN closes session used in LAN communication.
-func (c *Client) closeLAN(ctx context.Context) error {
-	// close the channel to notify the keepAliveSession goroutine to stop
-	close(c.closedCh)
-
-	// Closing the network connection must not depend on the BMC replying to
-	// close session, it always needs to be done or we will have a resource leak.
-	// For example a timed-out or unreachable BMC must not leave the socket open.
+// closeLAN stops keepalive before ending the session, and always releases the
+// socket even when the BMC does not reply. Concurrent callers share one close.
+func (c *Client) closeLAN(ctx context.Context) (closeErr error) {
+	c.lock()
+	if done := c.closeDone; done != nil {
+		c.unlock()
+		select {
+		case <-done:
+			c.lock()
+			err := c.closeErr
+			c.unlock()
+			return err
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	c.closeDone = make(chan struct{})
+	close(c.lanClosed)
+	cancel, done := c.keepaliveCancel, c.keepaliveDone
+	c.unlock()
+	defer func() {
+		if err := c.udpClient.Close(); err != nil {
+			closeErr = errors.Join(closeErr, fmt.Errorf("close UDP connection failed: %w", err))
+		}
+		c.lock()
+		c.closeErr = closeErr
+		close(c.closeDone)
+		c.unlock()
+	}()
+	if cancel != nil {
+		cancel()
+	}
+	if done != nil {
+		select {
+		case <-done:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	c.lock()
 	var sessionID uint32
 	var sessionActive bool
 	if c.v20 {
@@ -446,26 +493,27 @@ func (c *Client) closeLAN(ctx context.Context) error {
 		sessionID = c.session.v15.sessionID
 		sessionActive = c.session.v15.active
 	}
-
-	// Only active sessions can carry CloseSession. Check protocol state because
-	// Connect can fail after activation while setting the session privilege level.
-	var sessionErr error
+	c.unlock()
+	// Connect can fail after activation while setting session privilege level.
 	if sessionActive {
-		request := &app.CloseSessionRequest{
-			SessionID: sessionID,
-		}
-		_, sessionErr = c.CloseSession(ctx, request)
-		if sessionErr != nil {
-			sessionErr = fmt.Errorf("CloseSession failed, err: %w", sessionErr)
+		closeCtx := context.WithValue(ctx, lanCloseContextKey{}, c)
+		if _, err := c.CloseSession(closeCtx, &app.CloseSessionRequest{SessionID: sessionID}); err != nil {
+			return fmt.Errorf("CloseSession failed: %w", err)
 		}
 	}
+	return nil
+}
 
-	connectionErr := c.udpClient.Close()
-	if connectionErr != nil {
-		connectionErr = fmt.Errorf("close UDP connection failed, err: %w", connectionErr)
-	}
-
-	return errors.Join(sessionErr, connectionErr)
+func (c *Client) startSessionKeepalive(ctx context.Context, intervalSec int) {
+	ctx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	done := make(chan struct{})
+	c.lock()
+	c.keepaliveCancel, c.keepaliveDone = cancel, done
+	c.unlock()
+	go func() {
+		defer close(done)
+		c.keepSessionAlive(ctx, intervalSec)
+	}()
 }
 
 // 6.12.15 Session Inactivity Timeouts
@@ -481,7 +529,7 @@ func (c *Client) keepSessionAlive(ctx context.Context, intervalSec int) {
 			if _, err := c.GetCurrentSessionInfo(ctx); err != nil {
 				c.DebugfRed("keepSessionAlive failed, GetCurrentSessionInfo failed, err: %w", err)
 			}
-		case <-c.closedCh:
+		case <-ctx.Done():
 			c.Debugf("got close signal, keepSessionAlive stopped\n")
 			return
 		}

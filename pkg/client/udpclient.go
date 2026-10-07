@@ -31,12 +31,12 @@ type UDPClient struct {
 	timeout    time.Duration
 	bufferSize int
 
-	conn   net.Conn
-	closed bool
-
-	// lock is used to protect udp Exchange method to prevent another
-	// send/receive operation from occurring while one is in progress.
-	lock sync.Mutex
+	// lock protects connection ownership, never network I/O.
+	lock         sync.Mutex
+	conn         net.Conn
+	exchange     chan struct{}
+	generation   uint64
+	activeCancel context.CancelCauseFunc
 }
 
 func NewUDPClient(host string, port int) *UDPClient {
@@ -49,47 +49,82 @@ func NewUDPClient(host string, port int) *UDPClient {
 	return udpClient
 }
 
-func (c *UDPClient) initConn() error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
-	if c.conn != nil && !c.closed {
-		return nil
+// dialUDP honors ContextDialer when available. A legacy Dialer cannot be
+// interrupted, but a connection returned after cancellation must not leak.
+func dialUDP(ctx context.Context, dialer proxy.Dialer, addr string) (net.Conn, error) {
+	if dialer == nil {
+		return (&net.Dialer{}).DialContext(ctx, "udp", addr)
 	}
-
-	if c.proxy != nil {
-		conn, err := c.proxy.Dial("udp", fmt.Sprintf("%s:%d", c.Host, c.Port))
-		if err != nil {
-			return fmt.Errorf("udp proxy dial failed, err: %w", err)
+	if d, ok := dialer.(proxy.ContextDialer); ok {
+		return d.DialContext(ctx, "udp", addr)
+	}
+	type result struct {
+		conn net.Conn
+		err  error
+	}
+	done := make(chan result)
+	go func() {
+		conn, err := dialer.Dial("udp", addr)
+		select {
+		case done <- result{conn, err}:
+		case <-ctx.Done():
+			if conn != nil {
+				_ = conn.Close()
+			}
 		}
-		c.conn = conn
-		return nil
+	}()
+	select {
+	case r := <-done:
+		return r.conn, r.err
+	case <-ctx.Done():
+		return nil, ctx.Err()
 	}
+}
 
-	remoteAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", c.Host, c.Port))
-	if err != nil {
-		return fmt.Errorf("resolve addr failed, err: %w", err)
+func (c *UDPClient) initConn(ctx context.Context, generation uint64) (net.Conn, error) {
+	c.lock.Lock()
+	conn, dialer := c.conn, c.proxy
+	addr := net.JoinHostPort(c.Host, strconv.Itoa(c.Port))
+	c.lock.Unlock()
+	if conn != nil {
+		return conn, nil
 	}
-	conn, err := net.DialUDP("udp", nil, remoteAddr)
+	conn, err := dialUDP(ctx, dialer, addr)
 	if err != nil {
-		return fmt.Errorf("udp dial failed, err: %w", err)
+		return nil, fmt.Errorf("udp dial failed: %w", err)
+	}
+	c.lock.Lock()
+	if c.generation != generation || ctx.Err() != nil {
+		c.lock.Unlock()
+		_ = conn.Close()
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		return nil, net.ErrClosed
 	}
 	c.conn = conn
-	return nil
+	c.lock.Unlock()
+	return conn, nil
 }
 
 func (c *UDPClient) SetProxy(proxy proxy.Dialer) *UDPClient {
+	c.lock.Lock()
 	c.proxy = proxy
+	c.lock.Unlock()
 	return c
 }
 
 func (c *UDPClient) SetTimeout(timeout time.Duration) *UDPClient {
+	c.lock.Lock()
 	c.timeout = timeout
+	c.lock.Unlock()
 	return c
 }
 
 func (c *UDPClient) SetBufferSize(bufferSize int) *UDPClient {
+	c.lock.Lock()
 	c.bufferSize = bufferSize
+	c.lock.Unlock()
 	return c
 }
 
@@ -115,244 +150,148 @@ func (c *UDPClient) LocalIPPort() (string, int) {
 	return host, p
 }
 
+// Close interrupts the active exchange and invalidates calls already waiting
+// for it. A later exchange may open a new connection.
 func (c *UDPClient) Close() error {
 	c.lock.Lock()
-	defer c.lock.Unlock()
-
-	if c.conn == nil {
-		return nil
+	conn, cancel := c.conn, c.activeCancel
+	c.conn, c.activeCancel = nil, nil
+	c.generation++
+	c.lock.Unlock()
+	if cancel != nil {
+		cancel(net.ErrClosed)
 	}
-
-	if err := c.conn.Close(); err != nil {
-		return fmt.Errorf("close udp conn failed, err: %w", err)
+	if conn != nil {
+		if err := conn.Close(); err != nil {
+			return fmt.Errorf("close udp conn failed: %w", err)
+		}
 	}
-
-	c.conn = nil
-	c.closed = true
 	return nil
 }
 
-// Exchange performs a synchronous UDP query.
-// It sends the request, and waits for a reply.
-// Exchange does not retry a failed query.
-// The sent content is read from reader.
+// Exchange sends the request read from reader and returns the first reply.
+// It does not retry. Context cancellation interrupts socket I/O and waiting
+// for another exchange. The reader must not block indefinitely.
 func (c *UDPClient) Exchange(ctx context.Context, reader io.Reader) ([]byte, error) {
-	if err := c.initConn(); err != nil {
-		return nil, fmt.Errorf("init udp connection failed, err: %w", err)
+	return c.exchangeDatagrams(ctx, reader, nil)
+}
+
+// ExchangeUntilMatch sends the request, then discards datagrams until match
+// returns true or an error. One deadline covers the entire operation, including
+// writes and rejected datagrams: the earlier of ctx's deadline and the client
+// timeout. With no matching reply it returns errNoDatagramMatched; caller
+// cancellation preserves the context error. The reader and match callback run
+// synchronously and must return promptly.
+func (c *UDPClient) ExchangeUntilMatch(ctx context.Context, reader io.Reader, match func([]byte) (bool, error)) ([]byte, error) {
+	return c.exchangeDatagrams(ctx, reader, match)
+}
+
+func (c *UDPClient) exchangeDatagrams(ctx context.Context, reader io.Reader, match func([]byte) (bool, error)) ([]byte, error) {
+	c.lock.Lock()
+	if c.exchange == nil {
+		c.exchange = make(chan struct{}, 1)
 	}
-
-	recvBuffer := make([]byte, c.bufferSize)
-
-	// Use a single goroutine to handle the entire exchange operation
-	// This ensures proper context cancellation and resource cleanup
-	resultChan := make(chan struct {
-		data []byte
-		err  error
-	}, 1)
-
-	go func() {
-		defer close(resultChan)
-
-		c.lock.Lock()
-		defer c.lock.Unlock()
-
-		// Step 1: Check if context is already cancelled
-		if ctx.Err() != nil {
-			return
-		}
-
-		// Step 2: Send the request
-		_, err := io.Copy(c.conn, reader)
-		if err != nil {
-			resultChan <- struct {
-				data []byte
-				err  error
-			}{nil, fmt.Errorf("write to conn failed, err: %w", err)}
-			return
-		}
-
-		// Step 3: Check context after write
-		if ctx.Err() != nil {
-			return
-		}
-
-		// Step 4: Set read deadline
-		// Use context deadline if available, otherwise use configured timeout
-		deadline := time.Now().Add(c.timeout)
-		if ctxDeadline, ok := ctx.Deadline(); ok {
-			// Use the earlier deadline between context and configured timeout
-			if ctxDeadline.Before(deadline) {
-				deadline = ctxDeadline
-			}
-		}
-		err = c.conn.SetReadDeadline(deadline)
-		if err != nil {
-			resultChan <- struct {
-				data []byte
-				err  error
-			}{nil, fmt.Errorf("set conn read deadline failed, err: %w", err)}
-			return
-		}
-
-		// Step 5: Read the response
-		nRead, err := c.conn.Read(recvBuffer)
-
-		// Step 6: Check context after read (in case context was cancelled during read)
-		if ctx.Err() != nil {
-			return
-		}
-
-		if err != nil {
-			resultChan <- struct {
-				data []byte
-				err  error
-			}{nil, fmt.Errorf("read from conn failed, err: %w", err)}
-			return
-		}
-
-		// Step 7: Return the response data
-		resultChan <- struct {
-			data []byte
-			err  error
-		}{recvBuffer[:nRead], nil}
-	}()
-
-	// Wait for the result or context cancellation
+	gate, generation := c.exchange, c.generation
+	c.lock.Unlock()
 	select {
+	case gate <- struct{}{}:
+		defer func() { <-gate }()
 	case <-ctx.Done():
-		return nil, fmt.Errorf("canceled from caller: %w", ctx.Err())
-	case result, ok := <-resultChan:
+		return nil, ctx.Err()
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	opCtx, cancel := context.WithCancelCause(ctx)
+	c.lock.Lock()
+	if generation != c.generation {
+		c.lock.Unlock()
+		cancel(net.ErrClosed)
+		return nil, net.ErrClosed
+	}
+	c.activeCancel = cancel
+	timeout, bufferSize := c.timeout, c.bufferSize
+	c.lock.Unlock()
+	defer func() {
+		cancel(nil)
+		c.lock.Lock()
+		if generation == c.generation {
+			c.activeCancel = nil
+		}
+		c.lock.Unlock()
+	}()
+	deadline := time.Now().Add(timeout)
+	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
+		deadline = d
+	}
+	dialCtx, dialCancel := context.WithDeadline(opCtx, deadline)
+	conn, err := c.initConn(dialCtx, generation)
+	dialCancel()
+	if err != nil {
+		return nil, udpExchangeError(opCtx, err)
+	}
+	if err := conn.SetDeadline(deadline); err != nil {
+		return nil, udpExchangeError(opCtx, err)
+	}
+	// Join an already-running callback before releasing the exchange slot: a
+	// late deadline update must never interrupt the next exchange on this socket.
+	interrupted := make(chan struct{})
+	stop := context.AfterFunc(opCtx, func() {
+		defer close(interrupted)
+		_ = conn.SetDeadline(time.Now())
+	})
+	defer func() {
+		if !stop() {
+			<-interrupted
+		}
+	}()
+	if err := opCtx.Err(); err != nil {
+		return nil, udpExchangeError(opCtx, err)
+	}
+	if _, err := io.Copy(conn, reader); err != nil {
+		return nil, fmt.Errorf("write to conn failed: %w", udpExchangeError(opCtx, err))
+	}
+	recvBuffer := make([]byte, bufferSize)
+	for {
+		if err := opCtx.Err(); err != nil {
+			return nil, udpExchangeError(opCtx, err)
+		}
+		n, err := conn.Read(recvBuffer)
+		if err != nil {
+			err = udpExchangeError(opCtx, err)
+			var ne net.Error
+			if match != nil && !errors.Is(err, context.DeadlineExceeded) && errors.As(err, &ne) && ne.Timeout() {
+				return nil, errNoDatagramMatched
+			}
+			return nil, fmt.Errorf("read from conn failed: %w", err)
+		}
+		if err := opCtx.Err(); err != nil {
+			return nil, udpExchangeError(opCtx, err)
+		}
+		if match == nil {
+			return recvBuffer[:n], nil
+		}
+		recv := append([]byte(nil), recvBuffer[:n]...)
+		ok, err := match(recv)
+		if err != nil {
+			return nil, err
+		}
 		if ok {
-			return result.data, result.err
+			return recv, nil
 		}
-
-		if ctx.Err() != nil {
-			return nil, fmt.Errorf("canceled from caller: %w", ctx.Err())
+		if !time.Now().Before(deadline) {
+			return nil, udpExchangeError(opCtx, errNoDatagramMatched)
 		}
-		return nil, fmt.Errorf("result channel closed")
 	}
 }
 
-// ExchangeUntilMatch sends the payload read from reader as a single UDP datagram, then reads
-// repeatedly until match returns true for some received datagram, or until the overall deadline
-// elapses (the same deadline rules as Exchange: min of context deadline and client timeout).
-// Datagrams for which match returns (false, nil) are discarded and reading continues.
-//
-// Unlike Exchange, which returns the first datagram unconditionally, ExchangeUntilMatch filters
-// inbound traffic: stray packets, unrelated replies, or multiplexed traffic on the same socket can
-// be skipped by returning (false, nil) from match. If the deadline passes with no matching
-// datagram, the returned error indicates that no datagram satisfied match before the deadline.
-//
-// If match returns a non-nil error, that error is returned immediately. When match returns
-// (true, nil), the corresponding datagram's payload is returned.
-func (c *UDPClient) ExchangeUntilMatch(ctx context.Context, reader io.Reader, match func(recv []byte) (ok bool, err error)) ([]byte, error) {
-	if err := c.initConn(); err != nil {
-		return nil, fmt.Errorf("init udp connection failed, err: %w", err)
+func udpExchangeError(ctx context.Context, err error) error {
+	if cause := context.Cause(ctx); cause != nil {
+		return cause
 	}
-
-	recvBuffer := make([]byte, c.bufferSize)
-	resultChan := make(chan struct {
-		data []byte
-		err  error
-	}, 1)
-
-	go func() {
-		defer close(resultChan)
-
-		c.lock.Lock()
-		defer c.lock.Unlock()
-
-		if ctx.Err() != nil {
-			return
-		}
-
-		_, err := io.Copy(c.conn, reader)
-		if err != nil {
-			resultChan <- struct {
-				data []byte
-				err  error
-			}{nil, fmt.Errorf("write to conn failed, err: %w", err)}
-			return
-		}
-
-		if ctx.Err() != nil {
-			return
-		}
-
-		deadline := time.Now().Add(c.timeout)
-		if ctxDeadline, ok := ctx.Deadline(); ok && ctxDeadline.Before(deadline) {
-			deadline = ctxDeadline
-		}
-
-		for {
-			if ctx.Err() != nil {
-				return
-			}
-
-			remaining := time.Until(deadline)
-			if remaining <= 0 {
-				resultChan <- struct {
-					data []byte
-					err  error
-				}{nil, errNoDatagramMatched}
-				return
-			}
-
-			readDur := remaining
-			if c.timeout > 0 && c.timeout < remaining {
-				readDur = c.timeout
-			}
-
-			err := c.conn.SetReadDeadline(time.Now().Add(readDur))
-			if err != nil {
-				resultChan <- struct {
-					data []byte
-					err  error
-				}{nil, fmt.Errorf("set conn read deadline failed, err: %w", err)}
-				return
-			}
-
-			nRead, err := c.conn.Read(recvBuffer)
-			if err != nil {
-				if ne, ok := err.(net.Error); ok && ne.Timeout() {
-					continue
-				}
-				resultChan <- struct {
-					data []byte
-					err  error
-				}{nil, fmt.Errorf("read from conn failed, err: %w", err)}
-				return
-			}
-
-			recv := append([]byte(nil), recvBuffer[:nRead]...)
-			ok, mErr := match(recv)
-			if mErr != nil {
-				resultChan <- struct {
-					data []byte
-					err  error
-				}{nil, mErr}
-				return
-			}
-			if ok {
-				resultChan <- struct {
-					data []byte
-					err  error
-				}{recv, nil}
-				return
-			}
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-		return nil, fmt.Errorf("canceled from caller: %w", ctx.Err())
-	case result, ok := <-resultChan:
-		if ok {
-			return result.data, result.err
-		}
-		if ctx.Err() != nil {
-			return nil, fmt.Errorf("canceled from caller: %w", ctx.Err())
-		}
-		return nil, fmt.Errorf("result channel closed")
+	// A socket deadline can fire just before the context timer is scheduled.
+	if deadline, ok := ctx.Deadline(); ok && !time.Now().Before(deadline) {
+		return context.DeadlineExceeded
 	}
+	return err
 }

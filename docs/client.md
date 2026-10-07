@@ -102,6 +102,20 @@ sequence numbers aligned with wire order. A caller waiting for another exchange
 can cancel that wait with its context. Configure and connect the client before
 starting concurrent command calls.
 
+`Close(ctx)` stops new commands, cancels and joins keepalive, attempts to close
+the BMC session within the supplied context, and always closes the UDP socket.
+Concurrent and repeated closes share the result; a waiting caller can cancel its
+own wait. Create a new client to connect again after closing it.
+
+UDP reads, writes, and exchange-slot waits honor caller cancellation. The UDP
+transport can be reused after cancellation or Close. Proxy dialers implementing
+`proxy.ContextDialer` also receive cancellation. Legacy `proxy.Dialer` calls
+cannot be interrupted internally; the caller can still return promptly, and any
+connection returned later is closed. A legacy dialer that never returns can
+retain its dial goroutine; use a context-aware dialer when bounded cleanup is
+required. Custom request readers and datagram match callbacks must return
+promptly because they run synchronously.
+
 ## Spec commands vs helpers
 
 Specification commands are request/response pairs exposed as `Client` methods
