@@ -297,3 +297,38 @@ func TestUDPExchangeJoinsCancellationCallback(t *testing.T) {
 		t.Fatalf("next exchange: %v", err)
 	}
 }
+
+func TestUDPExchangePreservesCancellationCause(t *testing.T) {
+	for name, exchange := range udpExchanges {
+		t.Run(name, func(t *testing.T) {
+			for _, deadline := range []bool{false, true} {
+				t.Run(fmt.Sprint(deadline), func(t *testing.T) {
+					c, received := newUDPTestPeer(t)
+					cause := errors.New("caller stopped polling")
+					var ctx context.Context
+					var cancel func()
+					want := context.Canceled
+					if deadline {
+						ctx, cancel = context.WithTimeoutCause(context.Background(), 60*time.Millisecond, cause)
+						want = context.DeadlineExceeded
+					} else {
+						var cancelCause context.CancelCauseFunc
+						ctx, cancelCause = context.WithCancelCause(context.Background())
+						cancel = func() { cancelCause(cause) }
+					}
+					defer cancel()
+					done := make(chan error, 1)
+					go func() { _, err := exchange(c, ctx, strings.NewReader("hold")); done <- err }()
+					<-received
+					if !deadline {
+						cancel()
+					}
+					err := awaitUDPResult(t, done)
+					if !errors.Is(err, want) {
+						t.Fatalf("error = %v, want identity %v", err, want)
+					}
+				})
+			}
+		})
+	}
+}
