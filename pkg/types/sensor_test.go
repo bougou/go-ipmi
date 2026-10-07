@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"math"
 	"testing"
 )
 
@@ -50,5 +51,27 @@ func Test_ConvertReading(t *testing.T) {
 		v := ConvertReading(tt.raw, tt.analogDataFormat, tt.factors, tt.linearizationFunc)
 		fmt.Println(v)
 		// Todo
+	}
+}
+
+func TestConvertReadingEXP10FractionalExponent(t *testing.T) {
+	tests := []struct {
+		name string
+		raw  uint8
+		want float64
+	}{
+		{name: "positive", raw: 15, want: 31.622776601683793},
+		{name: "negative", raw: 0xf1, want: 0.03162277660168379},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Scaling signed readings of +/-15 gives exponents of +/-1.5.
+			got := ConvertReading(tt.raw, SensorAnalogUnitFormat_2sComplement,
+				ReadingFactors{M: 1, R_Exp: -1}, LinearizationFunc_EXP10)
+			if math.IsNaN(got) || math.Abs(got-tt.want) > 1e-12*tt.want {
+				t.Fatalf("ConvertReading() = %.17g, want %.17g", got, tt.want)
+			}
+		})
 	}
 }
