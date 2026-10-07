@@ -260,7 +260,7 @@ func (c *UDPClient) exchangeDatagrams(ctx context.Context, reader io.Reader, mat
 		if err != nil {
 			err = udpExchangeError(opCtx, err)
 			var ne net.Error
-			if match != nil && !errors.Is(err, context.DeadlineExceeded) && errors.As(err, &ne) && ne.Timeout() {
+			if match != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) && errors.As(err, &ne) && ne.Timeout() {
 				return nil, errNoDatagramMatched
 			}
 			return nil, fmt.Errorf("read from conn failed: %w", err)
