@@ -527,7 +527,7 @@ func (l LinearizationFunc) Apply(x float64) float64 {
 	case LinearizationFunc_E:
 		return math.Pow(math.E, float64(x))
 	case LinearizationFunc_EXP10:
-		return math.Pow10(int(x))
+		return math.Pow(10, x)
 	case LinearizationFunc_EXP2:
 		return math.Exp2(float64(x))
 	case LinearizationFunc_1X:
