@@ -72,7 +72,7 @@ func (b *DeviceBackend) Connect(ctx context.Context, devnum int32) error {
 }
 
 // Close closes the device file. Closing a backend that was never connected
-// is a no-op.
+// is a no-op. Context cancellation cannot interrupt kernel device teardown.
 func (b *DeviceBackend) Close(ctx context.Context) error {
 	if b.file == nil {
 		return nil
@@ -86,6 +86,8 @@ func (b *DeviceBackend) Close(ctx context.Context) error {
 
 // Send maps the transport-neutral Request onto a Linux openipmi ioctl
 // round trip and returns the response in the canonical "cc + payload" form.
+// Context cancellation interrupts the response wait, but cannot interrupt an
+// ioctl already executing in the kernel. Calls on a backend must be serialized.
 func (b *DeviceBackend) Send(ctx context.Context, req *Request, timeout time.Duration) ([]byte, error) {
 	if b.file == nil {
 		return nil, fmt.Errorf("device backend not connected")
@@ -93,7 +95,7 @@ func (b *DeviceBackend) Send(ctx context.Context, req *Request, timeout time.Dur
 	if req == nil {
 		return nil, fmt.Errorf("nil open request")
 	}
-	return sendCommand(b.file, req, timeout)
+	return sendCommand(ctx, b.file, req, timeout, setReq, getRecv)
 }
 
 func setReq(fd uintptr, op uintptr, req *IPMI_REQ) error {
@@ -110,7 +112,13 @@ func getRecv(fd uintptr, op uintptr, recv *IPMI_RECV) error {
 
 // sendCommand builds the openipmi ioctl structs from Request and performs
 // one send/receive round trip.
-func sendCommand(file *os.File, req *Request, timeout time.Duration) ([]byte, error) {
+func sendCommand(ctx context.Context, file *os.File, req *Request, timeout time.Duration,
+	send func(uintptr, uintptr, *IPMI_REQ) error,
+	receive func(uintptr, uintptr, *IPMI_RECV) error,
+) ([]byte, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if timeout == 0 {
 		timeout = DefaultTimeout
 	}
@@ -142,7 +150,10 @@ func sendCommand(file *os.File, req *Request, timeout time.Duration) ([]byte, er
 
 	fd := file.Fd()
 	for {
-		switch err := setReq(fd, IPMICTL_SEND_COMMAND, kernelReq); {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		switch err := send(fd, IPMICTL_SEND_COMMAND, kernelReq); {
 		case err == syscall.EINTR:
 			continue
 		case err != nil:
@@ -169,7 +180,7 @@ func sendCommand(file *os.File, req *Request, timeout time.Duration) ([]byte, er
 	var rerr error
 
 	readMsgFunc := func(fd uintptr) bool {
-		if err := getRecv(fd, IPMICTL_RECEIVE_MSG_TRUNC, recv); err != nil {
+		if err := receive(fd, IPMICTL_RECEIVE_MSG_TRUNC, recv); err != nil {
 			rerr = fmt.Errorf("getRecv failed, err: %w", err)
 			return false
 		}
@@ -193,11 +204,34 @@ func sendCommand(file *os.File, req *Request, timeout time.Duration) ([]byte, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to get syscall conn from file: %s", err)
 	}
-	if err := file.SetReadDeadline(time.Now().Add(timeout)); err != nil {
-		return nil, fmt.Errorf("failed to set read deadline on file: %s", err)
+	deadline := time.Now().Add(timeout)
+	contextDeadline, hasContextDeadline := ctx.Deadline()
+	if hasContextDeadline && contextDeadline.Before(deadline) {
+		deadline = contextDeadline
 	}
-	if err := conn.Read(readMsgFunc); err != nil {
-		return nil, fmt.Errorf("failed to read from syscall conn: %s", err)
+	if err := file.SetReadDeadline(deadline); err != nil {
+		return nil, fmt.Errorf("failed to set read deadline on file: %w", err)
+	}
+	canceled := make(chan struct{})
+	stop := context.AfterFunc(ctx, func() {
+		_ = file.SetReadDeadline(time.Now())
+		close(canceled)
+	})
+	readErr := conn.Read(readMsgFunc)
+	if !stop() {
+		// Join before returning so a late callback cannot expire the next read.
+		<-canceled
+	}
+	_ = file.SetReadDeadline(time.Time{})
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if readErr != nil {
+		// The poller deadline can fire just before the context timer runs.
+		if hasContextDeadline && !time.Now().Before(contextDeadline) {
+			return nil, context.DeadlineExceeded
+		}
+		return nil, fmt.Errorf("failed to read from syscall conn: %w", readErr)
 	}
 
 	// Keep Go-backed pointers alive across the ioctl round trip.
