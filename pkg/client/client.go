@@ -97,9 +97,13 @@ type Client struct {
 	// Ignored on non-Windows platforms.
 	openBackendPref string
 
-	// closedCh is closed when Client.Close() is called.
-	// used to notify other goroutines that Client is closed.
-	closedCh chan bool
+	// LAN lifecycle state is protected by l. Closing rejects new commands;
+	// closeDone publishes the result to concurrent and repeated Close calls.
+	lanClosed       chan struct{}
+	closeDone       chan struct{}
+	closeErr        error
+	keepaliveCancel context.CancelFunc
+	keepaliveDone   chan struct{}
 }
 
 func NewOpenClient() (*Client, error) {
@@ -164,7 +168,7 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 			},
 		},
 
-		closedCh:    make(chan bool),
+		lanClosed:   make(chan struct{}),
 		lanExchange: make(chan struct{}, 1),
 	}
 

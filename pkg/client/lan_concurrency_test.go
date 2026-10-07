@@ -125,8 +125,9 @@ func TestLANConcurrentCommandsAndKeepalive(t *testing.T) {
 			c, closeClient := newLANConcurrencyClient(t, intf, server.WithHandlerRegistry(registry))
 			// Exercise the real keepalive loop without waiting for its 30-second default.
 			keepaliveDone := make(chan struct{})
-			go func() { defer close(keepaliveDone); c.keepSessionAlive(context.Background(), 1) }()
-			defer func() { closeClient(); <-keepaliveDone }()
+			keepaliveCtx, cancelKeepalive := context.WithCancel(context.Background())
+			go func() { defer close(keepaliveDone); c.keepSessionAlive(keepaliveCtx, 1) }()
+			defer func() { cancelKeepalive(); <-keepaliveDone; closeClient() }()
 			var wg sync.WaitGroup
 			errs := make(chan error, 8)
 			start := make(chan struct{})
