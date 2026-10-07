@@ -165,6 +165,28 @@ func (c *Client) exchangeLAN(ctx context.Context, request types.Request, respons
 	if err := ctx.Err(); err != nil {
 		return fmt.Errorf("start LAN exchange: %w", err)
 	}
+	if closed != nil {
+		exchangeCtx, cancel := context.WithCancelCause(ctx)
+		c.lock()
+		select {
+		case <-closed:
+			c.unlock()
+			cancel(net.ErrClosed)
+			return net.ErrClosed
+		default:
+		}
+		// Publish under the same lock as Close: cancellation must also cover time
+		// between UDP attempts, when no transport operation is registered.
+		c.activeLANCancel = cancel
+		c.unlock()
+		defer func() {
+			c.lock()
+			c.activeLANCancel = nil
+			c.unlock()
+			cancel(nil)
+		}()
+		ctx = exchangeCtx
+	}
 
 	c.Debug(">> Command Request", request)
 
@@ -463,6 +485,7 @@ func (c *Client) closeLAN(ctx context.Context) (closeErr error) {
 	c.closeDone = make(chan struct{})
 	close(c.lanClosed)
 	cancel, done := c.keepaliveCancel, c.keepaliveDone
+	activeCancel := c.activeLANCancel
 	c.unlock()
 	defer func() {
 		if err := c.udpClient.Close(); err != nil {
@@ -473,6 +496,9 @@ func (c *Client) closeLAN(ctx context.Context) (closeErr error) {
 		close(c.closeDone)
 		c.unlock()
 	}()
+	if activeCancel != nil {
+		activeCancel(net.ErrClosed)
+	}
 	if cancel != nil {
 		cancel()
 	}

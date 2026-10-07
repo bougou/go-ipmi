@@ -287,7 +287,10 @@ func (c *UDPClient) exchangeDatagrams(ctx context.Context, reader io.Reader, mat
 
 func udpExchangeError(ctx context.Context, err error) error {
 	if cause := context.Cause(ctx); cause != nil {
-		return cause
+		if errors.Is(cause, ctx.Err()) {
+			return cause
+		}
+		return errors.Join(ctx.Err(), cause)
 	}
 	// A socket deadline can fire just before the context timer is scheduled.
 	if deadline, ok := ctx.Deadline(); ok && !time.Now().Before(deadline) {

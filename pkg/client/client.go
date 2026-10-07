@@ -102,6 +102,7 @@ type Client struct {
 	lanClosed       chan struct{}
 	closeDone       chan struct{}
 	closeErr        error
+	activeLANCancel context.CancelCauseFunc
 	keepaliveCancel context.CancelFunc
 	keepaliveDone   chan struct{}
 }

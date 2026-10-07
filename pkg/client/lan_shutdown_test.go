@@ -189,3 +189,60 @@ func TestLANCloseDeadlineInterruptsCommand(t *testing.T) {
 		})
 	}
 }
+
+type pausedLANTimeout struct{ entered, release chan struct{} }
+
+func (*pausedLANTimeout) Error() string   { return "test timeout" }
+func (*pausedLANTimeout) Temporary() bool { return true }
+func (e *pausedLANTimeout) Timeout() bool { close(e.entered); <-e.release; return true }
+
+type retryLANConn struct {
+	closeTrackingConn
+	timeout *pausedLANTimeout
+}
+
+func (c *retryLANConn) Write(b []byte) (int, error) { return len(b), nil }
+func (c *retryLANConn) Read([]byte) (int, error) {
+	return 0, &net.OpError{Op: "read", Net: "udp", Err: c.timeout}
+}
+
+type retryLANDialer struct {
+	conn  net.Conn
+	calls atomic.Int32
+}
+
+func (d *retryLANDialer) Dial(string, string) (net.Conn, error) {
+	if d.calls.Add(1) != 1 {
+		return nil, errors.New("unexpected redial")
+	}
+	return d.conn, nil
+}
+func TestLANClosePreventsRetryReopeningUDP(t *testing.T) {
+	timeout := &pausedLANTimeout{make(chan struct{}), make(chan struct{})}
+	defer func() {
+		select {
+		case <-timeout.release:
+		default:
+			close(timeout.release)
+		}
+	}()
+	dialer := &retryLANDialer{conn: &retryLANConn{timeout: timeout}}
+	c, err := NewClient("127.0.0.1", 623, "test", "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.WithUDPProxy(dialer).WithRetry(1)
+	done := make(chan error, 1)
+	go func() { _, err := c.RmcpPing(context.Background()); done <- err }()
+	<-timeout.entered
+	if err := c.Close(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	close(timeout.release)
+	if err := awaitUDPResult(t, done); err == nil {
+		t.Fatal("closed command succeeded")
+	}
+	if got := dialer.calls.Load(); got != 1 {
+		t.Fatalf("Close was followed by another dial; calls = %d", got)
+	}
+}
