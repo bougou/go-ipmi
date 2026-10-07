@@ -79,6 +79,10 @@ type Client struct {
 
 	l sync.Mutex
 
+	// lanExchange serializes packet construction through response parsing. It is
+	// separate from l, which response handlers (including SOL delivery) may acquire.
+	lanExchange chan struct{}
+
 	// fruMaxReadSize is the largest Read FRU Data count that succeeded (or was
 	// negotiated down after C7/C8/CAh). Zero means uninitialized; tryReadFRUData
 	// starts from defaultFRUReadSize and remembers reductions across chunks.
@@ -160,7 +164,8 @@ func NewClient(host string, port int, user string, pass string) (*Client, error)
 			},
 		},
 
-		closedCh: make(chan bool),
+		closedCh:    make(chan bool),
+		lanExchange: make(chan struct{}, 1),
 	}
 
 	c.udpClient = &UDPClient{

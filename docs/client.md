@@ -94,6 +94,14 @@ PowerShell fallback).
 | `WithOpenBackend`          | Windows open backend selection      |
 | `WithUDPProxy`             | Dial through a UDP proxy            |
 
+## Concurrent LAN commands
+
+LAN and LAN+ serialize each exchange from packet construction through response
+parsing, including session keepalive traffic. This keeps request and session
+sequence numbers aligned with wire order. A caller waiting for another exchange
+can cancel that wait with its context. Configure and connect the client before
+starting concurrent command calls.
+
 ## Spec commands vs helpers
 
 Specification commands are request/response pairs exposed as `Client` methods

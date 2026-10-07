@@ -141,6 +141,16 @@ func (c *Client) tryMatchSOLResponse(recv []byte, wantAck uint8) (bool, error) {
 }
 
 func (c *Client) exchangeLAN(ctx context.Context, request types.Request, response types.Response) error {
+	select {
+	case c.lanExchange <- struct{}{}:
+		defer func() { <-c.lanExchange }()
+	case <-ctx.Done():
+		return fmt.Errorf("wait for LAN exchange: %w", ctx.Err())
+	}
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("start LAN exchange: %w", err)
+	}
+
 	c.Debug(">> Command Request", request)
 
 	var wantSeq, wantCmd uint8
