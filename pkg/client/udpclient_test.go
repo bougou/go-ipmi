@@ -332,3 +332,19 @@ func TestUDPExchangePreservesCancellationCause(t *testing.T) {
 		})
 	}
 }
+
+func TestUDPExchangeUntilMatchCancellationIsNotReadTimeout(t *testing.T) {
+	c, received := newUDPTestPeer(t)
+	ctx, cancel := context.WithCancelCause(context.Background())
+	defer cancel(nil)
+	done := make(chan error, 1)
+	go func() {
+		_, err := c.ExchangeUntilMatch(ctx, strings.NewReader("hold"), func([]byte) (bool, error) { return true, nil })
+		done <- err
+	}()
+	<-received
+	cancel(&net.DNSError{Err: "caller canceled after another timeout", IsTimeout: true})
+	if err := awaitUDPResult(t, done); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancellation misclassified as read timeout: %v", err)
+	}
+}
