@@ -3,6 +3,43 @@
 #include <linux/ipmi.h>
 #include <stddef.h>
 #include <stdio.h>
+// Identify the compiler target independently of the Go test binary.
+#if defined(__x86_64__)
+#define ORACLE_GOARCH "amd64"
+#elif defined(__i386__)
+#define ORACLE_GOARCH "386"
+#elif defined(__aarch64__)
+#define ORACLE_GOARCH "arm64"
+#elif defined(__arm__)
+#define ORACLE_GOARCH "arm"
+#elif defined(__mips__)
+#if defined(__mips64)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define ORACLE_GOARCH "mips64le"
+#else
+#define ORACLE_GOARCH "mips64"
+#endif
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define ORACLE_GOARCH "mipsle"
+#else
+#define ORACLE_GOARCH "mips"
+#endif
+#elif defined(__powerpc64__)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define ORACLE_GOARCH "ppc64le"
+#else
+#define ORACLE_GOARCH "ppc64"
+#endif
+#elif defined(__s390x__)
+#define ORACLE_GOARCH "s390x"
+#elif defined(__riscv) && __riscv_xlen == 64
+#define ORACLE_GOARCH "riscv64"
+#elif defined(__loongarch__) && __loongarch_grlen == 64
+#define ORACLE_GOARCH "loong64"
+#else
+#define ORACLE_GOARCH "unknown"
+#endif
+
 #define VALUE(name, value) printf(name " %llu\n", (unsigned long long)(value))
 #define LAYOUT(t) VALUE(#t ".size", sizeof(struct t)); VALUE(#t ".align", _Alignof(struct t))
 #define FIELD(t, f) \
@@ -10,6 +47,7 @@
  VALUE(#t "." #f ".size", sizeof(((struct t *)0)->f)); \
  VALUE(#t "." #f ".signed", _Generic(((struct t *)0)->f, signed char: 1, short: 1, int: 1, long: 1, long long: 1, default: 0))
 int main(void) {
+    VALUE("target." ORACLE_GOARCH, 1);
     LAYOUT(ipmi_addr);
     FIELD(ipmi_addr, addr_type);
     FIELD(ipmi_addr, channel);

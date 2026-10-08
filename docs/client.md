@@ -105,16 +105,25 @@ GOARCH=arm GOARM=7 CGO_ENABLED=0 CC=arm-linux-gnueabihf-gcc \
   IPMI_UAPI_EXEC=qemu-arm go test -count=1 -exec=qemu-arm -v ./pkg/open
 ```
 
-Without an explicit `CC`, the oracle skips if `cc` is unavailable. CI sets `CC`
-explicitly, so a missing compiler fails the check. Use `-count=1` to recheck the
-external compiler and headers instead of reusing Go's test cache.
+Without an explicit `CC`, the oracle skips with diagnostics if it cannot find a
+compiler, build the probe, or match its target to the Go test binary's GOARCH.
+Setting `CC` explicitly makes these failures fatal; CI always does this. A
+matching target with incorrect layouts or ioctl values fails in either mode.
+`CC` accepts whitespace-separated compiler arguments, such as `CC="gcc -m32"`
+or `CC="ccache gcc"`. Cross-testing requires a compiler and `IPMI_UAPI_EXEC`
+for the target; the oracle checks its compiler target before comparing layouts.
+Use `-count=1` to recheck the external compiler and headers instead of reusing
+Go's test cache.
 
 **Low-level API compatibility:** correcting the kernel declarations changes
 exported field types in `IPMI_REQ`, `IPMI_RECV`, the address structs,
 `IPMI_CMDSPEC_CHANS`, and `IPMI_TIMING_PARAMS`. Code constructing these structs
 may need explicit conversions (for example, `MsgID: int(id)` and
 `AddrLen: uint32(length)`). The transport-neutral `Request` and `Backend` APIs
-are unchanged.
+are unchanged. The corrected `IOC_*` encoding constants also change the results
+of `IO`, `IOR`, `IOW`, and `IOWR` where applicable, and correct affected
+`IPMICTL_*` values (including command numbers on amd64). These value changes
+compile silently; callers now receive the Linux-defined numbers.
 
 ## Options
 

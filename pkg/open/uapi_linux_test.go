@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -18,21 +19,29 @@ import (
 // CC selects a cross-compiler; IPMI_UAPI_EXEC optionally runs its output under
 // an emulator. Go's -exec option must use the same target when cross-testing.
 func TestLinuxUAPI(t *testing.T) {
-	cc := os.Getenv("CC")
-	if cc == "" {
-		cc = "cc"
+	cc := strings.Fields(os.Getenv("CC"))
+	explicitCC := os.Getenv("CC") != ""
+	if len(cc) == 0 {
+		if explicitCC {
+			t.Fatal("CC must name a compiler")
+		}
+		cc = []string{"cc"}
 	}
-	compiler, err := exec.LookPath(cc)
+	compiler, err := exec.LookPath(cc[0])
 	if err != nil {
-		if os.Getenv("CC") != "" {
+		if explicitCC {
 			t.Fatal(err)
 		}
 		t.Skip("C ABI oracle requires a C compiler and Linux headers")
 	}
 	probe := filepath.Join(t.TempDir(), "uapi")
-	compile := exec.Command(compiler, "-std=c11", "-Wall", "-Wextra", "-Werror", "-static", "-o", probe, "testdata/uapi.c")
+	compileArgs := append(cc[1:], "-std=c11", "-Wall", "-Wextra", "-Werror", "-static", "-o", probe, "testdata/uapi.c")
+	compile := exec.Command(compiler, compileArgs...)
 	t.Logf("compile C ABI oracle: %q", compile.Args)
 	if out, err := compile.CombinedOutput(); err != nil {
+		if !explicitCC {
+			t.Skipf("C ABI oracle unavailable; set CC to require it: %v\n%s", err, out)
+		}
 		t.Fatalf("compile oracle: %v\n%s", err, out)
 	}
 	args := append(strings.Fields(os.Getenv("IPMI_UAPI_EXEC")), probe)
@@ -43,6 +52,7 @@ func TestLinuxUAPI(t *testing.T) {
 		t.Fatalf("run oracle: %v\n%s", err, output)
 	}
 	want := map[string]uint64{}
+	oracleTarget := "unknown"
 	reader := bytes.NewReader(output)
 	for {
 		var name string
@@ -53,8 +63,18 @@ func TestLinuxUAPI(t *testing.T) {
 			t.Fatalf("parse oracle: %v", err)
 		}
 		want[name] = value
+		if strings.HasPrefix(name, "target.") {
+			oracleTarget = strings.TrimPrefix(name, "target.")
+		}
 	}
-	got := map[string]uint64{}
+	if oracleTarget != runtime.GOARCH {
+		message := fmt.Sprintf("oracle target %s does not match GOARCH=%s; set CC and IPMI_UAPI_EXEC for the target", oracleTarget, runtime.GOARCH)
+		if !explicitCC {
+			t.Skip(message)
+		}
+		t.Fatal(message)
+	}
+	got := map[string]uint64{"target." + runtime.GOARCH: 1}
 	for _, layout := range []struct {
 		value        any
 		name, fields string
