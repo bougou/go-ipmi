@@ -230,10 +230,10 @@ func (c *UDPClient) exchangeDatagrams(ctx context.Context, reader io.Reader, mat
 	case gate <- struct{}{}:
 		defer func() { <-gate }()
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return nil, udpExchangeError(ctx, ctx.Err())
 	}
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return nil, udpExchangeError(ctx, err)
 	}
 	opCtx, cancel := context.WithCancelCause(ctx)
 	c.lock.Lock()

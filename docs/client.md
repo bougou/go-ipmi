@@ -116,6 +116,10 @@ it skips session cleanup; canceled setup cannot start another keepalive.
 Concurrent and repeated closes share the result; a waiting caller can cancel its
 own wait. Create a new client to connect again after closing it.
 
+Errors from canceled LAN command exchanges and setup calls match both the
+context error and its cancellation cause with `errors.Is`. Work stopped by
+`Close` matches `net.ErrClosed`, and a setup failure keeps its original error.
+
 UDP hostname resolution, reads, writes, and exchange-slot waits honor caller
 cancellation. Direct dialing retains IPv4 preference for dual-stack hostnames;
 IPv6-only names and scoped IPv6 literals are also supported. The UDP

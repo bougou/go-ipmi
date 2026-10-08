@@ -251,3 +251,21 @@ func TestLANClosePreventsRetryReopeningUDP(t *testing.T) {
 		t.Fatalf("Close was followed by another dial; calls = %d", got)
 	}
 }
+
+func TestLANCommandCancellationPreservesCause(t *testing.T) {
+	c, err := NewClient("127.0.0.1", 623, "test", "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = c.Close(context.Background()) }()
+	cause := errors.New("caller stopped polling")
+	// The exchange-slot select may take either ready case; repeat to cover the
+	// wait and post-acquire checks.
+	for range 20 {
+		ctx, cancel := context.WithCancelCause(context.Background())
+		cancel(cause)
+		if _, err := c.GetDeviceID(ctx); !errors.Is(err, context.Canceled) || !errors.Is(err, cause) {
+			t.Fatalf("canceled command: %v", err)
+		}
+	}
+}

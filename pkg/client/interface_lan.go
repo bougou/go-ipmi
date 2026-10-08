@@ -153,7 +153,7 @@ func (c *Client) exchangeLAN(ctx context.Context, request types.Request, respons
 	case c.lanExchange <- struct{}{}:
 		defer func() { <-c.lanExchange }()
 	case <-ctx.Done():
-		return fmt.Errorf("wait for LAN exchange: %w", ctx.Err())
+		return fmt.Errorf("wait for LAN exchange: %w", udpExchangeError(ctx, ctx.Err()))
 	case <-closed:
 		return net.ErrClosed
 	}
@@ -163,7 +163,7 @@ func (c *Client) exchangeLAN(ctx context.Context, request types.Request, respons
 	default:
 	}
 	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("start LAN exchange: %w", err)
+		return fmt.Errorf("start LAN exchange: %w", udpExchangeError(ctx, err))
 	}
 	if closed != nil {
 		exchangeCtx, cancel := context.WithCancelCause(ctx)
@@ -512,7 +512,7 @@ func (c *Client) connectLAN(ctx context.Context, setup func(context.Context) err
 		// Once keepalive is published, Close owns the session even if cancellation
 		// races this return. Do not report failure after successful publication.
 		if err != nil && ctx.Err() != nil {
-			err = udpExchangeError(ctx, err)
+			err = setupCancellationError(ctx, err)
 		}
 		c.lock()
 		c.connectCancel, c.connectDone = nil, nil
@@ -538,6 +538,15 @@ func (c *Client) connectLAN(ctx context.Context, setup func(context.Context) err
 		return err
 	}
 	return c.startSessionKeepalive(ctx, DefaultKeepAliveIntervalSec)
+}
+
+// setupCancellationError reports ctx's error and cause without discarding the
+// setup failure, unless err already reports both.
+func setupCancellationError(ctx context.Context, err error) error {
+	if errors.Is(err, ctx.Err()) && errors.Is(err, context.Cause(ctx)) {
+		return err
+	}
+	return errors.Join(udpExchangeError(ctx, ctx.Err()), err)
 }
 
 // closeLAN stops setup and keepalive before ending the session, and releases the

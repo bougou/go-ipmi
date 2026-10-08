@@ -348,3 +348,33 @@ func TestUDPExchangeUntilMatchCancellationIsNotReadTimeout(t *testing.T) {
 		t.Fatalf("cancellation misclassified as read timeout: %v", err)
 	}
 }
+
+func TestUDPExchangeSlotCancellationPreservesCause(t *testing.T) {
+	for name, exchange := range udpExchanges {
+		t.Run(name, func(t *testing.T) {
+			c, received := newUDPTestPeer(t)
+			cause := errors.New("caller stopped polling")
+			// Canceled before the call: the slot select may take either ready case,
+			// so repeat to cover the wait and post-acquire checks.
+			for range 20 {
+				ctx, cancel := context.WithCancelCause(context.Background())
+				cancel(cause)
+				if _, err := exchange(c, ctx, strings.NewReader("unused")); !errors.Is(err, context.Canceled) || !errors.Is(err, cause) {
+					t.Fatalf("canceled before start: %v", err)
+				}
+			}
+			active := make(chan error, 1)
+			go func() { _, err := exchange(c, context.Background(), strings.NewReader("hold")); active <- err }()
+			<-received
+			ctx, cancel := context.WithCancelCause(context.Background())
+			queued := make(chan error, 1)
+			go func() { _, err := exchange(c, ctx, strings.NewReader("queued")); queued <- err }()
+			cancel(cause)
+			if err := awaitUDPResult(t, queued); !errors.Is(err, context.Canceled) || !errors.Is(err, cause) {
+				t.Fatalf("canceled while queued: %v", err)
+			}
+			_ = c.Close()
+			_ = awaitUDPResult(t, active)
+		})
+	}
+}

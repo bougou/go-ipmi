@@ -481,3 +481,27 @@ func TestLANCallerCancellationAtConnectCompletion(t *testing.T) {
 		})
 	}
 }
+
+func TestLANCloseCancelsSetupAndKeepsSetupError(t *testing.T) {
+	c, _ := newLANSetupClient(t, InterfaceLanplus)
+	setupErr := errors.New("setup step failed")
+	entered := make(chan struct{})
+	connected := make(chan error, 1)
+	go func() {
+		connected <- c.connectLAN(context.Background(), func(ctx context.Context) error {
+			close(entered)
+			<-ctx.Done() // A setup step that is not inside a LAN exchange.
+			return setupErr
+		})
+	}()
+	waitLANSignal(t, entered)
+	closed := make(chan error, 1)
+	go func() { closed <- c.Close(context.Background()) }()
+	if err := awaitUDPResult(t, closed); err != nil {
+		t.Fatal(err)
+	}
+	err := awaitUDPResult(t, connected)
+	if !errors.Is(err, setupErr) || !errors.Is(err, net.ErrClosed) || !errors.Is(err, context.Canceled) {
+		t.Fatalf("setup canceled by Close: %v", err)
+	}
+}
