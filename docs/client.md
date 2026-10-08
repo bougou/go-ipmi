@@ -96,17 +96,18 @@ and mips, using QEMU for non-native targets. These checks validate the ABI;
 access to an IPMI device still depends on the host's kernel, hardware and device
 permissions. Emulation does not substitute for hardware testing.
 
-For a native Linux check, run `CC=cc go test -v ./pkg/open`. The C oracle needs
+For a native Linux check, run `CC=cc go test -count=1 -v ./pkg/open`. The C oracle needs
 Linux headers and static C libraries. Cross-testing also needs a target compiler
 and emulator, for example:
 
 ```sh
 GOARCH=arm GOARM=7 CGO_ENABLED=0 CC=arm-linux-gnueabihf-gcc \
-  IPMI_UAPI_EXEC=qemu-arm go test -exec=qemu-arm -v ./pkg/open
+  IPMI_UAPI_EXEC=qemu-arm go test -count=1 -exec=qemu-arm -v ./pkg/open
 ```
 
 Without an explicit `CC`, the oracle skips if `cc` is unavailable. CI sets `CC`
-explicitly, so a missing compiler fails the check.
+explicitly, so a missing compiler fails the check. Use `-count=1` to recheck the
+external compiler and headers instead of reusing Go's test cache.
 
 **Low-level API compatibility:** correcting the kernel declarations changes
 exported field types in `IPMI_REQ`, `IPMI_RECV`, the address structs,
