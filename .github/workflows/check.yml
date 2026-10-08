@@ -137,7 +137,8 @@ jobs:
           CGO_ENABLED: '0'
           CC: ${{ matrix.cc }}
           IPMI_UAPI_EXEC: ${{ matrix.runner }}
-        run: go test -exec="$IPMI_UAPI_EXEC" -v -timeout 120s ./pkg/open
+        # Headers and the external C compiler are not tracked by the Go test cache.
+        run: go test -count=1 -exec="$IPMI_UAPI_EXEC" -v -timeout 120s ./pkg/open
 
       - name: Build commands for target
         env:
