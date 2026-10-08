@@ -392,3 +392,92 @@ func TestLANCloseDeadlineDuringSetupClosesUDP(t *testing.T) {
 		t.Fatal("late keepalive after Close deadline")
 	}
 }
+
+// Exercise the small window between keepalive publication and Connect returning
+// through real LAN setup, without adding a production hook to that boundary.
+func TestLANCallerCancellationAtConnectCompletion(t *testing.T) {
+	for _, intf := range []Interface{InterfaceLan, InterfaceLanplus} {
+		t.Run(string(intf), func(t *testing.T) {
+			type cancellation struct {
+				cancel context.CancelFunc
+				delay  time.Duration
+				done   chan struct{}
+			}
+			var current atomic.Pointer[cancellation]
+			var hookAt atomic.Int64
+			registry := handlers.NewRegistry()
+			registry.Use(func(next handlers.Handler) handlers.Handler {
+				return handlers.HandlerFunc(func(ctx context.Context, hctx *handlers.HandlerContext, data []byte) ([]byte, types.CompletionCode, error) {
+					res, cc, err := next.Handle(ctx, hctx, data)
+					if hctx.Command == types.CommandSetSessionPrivilegeLevel {
+						now := time.Now()
+						hookAt.Store(now.UnixNano())
+						attempt := current.Load()
+						go func() {
+							defer close(attempt.done)
+							if attempt.delay < 0 {
+								return
+							}
+							// A timer's scheduling granularity can miss the entire window.
+							for time.Since(now) < attempt.delay {
+							}
+							attempt.cancel()
+						}()
+					}
+					return res, cc, err
+				})
+			})
+			handlers.RegisterAllHandlers(registry)
+			peer, _ := newLANSetupClient(t, intf, server.WithHandlerRegistry(registry))
+			run := func(delay time.Duration) (time.Duration, bool) {
+				c, err := NewClient(peer.Host, peer.Port, peer.Username, peer.Password)
+				if err != nil {
+					t.Fatal(err)
+				}
+				c.WithInterface(intf).WithTimeout(time.Second).WithRetry(0)
+				ctx, cancel := context.WithCancel(context.Background())
+				defer cancel()
+				defer func() {
+					closeCtx, closeCancel := context.WithTimeout(context.Background(), time.Second)
+					defer closeCancel()
+					if err := c.Close(closeCtx); err != nil {
+						t.Errorf("Close: %v", err)
+					}
+				}()
+				attempt := &cancellation{cancel: cancel, delay: delay, done: make(chan struct{})}
+				current.Store(attempt)
+				err = c.Connect(ctx)
+				elapsed := time.Duration(time.Now().UnixNano() - hookAt.Load())
+				if err != nil && (delay < 0 || !errors.Is(err, context.Canceled)) {
+					t.Fatalf("Connect: %v", err)
+				}
+				waitLANSignal(t, attempt.done)
+				if err != nil && c.keepaliveDone != nil {
+					select {
+					case <-c.keepaliveDone:
+					default:
+						return elapsed, true
+					}
+				}
+				return elapsed, false
+			}
+			var total time.Duration
+			for range 50 {
+				elapsed, _ := run(-1)
+				total += elapsed
+			}
+			mean := total / 50
+			inconsistent := 0
+			for i := range 500 {
+				delay := max(0, mean-40*time.Microsecond+time.Duration(i%51)*time.Microsecond)
+				_, live := run(delay)
+				if live {
+					inconsistent++
+				}
+			}
+			if inconsistent != 0 {
+				t.Fatalf("%d Connect calls reported cancellation while leaving keepalive running", inconsistent)
+			}
+		})
+	}
+}

@@ -105,7 +105,9 @@ starting concurrent command calls.
 LAN setup calls (`Connect`, `Connect15`, `Connect20`, and `ConnectAuto`) are
 serialized and honor cancellation while waiting. Reconnecting stops and joins
 the previous keepalive before changing session state. Do not overlap setup with
-ordinary commands or configuration changes.
+ordinary commands or configuration changes. Once setup starts keepalive and
+succeeds, cancellation of its context does not undo the connection; call `Close`
+to release the session.
 
 `Close(ctx)` stops new commands and setup, cancels and joins any setup and
 keepalive, attempts to close the BMC session within the supplied context, and
