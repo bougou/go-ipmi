@@ -102,12 +102,21 @@ sequence numbers aligned with wire order. A caller waiting for another exchange
 can cancel that wait with its context. Configure and connect the client before
 starting concurrent command calls.
 
-`Close(ctx)` stops new commands, cancels and joins keepalive, attempts to close
-the BMC session within the supplied context, and always closes the UDP socket.
+LAN setup calls (`Connect`, `Connect15`, `Connect20`, and `ConnectAuto`) are
+serialized and honor cancellation while waiting. Reconnecting stops and joins
+the previous keepalive before changing session state. Do not overlap setup with
+ordinary commands or configuration changes.
+
+`Close(ctx)` stops new commands and setup, cancels and joins any setup and
+keepalive, attempts to close the BMC session within the supplied context, and
+always closes the UDP socket. If its context expires while waiting for setup,
+it skips session cleanup; canceled setup cannot start another keepalive.
 Concurrent and repeated closes share the result; a waiting caller can cancel its
 own wait. Create a new client to connect again after closing it.
 
-UDP reads, writes, and exchange-slot waits honor caller cancellation. The UDP
+UDP hostname resolution, reads, writes, and exchange-slot waits honor caller
+cancellation. Direct dialing retains IPv4 preference for dual-stack hostnames;
+IPv6-only names and scoped IPv6 literals are also supported. The UDP
 transport can be reused after cancellation or Close. Proxy dialers implementing
 `proxy.ContextDialer` also receive cancellation. Legacy `proxy.Dialer` calls
 cannot be interrupted internally; the caller can still return promptly, and any

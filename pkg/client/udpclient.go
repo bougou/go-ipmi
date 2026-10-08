@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/netip"
 	"strconv"
 	"sync"
 	"time"
@@ -53,7 +54,11 @@ func NewUDPClient(host string, port int) *UDPClient {
 // interrupted, but a connection returned after cancellation must not leak.
 func dialUDP(ctx context.Context, dialer proxy.Dialer, addr string) (net.Conn, error) {
 	if dialer == nil {
-		return (&net.Dialer{}).DialContext(ctx, "udp", addr)
+		resolved, err := resolveUDPAddress(ctx, addr)
+		if err != nil {
+			return nil, err
+		}
+		return (&net.Dialer{}).DialContext(ctx, "udp", resolved)
 	}
 	if d, ok := dialer.(proxy.ContextDialer); ok {
 		return d.DialContext(ctx, "udp", addr)
@@ -81,6 +86,33 @@ func dialUDP(ctx context.Context, dialer proxy.Dialer, addr string) (net.Conn, e
 	}
 }
 
+// resolveUDPAddress preserves ResolveUDPAddr's IPv4 preference while allowing
+// hostname resolution to be canceled. Literal IPv6 addresses retain their zone.
+func resolveUDPAddress(ctx context.Context, addr string) (string, error) {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return "", err
+	}
+	if _, err := netip.ParseAddr(host); err == nil || host == "" {
+		return addr, nil
+	}
+	addrs, err := net.DefaultResolver.LookupIPAddr(ctx, host)
+	if err != nil {
+		return "", err
+	}
+	if len(addrs) == 0 {
+		return "", &net.DNSError{Err: "no suitable address found", Name: host, IsNotFound: true}
+	}
+	selected := addrs[0]
+	for _, ip := range addrs {
+		if ip.IP.To4() != nil {
+			selected = ip
+			break
+		}
+	}
+	return net.JoinHostPort(selected.String(), port), nil
+}
+
 func (c *UDPClient) initConn(ctx context.Context, generation uint64) (net.Conn, error) {
 	c.lock.Lock()
 	conn, dialer := c.conn, c.proxy
@@ -94,6 +126,7 @@ func (c *UDPClient) initConn(ctx context.Context, generation uint64) (net.Conn, 
 		return nil, fmt.Errorf("udp dial failed: %w", err)
 	}
 	c.lock.Lock()
+	// Close advances generation before invoking cancellation outside the lock.
 	if c.generation != generation || ctx.Err() != nil {
 		c.lock.Unlock()
 		_ = conn.Close()

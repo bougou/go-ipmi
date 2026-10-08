@@ -52,13 +52,18 @@ func TestLANCloseCancelsKeepalive(t *testing.T) {
 			})
 			handlers.RegisterAllHandlers(registry)
 			c, closeClient := newLANConcurrencyClient(t, intf, server.WithHandlerRegistry(registry))
+			c.keepaliveCancel()
+			<-c.keepaliveDone
 			c.udpClient.lock.Lock()
 			conn.Conn = c.udpClient.conn
 			c.udpClient.conn = conn
 			c.udpClient.lock.Unlock()
+			if err := c.startSessionKeepalive(context.Background(), 1); err != nil {
+				t.Fatal(err)
+			}
 			select {
 			case <-conn.dropped:
-			case <-time.After(35 * time.Second):
+			case <-time.After(5 * time.Second):
 				t.Fatal("keepalive did not start")
 			}
 			started := time.Now()
