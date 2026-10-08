@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -249,6 +250,66 @@ func TestLANClosePreventsRetryReopeningUDP(t *testing.T) {
 	}
 	if got := dialer.calls.Load(); got != 1 {
 		t.Fatalf("Close was followed by another dial; calls = %d", got)
+	}
+}
+
+func TestLANCloseRejectsKeepaliveRegistration(t *testing.T) {
+	c, err := NewClient("127.0.0.1", 623, "test", "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Close(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	// Close closes lanClosed under the lock but cancels setup only after releasing
+	// it, so registration can arrive with a live context.
+	if err := c.startSessionKeepalive(context.Background(), 1); !errors.Is(err, net.ErrClosed) {
+		t.Fatalf("keepalive registration after Close: %v", err)
+	}
+	if c.keepaliveDone != nil {
+		t.Fatal("keepalive published after Close")
+	}
+}
+
+// pausedErrContext pauses the first Err call. exchangeLAN makes it after its
+// unlocked closed check and before publishing cancellation under the lock.
+type pausedErrContext struct {
+	context.Context
+	once             sync.Once
+	entered, release chan struct{}
+}
+
+func (c *pausedErrContext) Err() error {
+	c.once.Do(func() { close(c.entered); <-c.release })
+	return c.Context.Err()
+}
+
+func TestLANCloseBeforeCommandPublishesCancellation(t *testing.T) {
+	for _, intf := range []Interface{InterfaceLan, InterfaceLanplus} {
+		t.Run(string(intf), func(t *testing.T) {
+			c, _ := newLANConcurrencyClient(t, intf)
+			ctx := &pausedErrContext{Context: context.Background(), entered: make(chan struct{}), release: make(chan struct{})}
+			defer func() {
+				select {
+				case <-ctx.release:
+				default:
+					close(ctx.release)
+				}
+			}()
+			command := make(chan error, 1)
+			go func() { _, err := c.GetDeviceID(ctx); command <- err }()
+			waitLANSignal(t, ctx.entered)
+			closed := make(chan error, 1)
+			go func() { closed <- c.Close(context.Background()) }()
+			waitLANSignal(t, c.lanClosed)
+			close(ctx.release)
+			if err := awaitUDPResult(t, command); !errors.Is(err, net.ErrClosed) {
+				t.Fatalf("command started across Close: %v", err)
+			}
+			if err := awaitUDPResult(t, closed); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 
