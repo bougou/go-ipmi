@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -349,6 +350,58 @@ func TestUDPExchangeUntilMatchCancellationIsNotReadTimeout(t *testing.T) {
 	}
 }
 
+// queuedContext pauses an exchange when it first evaluates Done: after it
+// captured the connection generation, before it can take the exchange slot.
+type queuedContext struct {
+	context.Context
+	once             sync.Once
+	waiting, release chan struct{}
+}
+
+func (c *queuedContext) Done() <-chan struct{} {
+	c.once.Do(func() { close(c.waiting); <-c.release })
+	return c.Context.Done()
+}
+
+func TestUDPCloseInvalidatesQueuedExchange(t *testing.T) {
+	for name, exchange := range udpExchanges {
+		t.Run(name, func(t *testing.T) {
+			c, received := newUDPTestPeer(t)
+			active := make(chan error, 1)
+			go func() { _, err := exchange(c, context.Background(), strings.NewReader("hold")); active <- err }()
+			<-received
+			ctx := &queuedContext{Context: context.Background(), waiting: make(chan struct{}), release: make(chan struct{})}
+			queued := make(chan error, 1)
+			go func() { _, err := exchange(c, ctx, strings.NewReader("queued")); queued <- err }()
+			waitLANSignal(t, ctx.waiting)
+			if err := c.Close(); err != nil {
+				t.Fatal(err)
+			}
+			if err := awaitUDPResult(t, active); err == nil {
+				t.Fatal("active exchange succeeded after Close")
+			}
+			// A later exchange reopens the socket before the invalidated call takes
+			// the slot, so only the generation check can reject it.
+			data, err := exchange(c, context.Background(), strings.NewReader("reply"))
+			if err != nil || string(data) != "reply" {
+				t.Fatalf("reuse after Close: %q, %v", data, err)
+			}
+			if got := <-received; got != "reply" {
+				t.Fatalf("peer received %q", got)
+			}
+			close(ctx.release)
+			if err := awaitUDPResult(t, queued); !errors.Is(err, net.ErrClosed) {
+				t.Fatalf("queued exchange after Close: %v", err)
+			}
+			select {
+			case got := <-received:
+				t.Fatalf("invalidated queued exchange wrote %q", got)
+			default:
+			}
+		})
+	}
+}
+
 func TestUDPExchangeSlotCancellationPreservesCause(t *testing.T) {
 	for name, exchange := range udpExchanges {
 		t.Run(name, func(t *testing.T) {
@@ -375,6 +428,31 @@ func TestUDPExchangeSlotCancellationPreservesCause(t *testing.T) {
 			}
 			_ = c.Close()
 			_ = awaitUDPResult(t, active)
+		})
+	}
+}
+
+// timerlessDeadlineContext has a deadline but never becomes done, like a
+// context whose timer has not fired yet when the socket deadline does.
+type timerlessDeadlineContext struct {
+	context.Context
+	deadline time.Time
+}
+
+func (c timerlessDeadlineContext) Deadline() (time.Time, bool) { return c.deadline, true }
+
+func TestUDPExchangeSocketDeadlineBeforeContextTimer(t *testing.T) {
+	for name, exchange := range udpExchanges {
+		t.Run(name, func(t *testing.T) {
+			c, received := newUDPTestPeer(t)
+			if _, err := exchange(c, context.Background(), strings.NewReader("reply")); err != nil {
+				t.Fatal(err)
+			}
+			<-received
+			ctx := timerlessDeadlineContext{context.Background(), time.Now().Add(30 * time.Millisecond)}
+			if _, err := exchange(c, ctx, strings.NewReader("hold")); !errors.Is(err, context.DeadlineExceeded) {
+				t.Fatalf("socket deadline at caller deadline: %v", err)
+			}
 		})
 	}
 }
