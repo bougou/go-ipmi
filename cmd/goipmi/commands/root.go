@@ -15,12 +15,13 @@ import (
 const homePage = "https://github.com/bougou/go-ipmi"
 
 var (
-	host     string
-	port     int
-	username string
-	password string
-	intf     string
-	debug    bool
+	host            string
+	port            int
+	username        string
+	password        string
+	passwordFromEnv bool
+	intf            string
+	debug           bool
 
 	privilegeLevel string
 	showVersion    bool
@@ -31,9 +32,16 @@ var (
 	openBackend string
 
 	client *ipmiclient.Client
+
+	rootCommand *cobra.Command
 )
 
 func initClient() error {
+	resolved, err := resolveSessionPassword()
+	if err != nil {
+		return err
+	}
+	password = resolved
 
 	if debug {
 		fmt.Printf("Version: %s\n", Version)
@@ -157,6 +165,7 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 623, "Remote RMCP port")
 	rootCmd.PersistentFlags().StringVarP(&username, "user", "U", "", "Remote session username")
 	rootCmd.PersistentFlags().StringVarP(&password, "pass", "P", "", "Remote session password")
+	rootCmd.PersistentFlags().BoolVarP(&passwordFromEnv, "password-env", "E", false, "Read password from IPMI_PASSWORD environment variable (IPMITOOL_PASSWORD takes precedence)")
 	rootCmd.PersistentFlags().StringVarP(&intf, "interface", "I", "open", "Interface to use, supported (open,lan,lanplus)")
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Enable debug mode")
 	rootCmd.PersistentFlags().BoolVarP(&showVersion, "version", "V", false, "Show version information")
@@ -188,5 +197,6 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.SilenceUsage = true
 	rootCmd.SilenceErrors = true
 
+	rootCommand = rootCmd
 	return rootCmd
 }
