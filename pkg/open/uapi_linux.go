@@ -15,18 +15,10 @@ import (
 
 // --- ioctl number encoding -------------------------------------------------
 
-// see: https://github.com/torvalds/linux/blob/master/arch/alpha/include/uapi/asm/ioctl.h
-
 // cSpell:disable
 const (
 	IOC_NRBITS   = 8
 	IOC_TYPEBITS = 8
-	IOC_SIZEBITS = 14
-	IOC_DIRBITS  = 2
-
-	IOC_NONE  = 0x0
-	IOC_READ  = 0x1
-	IOC_WRITE = 0x2
 
 	IOC_NRMASK   = ((1 << IOC_NRBITS) - 1)
 	IOC_TYPEMASK = ((1 << IOC_TYPEBITS) - 1)
@@ -59,6 +51,10 @@ func IOC_NR(nr uintptr) uintptr          { return (nr >> IOC_NRSHIFT) & IOC_NRMA
 func IOC_SIZE(nr uintptr) uintptr        { return (nr >> IOC_SIZESHIFT) & IOC_SIZEMASK }
 
 // IOCTL issues SYS_IOCTL against an openipmi file descriptor.
+// Pointer-derived uintptr arguments must stay live and escape the caller's stack
+// across this wrapper, just as they do for syscall.Syscall.
+//
+//go:uintptrescapes
 func IOCTL(fd, name, data uintptr) error {
 	_, _, ep := syscall.Syscall(syscall.SYS_IOCTL, fd, name, data)
 	if ep != 0 {
@@ -98,21 +94,21 @@ const (
 // IPMI_ADDR is the generic openipmi address buffer.
 type IPMI_ADDR struct {
 	AddrType int32
-	Channel  uint16
+	Channel  int16
 	Data     [IPMI_MAX_ADDR_SIZE]byte
 }
 
 // IPMI_SYSTEM_INTERFACE_ADDR is used for direct BMC system-interface messages.
 type IPMI_SYSTEM_INTERFACE_ADDR struct {
 	AddrType int32
-	Channel  uint16
+	Channel  int16
 	LUN      uint8
 }
 
 // IPMI_IPMB_ADDR is used for IPMB / broadcast-IPMB destinations.
 type IPMI_IPMB_ADDR struct {
 	AddrType  int32
-	Channel   uint16
+	Channel   int16
 	SlaveAddr uint8
 	LUN       uint8
 }
@@ -120,7 +116,7 @@ type IPMI_IPMB_ADDR struct {
 // IPMI_IPMB_DIRECT_ADDR is for messages received directly from an IPMB.
 type IPMI_IPMB_DIRECT_ADDR struct {
 	AddrType  int32
-	Channel   uint16
+	Channel   int16
 	SlaveAddr uint8
 	RsLUN     uint8
 	RqLUN     uint8
@@ -129,7 +125,7 @@ type IPMI_IPMB_DIRECT_ADDR struct {
 // IPMI_LAN_ADDR is an address to/from a LAN interface bridged by the BMC.
 type IPMI_LAN_ADDR struct {
 	AddrType      int32
-	Channel       uint16
+	Channel       int16
 	Privilege     uint8
 	SessionHandle uint8
 	RemoteSWID    uint8
@@ -154,21 +150,21 @@ func (msg *IPMI_MSG) MsgData() ([]byte, error) {
 	return recvBuf[:msg.DataLen:msg.DataLen], nil
 }
 
-// IPMI_REQ mirrors struct ipmi_req. Size is 40 on amd64; ioctl numbers encode it.
+// IPMI_REQ mirrors struct ipmi_req. Size is 20 on 32-bit Linux and 40 on 64-bit Linux; ioctl numbers encode it.
 // DeviceBackend only — not the Backend.Send public protocol (see Request).
 type IPMI_REQ struct {
 	Addr    unsafe.Pointer
-	AddrLen int
-	MsgID   int64
+	AddrLen uint32
+	MsgID   int
 	Msg     IPMI_MSG
 }
 
-// IPMI_RECV mirrors struct ipmi_recv. Size is 48 on amd64.
+// IPMI_RECV mirrors struct ipmi_recv. Size is 24 on 32-bit Linux and 48 on 64-bit Linux.
 type IPMI_RECV struct {
-	RecvType int
+	RecvType int32
 	Addr     unsafe.Pointer
-	AddrLen  int
-	MsgID    int64
+	AddrLen  uint32
+	MsgID    int
 	Msg      IPMI_MSG
 }
 
@@ -186,9 +182,9 @@ type IPMI_CMDSPEC struct {
 }
 
 type IPMI_CMDSPEC_CHANS struct {
-	NetFn int
-	Cmd   int
-	Chans int
+	NetFn uint32
+	Cmd   uint32
+	Chans uint32
 }
 
 type IPMI_CHANNEL_LUN_ADDRESS_SET struct {
@@ -197,8 +193,8 @@ type IPMI_CHANNEL_LUN_ADDRESS_SET struct {
 }
 
 type IPMI_TIMING_PARAMS struct {
-	Retries         int
-	RetryTimeMillis uint
+	Retries         int32
+	RetryTimeMillis uint32
 }
 
 // --- ipmi_devintf ioctl command numbers ------------------------------------
@@ -206,8 +202,8 @@ type IPMI_TIMING_PARAMS struct {
 const IPMI_IOC_MAGIC uintptr = 'i'
 
 var (
-	IPMICTL_SEND_COMMAND         = IOW(IPMI_IOC_MAGIC, 13, unsafe.Sizeof(IPMI_REQ{}))
-	IPMICTL_SEND_COMMAND_SETTIME = IOW(IPMI_IOC_MAGIC, 21, unsafe.Sizeof(IPMI_REQ_SETTIME{}))
+	IPMICTL_SEND_COMMAND         = IOR(IPMI_IOC_MAGIC, 13, unsafe.Sizeof(IPMI_REQ{}))
+	IPMICTL_SEND_COMMAND_SETTIME = IOR(IPMI_IOC_MAGIC, 21, unsafe.Sizeof(IPMI_REQ_SETTIME{}))
 
 	IPMICTL_RECEIVE_MSG       = IOWR(IPMI_IOC_MAGIC, 12, unsafe.Sizeof(IPMI_RECV{}))
 	IPMICTL_RECEIVE_MSG_TRUNC = IOWR(IPMI_IOC_MAGIC, 11, unsafe.Sizeof(IPMI_RECV{}))
@@ -218,7 +214,7 @@ var (
 	IPMICTL_REGISTER_FOR_CMD_CHANS   = IOR(IPMI_IOC_MAGIC, 28, unsafe.Sizeof(IPMI_CMDSPEC_CHANS{}))
 	IPMICTL_UNREGISTER_FOR_CMD_CHANS = IOR(IPMI_IOC_MAGIC, 29, unsafe.Sizeof(IPMI_CMDSPEC_CHANS{}))
 
-	IPMICTL_SET_GETS_EVENTS_CMD = IOW(IPMI_IOC_MAGIC, 16, unsafe.Sizeof(uint32(0)))
+	IPMICTL_SET_GETS_EVENTS_CMD = IOR(IPMI_IOC_MAGIC, 16, unsafe.Sizeof(uint32(0)))
 
 	IPMICTL_SET_MY_CHANNEL_ADDRESS_CMD = IOR(IPMI_IOC_MAGIC, 24, unsafe.Sizeof(IPMI_CHANNEL_LUN_ADDRESS_SET{}))
 	IPMICTL_GET_MY_CHANNEL_ADDRESS_CMD = IOR(IPMI_IOC_MAGIC, 25, unsafe.Sizeof(IPMI_CHANNEL_LUN_ADDRESS_SET{}))

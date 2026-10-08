@@ -82,6 +82,39 @@ Backends live in `pkg/open`: Linux talks to `/dev/ipmiN` via
 ioctl; Windows uses the Microsoft_IPMI WMI provider (COM by default, with a
 PowerShell fallback).
 
+### Linux architectures
+
+The Linux backend uses native kernel layouts: C `int` and `unsigned int` are
+32-bit fields, while the message ID is a native-width C `long`. MIPS and PowerPC
+use different ioctl encoding constants from the other Linux architectures.
+Production builds remain pure Go and do not require a C compiler or cgo.
+
+CI compares every declared OpenIPMI struct's layout and scalar signedness, and
+all ioctl numbers, against the target's `<linux/ipmi.h>`. It runs these checks
+and the OpenIPMI tests on amd64, 386, arm (GOARM=6 and 7), arm64, ppc64le, s390x,
+and mips, using QEMU for non-native targets. These checks validate the ABI;
+access to an IPMI device still depends on the host's kernel, hardware and device
+permissions. Emulation does not substitute for hardware testing.
+
+For a native Linux check, run `CC=cc go test -v ./pkg/open`. The C oracle needs
+Linux headers and static C libraries. Cross-testing also needs a target compiler
+and emulator, for example:
+
+```sh
+GOARCH=arm GOARM=7 CGO_ENABLED=0 CC=arm-linux-gnueabihf-gcc \
+  IPMI_UAPI_EXEC=qemu-arm go test -exec=qemu-arm -v ./pkg/open
+```
+
+Without an explicit `CC`, the oracle skips if `cc` is unavailable. CI sets `CC`
+explicitly, so a missing compiler fails the check.
+
+**Low-level API compatibility:** correcting the kernel declarations changes
+exported field types in `IPMI_REQ`, `IPMI_RECV`, the address structs,
+`IPMI_CMDSPEC_CHANS`, and `IPMI_TIMING_PARAMS`. Code constructing these structs
+may need explicit conversions (for example, `MsgID: int(id)` and
+`AddrLen: uint32(length)`). The transport-neutral `Request` and `Backend` APIs
+are unchanged.
+
 ## Options
 
 | Method                     | Effect                              |

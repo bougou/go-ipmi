@@ -139,7 +139,7 @@ func sendCommand(ctx context.Context, file *os.File, req *Request, timeout time.
 	kernelReq := &IPMI_REQ{
 		Addr:    addrPtr,
 		AddrLen: addrLen,
-		MsgID:   rand.Int63(),
+		MsgID:   rand.Int(),
 		Msg: IPMI_MSG{
 			NetFn:   req.NetFn,
 			Cmd:     req.Cmd,
@@ -169,7 +169,7 @@ func sendCommand(ctx context.Context, file *os.File, req *Request, timeout time.
 	recvBuf := make([]byte, IPMI_BUF_SIZE)
 	recv := &IPMI_RECV{
 		Addr:    unsafe.Pointer(recvAddr),
-		AddrLen: int(unsafe.Sizeof(*recvAddr)),
+		AddrLen: uint32(unsafe.Sizeof(*recvAddr)),
 		Msg: IPMI_MSG{
 			Data:    &recvBuf[0],
 			DataLen: IPMI_BUF_SIZE,
@@ -249,15 +249,15 @@ func sendCommand(ctx context.Context, file *os.File, req *Request, timeout time.
 //	else                                       → IPMI_SYSTEM_INTERFACE_ADDR
 //
 // keep must stay alive across the ioctl that consumes ptr.
-func buildRequestAddr(myAddr, targetAddr, channel, lun uint8) (ptr unsafe.Pointer, addrLen int, keep any) {
+func buildRequestAddr(myAddr, targetAddr, channel, lun uint8) (ptr unsafe.Pointer, addrLen uint32, keep any) {
 	if targetAddr != 0 && targetAddr != myAddr {
 		ipmb := &IPMI_IPMB_ADDR{
 			AddrType:  IPMI_IPMB_ADDR_TYPE,
-			Channel:   uint16(channel & 0x0f),
+			Channel:   int16(channel & 0x0f),
 			SlaveAddr: targetAddr,
 			LUN:       lun,
 		}
-		return unsafe.Pointer(ipmb), int(unsafe.Sizeof(*ipmb)), ipmb
+		return unsafe.Pointer(ipmb), uint32(unsafe.Sizeof(*ipmb)), ipmb
 	}
 
 	sys := &IPMI_SYSTEM_INTERFACE_ADDR{
@@ -265,7 +265,7 @@ func buildRequestAddr(myAddr, targetAddr, channel, lun uint8) (ptr unsafe.Pointe
 		Channel:  IPMI_BMC_CHANNEL,
 		LUN:      lun,
 	}
-	return unsafe.Pointer(sys), int(unsafe.Sizeof(*sys)), sys
+	return unsafe.Pointer(sys), uint32(unsafe.Sizeof(*sys)), sys
 }
 
 // addrTypeOf returns the addr_type of a buildRequestAddr result, or -1 if nil.
