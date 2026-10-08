@@ -215,7 +215,7 @@ func (c *Client) WithTimeout(timeout time.Duration) *Client {
 	c.timeout = timeout
 
 	if c.udpClient != nil {
-		c.udpClient.timeout = timeout
+		c.udpClient.SetTimeout(timeout)
 	}
 	return c
 }
@@ -228,7 +228,7 @@ func (c *Client) WithRetry(retryCount int) *Client {
 func (c *Client) WithBufferSize(bufferSize int) *Client {
 	c.bufferSize = bufferSize
 	if c.udpClient != nil {
-		c.udpClient.bufferSize = bufferSize
+		c.udpClient.SetBufferSize(bufferSize)
 	}
 	return c
 }
