@@ -314,6 +314,11 @@ func wrapExchangeLANError(attempts int, applyIPMIMatch bool, wantSeq, wantCmd ui
 // 3. Get Session Challenge
 // 4. Activate Session
 func (c *Client) Connect15(ctx context.Context) error {
+	return c.connectLAN(ctx, c.connect15)
+}
+
+func (c *Client) connect15(ctx context.Context) error {
+	c.v20 = false
 	var (
 		err           error
 		channelNumber uint8 = types.ChannelNumberSelf
@@ -345,15 +350,16 @@ func (c *Client) Connect15(ctx context.Context) error {
 		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %w", c.maxPrivilegeLevel, err)
 	}
 
-	// The Connect context bounds setup. Client.Close owns the established session lifetime.
-	c.startSessionKeepalive(ctx, DefaultKeepAliveIntervalSec)
-
 	return nil
 
 }
 
 // see 13.15 IPMI v2.0/RMCP+ Session Activation
 func (c *Client) Connect20(ctx context.Context) error {
+	return c.connectLAN(ctx, c.connect20)
+}
+
+func (c *Client) connect20(ctx context.Context) error {
 	var (
 		err           error
 		channelNumber uint8 = types.ChannelNumberSelf
@@ -432,9 +438,6 @@ func (c *Client) Connect20(ctx context.Context) error {
 		return fmt.Errorf("SetSessionPrivilegeLevel to (%s) failed, err: %w", c.maxPrivilegeLevel, err)
 	}
 
-	// The Connect context bounds setup. Client.Close owns the established session lifetime.
-	c.startSessionKeepalive(ctx, DefaultKeepAliveIntervalSec)
-
 	return nil
 }
 
@@ -442,6 +445,10 @@ func (c *Client) Connect20(ctx context.Context) error {
 // GetChannelAuthenticationCapabilities command, then decide to use v1.5 or v2.0
 // for subsequent requests.
 func (c *Client) ConnectAuto(ctx context.Context) error {
+	return c.connectLAN(ctx, c.connectAuto)
+}
+
+func (c *Client) connectAuto(ctx context.Context) error {
 	var (
 		err error
 
@@ -458,15 +465,80 @@ func (c *Client) ConnectAuto(ctx context.Context) error {
 	}
 	if cap.SupportIPMIv20 {
 		c.v20 = true
-		return c.Connect20(ctx)
+		return c.connect20(ctx)
 	}
 	if cap.SupportIPMIv15 {
-		return c.Connect15(ctx)
+		return c.connect15(ctx)
 	}
 	return fmt.Errorf("client does not support IPMI v1.5 and IPMI v.20")
 }
 
-// closeLAN stops keepalive before ending the session, and always releases the
+// connectLAN owns all setup mutations, including work after the final Exchange.
+// Reconnect joins the old keepalive before changing session state. Close cancels
+// setup and joins it before inspecting that state.
+func (c *Client) connectLAN(ctx context.Context, setup func(context.Context) error) (err error) {
+	c.lock()
+	for {
+		select {
+		case <-c.lanClosed:
+			c.unlock()
+			return net.ErrClosed
+		default:
+		}
+		if ctx.Err() != nil {
+			c.unlock()
+			return udpExchangeError(ctx, ctx.Err())
+		}
+		if done := c.connectDone; done != nil {
+			c.unlock()
+			select {
+			case <-done:
+			case <-c.lanClosed:
+				return net.ErrClosed
+			case <-ctx.Done():
+				return udpExchangeError(ctx, ctx.Err())
+			}
+			c.lock()
+			continue
+		}
+		break
+	}
+	ctx, cancel := context.WithCancelCause(ctx)
+	done := make(chan struct{})
+	c.connectCancel, c.connectDone = cancel, done
+	previousCancel, previousDone := c.keepaliveCancel, c.keepaliveDone
+	c.unlock()
+	defer func() {
+		if ctx.Err() != nil {
+			err = udpExchangeError(ctx, err)
+		}
+		c.lock()
+		c.connectCancel, c.connectDone = nil, nil
+		close(done)
+		c.unlock()
+		cancel(nil)
+	}()
+
+	if previousCancel != nil {
+		previousCancel()
+	}
+	if previousDone != nil {
+		select {
+		case <-previousDone:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if err := setup(ctx); err != nil {
+		return err
+	}
+	return c.startSessionKeepalive(ctx, DefaultKeepAliveIntervalSec)
+}
+
+// closeLAN stops setup and keepalive before ending the session, and releases the
 // socket even when the BMC does not reply. Concurrent callers share one close.
 func (c *Client) closeLAN(ctx context.Context) (closeErr error) {
 	c.lock()
@@ -486,6 +558,7 @@ func (c *Client) closeLAN(ctx context.Context) (closeErr error) {
 	close(c.lanClosed)
 	cancel, done := c.keepaliveCancel, c.keepaliveDone
 	activeCancel := c.activeLANCancel
+	connectCancel, connectDone := c.connectCancel, c.connectDone
 	c.unlock()
 	defer func() {
 		if err := c.udpClient.Close(); err != nil {
@@ -496,11 +569,21 @@ func (c *Client) closeLAN(ctx context.Context) (closeErr error) {
 		close(c.closeDone)
 		c.unlock()
 	}()
+	if connectCancel != nil {
+		connectCancel(net.ErrClosed)
+	}
 	if activeCancel != nil {
 		activeCancel(net.ErrClosed)
 	}
 	if cancel != nil {
 		cancel()
+	}
+	if connectDone != nil {
+		select {
+		case <-connectDone:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
 	if done != nil {
 		select {
@@ -530,16 +613,29 @@ func (c *Client) closeLAN(ctx context.Context) (closeErr error) {
 	return nil
 }
 
-func (c *Client) startSessionKeepalive(ctx context.Context, intervalSec int) {
+// The setup owner has joined the previous keepalive before calling this method.
+func (c *Client) startSessionKeepalive(ctx context.Context, intervalSec int) error {
+	c.lock()
+	select {
+	case <-c.lanClosed:
+		c.unlock()
+		return net.ErrClosed
+	default:
+	}
+	if ctx.Err() != nil {
+		c.unlock()
+		return udpExchangeError(ctx, ctx.Err())
+	}
+	// The Connect context bounds setup. Close owns the established session lifetime.
 	ctx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	done := make(chan struct{})
-	c.lock()
 	c.keepaliveCancel, c.keepaliveDone = cancel, done
 	c.unlock()
 	go func() {
 		defer close(done)
 		c.keepSessionAlive(ctx, intervalSec)
 	}()
+	return nil
 }
 
 // 6.12.15 Session Inactivity Timeouts

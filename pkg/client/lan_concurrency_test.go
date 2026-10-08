@@ -18,6 +18,17 @@ import (
 
 func newLANConcurrencyClient(t *testing.T, intf Interface, options ...server.ServerOption) (*Client, func()) {
 	t.Helper()
+	c, closeClient := newLANSetupClient(t, intf, options...)
+	connectCtx, connectCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer connectCancel()
+	if err := c.Connect(connectCtx); err != nil {
+		t.Fatalf("Connect: %v", err)
+	}
+	return c, closeClient
+}
+
+func newLANSetupClient(t *testing.T, intf Interface, options ...server.ServerOption) (*Client, func()) {
+	t.Helper()
 	b := newV15TestBMC(t, "test", "test-password")
 	pc, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
 	if err != nil {
@@ -34,11 +45,6 @@ func newLANConcurrencyClient(t *testing.T, intf Interface, options ...server.Ser
 		t.Fatal(err)
 	}
 	c.WithInterface(intf).WithTimeout(time.Second).WithRetry(0)
-	connectCtx, connectCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer connectCancel()
-	if err := c.Connect(connectCtx); err != nil {
-		t.Fatalf("Connect: %v", err)
-	}
 	var closeOnce sync.Once
 	closeClient := func() {
 		closeOnce.Do(func() {

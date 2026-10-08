@@ -103,6 +103,8 @@ type Client struct {
 	closeDone       chan struct{}
 	closeErr        error
 	activeLANCancel context.CancelCauseFunc
+	connectCancel   context.CancelCauseFunc
+	connectDone     chan struct{}
 	keepaliveCancel context.CancelFunc
 	keepaliveDone   chan struct{}
 }
@@ -285,11 +287,9 @@ func (c *Client) Connect(ctx context.Context) error {
 		return c.ConnectTool(ctx, devnum)
 
 	case InterfaceLanplus:
-		c.v20 = true
 		return c.Connect20(ctx)
 
 	case InterfaceLan:
-		c.v20 = false
 		return c.Connect15(ctx)
 
 	default:
