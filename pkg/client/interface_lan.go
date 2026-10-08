@@ -509,7 +509,9 @@ func (c *Client) connectLAN(ctx context.Context, setup func(context.Context) err
 	previousCancel, previousDone := c.keepaliveCancel, c.keepaliveDone
 	c.unlock()
 	defer func() {
-		if ctx.Err() != nil {
+		// Once keepalive is published, Close owns the session even if cancellation
+		// races this return. Do not report failure after successful publication.
+		if err != nil && ctx.Err() != nil {
 			err = udpExchangeError(ctx, err)
 		}
 		c.lock()
