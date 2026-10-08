@@ -4,6 +4,7 @@
 package open
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"os"
@@ -42,7 +43,7 @@ func TestBuildRequestAddrSystemInterface(t *testing.T) {
 			if sys.LUN != tc.lun {
 				t.Fatalf("lun: got %d, want %d", sys.LUN, tc.lun)
 			}
-			if n != int(unsafe.Sizeof(*sys)) {
+			if n != uint32(unsafe.Sizeof(*sys)) {
 				t.Fatalf("addrLen: got %d, want %d", n, unsafe.Sizeof(*sys))
 			}
 		})
@@ -67,7 +68,7 @@ func TestBuildRequestAddrIPMB(t *testing.T) {
 	if ipmb.LUN != 0x01 {
 		t.Fatalf("lun: got %d, want 1", ipmb.LUN)
 	}
-	if n != int(unsafe.Sizeof(*ipmb)) {
+	if n != uint32(unsafe.Sizeof(*ipmb)) {
 		t.Fatalf("addrLen: got %d, want %d", n, unsafe.Sizeof(*ipmb))
 	}
 }
@@ -81,8 +82,12 @@ func TestBuildRequestAddrChannelMasked(t *testing.T) {
 }
 
 func TestIPMIReqSizeMatchesKernel(t *testing.T) {
-	if unsafe.Sizeof(IPMI_REQ{}) != 40 {
-		t.Fatalf("IPMI_REQ size: got %d, want 40", unsafe.Sizeof(IPMI_REQ{}))
+	want := uintptr(20)
+	if unsafe.Sizeof(uintptr(0)) == 8 {
+		want = 40
+	}
+	if unsafe.Sizeof(IPMI_REQ{}) != want {
+		t.Fatalf("IPMI_REQ size: got %d, want %d", unsafe.Sizeof(IPMI_REQ{}), want)
 	}
 }
 
@@ -164,7 +169,7 @@ func TestSendCommandCancellationAndReuse(t *testing.T) {
 				_ = read.SetReadDeadline(time.Now())
 				<-done
 			}
-			var msgID int64
+			var msgID int
 			result, err := sendCommand(context.Background(), read, &Request{}, time.Second,
 				func(_ uintptr, _ uintptr, req *IPMI_REQ) error { msgID = req.MsgID; return nil },
 				func(_ uintptr, _ uintptr, recv *IPMI_RECV) error {
@@ -192,5 +197,51 @@ func TestSendCommandTransportTimeout(t *testing.T) {
 		func(uintptr, uintptr, *IPMI_RECV) error { return syscall.EAGAIN })
 	if !errors.Is(err, os.ErrDeadlineExceeded) {
 		t.Fatalf("error=%v, want transport timeout", err)
+	}
+}
+
+func TestSendCommandPayload(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		data []byte
+	}{
+		{name: "empty"},
+		{name: "nonempty", data: []byte{0x01, 0x80, 0xff}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			read, write, err := os.Pipe()
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer read.Close()
+			defer write.Close()
+			req := &Request{NetFn: 6, Cmd: 1, Data: tc.data}
+			want := []byte{0, 0x80, 0xff}
+			var msgID int
+			result, err := sendCommand(context.Background(), read, req, time.Second,
+				func(_ uintptr, op uintptr, kernelReq *IPMI_REQ) error {
+					if op != IPMICTL_SEND_COMMAND || kernelReq.Msg.NetFn != req.NetFn || kernelReq.Msg.Cmd != req.Cmd {
+						t.Fatalf("unexpected request: op=%#x msg=%+v", op, kernelReq.Msg)
+					}
+					data := unsafe.Slice(kernelReq.Msg.Data, kernelReq.Msg.DataLen)
+					if !bytes.Equal(data, tc.data) || (len(tc.data) == 0 && kernelReq.Msg.Data != nil) {
+						t.Fatalf("request data=%x pointer=%p, want %x", data, kernelReq.Msg.Data, tc.data)
+					}
+					msgID = kernelReq.MsgID
+					return nil
+				},
+				func(_ uintptr, op uintptr, recv *IPMI_RECV) error {
+					if op != IPMICTL_RECEIVE_MSG_TRUNC || int(recv.Msg.DataLen) < len(want) {
+						t.Fatalf("unexpected receive: op=%#x capacity=%d", op, recv.Msg.DataLen)
+					}
+					recv.MsgID = msgID
+					copy(unsafe.Slice(recv.Msg.Data, recv.Msg.DataLen), want)
+					recv.Msg.DataLen = uint16(len(want))
+					return nil
+				})
+			if err != nil || !bytes.Equal(result, want) {
+				t.Fatalf("response=%x error=%v, want %x", result, err, want)
+			}
+		})
 	}
 }

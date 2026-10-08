@@ -67,3 +67,82 @@ jobs:
       # the server shares session/config state across a goroutine per packet.
       - name: Run tests
         run: make test-race
+
+  linux-uapi:
+    name: Linux UAPI (${{ matrix.target }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: amd64
+            goarch: amd64
+            cc: gcc
+            packages: gcc libc6-dev
+          - target: 386
+            goarch: '386'
+            cc: i686-linux-gnu-gcc
+            packages: gcc-i686-linux-gnu libc6-dev-i386-cross
+          - target: armv6
+            goarch: arm
+            goarm: '6'
+            cc: arm-linux-gnueabihf-gcc
+            runner: qemu-arm
+            packages: gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
+          - target: armv7
+            goarch: arm
+            goarm: '7'
+            cc: arm-linux-gnueabihf-gcc
+            runner: qemu-arm
+            packages: gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user
+          - target: arm64
+            goarch: arm64
+            cc: aarch64-linux-gnu-gcc
+            runner: qemu-aarch64
+            packages: gcc-aarch64-linux-gnu libc6-dev-arm64-cross qemu-user
+          - target: ppc64le
+            goarch: ppc64le
+            cc: powerpc64le-linux-gnu-gcc
+            runner: qemu-ppc64le
+            packages: gcc-powerpc64le-linux-gnu libc6-dev-ppc64el-cross qemu-user
+          - target: s390x
+            goarch: s390x
+            cc: s390x-linux-gnu-gcc
+            runner: qemu-s390x
+            packages: gcc-s390x-linux-gnu libc6-dev-s390x-cross qemu-user
+          - target: mips
+            goarch: mips
+            cc: mips-linux-gnu-gcc
+            runner: qemu-mips
+            packages: gcc-mips-linux-gnu libc6-dev-mips-cross qemu-user
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Install target compiler and emulator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ${{ matrix.packages }}
+
+      - name: Compare with target Linux headers and test OpenIPMI
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+          CGO_ENABLED: '0'
+          CC: ${{ matrix.cc }}
+          IPMI_UAPI_EXEC: ${{ matrix.runner }}
+        run: go test -exec="$IPMI_UAPI_EXEC" -v -timeout 120s ./pkg/open
+
+      - name: Build commands for target
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+          CGO_ENABLED: '0'
+        run: go build ./cmd/...
