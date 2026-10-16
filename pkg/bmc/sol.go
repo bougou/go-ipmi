@@ -1089,12 +1089,6 @@ func (inst *SOLInstance) ProcessPacket(ctx context.Context, in *types.SOLPayload
 			inst.lastAccepted = accepted
 			inst.lastNACK = nack
 		}
-	} else {
-		// ACK-only packet (seq 0h, §15.11): the acked echo names the last
-		// accepted data packet, so replay its accepted count — reporting 0
-		// would read as "packet N accepted nothing" (Table 15-3) and make
-		// a strict console resend packet N's already-delivered keystrokes.
-		accepted = inst.lastAccepted
 	}
 
 	// Outbound character data rides the response: polling-style consoles
@@ -1113,6 +1107,13 @@ func (inst *SOLInstance) ProcessPacket(ctx context.Context, in *types.SOLPayload
 		out.SequenceNumber = inst.outSeq
 		out.CharacterData = inst.pending
 		inst.pendingSince = inst.clock.Now() // the response is a (re)send
+	}
+	if in.SequenceNumber == 0 && out.SequenceNumber == 0 {
+		// §15.11: ACK-only packets are never acknowledged, and with no
+		// outbound data to carry there is nothing else to send. (A data
+		// packet emitted here — e.g. the retransmit a Resume ACK triggers,
+		// Table 15-3 — is a push, not an acknowledgement, and still goes.)
+		return nil
 	}
 	out.AckedSequenceNumber = inst.inSeq
 	out.AcceptedCharacterCount = accepted
