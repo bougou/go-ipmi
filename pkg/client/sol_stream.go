@@ -2,28 +2,22 @@ package client
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"os"
-	"sync"
 	"time"
 
+	"github.com/bougou/go-ipmi/pkg/protocol"
 	"github.com/bougou/go-ipmi/pkg/types"
 )
 
-// SOLStreamOptions configures [Client.SOLStream].
-type SOLStreamOptions struct {
-	// PollInterval is how often to send an empty SOL packet to poll for inbound data.
-	// Zero selects a default (100ms).
-	PollInterval time.Duration
-}
-
 const (
-	defaultSOLTransmitRetryCount        = 3
-	defaultSOLTransmitRetryInterval     = 100 * time.Millisecond
-	defaultSOLAcknowledgementRetryCount = 3
-	solSequenceMask                     = 0x0f
+	defaultSOLTransmitRetryCount    = 3
+	defaultSOLTransmitRetryInterval = 100 * time.Millisecond
+	solSequenceMask                 = 0x0f
 	// Sequence numbers wrap from 15 to 1, so 0 is not part of the cycle and the
 	// cycle holds 15 values. A packet more than half the cycle ahead of the last
 	// one received is read as trailing it rather than skipping past it.
@@ -36,13 +30,13 @@ const (
 // SOLStream exchanges console data over an already active SOL payload. Input is transmitted
 // unchanged, unlike [Client.SOLActivate], this method does not interpret terminal escape sequences
 // or process signals.
-func (c *Client) SOLStream(ctx context.Context, in io.Reader, out io.Writer, opts *SOLStreamOptions) error {
-	pollInterval := defaultPollInterval
-	if opts != nil && opts.PollInterval > 0 {
-		pollInterval = opts.PollInterval
-	}
-
-	return c.runSOLStream(ctx, in, out, pollInterval, nil)
+//
+// The exchange model follows §15.3/§15.11: the BMC pushes console output
+// asynchronously; the client sends packets only to carry input (non-zero
+// sequence) or to acknowledge output (ACK-only, sequence 0h, no reply
+// expected). No packets are sent while the session is idle.
+func (c *Client) SOLStream(ctx context.Context, in io.Reader, out io.Writer) error {
+	return c.runSOLStream(ctx, in, out, nil)
 }
 
 type solConsoleInput struct {
@@ -54,17 +48,22 @@ type solStream struct {
 	client        *Client
 	input         io.Reader
 	output        io.Writer
-	pollInterval  time.Duration
 	interrupt     <-chan os.Signal
 	maxInputChars int
 
 	localSequenceNumber  uint8
 	remoteSequenceNumber uint8
 	acceptedCharCount    uint8
-	outputAckPending     bool
+	// ackPending records that accepted console output has not been
+	// acknowledged to the BMC yet. Set on the run loop by processOutput,
+	// cleared by sendAck or by a data packet carrying the same ACK state.
+	ackPending bool
 
-	pendingOutputMu sync.Mutex
-	pendingOutput   []*types.SOLPayloadResponse
+	// outputCh receives every inbound SOL packet in wire order from the
+	// receive loop, both asynchronous pushes and responses to our packets.
+	// Deep enough that the loop never blocks behind output processing; on
+	// overflow packets drop and the BMC's retry retransmits them (§15.11).
+	outputCh chan *types.SOLPayloadResponse
 }
 
 // nextSOLSequenceNumber returns the next SOL sequence number, wrapping from 15 to 1.
@@ -85,6 +84,9 @@ func solSequenceDistance(sequenceNumber, previous uint8) uint8 {
 	return uint8((int(sequenceNumber) - int(previous) + solSequenceSpace) % solSequenceSpace)
 }
 
+// processOutput validates one inbound SOL packet and writes its console data
+// to the stream's output, tracking what the BMC must be acknowledged for.
+// It runs only on the stream's run loop.
 func (s *solStream) processOutput(response *types.SOLPayloadResponse) error {
 	if response == nil {
 		return fmt.Errorf("nil SOL payload response")
@@ -127,11 +129,11 @@ func (s *solStream) processOutput(response *types.SOLPayloadResponse) error {
 		writeOffset = int(s.acceptedCharCount)
 	case sequenceNumber == nextSOLSequenceNumber(s.remoteSequenceNumber):
 	case solSequenceDistance(sequenceNumber, s.remoteSequenceNumber) > solSequenceHalfSpace:
-		// The BMC retransmits unacknowledged output (spec v2.0 §15.9) reusing the
-		// original sequence number, so a packet trailing the current one is a
-		// duplicate sent before our acknowledgement arrived. Its data was already
-		// delivered, and it says nothing about what the BMC has since accepted, so
-		// drop it without disturbing the acknowledgement bookkeeping.
+		// A retransmission of an already-acknowledged packet (the ACK was
+		// lost, or the BMC's retry raced our ACK). §15.11 requires
+		// acknowledging every non-zero packet: re-ACK with the current
+		// state — a Table 15-3 "Completion ACK" stops the retry engine.
+		s.ackPending = true
 		return nil
 	default:
 		// A gap means BMC output was lost before it reached the writer.
@@ -151,48 +153,112 @@ func (s *solStream) processOutput(response *types.SOLPayloadResponse) error {
 	}
 	s.remoteSequenceNumber = sequenceNumber
 	s.acceptedCharCount = uint8(len(data))
-	s.outputAckPending = true
+	s.ackPending = true
 
 	return nil
 }
 
-func (c *Client) registerSOLStream(stream *solStream) error {
+// registerSOLStream activates the stream and hands socket reads to the
+// receive loop that dispatches inbound SOL packets to it.
+func (c *Client) registerSOLStream(ctx context.Context, stream *solStream) error {
+	if c.udpClient == nil {
+		return fmt.Errorf("SOL stream requires a LAN connection")
+	}
 	c.lock()
-	defer c.unlock()
 	if c.activeSOLStream != nil {
+		c.unlock()
 		return fmt.Errorf("SOL stream is already active")
 	}
 	c.activeSOLStream = stream
+	c.unlock()
+	// Never hold c.l across the exchange gate (taken by StartRecvLoop):
+	// in-flight exchanges acquire c.l from inside the gate.
+	if err := c.udpClient.StartRecvLoop(ctx, c.dispatchInboundDatagram); err != nil {
+		c.lock()
+		c.activeSOLStream = nil
+		c.unlock()
+		return fmt.Errorf("start SOL receive loop: %w", err)
+	}
 	return nil
 }
 
 func (c *Client) unregisterSOLStream() {
+	c.udpClient.StopRecvLoop()
 	c.lock()
-	defer c.unlock()
 	c.activeSOLStream = nil
+	c.unlock()
 }
 
-func (c *Client) deliverSOLOutput(response *types.SOLPayloadResponse) {
+// dispatchInboundDatagram routes one inbound datagram to the active SOL
+// stream. The receive loop calls it for every datagram, including ones a
+// waiting exchange claimed, so that piggybacked console data (§15.11) is
+// processed in wire order. Non-SOL datagrams are the rule here (every
+// command response passes through) and return early and silently.
+func (c *Client) dispatchInboundDatagram(recv []byte) {
+	// RMCP version and auth type stay explicit: ParseRMCPPlusHeader will
+	// read a v1.5 header as RMCP+.
+	if len(recv) < 16 || recv[0] != types.RmcpVersion || recv[4] != byte(types.AuthTypeRMCPPlus) {
+		return
+	}
+	_, _, payloadType, _, _, ok := protocol.ParseRMCPPlusHeader(recv)
+	if !ok || types.PayloadType(payloadType) != types.PayloadTypeSOL {
+		return
+	}
+	sol, err := c.parseInboundSOLPacket(recv)
+	if err != nil {
+		c.DebugfYellow("drop recv: SOL dispatch parse failed: %s\n", err)
+		return
+	}
 	c.lock()
 	stream := c.activeSOLStream
 	c.unlock()
-	if stream != nil {
-		stream.queueOutput(response)
+	if stream == nil {
+		c.DebugfYellow("drop recv: SOL packet with no active stream\n")
+		return
 	}
+	stream.enqueueOutput(&types.SOLPayloadResponse{SOLPayloadPacket: *sol})
 }
 
-func (s *solStream) queueOutput(response *types.SOLPayloadResponse) {
-	s.pendingOutputMu.Lock()
-	defer s.pendingOutputMu.Unlock()
-	s.pendingOutput = append(s.pendingOutput, response)
+// parseInboundSOLPacket extracts the SOL payload packet from an inbound
+// RMCP+ datagram. It shares the matcher's parse path so both directions of
+// the receive loop classify packets identically.
+func (c *Client) parseInboundSOLPacket(recv []byte) (*types.SOLPayloadPacket, error) {
+	rmcp := &types.Rmcp{}
+	if err := rmcp.Unpack(recv); err != nil {
+		return nil, fmt.Errorf("rmcp unpack failed: %w", err)
+	}
+	if rmcp.Session20 == nil {
+		return nil, fmt.Errorf("not an RMCP+ session packet")
+	}
+	hdr := rmcp.Session20.SessionHeader20
+	if hdr.PayloadType != types.PayloadTypeSOL {
+		return nil, fmt.Errorf("payload type %s is not SOL", hdr.PayloadType)
+	}
+	payload := rmcp.Session20.SessionPayload
+	if hdr.PayloadEncrypted {
+		// decryptPayload reads session keys; take the session lock.
+		c.lock()
+		d, err := c.decryptPayload(payload)
+		c.unlock()
+		if err != nil {
+			return nil, fmt.Errorf("decrypt SOL payload failed: %w", err)
+		}
+		payload = d
+	}
+	var sol types.SOLPayloadPacket
+	if err := sol.Unpack(payload); err != nil {
+		return nil, fmt.Errorf("SOL payload unpack failed: %w", err)
+	}
+	return &sol, nil
 }
 
-func (s *solStream) takePendingOutput() []*types.SOLPayloadResponse {
-	s.pendingOutputMu.Lock()
-	defer s.pendingOutputMu.Unlock()
-	responses := s.pendingOutput
-	s.pendingOutput = nil
-	return responses
+func (s *solStream) enqueueOutput(response *types.SOLPayloadResponse) {
+	select {
+	case s.outputCh <- response:
+	default:
+		// Backlog overrun: drop. The BMC retransmits unacknowledged output
+		// per its retry policy (§15.11), so a transient stall self-heals.
+	}
 }
 
 func readSOLInput(ctx context.Context, in io.Reader) <-chan solConsoleInput {
@@ -223,9 +289,11 @@ func (c *Client) runSOLStream(
 	ctx context.Context,
 	in io.Reader,
 	out io.Writer,
-	pollInterval time.Duration,
 	interrupt <-chan os.Signal,
 ) error {
+	if c.Interface != InterfaceLanplus {
+		return fmt.Errorf("SOL stream requires IPMI v2.0 (RMCP+); use InterfaceLanplus (-I lanplus)")
+	}
 	// Table 24-2 includes the four-byte SOL header in the inbound payload size.
 	// Table 15-2 limits the acknowledged character count to 255. Keep one-byte
 	// input when activation did not provide a usable size.
@@ -236,12 +304,12 @@ func (c *Client) runSOLStream(
 		client:              c,
 		input:               in,
 		output:              out,
-		pollInterval:        pollInterval,
 		interrupt:           interrupt,
 		maxInputChars:       maxInputChars,
 		localSequenceNumber: 1,
+		outputCh:            make(chan *types.SOLPayloadResponse, 256),
 	}
-	if err := c.registerSOLStream(stream); err != nil {
+	if err := c.registerSOLStream(ctx, stream); err != nil {
 		return err
 	}
 	defer c.unregisterSOLStream()
@@ -249,6 +317,10 @@ func (c *Client) runSOLStream(
 	return stream.run(ctx)
 }
 
+// exchangePacket sends one data-carrying SOL packet and waits for the BMC's
+// acknowledgement (§15.11: every non-zero-sequence console packet is ACKed).
+// The request also carries the current acknowledgement state for console
+// output, so output received so far is ACKed without a separate packet.
 func (s *solStream) exchangePacket(ctx context.Context, chars []byte) (*types.SOLPayloadResponse, error) {
 	req := &types.SOLPayloadRequest{
 		SOLPayloadPacket: types.SOLPayloadPacket{
@@ -263,58 +335,45 @@ func (s *solStream) exchangePacket(ctx context.Context, chars []byte) (*types.SO
 		return nil, err
 	}
 	s.localSequenceNumber = nextSOLSequenceNumber(s.localSequenceNumber)
-	// The request carried the acknowledgement for output received so far.
-	s.outputAckPending = false
-
-	for _, pending := range s.takePendingOutput() {
-		if err := s.processOutput(pending); err != nil {
-			return nil, err
-		}
-	}
-
-	if err := s.processOutput(res); err != nil {
-		return nil, err
-	}
+	// The packet carried the acknowledgement for output received so far.
+	s.ackPending = false
 	return res, nil
 }
 
-// acknowledgeOutput immediately acknowledges and drains BMC console output.
-func (s *solStream) acknowledgeOutput(ctx context.Context) error {
-	repeatedResponses := 0
-	for s.outputAckPending {
-		previousSequenceNumber := s.remoteSequenceNumber
-		previousAcceptedCharCount := s.acceptedCharCount
-
-		// A nonzero empty packet carries the acknowledgement and requires a response from the BMC.
-		_, err := s.exchangePacket(ctx, nil)
-		if err != nil {
-			return err
-		}
-
-		if s.outputAckPending &&
-			s.remoteSequenceNumber == previousSequenceNumber &&
-			s.acceptedCharCount == previousAcceptedCharCount {
-			repeatedResponses++
-			if repeatedResponses > defaultSOLAcknowledgementRetryCount {
-				return fmt.Errorf("BMC repeated SOL sequence %d after %d acknowledgement retries",
-					s.remoteSequenceNumber, defaultSOLAcknowledgementRetryCount)
-			}
-		} else {
-			repeatedResponses = 0
-		}
+// sendAck acknowledges accepted console output with an ACK-only packet
+// (sequence 0h), which the BMC does not answer (§15.11).
+func (s *solStream) sendAck(ctx context.Context) error {
+	req := &types.SOLPayloadRequest{
+		SOLPayloadPacket: types.SOLPayloadPacket{
+			SequenceNumber:         0,
+			AckedSequenceNumber:    s.remoteSequenceNumber,
+			AcceptedCharacterCount: s.acceptedCharCount,
+		},
+	}
+	rmcp, err := s.client.BuildRmcpRequest(ctx, req)
+	if err != nil {
+		return fmt.Errorf("build SOL ACK packet failed: %w", err)
+	}
+	if err := s.client.udpClient.Send(ctx, bytes.NewReader(rmcp.Pack())); err != nil {
+		return fmt.Errorf("send SOL ACK failed: %w", err)
 	}
 	return nil
 }
 
-func (s *solStream) sendPacket(ctx context.Context, chars []byte) (*types.SOLPayloadResponse, error) {
-	response, err := s.exchangePacket(ctx, chars)
-	if err != nil {
-		return nil, err
+// takeOutput writes SOL packets already queued by the receive loop, in the
+// order they arrived. Non-blocking: the caller has just finished an exchange,
+// and that exchange does not return until its own response has been queued.
+func (s *solStream) takeOutput() error {
+	for {
+		select {
+		case response := <-s.outputCh:
+			if err := s.processOutput(response); err != nil {
+				return err
+			}
+		default:
+			return nil
+		}
 	}
-	if err := s.acknowledgeOutput(ctx); err != nil {
-		return nil, err
-	}
-	return response, nil
 }
 
 func (s *solStream) sendData(ctx context.Context, chars []byte) error {
@@ -322,7 +381,7 @@ func (s *solStream) sendData(ctx context.Context, chars []byte) error {
 	noProgressRetries := 0
 	for len(pending) > 0 {
 		// Retry only the data the BMC did not accept, using a fresh SOL sequence.
-		res, err := s.sendPacket(ctx, pending)
+		res, err := s.exchangePacket(ctx, pending)
 		if err != nil {
 			return err
 		}
@@ -369,19 +428,19 @@ func (s *solStream) run(ctx context.Context) error {
 	defer cancelInput()
 
 	input := readSOLInput(inputCtx, s.input)
-	ticker := time.NewTicker(s.pollInterval)
-	defer ticker.Stop()
-
-	if _, err := s.sendPacket(ctx, nil); err != nil {
-		return err
-	}
 
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
+		case <-s.client.lanClosed:
+			return net.ErrClosed
 		case <-s.interrupt:
 			return nil
+		case response := <-s.outputCh:
+			if err := s.processOutput(response); err != nil {
+				return err
+			}
 		case consoleInput := <-input:
 			chars := make([]byte, 0, s.maxInputChars)
 		collectInput:
@@ -402,15 +461,29 @@ func (s *solStream) run(ctx context.Context) error {
 				return err
 			}
 			if consoleInput.err != nil {
+				// The keystroke's reply may carry console output. It is
+				// queued on outputCh before sendData returns; leaving it
+				// there drops the last screen update.
+				if err := s.takeOutput(); err != nil {
+					return err
+				}
+				if s.ackPending {
+					if err := s.sendAck(ctx); err != nil {
+						return err
+					}
+					s.ackPending = false
+				}
 				if consoleInput.err == io.EOF {
 					return nil
 				}
 				return consoleInput.err
 			}
-		case <-ticker.C:
-			if _, err := s.sendPacket(ctx, nil); err != nil {
+		}
+		if s.ackPending {
+			if err := s.sendAck(ctx); err != nil {
 				return err
 			}
+			s.ackPending = false
 		}
 	}
 }

@@ -95,45 +95,20 @@ func (c *Client) tryMatchIPMILANResponse(recv []byte, wantSeq, wantCmd uint8) (b
 // echoing its sequence number (spec v2.0 §15.9/§15.11), so the response to
 // the request with sequence number wantAck always carries
 // AckedSequenceNumber == wantAck. Asynchronous BMC output may acknowledge an
-// earlier request, so it is preserved for the active stream to process after
-// the pending request completes.
+// earlier request: it does not match and falls through to the receive loop's
+// dispatcher, which delivers it to the active stream in wire order.
 //
 // ACK-only requests (sequence 0h) carry no number for the BMC to echo: it
 // answers with the last accepted data sequence instead (which is non-zero
 // once any keystroke has flowed), so no acked-based filter exists and the
 // first SOL packet on the wire is taken as their response.
 func (c *Client) tryMatchSOLResponse(recv []byte, wantAck uint8) (bool, error) {
-	rmcp := &types.Rmcp{}
-	if err := rmcp.Unpack(recv); err != nil {
-		c.DebugfYellow("drop recv: rmcp unpack failed: %s\n", err)
-		c.DebugBytes("dropped recv (rmcp unpack failed)", recv, 16)
-		return false, nil
-	}
-	if rmcp.Session20 == nil {
-		return false, nil
-	}
-	hdr := rmcp.Session20.SessionHeader20
-	if hdr.PayloadType != types.PayloadTypeSOL {
-		return false, nil
-	}
-	payload := rmcp.Session20.SessionPayload
-	if hdr.PayloadEncrypted {
-		d, err := c.decryptPayload(payload)
-		if err != nil {
-			c.DebugfYellow("drop recv: decrypt SOL payload failed: %s\n", err)
-			return false, nil
-		}
-		payload = d
-	}
-	var sol types.SOLPayloadPacket
-	if err := sol.Unpack(payload); err != nil {
-		c.DebugfYellow("drop recv: SOL payload unpack failed: %s\n", err)
+	sol, err := c.parseInboundSOLPacket(recv)
+	if err != nil {
+		c.DebugfYellow("drop recv: %s\n", err)
 		return false, nil
 	}
 	if wantAck != 0 && sol.AckedSequenceNumber != wantAck {
-		if sol.SequenceNumber != 0 {
-			c.deliverSOLOutput(&types.SOLPayloadResponse{SOLPayloadPacket: sol})
-		}
 		c.DebugfYellow("drop recv: SOL ack mismatch (got ack %d, want ack %d)\n", sol.AckedSequenceNumber, wantAck)
 		return false, nil
 	}

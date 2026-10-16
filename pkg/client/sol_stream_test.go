@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"strings"
 	"testing"
@@ -57,16 +58,18 @@ func TestSOLOutputStreamDropsTrailingRetransmission(t *testing.T) {
 			stream.remoteSequenceNumber, stream.acceptedCharCount)
 	}
 
-	// A dropped duplicate carries no news about what the BMC accepted, so it must
-	// not schedule an acknowledgement of its own.
-	stream.outputAckPending = false
+	// A trailing duplicate means the BMC never saw our acknowledgement (or its
+	// retry raced it): §15.11 requires acknowledging every non-zero packet, so
+	// the duplicate must schedule a fresh ACK of the current state — a
+	// Table 15-3 "Completion ACK" stops the BMC's retry engine.
+	stream.ackPending = false
 	if err := stream.processOutput(&types.SOLPayloadResponse{
 		SOLPayloadPacket: types.SOLPayloadPacket{SequenceNumber: 15, CharacterData: []byte("def")},
 	}); err != nil {
 		t.Fatalf("processOutput() error = %v", err)
 	}
-	if stream.outputAckPending {
-		t.Fatal("dropped duplicate left an acknowledgement pending")
+	if !stream.ackPending {
+		t.Fatal("dropped duplicate did not re-schedule the acknowledgement")
 	}
 }
 
@@ -126,13 +129,10 @@ func TestSOLOutputStreamRejectsInvalidResponse(t *testing.T) {
 	}
 }
 
-func TestSOLStreamPreservesAsynchronousOutput(t *testing.T) {
+func TestSOLStreamDispatcherDeliversAsynchronousOutput(t *testing.T) {
 	client := &Client{}
-	stream := &solStream{client: client}
-	if err := client.registerSOLStream(stream); err != nil {
-		t.Fatalf("registerSOLStream() error = %v", err)
-	}
-	defer client.unregisterSOLStream()
+	stream := &solStream{outputCh: make(chan *types.SOLPayloadResponse, 16)}
+	client.activeSOLStream = stream
 
 	payload := (&types.SOLPayloadPacket{
 		SequenceNumber:      1,
@@ -151,28 +151,47 @@ func TestSOLStreamPreservesAsynchronousOutput(t *testing.T) {
 		},
 	}).Pack()
 
-	matched, err := client.tryMatchSOLResponse(packet, 2)
-	if err != nil {
-		t.Fatalf("tryMatchSOLResponse() error = %v", err)
-	}
-	if matched {
-		t.Fatal("tryMatchSOLResponse() matched asynchronous output")
+	client.dispatchInboundDatagram(packet)
+	select {
+	case got := <-stream.outputCh:
+		if string(got.CharacterData) != "output" {
+			t.Fatalf("dispatched output = %q, want %q", got.CharacterData, "output")
+		}
+	default:
+		t.Fatal("dispatcher did not deliver asynchronous output to the stream")
 	}
 
-	responses := stream.takePendingOutput()
-	if len(responses) != 1 || string(responses[0].CharacterData) != "output" {
-		t.Fatalf("pending SOL responses = %#v, want asynchronous output", responses)
+	// Command responses claimed by an exchange also pass through the
+	// dispatcher; non-SOL datagrams must return early without touching the
+	// stream.
+	ipmiPacket := (&types.Rmcp{
+		RmcpHeader: types.NewRmcpHeader(),
+		Session20: &types.Session20{
+			SessionHeader20: &types.SessionHeader20{
+				AuthType:      types.AuthTypeRMCPPlus,
+				PayloadType:   types.PayloadTypeIPMI,
+				PayloadLength: 8,
+			},
+			SessionPayload: []byte{0x20, 0x18, 0xc8, 0x81, 0x04, 0x01, 0x51, 0x9f},
+		},
+	}).Pack()
+	client.dispatchInboundDatagram(ipmiPacket)
+	select {
+	case got := <-stream.outputCh:
+		t.Fatalf("dispatcher delivered a non-SOL datagram to the stream: %+v", got)
+	default:
 	}
 }
 
 func TestRegisterSOLStreamRejectsActiveStream(t *testing.T) {
-	client := &Client{}
-	if err := client.registerSOLStream(&solStream{}); err != nil {
+	client := &Client{udpClient: NewUDPClient("127.0.0.1", 1)}
+	defer client.udpClient.Close()
+	if err := client.registerSOLStream(context.Background(), &solStream{}); err != nil {
 		t.Fatalf("registerSOLStream() error = %v", err)
 	}
 	defer client.unregisterSOLStream()
 
-	if err := client.registerSOLStream(&solStream{}); err == nil {
+	if err := client.registerSOLStream(context.Background(), &solStream{}); err == nil {
 		t.Fatal("registerSOLStream() accepted a second active stream")
 	}
 }
