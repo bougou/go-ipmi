@@ -93,6 +93,58 @@ func newSOLTestServerWithConsole(t *testing.T, ch *mock.Console) (c *Client, b *
 	return c, b
 }
 
+// A removed session makes the probe time out. One timeout is a UDP blip and
+// must not close the client; a second consecutive miss does.
+func TestSessionProbeLostOnlyForDeadSessionStatus(t *testing.T) {
+	if !sessionProbeLost(types.NewRmcpStatusError(types.RmcpStatusCodeInvalidSessionID)) {
+		t.Fatal("invalid session id should close")
+	}
+	if !sessionProbeLost(types.NewRmcpStatusError(types.RmcpStatusCodeInactiveSessionID)) {
+		t.Fatal("inactive session id should close")
+	}
+	if sessionProbeLost(types.NewRmcpStatusError(types.RmcpStatusCodeInvalidPayloadType)) {
+		t.Fatal("unrelated RMCP status should not close")
+	}
+	if sessionProbeLost(types.NewResponseError(0x80, "answered")) {
+		t.Fatal("a completion code means the BMC answered")
+	}
+	if sessionProbeLost(errors.New("udp timeout")) {
+		t.Fatal("a timeout is inconclusive")
+	}
+}
+
+func TestKeepaliveClosesWhenSessionDies(t *testing.T) {
+	c, b, _ := newSOLTestServer(t)
+	if err := b.Sessions.Close(c.session.v20.bmcSessionID); err != nil {
+		t.Fatalf("close session: %v", err)
+	}
+	c.WithRetry(0).WithTimeout(200 * time.Millisecond)
+	c.keepaliveCancel()
+	<-c.keepaliveDone
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		c.keepSessionAlive(context.Background(), 1)
+	}()
+	time.Sleep(1500 * time.Millisecond)
+	select {
+	case <-c.lanClosed:
+		t.Fatal("closed on the first inconclusive probe")
+	default:
+	}
+	select {
+	case <-c.lanClosed:
+	case <-time.After(3 * time.Second):
+		t.Fatal("keepalive left a dead session open after repeated probes")
+	}
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("keepalive did not return")
+	}
+}
+
 func waitForCondition(t *testing.T, what string, fn func() bool) {
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)

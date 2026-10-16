@@ -649,6 +649,23 @@ func (c *Client) startSessionKeepalive(ctx context.Context, intervalSec int) err
 	return nil
 }
 
+// sessionProbeLost reports an RMCP+ status that means this session is gone.
+// A completion code is not that: the BMC answered, so the session is alive.
+// A UDP timeout is not that either: the probe already retried, and one miss
+// does not distinguish a blip from an expired session.
+func sessionProbeLost(err error) bool {
+	var status *types.RmcpStatusError
+	if !errors.As(err, &status) {
+		return false
+	}
+	switch status.StatusCode() {
+	case types.RmcpStatusCodeInvalidSessionID, types.RmcpStatusCodeInactiveSessionID:
+		return true
+	default:
+		return false
+	}
+}
+
 // 6.12.15 Session Inactivity Timeouts
 func (c *Client) keepSessionAlive(ctx context.Context, intervalSec int) {
 	var period = time.Duration(intervalSec) * time.Second
@@ -656,12 +673,32 @@ func (c *Client) keepSessionAlive(ctx context.Context, intervalSec int) {
 	defer ticker.Stop()
 
 	c.Debugf("keepSessionAlive started\n")
+	// Consecutive inconclusive misses. Two of them, at the 10s interval,
+	// still land inside a 30s inactivity timeout. One miss does not close:
+	// the probe has already spent its UDP retry budget.
+	var misses int
 	for {
 		select {
 		case <-ticker.C:
 			if _, err := c.GetCurrentSessionInfo(ctx); err != nil {
+				if ctx.Err() != nil {
+					return
+				}
 				c.DebugfRed("keepSessionAlive failed, GetCurrentSessionInfo failed, err: %w", err)
+				var replied *types.ResponseError
+				if errors.As(err, &replied) {
+					misses = 0
+					continue
+				}
+				misses++
+				if !sessionProbeLost(err) && misses < 2 {
+					continue
+				}
+				// closeLAN waits for this goroutine, so Close cannot run inline.
+				go c.Close(context.Background())
+				return
 			}
+			misses = 0
 		case <-ctx.Done():
 			c.Debugf("got close signal, keepSessionAlive stopped\n")
 			return

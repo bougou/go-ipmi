@@ -32,7 +32,14 @@ const (
 	// OpenBackendPower is a deprecated alias of OpenBackendPowerShell.
 	OpenBackendPower string = open.BackendPowerShell
 
-	DefaultKeepAliveIntervalSec int = 30
+	// Keepalive must land well before the BMC's session inactivity timeout.
+	// The spec default is 60s (Table 6-7), but implementations pick their
+	// own — OpenIPMI's ipmi_sim defaults to 30s (lanserv_ipmi.c
+	// default_session_timeout) and, like many BMCs, does not count SOL
+	// payload packets as session activity: during an idle SOL session the
+	// keepalive is the only IPMI-command traffic. 10s beats even a 30s
+	// timeout with its -3s tolerance.
+	DefaultKeepAliveIntervalSec int = 10
 	DefaultBufferSize           int = 4096
 
 	// https://github.com/ipmitool/ipmitool/blob/IPMITOOL_1_8_19/src/plugins/lanplus/lanplus.h#L68
