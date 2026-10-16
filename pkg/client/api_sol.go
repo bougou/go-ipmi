@@ -89,9 +89,18 @@ func (c *Client) SOLActivate(ctx context.Context, in io.Reader, out io.Writer, o
 		}
 	}
 
+	// Table 24-2: ask for encrypted and authenticated SOL data only when
+	// this session negotiated them. Requesting encryption the suite does
+	// not have is 83h, not a no-op (suites 1, 2, 15, 16).
+	c.lock()
+	wantEnc := c.session.v20.cryptAlg != types.CryptAlg_None
+	wantAuth := c.session.v20.integrityAlg != types.IntegrityAlg_None
+	c.unlock()
 	activatePayloadResponse, err := c.ActivatePayload(ctx, &transport.ActivatePayloadRequest{
-		PayloadType:     types.PayloadTypeSOL,
-		PayloadInstance: payloadInstance,
+		PayloadType:          types.PayloadTypeSOL,
+		PayloadInstance:      payloadInstance,
+		EnableEncryption:     wantEnc,
+		EnableAuthentication: wantAuth,
 	})
 	if err != nil {
 		return err
