@@ -163,8 +163,13 @@ func (c *Client) genSession20(payloadType types.PayloadType, rawPayload []byte) 
 	}
 
 	if c.session.v20.state == types.SessionStateActive {
-		sessionHeader.PayloadAuthenticated = true
-		sessionHeader.PayloadEncrypted = true
+		// The per-packet flags must mirror the negotiated cipher suite
+		// (§13.19/§13.20): suites without confidentiality (e.g. 2) send
+		// cleartext payloads, suites without integrity (e.g. 1) send no
+		// AuthCode. Claiming encryption while sending cleartext makes the
+		// BMC drop every in-session packet.
+		sessionHeader.PayloadAuthenticated = c.session.v20.integrityAlg != types.IntegrityAlg_None
+		sessionHeader.PayloadEncrypted = c.session.v20.cryptAlg != types.CryptAlg_None
 		sessionHeader.SessionID = c.session.v20.bmcSessionID // use bmc session id
 
 		c.session.v20.sequence += 1
