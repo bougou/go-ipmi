@@ -119,49 +119,66 @@ func (c *Client) tryMatchSOLResponse(recv []byte, wantAck uint8) (bool, error) {
 // normal commands have been stopped.
 type lanCloseContextKey struct{}
 
-func (c *Client) exchangeLAN(ctx context.Context, request types.Request, response types.Response) error {
+// beginLANExchange reserves the LAN command slot and ties the returned context
+// to closeLAN. release drops the slot. CloseSession during shutdown passes a
+// nil closed channel and skips the closed-session check.
+func (c *Client) beginLANExchange(ctx context.Context) (context.Context, func(), error) {
 	closed := c.lanClosed
 	if ctx.Value(lanCloseContextKey{}) == c {
 		closed = nil
 	}
 	select {
 	case c.lanExchange <- struct{}{}:
-		defer func() { <-c.lanExchange }()
 	case <-ctx.Done():
-		return fmt.Errorf("wait for LAN exchange: %w", udpExchangeError(ctx, ctx.Err()))
+		return nil, nil, fmt.Errorf("wait for LAN exchange: %w", udpExchangeError(ctx, ctx.Err()))
 	case <-closed:
-		return net.ErrClosed
+		return nil, nil, net.ErrClosed
 	}
+	releaseSlot := func() { <-c.lanExchange }
+
 	select {
 	case <-closed:
-		return net.ErrClosed
+		releaseSlot()
+		return nil, nil, net.ErrClosed
 	default:
 	}
 	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("start LAN exchange: %w", udpExchangeError(ctx, err))
+		releaseSlot()
+		return nil, nil, fmt.Errorf("start LAN exchange: %w", udpExchangeError(ctx, err))
 	}
-	if closed != nil {
-		exchangeCtx, cancel := context.WithCancelCause(ctx)
-		c.lock()
-		select {
-		case <-closed:
-			c.unlock()
-			cancel(net.ErrClosed)
-			return net.ErrClosed
-		default:
-		}
-		// Publish under the same lock as Close: cancellation must also cover time
-		// between UDP attempts, when no transport operation is registered.
-		c.activeLANCancel = cancel
+	if closed == nil {
+		return ctx, releaseSlot, nil
+	}
+
+	exchangeCtx, cancel := context.WithCancelCause(ctx)
+	c.lock()
+	select {
+	case <-closed:
 		c.unlock()
-		defer func() {
-			c.lock()
-			c.activeLANCancel = nil
-			c.unlock()
-			cancel(nil)
-		}()
-		ctx = exchangeCtx
+		cancel(net.ErrClosed)
+		releaseSlot()
+		return nil, nil, net.ErrClosed
+	default:
 	}
+	// Publish under the same lock as Close: cancellation must also cover time
+	// between UDP attempts, when no transport operation is registered.
+	c.activeLANCancel = cancel
+	c.unlock()
+	return exchangeCtx, func() {
+		c.lock()
+		c.activeLANCancel = nil
+		c.unlock()
+		cancel(nil)
+		releaseSlot()
+	}, nil
+}
+
+func (c *Client) exchangeLAN(ctx context.Context, request types.Request, response types.Response) error {
+	ctx, release, err := c.beginLANExchange(ctx)
+	if err != nil {
+		return err
+	}
+	defer release()
 
 	c.Debug(">> Command Request", request)
 

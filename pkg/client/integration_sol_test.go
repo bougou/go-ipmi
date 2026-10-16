@@ -207,6 +207,86 @@ func TestSOLStreamWritesPiggybackedOutputBeforeEOF(t *testing.T) {
 	}
 }
 
+func TestSOLPayloadAckOnlyDoesNotWait(t *testing.T) {
+	c, _, _ := newSOLTestServer(t)
+	c.WithTimeout(200 * time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if _, err := c.ActivatePayload(ctx, &transport.ActivatePayloadRequest{
+		PayloadType:     types.PayloadTypeSOL,
+		PayloadInstance: 1,
+	}); err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	start := time.Now()
+	if _, err := c.SOLPayload(ctx, &types.SOLPayloadRequest{}); err != nil {
+		t.Fatalf("ACK-only SOLPayload: %v", err)
+	}
+	// One read, then success. The retry budget (5 × 200ms) would blow this.
+	if elapsed := time.Since(start); elapsed > 500*time.Millisecond {
+		t.Fatalf("ACK-only SOLPayload waited %s", elapsed)
+	}
+}
+
+func TestSOLPayloadAckAfterClose(t *testing.T) {
+	c, _, _ := newSOLTestServer(t)
+	if err := c.Close(context.Background()); err != nil {
+		t.Fatalf("close: %v", err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_, err := c.SOLPayload(ctx, &types.SOLPayloadRequest{})
+	if !errors.Is(err, net.ErrClosed) {
+		t.Fatalf("SOLPayload after close: %v, want closed", err)
+	}
+	c.udpClient.lock.Lock()
+	conn := c.udpClient.conn
+	c.udpClient.lock.Unlock()
+	if conn != nil {
+		t.Fatal("ACK after close left a UDP socket open")
+	}
+}
+
+func TestSOLPayloadAckRejectsNonLanplus(t *testing.T) {
+	c, _, _ := newSOLTestServer(t)
+	c.udpClient.lock.Lock()
+	gen, conn := c.udpClient.generation, c.udpClient.conn
+	c.udpClient.lock.Unlock()
+	c.Interface = InterfaceLan
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_, err := c.SOLPayload(ctx, &types.SOLPayloadRequest{})
+	if err == nil || !strings.Contains(err.Error(), "lanplus") {
+		t.Fatalf("SOLPayload on lan: %v", err)
+	}
+	c.udpClient.lock.Lock()
+	defer c.udpClient.lock.Unlock()
+	if c.udpClient.generation != gen || c.udpClient.conn != conn {
+		t.Fatal("non-lanplus ACK opened a UDP socket")
+	}
+}
+
+func TestSOLPayloadAckReturnsQueuedOutput(t *testing.T) {
+	c, _, fake := newSOLTestServer(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if _, err := c.ActivatePayload(ctx, &transport.ActivatePayloadRequest{
+		PayloadType:     types.PayloadTypeSOL,
+		PayloadInstance: 1,
+	}); err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	fake.FeedRX([]byte("login: "))
+	res, err := c.SOLPayload(ctx, &types.SOLPayloadRequest{})
+	if err != nil {
+		t.Fatalf("SOLPayload: %v", err)
+	}
+	if !bytes.Contains(res.CharacterData, []byte("login: ")) {
+		t.Fatalf("response data = %q, want login:", res.CharacterData)
+	}
+}
+
 func waitForCondition(t *testing.T, what string, fn func() bool) {
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)

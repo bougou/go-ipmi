@@ -2,9 +2,12 @@ package client
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"os/signal"
 
@@ -47,10 +50,64 @@ func solActivatePayloadInstance(opts *SOLActivateOptions) uint8 {
 }
 
 // SOLPayload exchanges a single SOL payload packet over an active RMCP+ session.
+//
+// Sequence 0h is not acknowledged (§15.11). While a SOL stream is running its
+// receive loop already delivers any console push, so the packet is only sent.
+// With no stream, one read collects a push the BMC sends for queued output;
+// silence from the BMC is success, not a timeout.
 func (c *Client) SOLPayload(ctx context.Context, request *types.SOLPayloadRequest) (response *types.SOLPayloadResponse, err error) {
 	response = &types.SOLPayloadResponse{}
+	if c.Interface != InterfaceLanplus {
+		return nil, fmt.Errorf("SOL payload exchange requires lanplus interface")
+	}
+	if request.SequenceNumber == 0 {
+		err = c.sendSOLAck(ctx, request, response)
+		return
+	}
 	err = c.Exchange(ctx, request, response)
 	return
+}
+
+// sendSOLAck sends a sequence-0h packet on the LAN session. It shares
+// closeLAN's exchange slot, so a closed client cannot dial a new socket.
+func (c *Client) sendSOLAck(ctx context.Context, request *types.SOLPayloadRequest, response *types.SOLPayloadResponse) error {
+	if c.udpClient == nil {
+		return fmt.Errorf("SOL ACK requires a LAN connection")
+	}
+	ctx, release, err := c.beginLANExchange(ctx)
+	if err != nil {
+		return err
+	}
+	defer release()
+
+	c.lock()
+	streaming := c.activeSOLStream != nil
+	c.unlock()
+
+	rmcp, err := c.BuildRmcpRequest(ctx, request)
+	if err != nil {
+		return err
+	}
+	sent := rmcp.Pack()
+	if streaming {
+		return c.udpClient.Send(ctx, bytes.NewReader(sent))
+	}
+
+	recv, err := c.udpClient.ExchangeUntilMatch(ctx, bytes.NewReader(sent), func(p []byte) (bool, error) {
+		return c.tryMatchSOLResponse(p, 0)
+	})
+	if err != nil {
+		if ctx.Err() == nil && (errors.Is(err, errNoDatagramMatched) || isNetTimeout(err)) {
+			return nil
+		}
+		return err
+	}
+	return c.ParseRmcpResponse(ctx, recv, request.Command(), response)
+}
+
+func isNetTimeout(err error) bool {
+	var netErr net.Error
+	return errors.As(err, &netErr) && netErr.Timeout()
 }
 
 // SOLActivate activates the SOL payload and runs an interactive session.
