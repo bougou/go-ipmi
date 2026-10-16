@@ -2,7 +2,6 @@ package client
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -343,18 +342,14 @@ func (s *solStream) exchangePacket(ctx context.Context, chars []byte) (*types.SO
 // sendAck acknowledges accepted console output with an ACK-only packet
 // (sequence 0h), which the BMC does not answer (§15.11).
 func (s *solStream) sendAck(ctx context.Context) error {
-	req := &types.SOLPayloadRequest{
+	_, err := s.client.SOLPayload(ctx, &types.SOLPayloadRequest{
 		SOLPayloadPacket: types.SOLPayloadPacket{
 			SequenceNumber:         0,
 			AckedSequenceNumber:    s.remoteSequenceNumber,
 			AcceptedCharacterCount: s.acceptedCharCount,
 		},
-	}
-	rmcp, err := s.client.BuildRmcpRequest(ctx, req)
+	})
 	if err != nil {
-		return fmt.Errorf("build SOL ACK packet failed: %w", err)
-	}
-	if err := s.client.udpClient.Send(ctx, bytes.NewReader(rmcp.Pack())); err != nil {
 		return fmt.Errorf("send SOL ACK failed: %w", err)
 	}
 	return nil
