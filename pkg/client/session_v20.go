@@ -372,6 +372,11 @@ func (c *Client) decryptPayload(data []byte) ([]byte, error) {
 		return data, nil
 
 	case types.CryptAlg_AES_CBC_128:
+		// Wire format is IV(16) || ciphertext; CryptBlocks panics unless the
+		// ciphertext is a positive multiple of the 16-byte block.
+		if len(data) < 32 || (len(data)-16)%16 != 0 {
+			return nil, fmt.Errorf("encrypted payload length %d is not IV + AES blocks", len(data))
+		}
 		iv := data[0:16] // the first 16 byte is the initialization vector
 		cipherText := data[16:]
 		cipherKey := c.session.v20.k2[0:16]
@@ -381,12 +386,25 @@ func (c *Client) decryptPayload(data []byte) ([]byte, error) {
 		}
 		padLength := d[len(d)-1]
 		dEnd := len(d) - int(padLength) - 1
+		if dEnd < 0 {
+			return nil, fmt.Errorf("decrypted payload has invalid pad length %d", padLength)
+		}
 		return d[0:dEnd], nil
 
 	case types.CryptAlg_xRC4_40, types.CryptAlg_xRC4_128:
-		// the first received packet
+		// §13.30: the first packet is offset(4)=0 || IV(16) || ciphertext.
+		// Later packets are offset(4) || ciphertext. Slicing every packet at
+		// 20 drops ciphertext and panics when a later packet is shorter than 20.
+		if len(data) < 4 {
+			return nil, fmt.Errorf("encrypted payload length %d too short for xRC4", len(data))
+		}
+		payloadData := data[4:]
 		if data[0] == 0x0 && data[1] == 0x0 && data[2] == 0x0 && data[3] == 0x0 {
+			if len(data) < 20 {
+				return nil, fmt.Errorf("first xRC4 payload length %d has no room for the IV", len(data))
+			}
 			c.session.v20.rc4DecryptIV = array16(data[4:20])
+			payloadData = data[20:]
 		}
 
 		iv := c.session.v20.rc4DecryptIV[:]
@@ -403,7 +421,6 @@ func (c *Client) decryptPayload(data []byte) ([]byte, error) {
 			cipherKey = keyRC[:16]
 		}
 
-		payloadData := data[20:]
 		b, err := crypto.DecryptRC4(payloadData, cipherKey, iv)
 		if err != nil {
 			return nil, fmt.Errorf("decrypt payload with xRC4_128 failed, err: %w", err)
