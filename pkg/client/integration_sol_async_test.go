@@ -285,3 +285,48 @@ func TestSOLStreamKeepsSessionAliveDuringIdle(t *testing.T) {
 	t.Fatalf("no IPMI command traffic during 12s idle SOL session; keepalive interval %ds cannot beat aggressive inactivity timeouts (ipmi_sim defaults to 30s)",
 		DefaultKeepAliveIntervalSec)
 }
+
+// Requesting encryption on a suite that has none is Table 24-2 83h. Suites
+// that negotiated confidentiality must still ask for it.
+func TestSOLActivateMatchesNegotiatedCipher(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		id   types.CipherSuiteID
+		enc  bool
+	}{
+		{name: "suite 2", id: types.CipherSuiteID2, enc: false},
+		{name: "suite 3", id: types.CipherSuiteID3, enc: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, b, _ := newSOLTestRig(t, nil, func(c *Client) {
+				c.session.v20.customSuiteIDs = []types.CipherSuiteID{tc.id}
+			}, bmc.WithCipherSuites([]types.CipherSuiteID{tc.id}))
+
+			inR, inW := io.Pipe()
+			_ = inW.Close()
+			var gotEnc bool
+			var saw bool
+			err := c.SOLActivate(context.Background(), inR, io.Discard, &SOLActivateOptions{
+				OnActivated: func(uint8, io.Reader, io.Writer, *transport.ActivatePayloadResponse) {
+					saw = true
+					inst := b.SOL.InstanceBySession(c.session.v20.bmcSessionID)
+					if inst == nil {
+						t.Errorf("SOL instance missing after activate")
+						return
+					}
+					gotEnc = inst.OutboundEncrypted()
+				},
+				OnDeactivated: func(uint8, io.Reader, io.Writer, *transport.ActivatePayloadResponse) {},
+			})
+			if err != nil {
+				t.Fatalf("SOLActivate: %v", err)
+			}
+			if !saw {
+				t.Fatal("activation callback did not run")
+			}
+			if gotEnc != tc.enc {
+				t.Fatalf("outbound encrypted = %v, want %v", gotEnc, tc.enc)
+			}
+		})
+	}
+}
