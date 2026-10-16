@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/bougou/go-ipmi/pkg/command/transport"
 	"github.com/bougou/go-ipmi/pkg/types"
@@ -18,9 +17,6 @@ import (
 type SOLActivateOptions struct {
 	// PayloadInstance is the SOL payload instance (1–0x3f). Zero means use default 1.
 	PayloadInstance uint8
-	// PollInterval is how often to send an empty SOL packet to poll for inbound data.
-	// Zero selects a default (100ms).
-	PollInterval time.Duration
 	// OnActivated is called once after Activate Payload (SOL) succeeds and before the session loop.
 	OnActivated func(payloadInstance uint8, in io.Reader, out io.Writer, res *transport.ActivatePayloadResponse)
 	// OnDeactivated is called once after the session loop ends.
@@ -29,7 +25,6 @@ type SOLActivateOptions struct {
 
 const (
 	defaultPayloadInstance = uint8(1)
-	defaultPollInterval    = 100 * time.Millisecond
 
 	//SOLEscapeSequence is the escape sequence to terminate SOL session.
 	// Must be used at the start of a line.
@@ -43,13 +38,6 @@ const (
 	solEscapePrefix     = '~'
 	solEscapeTerminator = 'X'
 )
-
-func solActivatePollInterval(opts *SOLActivateOptions) time.Duration {
-	if opts == nil || opts.PollInterval <= 0 {
-		return defaultPollInterval
-	}
-	return opts.PollInterval
-}
 
 func solActivatePayloadInstance(opts *SOLActivateOptions) uint8 {
 	if opts == nil || opts.PayloadInstance == 0 {
@@ -76,7 +64,6 @@ func (c *Client) SOLActivate(ctx context.Context, in io.Reader, out io.Writer, o
 	}
 
 	payloadInstance := solActivatePayloadInstance(opts)
-	pollEvery := solActivatePollInterval(opts)
 
 	useDefaultActivated := opts.OnActivated == nil
 	useDefaultDeactivated := opts.OnDeactivated == nil
@@ -128,7 +115,7 @@ func (c *Client) SOLActivate(ctx context.Context, in io.Reader, out io.Writer, o
 	signal.Notify(sigCh, os.Interrupt)
 	defer signal.Stop(sigCh)
 
-	return c.runSOLStream(ctx, newSOLEscapeReader(in), out, pollEvery, sigCh)
+	return c.runSOLStream(ctx, newSOLEscapeReader(in), out, sigCh)
 }
 
 type solEscapeReader struct {

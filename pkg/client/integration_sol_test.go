@@ -145,6 +145,68 @@ func TestKeepaliveClosesWhenSessionDies(t *testing.T) {
 	}
 }
 
+// piggyOnWrite makes the keystroke's own SOL response carry console output,
+// instead of letting the pump push that output as an earlier packet.
+type piggyOnWrite struct {
+	*mock.FakeConsoleConn
+	msg []byte
+}
+
+func (p *piggyOnWrite) Write(b []byte) (int, error) {
+	n, err := p.FakeConsoleConn.Write(b)
+	if err == nil && len(b) > 0 && len(p.msg) > 0 {
+		p.FeedRX(p.msg)
+		p.msg = nil
+	}
+	return n, err
+}
+
+func TestSOLStreamWritesPiggybackedOutputBeforeEOF(t *testing.T) {
+	fake := &mock.FakeConsoleConn{}
+	c, _ := newSOLTestServerWithConsole(t, &mock.Console{Conn: &piggyOnWrite{FakeConsoleConn: fake, msg: []byte("login: ")}})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	if _, err := c.ActivatePayload(ctx, &transport.ActivatePayloadRequest{
+		PayloadType:     types.PayloadTypeSOL,
+		PayloadInstance: 1,
+	}); err != nil {
+		t.Fatalf("activate: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = c.DeactivatePayload(context.Background(), &transport.DeactivatePayloadRequest{
+			PayloadType:     types.PayloadTypeSOL,
+			PayloadInstance: 1,
+		})
+	})
+
+	inR, inW := io.Pipe()
+	out := &lockedBuffer{}
+	solErr := make(chan error, 1)
+	go func() { solErr <- c.SOLStream(ctx, inR, out) }()
+
+	if _, err := inW.Write([]byte("k")); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := inW.Close(); err != nil {
+		t.Fatalf("close input: %v", err)
+	}
+	select {
+	case err := <-solErr:
+		if err != nil {
+			t.Fatalf("SOLStream: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("SOLStream did not return on EOF")
+	}
+	if !strings.Contains(out.String(), "login: ") {
+		t.Fatalf("output = %q, want piggybacked login:", out.String())
+	}
+	if fake.TXString() != "k" {
+		t.Fatalf("console got %q, want k", fake.TXString())
+	}
+}
+
 func waitForCondition(t *testing.T, what string, fn func() bool) {
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)
@@ -169,12 +231,9 @@ func TestSOLSessionLoopback(t *testing.T) {
 	inR, inW := io.Pipe()
 	out := &lockedBuffer{}
 
-	// Poll slower than the server's 50ms retry interval (§15.11): the retry
-	// engine must fire between polls so async retransmissions exist — a fast
-	// poller would ack every packet before a retry could be sent.
 	solErr := make(chan error, 1)
 	go func() {
-		solErr <- c.SOLActivate(ctx, inR, out, &SOLActivateOptions{PollInterval: 100 * time.Millisecond})
+		solErr <- c.SOLActivate(ctx, inR, out, nil)
 	}()
 
 	waitForCondition(t, "SOL activation", func() bool {
@@ -204,11 +263,11 @@ func TestSOLSessionLoopback(t *testing.T) {
 	})
 
 	// §15.9/§15.11: a retransmission reuses its sequence number, so the
-	// receiver must not re-deliver it. The server pushes console data both
-	// async and piggybacked on poll responses, and retries unacked packets;
-	// the client must consume only the response to its current poll and
-	// display the data exactly once. The keystroke round-trip above spans
-	// several poll cycles, so any duplicate delivery has settled by now.
+	// receiver must not re-deliver it. The server pushes console data
+	// asynchronously and retries unacked packets; the client acknowledges
+	// each packet once and must display the data exactly once. The round
+	// trips above gave any retry a chance to arrive, so duplicate delivery
+	// would be visible by now.
 	if got := strings.Count(out.String(), "login: "); got != 1 {
 		t.Fatalf("console output delivered %d times, want exactly once: %q", got, out.String())
 	}
@@ -246,18 +305,33 @@ func TestSOLStreamImmediatelyAcknowledgesOutput(t *testing.T) {
 		})
 	})
 
+	// Output buffered before the stream starts sits in the socket's kernel
+	// buffer; the receive loop must pick it up without any client polling.
 	want := bytes.Repeat([]byte("x"), 2*bmc.SOLMaxPayloadChars+1)
 	fake.FeedRX(want)
 
-	var out bytes.Buffer
-	err := c.SOLStream(ctx, strings.NewReader(""), &out, &SOLStreamOptions{
-		PollInterval: time.Hour,
+	inR, inW := io.Pipe()
+	out := &lockedBuffer{}
+	solErr := make(chan error, 1)
+	go func() {
+		solErr <- c.SOLStream(ctx, inR, out)
+	}()
+
+	waitForCondition(t, "buffered console output", func() bool {
+		return out.String() == string(want)
 	})
-	if err != nil {
-		t.Fatalf("SOLStream() error = %v", err)
-	}
-	if !bytes.Equal(out.Bytes(), want) {
-		t.Fatalf("SOL output length = %d, want %d", out.Len(), len(want))
+
+	// Multiple BMC packets were delivered, each acknowledged (§15.11): the
+	// server retransmits unacknowledged output, so exactly-once delivery here
+	// proves the ACK path.
+	_ = inW.Close()
+	select {
+	case err := <-solErr:
+		if err != nil {
+			t.Fatalf("SOLStream: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("SOLStream did not return after input EOF")
 	}
 }
 
@@ -342,7 +416,7 @@ func TestSOLStreamBatchesInput(t *testing.T) {
 			if tt.readErr != nil {
 				input = io.MultiReader(strings.NewReader(want), iotest.ErrReader(tt.readErr))
 			}
-			err = c.SOLStream(ctx, input, io.Discard, &SOLStreamOptions{PollInterval: time.Hour})
+			err = c.SOLStream(ctx, input, io.Discard)
 			if !errors.Is(err, tt.readErr) {
 				t.Fatalf("SOLStream() error = %v, want %v", err, tt.readErr)
 			}
@@ -366,9 +440,7 @@ func TestSOLStreamRetriesUnacceptedData(t *testing.T) {
 	console := &rejectingConsole{rejects: 1}
 	c, _ := newSOLTestServerWithConsole(t, &mock.Console{Conn: console})
 
-	err := c.SOLActivate(context.Background(), strings.NewReader("x"), io.Discard, &SOLActivateOptions{
-		PollInterval: time.Hour,
-	})
+	err := c.SOLActivate(context.Background(), strings.NewReader("x"), io.Discard, nil)
 	if err != nil {
 		t.Fatalf("SOLActivate() error = %v", err)
 	}
@@ -383,9 +455,7 @@ func TestSOLStreamBoundsUnacceptedDataRetries(t *testing.T) {
 	console := &rejectingConsole{rejects: -1}
 	c, _ := newSOLTestServerWithConsole(t, &mock.Console{Conn: console})
 
-	err := c.SOLActivate(context.Background(), strings.NewReader("x"), io.Discard, &SOLActivateOptions{
-		PollInterval: time.Hour,
-	})
+	err := c.SOLActivate(context.Background(), strings.NewReader("x"), io.Discard, nil)
 	if err == nil || !strings.Contains(err.Error(), "did not accept") {
 		t.Fatalf("SOLActivate() error = %v, want bounded data transmission error", err)
 	}
@@ -475,7 +545,7 @@ func TestSOLReconnectLoopback(t *testing.T) {
 
 	solErr := make(chan error, 1)
 	go func() {
-		solErr <- c.SOLActivate(ctx, inR, out, &SOLActivateOptions{PollInterval: 20 * time.Millisecond})
+		solErr <- c.SOLActivate(ctx, inR, out, nil)
 	}()
 	waitForCondition(t, "SOL activation", func() bool {
 		return b.SOL.ActiveSessionID(1) != 0
