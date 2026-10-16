@@ -97,6 +97,26 @@ run_sol_activate() {
 	printf '~.' | "${GOIPMI_BASE[@]}" -I lanplus sol activate
 }
 
+# run_sol_idle_soak holds an idle SOL session across ipmi_sim's 30s default
+# session-inactivity timeout (lanserv default_session_timeout; the spec's
+# Table 6-7 default is 60s). ipmi_sim counts only IPMI commands as session
+# activity, so an idle SOL session lives only if the client's keepalive runs
+# well under 30s (regression: keepalive at exactly 30s lost that race and the
+# session died ~45s in).
+run_sol_idle_soak() {
+	# $! of a background pipeline is goipmi. A subshell around the pipeline
+	# stays up for sleep's full 45s after goipmi has already exited.
+	sleep 45 | "${GOIPMI_BASE[@]}" -I lanplus sol activate &
+	local pid=$!
+	sleep 40
+	if ! kill -0 "${pid}" 2>/dev/null; then
+		echo "SOL session died before the 40s mark (idle session must survive the 30s inactivity timeout)" >&2
+		wait "${pid}" 2>/dev/null || true
+		return 1
+	fi
+	wait "${pid}"
+}
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -120,6 +140,7 @@ echo " IPMI v2.0 / RMCP+ (-I lanplus)"
 echo "========================================"
 e2e_run_chassis_cases failures "${GOIPMI_BASE[@]}" -I lanplus
 e2e_run_test "SOL activate" run_sol_activate || ((failures++)) || true
+e2e_run_test "SOL idle across 30s inactivity timeout" run_sol_idle_soak || ((failures++)) || true
 
 echo ""
 echo "========================================"
