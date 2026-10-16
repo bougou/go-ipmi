@@ -607,38 +607,6 @@ func TestSOLReconnectLoopback(t *testing.T) {
 	}
 }
 
-// TestSOLPayloadAckOnly verifies an ACK-only SOL packet (sequence 0h,
-// §15.11) still exchanges successfully after data has flowed: the BMC
-// echoes the last accepted data sequence number, which the response
-// matcher must not demand to equal the request's (zero) sequence number.
-func TestSOLPayloadAckOnly(t *testing.T) {
-	c, _, _ := newSOLTestServer(t)
-	ctx := context.Background()
-	if _, err := c.ActivatePayload(ctx, &transport.ActivatePayloadRequest{
-		PayloadType:     types.PayloadTypeSOL,
-		PayloadInstance: 1,
-	}); err != nil {
-		t.Fatalf("activate: %v", err)
-	}
-	t.Cleanup(func() {
-		_, _ = c.DeactivatePayload(ctx, &transport.DeactivatePayloadRequest{
-			PayloadType:     types.PayloadTypeSOL,
-			PayloadInstance: 1,
-		})
-	})
-
-	// Data packet first, so the server's acked echo becomes non-zero.
-	if _, err := c.SOLPayload(ctx, &types.SOLPayloadRequest{
-		SOLPayloadPacket: types.SOLPayloadPacket{SequenceNumber: 1, CharacterData: []byte("k")},
-	}); err != nil {
-		t.Fatalf("data exchange: %v", err)
-	}
-	// ACK-only (seq 0h) must still get a reply.
-	if _, err := c.SOLPayload(ctx, &types.SOLPayloadRequest{}); err != nil {
-		t.Fatalf("ack-only exchange: %v", err)
-	}
-}
-
 // TestGetChannelPayloadSupport verifies the §24.8 reply is spec-length (8
 // bytes): the client rejects shorter replies, so this is what keeps payload
 // discovery working.

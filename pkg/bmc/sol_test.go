@@ -212,6 +212,20 @@ func feed(t *testing.T, s *SOLStore, sess *Session, in *types.SOLPayloadPacket) 
 	return out
 }
 
+// feedUnanswered feeds an ACK-only packet (sequence 0h) that must not be
+// acknowledged (§15.11): the BMC sends nothing back when it has no console
+// data to push.
+func feedUnanswered(t *testing.T, s *SOLStore, sess *Session, in *types.SOLPayloadPacket) {
+	t.Helper()
+	if in.SequenceNumber != 0 {
+		t.Fatalf("feedUnanswered called with data-sequence packet %d", in.SequenceNumber)
+	}
+	if out := s.ProcessPacket(context.Background(), sess.BMCID, in); out != nil {
+		t.Fatalf("ProcessPacket(ACK-only) answered with seq=%d data=%q, want silence (§15.11)",
+			out.SequenceNumber, out.CharacterData)
+	}
+}
+
 func TestSOLProcessInboundData(t *testing.T) {
 	fake := &mock.FakeConsoleConn{}
 	m := mock.New()
@@ -297,17 +311,13 @@ func TestSOLProcessOutboundData(t *testing.T) {
 	}
 
 	// Suspend NACK for seq 1 (Table 15-3): the BMC stops sending the pending
-	// packet — the response is ACK-only — until the console resumes.
-	out = feed(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: 1, NACK: true})
-	if out.SequenceNumber != 0 || len(out.CharacterData) != 0 {
-		t.Fatalf("suspend: seq=%d data=%q, want ACK-only response", out.SequenceNumber, out.CharacterData)
-	}
+	// packet until the console resumes. The NACK rides an ACK-only (seq 0h)
+	// packet, which is itself never acknowledged (§15.11) — silence.
+	feedUnanswered(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: 1, NACK: true})
 
-	// While suspended even a plain poll must not resurrect the packet.
-	out = feed(t, b.SOL, sess, &types.SOLPayloadPacket{})
-	if out.SequenceNumber != 0 || len(out.CharacterData) != 0 {
-		t.Fatalf("suspended poll: seq=%d data=%q, want ACK-only response", out.SequenceNumber, out.CharacterData)
-	}
+	// While suspended even a plain poll must not resurrect the packet —
+	// and with nothing to send, the poll goes unanswered.
+	feedUnanswered(t, b.SOL, sess, &types.SOLPayloadPacket{})
 
 	// Resume ACK (ACK with count 0, Table 15-3): retransmit immediately.
 	out = feed(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: 1})
@@ -438,12 +448,11 @@ func TestSOLFlushOutbound(t *testing.T) {
 	}
 
 	// Suspend NACK, then Flush Outbound on an ACK-only packet (Table 15-3's
-	// recovery path): the pending packet is dropped, not resumed.
-	feed(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: 1, NACK: true})
-	out = feed(t, b.SOL, sess, &types.SOLPayloadPacket{ControlByte: 0x01})
-	if out.SequenceNumber != 0 || len(out.CharacterData) != 0 {
-		t.Fatalf("flush: seq=%d data=%q, want ACK-only response", out.SequenceNumber, out.CharacterData)
-	}
+	// recovery path): the pending packet is dropped, not resumed. Neither
+	// ACK-only packet is answered (§15.11); the fresh-output poll below
+	// proves the flush dropped the pending packet.
+	feedUnanswered(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: 1, NACK: true})
+	feedUnanswered(t, b.SOL, sess, &types.SOLPayloadPacket{ControlByte: 0x01})
 
 	// Output produced after the flush flows under a fresh sequence number.
 	fake.RX = []byte("world")
@@ -543,6 +552,8 @@ func TestSOLPumpAsyncPush(t *testing.T) {
 
 	// ACK it: the pump must then send the next chunk with a fresh sequence.
 	fake.FeedRX([]byte("second"))
+	// The ACK itself is not answered, but completing the pending packet lets
+	// the just-fed "second" ride the response as a fresh data packet.
 	feed(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: 1, AcceptedCharacterCount: 12})
 	pkts = waitForPkt(t, cap, 2)
 	if string(pkts[1].CharacterData) != "second" || pkts[1].SequenceNumber != 2 {
@@ -756,7 +767,7 @@ func TestSOLReconnectRecovers(t *testing.T) {
 	// the console dies: the reconnect must keep that pending state.
 	fake1.FeedRX([]byte("hello"))
 	pkts := waitForPkt(t, cap, 1)
-	feed(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: pkts[0].SequenceNumber, AcceptedCharacterCount: 5})
+	feedUnanswered(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: pkts[0].SequenceNumber, AcceptedCharacterCount: 5})
 
 	// Console dies; anything queued on it afterwards is stale residue.
 	fake1.SetReadErr(errors.New("console died"))
@@ -792,7 +803,8 @@ func TestSOLReconnectRecovers(t *testing.T) {
 
 	// Output continues after the reconnect. ACK the "fresh" packet first so
 	// the retry engine does not re-send it while the next chunk accumulates.
-	feed(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: pkts[1].SequenceNumber, AcceptedCharacterCount: 5})
+	// ACK-only (seq 0h): unanswered per §15.11.
+	feedUnanswered(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: pkts[1].SequenceNumber, AcceptedCharacterCount: 5})
 	fake2.FeedRX([]byte("second"))
 	waitForCondition(t, func() bool {
 		for _, p := range cap.all() {
@@ -858,7 +870,7 @@ func TestSOLReconnectKeepsPending(t *testing.T) {
 	}
 
 	// The pre-outage ACK is still honored after the reconnect.
-	feed(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: pkts[0].SequenceNumber, AcceptedCharacterCount: 3})
+	feedUnanswered(t, b.SOL, sess, &types.SOLPayloadPacket{AckedSequenceNumber: pkts[0].SequenceNumber, AcceptedCharacterCount: 3})
 	inst.mu.Lock()
 	pending = inst.pending != nil
 	inst.mu.Unlock()
@@ -1137,9 +1149,13 @@ func TestSOLReconnectDisabled(t *testing.T) {
 		t.Fatalf("dead console conn not released")
 	}
 
-	// The payload keeps answering with status bit [5] so the remote console
-	// can tell the outage apart from a dead BMC.
-	out := feed(t, b.SOL, sess, &types.SOLPayloadPacket{})
+	// The payload keeps answering data packets with status bit [5] so the
+	// remote console can tell the outage apart from a dead BMC. (ACK-only
+	// packets get no answer at all, §15.11.)
+	out := feed(t, b.SOL, sess, &types.SOLPayloadPacket{SequenceNumber: 1, CharacterData: []byte("x")})
+	if !out.NACK {
+		t.Fatalf("disabled reconnect: NACK=%v, want true while console is broken", out.NACK)
+	}
 	if out.ControlByte&0x20 == 0 {
 		t.Fatalf("disabled reconnect: control %#02x missing status bit [5]", out.ControlByte)
 	}
@@ -1216,7 +1232,10 @@ func TestSOLReconnectGiveUpAfterSteps(t *testing.T) {
 	if !instBroken(inst) {
 		t.Fatal("instance recovered despite Steps exhaustion")
 	}
-	out := feed(t, b.SOL, sess, &types.SOLPayloadPacket{})
+	out := feed(t, b.SOL, sess, &types.SOLPayloadPacket{SequenceNumber: 1, CharacterData: []byte("x")})
+	if !out.NACK {
+		t.Fatalf("after give-up: NACK=%v, want true while console is broken", out.NACK)
+	}
 	if out.ControlByte&0x20 == 0 {
 		t.Fatalf("after give-up: control %#02x missing status bit [5]", out.ControlByte)
 	}
@@ -1269,11 +1288,12 @@ func TestSOLReconnectSlowDialReArms(t *testing.T) {
 	}
 }
 
-// TestSOLAckOnlyReplaysAcceptedCount verifies the response to an ACK-only
-// packet echoes the accepted count of the data packet it acknowledges
-// (Table 15-3): reporting 0 for a non-empty packet would make a strict
-// console resend already-delivered keystrokes.
-func TestSOLAckOnlyReplaysAcceptedCount(t *testing.T) {
+// TestSOLAckOnlyNotAcknowledged verifies §15.11: a packet with sequence
+// number 0h carries ACK/NACK information only and is never answered — even
+// after data has flowed (a reply would be noise the console never waits for).
+// The accepted-count bookkeeping survives in the response to the next
+// data-carrying packet.
+func TestSOLAckOnlyNotAcknowledged(t *testing.T) {
 	b, _ := newConsoleBMC(t)
 	sess := newSOLTestSession(t, b)
 	if _, err := b.SOL.Activate(context.Background(), sess, false, false); err != nil {
@@ -1285,8 +1305,12 @@ func TestSOLAckOnlyReplaysAcceptedCount(t *testing.T) {
 	if out.AckedSequenceNumber != 3 || out.AcceptedCharacterCount != 3 {
 		t.Fatalf("data response: acked=%d accept=%d, want 3/3", out.AckedSequenceNumber, out.AcceptedCharacterCount)
 	}
-	out = feed(t, b.SOL, sess, &types.SOLPayloadPacket{})
+	feedUnanswered(t, b.SOL, sess, &types.SOLPayloadPacket{})
+
+	// A duplicate of the data packet still replays the original accepted
+	// count (Table 15-3), so the suppressed ACK-only answer loses nothing.
+	out = feed(t, b.SOL, sess, &types.SOLPayloadPacket{SequenceNumber: 3, CharacterData: []byte("abc")})
 	if out.AckedSequenceNumber != 3 || out.AcceptedCharacterCount != 3 {
-		t.Fatalf("ack-only response: acked=%d accept=%d, want 3/3", out.AckedSequenceNumber, out.AcceptedCharacterCount)
+		t.Fatalf("retry response: acked=%d accept=%d, want 3/3", out.AckedSequenceNumber, out.AcceptedCharacterCount)
 	}
 }
