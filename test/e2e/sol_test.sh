@@ -11,8 +11,8 @@
 #   - local ipmitool           (ipmitool sol activate)
 #   - Docker ipmitool          (fallback when no local binary; entrypoint of
 #                               the image is ipmitool, stdin via docker -i)
-#   - local goipmi binary      (goipmi sol activate — our own client, which
-#                               polls with SOL packets unlike ipmitool)
+#   - local goipmi binary      (goipmi sol activate — our own client; like
+#                               ipmitool it receives asynchronously, §15.3)
 #
 # Requires Linux (PTY allocation). With neither local ipmitool nor Docker
 # the ipmitool suites are skipped; the goipmi suite always runs.
@@ -213,8 +213,12 @@ wait_activated() { # wait until the payload is active (≈5s)
 	esac
 }
 
-stop_client() { # ask the client to exit via the ~. escape, then reap
-	printf '\r~.' >&9 2>/dev/null || true
+stop_client() { # ask the client to exit via its escape sequence, then reap
+	# ipmitool exits on ~. (ssh-style), goipmi on ~X (see SOLEscapeSequence).
+	case "${MODE}" in
+	goipmi) printf '\r~X' >&9 2>/dev/null || true ;;
+	*)      printf '\r~.' >&9 2>/dev/null || true ;;
+	esac
 	local i
 	for ((i = 0; i < 25; i++)); do
 		[ -n "${CLIENT_PID}" ] && kill -0 "${CLIENT_PID}" 2>/dev/null || break
@@ -270,6 +274,30 @@ case_inbound() { # remote keystrokes land on the system serial port
 	wait_for "${SOL_IN_GOT}" "E2E-IN-${MODE}" 50
 }
 
+case_soak() { # 65s of continuous console output across keepalive boundaries
+	# A line a second for 65s crosses the client's session keepalive (10s)
+	# six times and the server's inactivity timeout (60s) once. Every line
+	# must arrive exactly once: a missed keepalive or a dropped async push
+	# kills the session mid-soak, a retransmission mishandled duplicates.
+	local i n
+	for ((i = 1; i <= 65; i++)); do
+		if ! kill -0 "${CLIENT_PID}" 2>/dev/null; then
+			echo "client died at soak line ${i}" >&2
+			return 1
+		fi
+		printf 'soak-%s-%02d\r\n' "${MODE}" "${i}" > "${SLAVE}"
+		sleep 1
+	done
+	wait_for "${SOL_OUT}" "soak-${MODE}-65" 100 || return 1
+	for ((i = 1; i <= 65; i++)); do
+		n="$(grep -c "soak-${MODE}-$(printf '%02d' "${i}")" "${SOL_OUT}")"
+		if [ "${n}" -ne 1 ]; then
+			echo "soak line ${i} seen ${n} times, want exactly 1" >&2
+			return 1
+		fi
+	done
+}
+
 reconnect_case() { # console fault (SIGUSR1) → reconnect → recovery
 	# The SOL session from the interactive suite is still active. Break the
 	# console link: console reads fail, the instance flips broken, and the
@@ -323,10 +351,11 @@ run_interactive_suite() {
 	e2e_run_test "${label}: outbound (BMC → console)" case_outbound || ((FAILURES++)) || true
 	e2e_run_test "${label}: outbound streaming (40 lines)" case_streaming || ((FAILURES++)) || true
 	e2e_run_test "${label}: inbound (console → BMC)" case_inbound || ((FAILURES++)) || true
+	e2e_run_test "${label}: 65s output soak across keepalive boundary" case_soak || ((FAILURES++)) || true
 	if [ "${SOL_RECONNECT}" = "1" ]; then
 		e2e_run_test "${label}: reconnect after console fault" reconnect_case || ((FAILURES++)) || true
 	fi
-	e2e_run_test "${label}: deactivate via ~." stop_client || ((FAILURES++)) || true
+	e2e_run_test "${label}: deactivate via escape" stop_client || ((FAILURES++)) || true
 	exec 9>&-
 }
 
