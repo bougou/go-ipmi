@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bougou/go-ipmi/pkg/types"
@@ -85,14 +86,18 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 	c.Debugf("%s\n\n", fruHeader.String())
 	fru.CommonHeader = fruHeader
 
+	var errs []error
+
 	if offset := uint16(fruHeader.ChassisOffset8B) * 8; offset > 0 && offset < fruAreaInfoRes.AreaSizeBytes {
 		c.Debugf("Get FRU Area Chassis, offset (%d)\n", offset)
 		fruChassis, err := c.GetFRUAreaChassis(ctx, deviceID, offset)
 		if err != nil {
-			return nil, fmt.Errorf("GetFRUAreaChassis failed, err: %w", err)
+			errs = append(errs, fmt.Errorf("GetFRUAreaChassis failed, err: %w", err))
 		}
 
-		c.Debug("FRU Area Chassis", fruChassis)
+		if fruChassis != nil {
+			c.Debug("FRU Area Chassis", fruChassis)
+		}
 		fru.ChassisInfoArea = fruChassis
 	}
 
@@ -100,9 +105,11 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 		c.Debugf("Get FRU Area Board, offset (%d)\n", offset)
 		fruBoard, err := c.GetFRUAreaBoard(ctx, deviceID, offset)
 		if err != nil {
-			return nil, fmt.Errorf("GetFRUAreaBoard failed, err: %w", err)
+			errs = append(errs, fmt.Errorf("GetFRUAreaBoard failed, err: %w", err))
 		}
-		c.Debug("FRU Area Board", fruBoard)
+		if fruBoard != nil {
+			c.Debug("FRU Area Board", fruBoard)
+		}
 		fru.BoardInfoArea = fruBoard
 	}
 
@@ -110,9 +117,11 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 		c.Debugf("Get FRU Area Product, offset (%d)\n", offset)
 		fruProduct, err := c.GetFRUAreaProduct(ctx, deviceID, offset)
 		if err != nil {
-			return nil, fmt.Errorf("GetFRUAreaProduct failed, err: %w", err)
+			errs = append(errs, fmt.Errorf("GetFRUAreaProduct failed, err: %w", err))
 		}
-		c.Debug("FRU Area Product", fruProduct)
+		if fruProduct != nil {
+			c.Debug("FRU Area Product", fruProduct)
+		}
 		fru.ProductInfoArea = fruProduct
 	}
 
@@ -120,18 +129,21 @@ func (c *Client) GetFRU(ctx context.Context, deviceID uint8, deviceName string) 
 		c.Debugf("Get FRU Area Multi Records, offset (%d)\n", offset)
 		fruMultiRecords, err := c.GetFRUAreaMultiRecords(ctx, deviceID, offset)
 		if err != nil {
-			return nil, fmt.Errorf("GetFRUAreaMultiRecord failed, err: %w", err)
+			errs = append(errs, fmt.Errorf("GetFRUAreaMultiRecord failed, err: %w", err))
 		}
-		c.Debug("FRU Area MultiRecords", fruMultiRecords)
+		if fruMultiRecords != nil {
+			c.Debug("FRU Area MultiRecords", fruMultiRecords)
+		}
 		fru.MultiRecords = fruMultiRecords
 	}
 
 	c.Debug("FRU", fru)
-	return fru, nil
+	return fru, errors.Join(errs...)
 }
 
 func (c *Client) GetFRUs(ctx context.Context) ([]*types.FRU, error) {
 	var frus = make([]*types.FRU, 0)
+	var errs []error
 
 	// Do a Get Device ID command to determine device support
 	deviceRes, err := c.GetDeviceID(ctx)
@@ -147,9 +159,11 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*types.FRU, error) {
 		var deviceID uint8 = 0x00
 		fru, err := c.GetFRU(ctx, deviceID, "Builtin FRU")
 		if err != nil {
-			return nil, fmt.Errorf("GetFRU device id (%#02x) failed, err: %w", deviceID, err)
+			errs = append(errs, fmt.Errorf("GetFRU device id (%#02x) failed, err: %w", deviceID, err))
 		}
-		frus = append(frus, fru)
+		if fru != nil {
+			frus = append(frus, fru)
+		}
 	}
 
 	// Walk the SDRs to look for FRU Devices and Management Controller Devices.
@@ -158,7 +172,7 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*types.FRU, error) {
 	// Use GetSDRsRaw (header peek, no sensor enhance) — same approach as ipmitool.
 	sdrs, err := c.GetSDRsRaw(ctx, types.SDRRecordTypeFRUDeviceLocator, types.SDRRecordTypeManagementControllerDeviceLocator)
 	if err != nil {
-		return nil, fmt.Errorf("GetSDRsRaw failed, err: %w", err)
+		return frus, errors.Join(append(errs, fmt.Errorf("GetSDRsRaw failed, err: %w", err))...)
 	}
 
 	for _, sdr := range sdrs {
@@ -194,9 +208,11 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*types.FRU, error) {
 				// Todo, accessed using Read/Write FRU commands at LUN other than 00b
 				fru, err := c.GetFRU(ctx, deviceIDOrSlaveAddress, deviceName)
 				if err != nil {
-					return nil, fmt.Errorf("GetFRU sdr device id (%#02x) failed, err: %w", deviceIDOrSlaveAddress, err)
+					errs = append(errs, fmt.Errorf("GetFRU sdr device id (%#02x) failed, err: %w", deviceIDOrSlaveAddress, err))
 				}
-				frus = append(frus, fru)
+				if fru != nil {
+					frus = append(frus, fru)
+				}
 
 			case types.FRULocation_PrivateBus:
 				// Todo,
@@ -232,7 +248,7 @@ func (c *Client) GetFRUs(ctx context.Context) ([]*types.FRU, error) {
 		}
 	}
 
-	return frus, nil
+	return frus, errors.Join(errs...)
 }
 
 func (c *Client) GetFRUAreaChassis(ctx context.Context, deviceID uint8, offset uint16) (*types.FRUChassisInfoArea, error) {
@@ -243,7 +259,7 @@ func (c *Client) GetFRUAreaChassis(ctx context.Context, deviceID uint8, offset u
 
 	fruChassis := &types.FRUChassisInfoArea{}
 	if err := fruChassis.Unpack(data); err != nil {
-		return nil, fmt.Errorf("unpack fru chassis failed, err: %w", err)
+		return fruChassis, fmt.Errorf("unpack fru chassis failed, err: %w", err)
 	}
 
 	return fruChassis, nil
@@ -257,7 +273,7 @@ func (c *Client) GetFRUAreaBoard(ctx context.Context, deviceID uint8, offset uin
 
 	fruBoard := &types.FRUBoardInfoArea{}
 	if err := fruBoard.Unpack(data); err != nil {
-		return nil, fmt.Errorf("unpack fru board failed, err: %w", err)
+		return fruBoard, fmt.Errorf("unpack fru board failed, err: %w", err)
 	}
 
 	return fruBoard, nil
@@ -271,7 +287,7 @@ func (c *Client) GetFRUAreaProduct(ctx context.Context, deviceID uint8, offset u
 
 	fruProduct := &types.FRUProductInfoArea{}
 	if err := fruProduct.Unpack(data); err != nil {
-		return nil, fmt.Errorf("unpack fru product failed, err: %w", err)
+		return fruProduct, fmt.Errorf("unpack fru product failed, err: %w", err)
 	}
 
 	return fruProduct, nil
