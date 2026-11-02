@@ -41,6 +41,7 @@ const (
 	OEM_PICMG                        = 12634
 	OEM_RARITAN                      = 13742
 	OEM_KONTRON                      = 15000
+	OEM_GIGABYTE                     = 15370
 	OEM_PPS                          = 16394
 	OEM_IBM_20301                    = 20301 /* 20301 for [IBM eServer X] */
 	OEM_AMI                          = 20974
@@ -92,6 +93,7 @@ func (oem OEM) String() string {
 		12634: "PICMG",
 		13742: "Raritan", // 力登
 		15000: "Kontron", // 控创
+		15370: "GIGA-BYTE TECHNOLOGY CO., LTD",
 		16394: "PPS",
 		20301: "IBM",
 		20974: "AMI",
