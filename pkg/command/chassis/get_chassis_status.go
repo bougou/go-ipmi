@@ -2,6 +2,7 @@ package chassis
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/bougou/go-ipmi/pkg/types"
 )
@@ -234,6 +235,28 @@ func (res *GetChassisStatusResponse) Unpack(msg []byte) error {
 	return nil
 }
 
+// lastPowerEvent lists the set Last Power Event bits with the keywords ipmitool
+// prints for "chassis status", or returns "" when none is set.
+func (res *GetChassisStatusResponse) lastPowerEvent() string {
+	events := []string{}
+	if res.ACFailed {
+		events = append(events, "ac-failed")
+	}
+	if res.LastPowerDownByPowerOverload {
+		events = append(events, "overload")
+	}
+	if res.LastPowerDownByPowerInterlockActivated {
+		events = append(events, "interlock")
+	}
+	if res.LastPowerDownByPowerFault {
+		events = append(events, "fault")
+	}
+	if res.LastPowerOnByCommand {
+		events = append(events, "command")
+	}
+	return strings.Join(events, " ")
+}
+
 func (res *GetChassisStatusResponse) Format() string {
 	return "" +
 		fmt.Sprintf("System Power         : %s\n", types.FormatBool(res.PowerIsOn, "on", "off")) +
@@ -242,7 +265,7 @@ func (res *GetChassisStatusResponse) Format() string {
 		fmt.Sprintf("Main Power Fault     : %v\n", res.PowerFault) +
 		fmt.Sprintf("Power Control Fault  : %v\n", res.PowerControlFault) +
 		fmt.Sprintf("Power Restore Policy : %s\n", res.PowerRestorePolicy.String()) +
-		fmt.Sprintf("Last Power Event     : %s\n", types.FormatBool(res.ChassisIntrusionActive, "active", "inactive")) +
+		fmt.Sprintf("Last Power Event     : %s\n", res.lastPowerEvent()) +
 		fmt.Sprintf("Chassis Intrusion    : %s\n", types.FormatBool(res.ChassisIntrusionActive, "active", "inactive")) +
 		fmt.Sprintf("Front-Panel Lockout  : %s\n", types.FormatBool(res.FrontPanelLockoutActive, "active", "inactive")) +
 		fmt.Sprintf("Drive Fault          : %v\n", res.DriveFault) +
