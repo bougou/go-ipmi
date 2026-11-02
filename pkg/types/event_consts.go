@@ -851,7 +851,7 @@ var SensorSpecificEvents = map[SensorType]map[uint8]Event{
 	},
 	SensorTypePowerUnit: {
 		0x00: {
-			EventName:           "Power Off / Power Dow",
+			EventName:           "Power Off / Power Down",
 			AssertionSeverity:   EventSeverityInfo,
 			DeassertionSeverity: EventSeverityInfo,
 		},
@@ -871,7 +871,7 @@ var SensorSpecificEvents = map[SensorType]map[uint8]Event{
 			DeassertionSeverity: EventSeverityWarning,
 		},
 		0x04: {
-			EventName:           "AC lost / Power input lost ",
+			EventName:           "AC lost / Power input lost",
 			AssertionSeverity:   EventSeverityCritical,
 			DeassertionSeverity: EventSeverityWarning,
 		},
@@ -1573,7 +1573,7 @@ var SensorSpecificEvents = map[SensorType]map[uint8]Event{
 			DeassertionSeverity: EventSeverityCritical,
 		},
 		0x02: {
-			EventName:           "Entity Disable",
+			EventName:           "Entity Disabled",
 			AssertionSeverity:   EventSeverityCritical,
 			DeassertionSeverity: EventSeverityCritical,
 		},
