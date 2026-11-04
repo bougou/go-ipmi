@@ -180,140 +180,105 @@ func packSensorUnitByte(u SensorUnit) (b20, b21, b22 uint8) {
 	return b20, b21, b22
 }
 
-func packMaskAssertLower(m Mask) uint16 {
-	var lsb, msb uint8
-	set := func(bit uint8, v bool) {
-		if v {
-			lsb |= bit
-		}
-	}
-	setMSB := func(bit uint8, v bool) {
-		if v {
-			msb |= bit
-		}
-	}
-	set(0x40, m.Discrete.Assert.State_14)
-	set(0x20, m.Discrete.Assert.State_13)
-	set(0x10, m.Discrete.Assert.State_12)
-	set(0x08, m.Discrete.Assert.State_11)
-	set(0x04, m.Discrete.Assert.State_10)
-	set(0x02, m.Discrete.Assert.State_9)
-	set(0x01, m.Discrete.Assert.State_8)
-	setMSB(0x80, m.Discrete.Assert.State_7)
-	setMSB(0x40, m.Discrete.Assert.State_6)
-	setMSB(0x20, m.Discrete.Assert.State_5)
-	setMSB(0x10, m.Discrete.Assert.State_4)
-	setMSB(0x08, m.Discrete.Assert.State_3)
-	setMSB(0x04, m.Discrete.Assert.State_2)
-	setMSB(0x02, m.Discrete.Assert.State_1)
-	setMSB(0x01, m.Discrete.Assert.State_0)
+// The packMask* functions return a mask field in the bit numbering of the
+// spec, to be written with PackUint16L; see [Mask].
 
-	set(0x40, m.Threshold.LNR.StatusReturned)
-	set(0x20, m.Threshold.LCR.StatusReturned)
-	set(0x10, m.Threshold.LNC.StatusReturned)
-	set(0x08, m.Threshold.UNR.High_Assert)
-	set(0x04, m.Threshold.UNR.Low_Assert)
-	set(0x02, m.Threshold.UCR.High_Assert)
-	set(0x01, m.Threshold.UCR.Low_Assert)
-	setMSB(0x80, m.Threshold.UNC.High_Assert)
-	setMSB(0x40, m.Threshold.UNC.Low_Assert)
-	setMSB(0x20, m.Threshold.LNR.High_Assert)
-	setMSB(0x10, m.Threshold.LNR.Low_Assert)
-	setMSB(0x08, m.Threshold.LCR.High_Assert)
-	setMSB(0x04, m.Threshold.LCR.Low_Assert)
-	setMSB(0x02, m.Threshold.LNC.High_Assert)
-	setMSB(0x01, m.Threshold.LNC.Low_Assert)
-	return uint16(msb)<<8 | uint16(lsb)
+func packDiscreteEventMask(e Mask_DiscreteEvent) uint16 {
+	var b uint16
+	set := func(n uint, v bool) {
+		if v {
+			b |= 1 << n
+		}
+	}
+	set(0, e.State_0)
+	set(1, e.State_1)
+	set(2, e.State_2)
+	set(3, e.State_3)
+	set(4, e.State_4)
+	set(5, e.State_5)
+	set(6, e.State_6)
+	set(7, e.State_7)
+	set(8, e.State_8)
+	set(9, e.State_9)
+	set(10, e.State_10)
+	set(11, e.State_11)
+	set(12, e.State_12)
+	set(13, e.State_13)
+	set(14, e.State_14)
+	return b
+}
+
+func packMaskAssertLower(m Mask) uint16 {
+	b := packDiscreteEventMask(m.Discrete.Assert)
+	set := func(n uint, v bool) {
+		if v {
+			b |= 1 << n
+		}
+	}
+	set(14, m.Threshold.LNR.StatusReturned)
+	set(13, m.Threshold.LCR.StatusReturned)
+	set(12, m.Threshold.LNC.StatusReturned)
+	set(11, m.Threshold.UNR.High_Assert)
+	set(10, m.Threshold.UNR.Low_Assert)
+	set(9, m.Threshold.UCR.High_Assert)
+	set(8, m.Threshold.UCR.Low_Assert)
+	set(7, m.Threshold.UNC.High_Assert)
+	set(6, m.Threshold.UNC.Low_Assert)
+	set(5, m.Threshold.LNR.High_Assert)
+	set(4, m.Threshold.LNR.Low_Assert)
+	set(3, m.Threshold.LCR.High_Assert)
+	set(2, m.Threshold.LCR.Low_Assert)
+	set(1, m.Threshold.LNC.High_Assert)
+	set(0, m.Threshold.LNC.Low_Assert)
+	return b
 }
 
 func packMaskDeassertUpper(m Mask) uint16 {
-	var lsb, msb uint8
-	set := func(bit uint8, v bool) {
+	b := packDiscreteEventMask(m.Discrete.Deassert)
+	set := func(n uint, v bool) {
 		if v {
-			lsb |= bit
+			b |= 1 << n
 		}
 	}
-	setMSB := func(bit uint8, v bool) {
-		if v {
-			msb |= bit
-		}
-	}
-	set(0x40, m.Discrete.Deassert.State_14)
-	set(0x20, m.Discrete.Deassert.State_13)
-	set(0x10, m.Discrete.Deassert.State_12)
-	set(0x08, m.Discrete.Deassert.State_11)
-	set(0x04, m.Discrete.Deassert.State_10)
-	set(0x02, m.Discrete.Deassert.State_9)
-	set(0x01, m.Discrete.Deassert.State_8)
-	setMSB(0x80, m.Discrete.Deassert.State_7)
-	setMSB(0x40, m.Discrete.Deassert.State_6)
-	setMSB(0x20, m.Discrete.Deassert.State_5)
-	setMSB(0x10, m.Discrete.Deassert.State_4)
-	setMSB(0x08, m.Discrete.Deassert.State_3)
-	setMSB(0x04, m.Discrete.Deassert.State_2)
-	setMSB(0x02, m.Discrete.Deassert.State_1)
-	setMSB(0x01, m.Discrete.Deassert.State_0)
-
-	set(0x40, m.Threshold.UNR.StatusReturned)
-	set(0x20, m.Threshold.UCR.StatusReturned)
-	set(0x10, m.Threshold.UNC.StatusReturned)
-	set(0x08, m.Threshold.UNR.High_Deassert)
-	set(0x04, m.Threshold.UNR.Low_Deassert)
-	set(0x02, m.Threshold.UCR.High_Deassert)
-	set(0x01, m.Threshold.UCR.Low_Deassert)
-	setMSB(0x80, m.Threshold.UNC.High_Deassert)
-	setMSB(0x40, m.Threshold.UNC.Low_Deassert)
-	setMSB(0x20, m.Threshold.LNR.High_Deassert)
-	setMSB(0x10, m.Threshold.LNR.Low_Deassert)
-	setMSB(0x08, m.Threshold.LCR.High_Deassert)
-	setMSB(0x04, m.Threshold.LCR.Low_Deassert)
-	setMSB(0x02, m.Threshold.LNC.High_Deassert)
-	setMSB(0x01, m.Threshold.LNC.Low_Deassert)
-	return uint16(msb)<<8 | uint16(lsb)
+	set(14, m.Threshold.UNR.StatusReturned)
+	set(13, m.Threshold.UCR.StatusReturned)
+	set(12, m.Threshold.UNC.StatusReturned)
+	set(11, m.Threshold.UNR.High_Deassert)
+	set(10, m.Threshold.UNR.Low_Deassert)
+	set(9, m.Threshold.UCR.High_Deassert)
+	set(8, m.Threshold.UCR.Low_Deassert)
+	set(7, m.Threshold.UNC.High_Deassert)
+	set(6, m.Threshold.UNC.Low_Deassert)
+	set(5, m.Threshold.LNR.High_Deassert)
+	set(4, m.Threshold.LNR.Low_Deassert)
+	set(3, m.Threshold.LCR.High_Deassert)
+	set(2, m.Threshold.LCR.Low_Deassert)
+	set(1, m.Threshold.LNC.High_Deassert)
+	set(0, m.Threshold.LNC.Low_Deassert)
+	return b
 }
 
 func packMaskReading(m Mask) uint16 {
-	var lsb, msb uint8
-	set := func(bit uint8, v bool) {
+	b := packDiscreteEventMask(m.Discrete.Reading)
+	set := func(n uint, v bool) {
 		if v {
-			lsb |= bit
+			b |= 1 << n
 		}
 	}
-	setMSB := func(bit uint8, v bool) {
-		if v {
-			msb |= bit
-		}
-	}
-	set(0x40, m.Discrete.Reading.State_14)
-	set(0x20, m.Discrete.Reading.State_13)
-	set(0x10, m.Discrete.Reading.State_12)
-	set(0x08, m.Discrete.Reading.State_11)
-	set(0x04, m.Discrete.Reading.State_10)
-	set(0x02, m.Discrete.Reading.State_9)
-	set(0x01, m.Discrete.Reading.State_8)
-	setMSB(0x80, m.Discrete.Reading.State_7)
-	setMSB(0x40, m.Discrete.Reading.State_6)
-	setMSB(0x20, m.Discrete.Reading.State_5)
-	setMSB(0x10, m.Discrete.Reading.State_4)
-	setMSB(0x08, m.Discrete.Reading.State_3)
-	setMSB(0x04, m.Discrete.Reading.State_2)
-	setMSB(0x02, m.Discrete.Reading.State_1)
-	setMSB(0x01, m.Discrete.Reading.State_0)
+	set(13, m.Threshold.UNR.Settable)
+	set(12, m.Threshold.UCR.Settable)
+	set(11, m.Threshold.UNC.Settable)
+	set(10, m.Threshold.LNR.Settable)
+	set(9, m.Threshold.LCR.Settable)
+	set(8, m.Threshold.LNC.Settable)
 
-	set(0x20, m.Threshold.UNR.Settable)
-	set(0x10, m.Threshold.UCR.Settable)
-	set(0x08, m.Threshold.UNC.Settable)
-	set(0x04, m.Threshold.LNR.Settable)
-	set(0x02, m.Threshold.LCR.Settable)
-	set(0x01, m.Threshold.LNC.Settable)
-
-	setMSB(0x20, m.Threshold.UNR.Readable)
-	setMSB(0x10, m.Threshold.UCR.Readable)
-	setMSB(0x08, m.Threshold.UNC.Readable)
-	setMSB(0x04, m.Threshold.LNR.Readable)
-	setMSB(0x02, m.Threshold.LCR.Readable)
-	setMSB(0x01, m.Threshold.LNC.Readable)
-	return uint16(msb)<<8 | uint16(lsb)
+	set(5, m.Threshold.UNR.Readable)
+	set(4, m.Threshold.UCR.Readable)
+	set(3, m.Threshold.UNC.Readable)
+	set(2, m.Threshold.LNR.Readable)
+	set(1, m.Threshold.LCR.Readable)
+	set(0, m.Threshold.LNC.Readable)
+	return b
 }
 
 func packSignedNibble(v int8) uint8 {
