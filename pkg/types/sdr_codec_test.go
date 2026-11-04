@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"slices"
 	"testing"
 )
 
@@ -276,6 +277,104 @@ func TestGenericDeviceLocatorSlaveAddressStripsChannelBit(t *testing.T) {
 	if got := sdr.GenericDeviceLocator.ChannelNumber; got != 9 {
 		t.Fatalf("ChannelNumber: want 9 got %d", got)
 	}
+}
+
+// TestSDRSensorMasks decodes the three 16-bit mask fields of Full and Compact
+// sensor records (v2.0 Table 43-1 and 43-2, bytes 15-20). Each field is stored
+// little-endian: its first byte holds bits [7:0] and its second byte bits
+// [15:8]. FreeIPMI's tmpl_sdr_full_sensor_record_threshold_based_sensors and
+// tmpl_sdr_compact_sensor_record_non_threshold_based_sensors decode these
+// records to the same masks.
+func TestSDRSensorMasks(t *testing.T) {
+	t.Run("full threshold sensor", func(t *testing.T) {
+		raw := []byte{
+			0x10, 0x00, 0x51, 0x01, 0x33, // record ID 0x0010, Full Sensor, 51 body bytes
+			0x20, 0x00, 0x01, 0x03, 0x01, 0x7f, 0x68, // owner, LUN, sensor 1, entity 3.1, init, capabilities
+			0x01, 0x01, // temperature, threshold
+			0x85, 0x32, // assertion lnc- lcr- unc+ ucr+, lower comparison lnc lcr
+			0x81, 0x30, // deassertion lnc- unc+, upper comparison unc ucr
+			0x1b, 0x18, // readable lnc lcr unc ucr, settable unc ucr
+			0x80, 0x01, 0x00, // 2's complement, degrees C
+			0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // linear, M=1
+			0x00, 0x00, 0x00, 0x00, 0x7f, 0x80, // nominal, normal max/min, sensor max/min
+			0x00, 0x5d, 0x58, 0x00, 0x00, 0x05, // UNR UCR UNC LNR LCR LNC
+			0x02, 0x02, 0x00, 0x00, 0x00, // hysteresis, reserved, OEM
+			0xc8, 'C', 'P', 'U', '_', 'T', 'E', 'M', 'P',
+		}
+
+		sdr, err := ParseSDR(raw, 0xffff)
+		if err != nil {
+			t.Fatalf("ParseSDR: %v", err)
+		}
+		mask := sdr.Full.Mask
+
+		// The Discrete view of these bytes is meaningless for a threshold sensor.
+		want := Mask_Thresholds{
+			LNC: Mask_Threshold{StatusReturned: true, Readable: true, Low_Assert: true, Low_Deassert: true},
+			LCR: Mask_Threshold{StatusReturned: true, Readable: true, Low_Assert: true},
+			UNC: Mask_Threshold{StatusReturned: true, Readable: true, Settable: true, High_Assert: true, High_Deassert: true},
+			UCR: Mask_Threshold{StatusReturned: true, Readable: true, Settable: true, High_Assert: true},
+		}
+		if mask.Threshold != want {
+			t.Fatalf("threshold masks:\nwant %+v\ngot  %+v", want, mask.Threshold)
+		}
+
+		thresholds := SensorThresholdTypes{SensorThresholdType_UNC, SensorThresholdType_UCR, SensorThresholdType_LNC, SensorThresholdType_LCR}
+		if got := mask.ReadableThresholds(); !slices.Equal(got, thresholds) {
+			t.Errorf("ReadableThresholds: want %v, got %v", thresholds.Strings(), got.Strings())
+		}
+		if got := mask.StatusReturnedThresholds(); !slices.Equal(got, thresholds) {
+			t.Errorf("StatusReturnedThresholds: want %v, got %v", thresholds.Strings(), got.Strings())
+		}
+		settable := SensorThresholdTypes{SensorThresholdType_UNC, SensorThresholdType_UCR}
+		if got := mask.SettableThresholds(); !slices.Equal(got, settable) {
+			t.Errorf("SettableThresholds: want %v, got %v", settable.Strings(), got.Strings())
+		}
+		events := SensorEvents{
+			SensorEvent_UNC_High_Assert, SensorEvent_UCR_High_Assert, SensorEvent_LNC_Low_Assert, SensorEvent_LCR_Low_Assert,
+			SensorEvent_UNC_High_Deassert, SensorEvent_LNC_Low_Deassert,
+		}
+		if got := mask.SupportedThresholdEvents(); !slices.Equal(got, events) {
+			t.Errorf("SupportedThresholdEvents: want %v, got %v", events, got)
+		}
+
+		assertPackSDRRoundTrip(t, raw)
+	})
+
+	t.Run("compact discrete sensor", func(t *testing.T) {
+		raw := []byte{
+			0x20, 0x00, 0x51, 0x02, 0x21, // record ID 0x0020, Compact Sensor, 33 body bytes
+			0x20, 0x00, 0x30, 0x20, 0x01, 0x67, 0x40, // owner, LUN, sensor 0x30, entity 32.1, init, capabilities
+			0x0c, 0x6f, // memory, sensor-specific
+			0x23, 0x05, // assertion states 0 1 5 8 10
+			0x40, 0x02, // deassertion states 6 9
+			0x73, 0x07, // reading states 0 1 4 5 6 8 9 10
+			0xc0, 0x00, 0x00, // no analog reading
+			0x00, 0x00, 0x00, 0x00, // record sharing, hysteresis
+			0x00, 0x00, 0x00, 0x00, // reserved, OEM
+			0xc6, 'D', 'I', 'M', 'M', '_', 'A',
+		}
+
+		sdr, err := ParseSDR(raw, 0xffff)
+		if err != nil {
+			t.Fatalf("ParseSDR: %v", err)
+		}
+
+		// The Threshold view of these bytes is meaningless for a discrete sensor.
+		want := Mask_Discrete{
+			Assert:   Mask_DiscreteEvent{State_0: true, State_1: true, State_5: true, State_8: true, State_10: true},
+			Deassert: Mask_DiscreteEvent{State_6: true, State_9: true},
+			Reading: Mask_DiscreteEvent{
+				State_0: true, State_1: true, State_4: true, State_5: true, State_6: true,
+				State_8: true, State_9: true, State_10: true,
+			},
+		}
+		if got := sdr.Compact.Mask.Discrete; got != want {
+			t.Fatalf("discrete masks:\nwant %+v\ngot  %+v", want, got)
+		}
+
+		assertPackSDRRoundTrip(t, raw)
+	})
 }
 
 func TestPackSDR_AllRecordTypes(t *testing.T) {

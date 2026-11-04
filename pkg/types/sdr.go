@@ -556,10 +556,38 @@ type Mask_Discrete struct {
 //   - Upper Threshold Reading Mask
 //   - Settable Threshold Mask, Readable Threshold Mask
 //
-// Used in Full and Compact SDR
+// Used in Full and Compact SDR. Each of the three mask fields is a 16-bit
+// little-endian value: the record's first byte holds bits [7:0] and its second
+// byte bits [15:8]. The Parse methods take the value as read with
+// UnpackUint16L, and the bit numbers they use are those of the spec (v2.0
+// Table 43-1, bytes 15-20).
 type Mask struct {
 	Threshold Mask_Thresholds
 	Discrete  Mask_Discrete
+}
+
+// parseDiscreteEventMask decodes bits [14:0] of a mask field, one bit per
+// event offset or discrete state.
+func parseDiscreteEventMask(b uint16) Mask_DiscreteEvent {
+	bit := func(n uint) bool { return b&(1<<n) != 0 }
+
+	return Mask_DiscreteEvent{
+		State_0:  bit(0),
+		State_1:  bit(1),
+		State_2:  bit(2),
+		State_3:  bit(3),
+		State_4:  bit(4),
+		State_5:  bit(5),
+		State_6:  bit(6),
+		State_7:  bit(7),
+		State_8:  bit(8),
+		State_9:  bit(9),
+		State_10: bit(10),
+		State_11: bit(11),
+		State_12: bit(12),
+		State_13: bit(13),
+		State_14: bit(14),
+	}
 }
 
 // ParseAssertLower fill:
@@ -567,130 +595,83 @@ type Mask struct {
 //   - Lower Threshold Reading Mask
 //   - Threshold Assertion Event Mask
 func (mask *Mask) ParseAssertLower(b uint16) {
-	lsb := uint8(b & 0x00ff) // Least Significant Byte
-	msb := uint8(b >> 8)     // Most Significant Byte
+	bit := func(n uint) bool { return b&(1<<n) != 0 }
 
 	// Assertion Event Mask
-	mask.Discrete.Assert.State_14 = IsBit6Set(lsb)
-	mask.Discrete.Assert.State_13 = IsBit5Set(lsb)
-	mask.Discrete.Assert.State_12 = IsBit4Set(lsb)
-	mask.Discrete.Assert.State_11 = IsBit3Set(lsb)
-	mask.Discrete.Assert.State_10 = IsBit2Set(lsb)
-	mask.Discrete.Assert.State_9 = IsBit1Set(lsb)
-	mask.Discrete.Assert.State_8 = IsBit0Set(lsb)
-	mask.Discrete.Assert.State_7 = IsBit7Set(msb)
-	mask.Discrete.Assert.State_6 = IsBit6Set(msb)
-	mask.Discrete.Assert.State_5 = IsBit5Set(msb)
-	mask.Discrete.Assert.State_4 = IsBit4Set(msb)
-	mask.Discrete.Assert.State_3 = IsBit3Set(msb)
-	mask.Discrete.Assert.State_2 = IsBit2Set(msb)
-	mask.Discrete.Assert.State_1 = IsBit1Set(msb)
-	mask.Discrete.Assert.State_0 = IsBit0Set(msb)
+	mask.Discrete.Assert = parseDiscreteEventMask(b)
 
 	// Lower Threshold Reading Mask
 	// Indicates which lower threshold comparison status is returned via the Get Sensor Reading command
-	mask.Threshold.LNR.StatusReturned = IsBit6Set(lsb)
-	mask.Threshold.LCR.StatusReturned = IsBit5Set(lsb)
-	mask.Threshold.LNC.StatusReturned = IsBit4Set(lsb)
+	mask.Threshold.LNR.StatusReturned = bit(14)
+	mask.Threshold.LCR.StatusReturned = bit(13)
+	mask.Threshold.LNC.StatusReturned = bit(12)
 
 	// Threshold Assertion Event Mask
-	mask.Threshold.UNR.High_Assert = IsBit3Set(lsb)
-	mask.Threshold.UNR.Low_Assert = IsBit2Set(lsb)
-	mask.Threshold.UCR.High_Assert = IsBit1Set(lsb)
-	mask.Threshold.UCR.Low_Assert = IsBit0Set(lsb)
-	mask.Threshold.UNC.High_Assert = IsBit7Set(msb)
-	mask.Threshold.UNC.Low_Assert = IsBit6Set(msb)
-	mask.Threshold.LNR.High_Assert = IsBit5Set(msb)
-	mask.Threshold.LNR.Low_Assert = IsBit4Set(msb)
-	mask.Threshold.LCR.High_Assert = IsBit3Set(msb)
-	mask.Threshold.LCR.Low_Assert = IsBit2Set(msb)
-	mask.Threshold.LNC.High_Assert = IsBit1Set(msb)
-	mask.Threshold.LNC.Low_Assert = IsBit0Set(msb)
-
+	mask.Threshold.UNR.High_Assert = bit(11)
+	mask.Threshold.UNR.Low_Assert = bit(10)
+	mask.Threshold.UCR.High_Assert = bit(9)
+	mask.Threshold.UCR.Low_Assert = bit(8)
+	mask.Threshold.UNC.High_Assert = bit(7)
+	mask.Threshold.UNC.Low_Assert = bit(6)
+	mask.Threshold.LNR.High_Assert = bit(5)
+	mask.Threshold.LNR.Low_Assert = bit(4)
+	mask.Threshold.LCR.High_Assert = bit(3)
+	mask.Threshold.LCR.Low_Assert = bit(2)
+	mask.Threshold.LNC.High_Assert = bit(1)
+	mask.Threshold.LNC.Low_Assert = bit(0)
 }
 
 func (mask *Mask) ParseDeassertUpper(b uint16) {
-	lsb := uint8(b & 0x00ff) // Least Significant Byte
-	msb := uint8(b >> 8)     // Most Significant Byte
+	bit := func(n uint) bool { return b&(1<<n) != 0 }
 
 	// Deassertion Event Mask
-	mask.Discrete.Deassert.State_14 = IsBit6Set(lsb)
-	mask.Discrete.Deassert.State_13 = IsBit5Set(lsb)
-	mask.Discrete.Deassert.State_12 = IsBit4Set(lsb)
-	mask.Discrete.Deassert.State_11 = IsBit3Set(lsb)
-	mask.Discrete.Deassert.State_10 = IsBit2Set(lsb)
-	mask.Discrete.Deassert.State_9 = IsBit1Set(lsb)
-	mask.Discrete.Deassert.State_8 = IsBit0Set(lsb)
-	mask.Discrete.Deassert.State_7 = IsBit7Set(msb)
-	mask.Discrete.Deassert.State_6 = IsBit6Set(msb)
-	mask.Discrete.Deassert.State_5 = IsBit5Set(msb)
-	mask.Discrete.Deassert.State_4 = IsBit4Set(msb)
-	mask.Discrete.Deassert.State_3 = IsBit3Set(msb)
-	mask.Discrete.Deassert.State_2 = IsBit2Set(msb)
-	mask.Discrete.Deassert.State_1 = IsBit1Set(msb)
-	mask.Discrete.Deassert.State_0 = IsBit0Set(msb)
+	mask.Discrete.Deassert = parseDiscreteEventMask(b)
 
 	// Upper Threshold Reading Mask
 	// Indicates which upper threshold comparison status is returned via the Get Sensor Reading command.
-	mask.Threshold.UNR.StatusReturned = IsBit6Set(lsb)
-	mask.Threshold.UCR.StatusReturned = IsBit5Set(lsb)
-	mask.Threshold.UNC.StatusReturned = IsBit4Set(lsb)
+	mask.Threshold.UNR.StatusReturned = bit(14)
+	mask.Threshold.UCR.StatusReturned = bit(13)
+	mask.Threshold.UNC.StatusReturned = bit(12)
 
 	// Threshold Deassertion Event Mask
-	mask.Threshold.UNR.High_Deassert = IsBit3Set(lsb)
-	mask.Threshold.UNR.Low_Deassert = IsBit2Set(lsb)
-	mask.Threshold.UCR.High_Deassert = IsBit1Set(lsb)
-	mask.Threshold.UCR.Low_Deassert = IsBit0Set(lsb)
-	mask.Threshold.UNC.High_Deassert = IsBit7Set(msb)
-	mask.Threshold.UNC.Low_Deassert = IsBit6Set(msb)
-	mask.Threshold.LNR.High_Deassert = IsBit5Set(msb)
-	mask.Threshold.LNR.Low_Deassert = IsBit4Set(msb)
-	mask.Threshold.LCR.High_Deassert = IsBit3Set(msb)
-	mask.Threshold.LCR.Low_Deassert = IsBit2Set(msb)
-	mask.Threshold.LNC.High_Deassert = IsBit1Set(msb)
-	mask.Threshold.LNC.Low_Deassert = IsBit0Set(msb)
-
+	mask.Threshold.UNR.High_Deassert = bit(11)
+	mask.Threshold.UNR.Low_Deassert = bit(10)
+	mask.Threshold.UCR.High_Deassert = bit(9)
+	mask.Threshold.UCR.Low_Deassert = bit(8)
+	mask.Threshold.UNC.High_Deassert = bit(7)
+	mask.Threshold.UNC.Low_Deassert = bit(6)
+	mask.Threshold.LNR.High_Deassert = bit(5)
+	mask.Threshold.LNR.Low_Deassert = bit(4)
+	mask.Threshold.LCR.High_Deassert = bit(3)
+	mask.Threshold.LCR.Low_Deassert = bit(2)
+	mask.Threshold.LNC.High_Deassert = bit(1)
+	mask.Threshold.LNC.Low_Deassert = bit(0)
 }
 
 func (mask *Mask) ParseReading(b uint16) {
-	lsb := uint8(b & 0x0000ffff) // Least Significant Byte
-	msb := uint8(b >> 8)         // Most Significant Byte
+	bit := func(n uint) bool { return b&(1<<n) != 0 }
 
 	// Reading Mask (for non-threshold based sensors)
 	// Indicates what discrete readings can be returned by this sensor.
-	mask.Discrete.Reading.State_14 = IsBit6Set(lsb)
-	mask.Discrete.Reading.State_13 = IsBit5Set(lsb)
-	mask.Discrete.Reading.State_12 = IsBit4Set(lsb)
-	mask.Discrete.Reading.State_11 = IsBit3Set(lsb)
-	mask.Discrete.Reading.State_10 = IsBit2Set(lsb)
-	mask.Discrete.Reading.State_9 = IsBit1Set(lsb)
-	mask.Discrete.Reading.State_8 = IsBit0Set(lsb)
-	mask.Discrete.Reading.State_7 = IsBit7Set(msb)
-	mask.Discrete.Reading.State_6 = IsBit6Set(msb)
-	mask.Discrete.Reading.State_5 = IsBit5Set(msb)
-	mask.Discrete.Reading.State_4 = IsBit4Set(msb)
-	mask.Discrete.Reading.State_3 = IsBit3Set(msb)
-	mask.Discrete.Reading.State_2 = IsBit2Set(msb)
-	mask.Discrete.Reading.State_1 = IsBit1Set(msb)
-	mask.Discrete.Reading.State_0 = IsBit0Set(msb)
+	mask.Discrete.Reading = parseDiscreteEventMask(b)
 
 	// Settable Threshold Mask (for threshold-based sensors)
 	// Indicates which thresholds are settable via the Set Sensor Thresholds.
-	mask.Threshold.UNR.Settable = IsBit5Set(lsb)
-	mask.Threshold.UCR.Settable = IsBit4Set(lsb)
-	mask.Threshold.UNC.Settable = IsBit3Set(lsb)
-	mask.Threshold.LNR.Settable = IsBit2Set(lsb)
-	mask.Threshold.LCR.Settable = IsBit1Set(lsb)
-	mask.Threshold.LNC.Settable = IsBit0Set(lsb)
+	mask.Threshold.UNR.Settable = bit(13)
+	mask.Threshold.UCR.Settable = bit(12)
+	mask.Threshold.UNC.Settable = bit(11)
+	mask.Threshold.LNR.Settable = bit(10)
+	mask.Threshold.LCR.Settable = bit(9)
+	mask.Threshold.LNC.Settable = bit(8)
 
 	// Readable Threshold Mask (for threshold-based sensors)
 	// Indicates which thresholds are readable via the Get Sensor Thresholds command.
-	mask.Threshold.UNR.Readable = IsBit5Set(msb)
-	mask.Threshold.UCR.Readable = IsBit4Set(msb)
-	mask.Threshold.UNC.Readable = IsBit3Set(msb)
-	mask.Threshold.LNR.Readable = IsBit2Set(msb)
-	mask.Threshold.LCR.Readable = IsBit1Set(msb)
-	mask.Threshold.LNC.Readable = IsBit0Set(msb)
+	mask.Threshold.UNR.Readable = bit(5)
+	mask.Threshold.UCR.Readable = bit(4)
+	mask.Threshold.UNC.Readable = bit(3)
+	mask.Threshold.LNR.Readable = bit(2)
+	mask.Threshold.LCR.Readable = bit(1)
+	mask.Threshold.LNC.Readable = bit(0)
 }
 
 // StatusReturnedThresholds returns all supported thresholds comparison status
