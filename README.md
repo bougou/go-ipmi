@@ -58,6 +58,11 @@ func main() {
 Interfaces, options, and helpers: [docs/client.md](./docs/client.md).
 Import path changes since `v0.8.x`: [docs/migration.md](./docs/migration.md).
 
+Tables (for example `FormatSensors`, `FormatSDRs` or `FormatSELs`) are rendered with
+[tablewriter](https://github.com/olekukonko/tablewriter). Programs which don't need pretty tables can build
+with the `goipmi_notablewriter` build tag (`go build -tags goipmi_notablewriter`): tables are then rendered
+as plain aligned columns, and tablewriter with its dependencies is not linked into the program.
+
 ## Server
 
 `goipmi-server` is a dual-stack reference BMC (RMCP+ and IPMI v1.5 on one UDP

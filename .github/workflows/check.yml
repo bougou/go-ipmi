@@ -68,6 +68,25 @@ jobs:
       - name: Run tests
         run: make test-race
 
+  notablewriter:
+    name: go test (goipmi_notablewriter)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      # The goipmi_notablewriter build tag replaces the tablewriter based table rendering,
+      # make sure the alternative implementation keeps building and working.
+      - name: Run go vet and tests with the goipmi_notablewriter build tag
+        run: |
+          go vet -tags goipmi_notablewriter ./...
+          go test -tags goipmi_notablewriter ./pkg/types/... ./pkg/client/...
+
   linux-uapi:
     name: Linux UAPI (${{ matrix.target }})
     runs-on: ubuntu-24.04
