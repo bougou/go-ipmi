@@ -966,7 +966,45 @@ func (s *Sensor) String() string {
 		fmt.Sprintf(" Sensor Reading (raw) : %s\n", sensorReadingRawStr) +
 		fmt.Sprintf(" Sensor Value         : %s\n", sensorReadingValueStr) +
 		fmt.Sprintf(" Sensor Status        : %s\n", s.Status()) +
-		fmt.Sprintf(" Sensor Human String  : %s\n", s.HumanStr())
+		fmt.Sprintf(" Sensor Human String  : %s\n", s.HumanStr()) +
+		s.thresholdString()
+}
+
+// thresholdString returns the threshold-related lines for a threshold sensor,
+// mirroring the fields ipmitool's `sensor get` prints. It returns an empty
+// string for non-threshold sensors.
+func (s *Sensor) thresholdString() string {
+	if !s.IsThreshold() {
+		return ""
+	}
+
+	return "" +
+		fmt.Sprintf(" Lower Non-Recoverable : %s\n", s.ThresholdStr(SensorThresholdType_LNR)) +
+		fmt.Sprintf(" Lower Critical        : %s\n", s.ThresholdStr(SensorThresholdType_LCR)) +
+		fmt.Sprintf(" Lower Non-Critical    : %s\n", s.ThresholdStr(SensorThresholdType_LNC)) +
+		fmt.Sprintf(" Upper Non-Critical    : %s\n", s.ThresholdStr(SensorThresholdType_UNC)) +
+		fmt.Sprintf(" Upper Critical        : %s\n", s.ThresholdStr(SensorThresholdType_UCR)) +
+		fmt.Sprintf(" Upper Non-Recoverable : %s\n", s.ThresholdStr(SensorThresholdType_UNR)) +
+		fmt.Sprintf(" Positive Hysteresis   : %s\n", s.hysteresisValueStr(s.Threshold.PositiveHysteresisRaw, s.Threshold.PositiveHysteresis)) +
+		fmt.Sprintf(" Negative Hysteresis   : %s\n", s.hysteresisValueStr(s.Threshold.NegativeHysteresisRaw, s.Threshold.NegativeHysteresis)) +
+		fmt.Sprintf(" Assertions Enabled    : %s\n", strings.Join(s.SupportedThresholdEvents().FilterAssert().Strings(), " ")) +
+		fmt.Sprintf(" Deassertions Enabled  : %s\n", strings.Join(s.SupportedThresholdEvents().FilterDeassert().Strings(), " "))
+}
+
+// SupportedThresholdEvents returns the threshold assertion and deassertion
+// events enabled for this sensor.
+func (s *Sensor) SupportedThresholdEvents() SensorEvents {
+	mask := Mask{Threshold: s.Threshold.Mask}
+	return mask.SupportedThresholdEvents()
+}
+
+// hysteresisValueStr formats a hysteresis value for display, returning
+// "unspecified" when the raw value indicates no hysteresis is configured.
+func (s *Sensor) hysteresisValueStr(raw uint8, value float64) string {
+	if raw == 0x00 || raw == 0xff {
+		return "unspecified"
+	}
+	return fmt.Sprintf("%.3f", value)
 }
 
 func sensorToRow(sensor *Sensor, options ...any) map[string]string {

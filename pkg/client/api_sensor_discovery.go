@@ -288,6 +288,7 @@ func (c *Client) sdrToSensor(ctx context.Context, sdr *types.SDR) (*types.Sensor
 
 		sensor.Threshold.LinearizationFunc = sdr.Full.LinearizationFunc
 		sensor.Threshold.ReadingFactors = sdr.Full.ReadingFactors
+		sensor.Threshold.Mask = sdr.Full.Mask.Threshold
 
 	case types.SDRRecordTypeCompactSensor:
 		sensor.GeneratorID = sdr.Compact.GeneratorID
@@ -300,6 +301,7 @@ func (c *Client) sdrToSensor(ctx context.Context, sdr *types.SDR) (*types.Sensor
 		sensor.SensorCapabilities = sdr.Compact.SensorCapabilities
 		sensor.EntityID = sdr.Compact.SensorEntityID
 		sensor.EntityInstance = sdr.Compact.SensorEntityInstance
+		sensor.Threshold.Mask = sdr.Compact.Mask.Threshold
 
 	default:
 		return nil, fmt.Errorf("only support Full or Compact SDR record type, input is %s", sdr.RecordHeader.RecordType)

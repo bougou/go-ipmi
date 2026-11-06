@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"math"
+	"slices"
 	"testing"
 )
 
@@ -51,6 +52,68 @@ func Test_ConvertReading(t *testing.T) {
 		v := ConvertReading(tt.raw, tt.analogDataFormat, tt.factors, tt.linearizationFunc)
 		fmt.Println(v)
 		// Todo
+	}
+}
+
+func TestSensorEventsStrings(t *testing.T) {
+	events := SensorEvents{
+		SensorEvent_UNC_High_Assert,
+		SensorEvent_UNC_Low_Deassert,
+		SensorEvent_UCR_High_Assert,
+		SensorEvent_LNC_Low_Deassert,
+	}
+
+	want := []string{"unc+", "unc-", "ucr+", "lnc-"}
+	if got := events.Strings(); !slices.Equal(got, want) {
+		t.Fatalf("Strings() = %v, want %v", got, want)
+	}
+}
+
+func TestSensorThresholdString(t *testing.T) {
+	s := &Sensor{EventReadingType: EventReadingTypeThreshold}
+
+	s.Threshold.Mask = Mask_Thresholds{
+		LNR: Mask_Threshold{Readable: true},
+		LCR: Mask_Threshold{Readable: true},
+		LNC: Mask_Threshold{Readable: true},
+		UNC: Mask_Threshold{Readable: true, High_Assert: true, High_Deassert: true},
+		UCR: Mask_Threshold{Readable: true, High_Assert: true, High_Deassert: true},
+		UNR: Mask_Threshold{Readable: true},
+	}
+
+	s.Threshold.LNC = 0
+	s.Threshold.LCR = 0
+	s.Threshold.LNR = 0
+	s.Threshold.UNC = 81
+	s.Threshold.UCR = 83
+	s.Threshold.UNR = 85
+
+	s.Threshold.PositiveHysteresisRaw = 1
+	s.Threshold.NegativeHysteresisRaw = 1
+	s.Threshold.PositiveHysteresis = 1.0
+	s.Threshold.NegativeHysteresis = 1.0
+
+	want := "" +
+		" Lower Non-Recoverable : 0.000\n" +
+		" Lower Critical        : 0.000\n" +
+		" Lower Non-Critical    : 0.000\n" +
+		" Upper Non-Critical    : 81.000\n" +
+		" Upper Critical        : 83.000\n" +
+		" Upper Non-Recoverable : 85.000\n" +
+		" Positive Hysteresis   : 1.000\n" +
+		" Negative Hysteresis   : 1.000\n" +
+		" Assertions Enabled    : unc+ ucr+\n" +
+		" Deassertions Enabled  : unc+ ucr+\n"
+
+	if got := s.thresholdString(); got != want {
+		t.Fatalf("thresholdString() mismatch:\nwant:\n%s\ngot:\n%s", want, got)
+	}
+}
+
+func TestSensorThresholdStringNonThreshold(t *testing.T) {
+	s := &Sensor{EventReadingType: EventReadingTypeSensorSpecific}
+	if got := s.thresholdString(); got != "" {
+		t.Fatalf("thresholdString() for non-threshold sensor = %q, want empty", got)
 	}
 }
 

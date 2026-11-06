@@ -31,7 +31,10 @@ func (e SensorEvent) String() string {
 type SensorEvents []SensorEvent
 
 func (events SensorEvents) Strings() []string {
-	out := make([]string, 0)
+	out := make([]string, 0, len(events))
+	for _, event := range events {
+		out = append(out, event.String())
+	}
 	return out
 }
 func (events SensorEvents) FilterAssert() SensorEvents {
@@ -492,7 +495,7 @@ var (
 		SensorClass:   SensorClassThreshold,
 		ThresholdType: SensorThresholdType_UNC,
 		Assert:        false,
-		High:          true,
+		High:          false,
 	}
 
 	SensorEvent_LNR_High_Deassert = SensorEvent{
