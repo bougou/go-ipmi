@@ -1,7 +1,33 @@
 package types
 
+import (
+	"bufio"
+	"bytes"
+	"compress/gzip"
+	_ "embed"
+	"fmt"
+	"io"
+	"strconv"
+	"strings"
+	"sync"
+)
+
 // OEM represents Manufacturer ID, that is IANA Private Enterprise Number
 type OEM uint32
+
+//go:generate go run oem_generate.go
+
+// The source registry stays reviewable in the repository; only the compressed
+// ID/organization extract is linked into binaries.
+//
+//go:embed data/enterprise-names.tsv.gz
+var oemNamesGZIP []byte
+
+var (
+	oemNamesOnce sync.Once
+	oemNames     map[OEM]string
+	oemNamesErr  error
+)
 
 // cSpell: disable
 const (
@@ -54,62 +80,79 @@ const (
 	OEM_INSPUR                       = 37945
 	OEM_TENCENT                      = 41475
 	OEM_BYTEDANCE                    = 46045
-	OEM_SUPERMICRO_47488             = 47488
-	OEM_YADRO                        = 49769
+	// Retained for compatibility with ipmitool; registry lookups resolve 47488 to Nedam.
+	OEM_SUPERMICRO_47488 = 47488
+	OEM_YADRO            = 49769
 )
 
 func (oem OEM) String() string {
-	m := map[OEM]string{
-		2:     "IBM",
-		11:    "HP",
-		42:    "Sun",
-		94:    "Nokia",
-		107:   "Bull",
-		116:   "Hitachi",
-		119:   "NEC",
-		186:   "Toshiba",
-		193:   "Ericsson",
-		343:   "Intel",
-		373:   "Tatung", // 大同
-		399:   "Hitachi",
-		674:   "Dell",
-		2011:  "Huawei",
-		2168:  "LMC",
-		2623:  "Asustek",
-		4337:  "Radisys",
-		4413:  "Broadcom",
-		4769:  "IBM",
-		5593:  "Magnum", // 迈格纳技术集成公司
-		6653:  "Tyan",   // 泰安
-		7244:  "Quanta",
-		9237:  "Viking",
-		10297: "Advantech", // 研华科技
-		10368: "Fujitsu",
-		10418: "Avocent",
-		10437: "Peppercon",
-		10876: "Supermicro",
-		11102: "OSA",
-		11129: "Google",
-		12634: "PICMG",
-		13742: "Raritan", // 力登
-		15000: "Kontron", // 控创
-		15370: "GIGA-BYTE TECHNOLOGY CO., LTD",
-		16394: "PPS",
-		20301: "IBM",
-		20974: "AMI",
-		22238: "Foxconn",
-		24339: "ADLINK", // 凌华
-		25506: "H3C",
-		28458: "Nokia",
-		33196: "Vita",      // 维塔
-		37945: "Inspur",    // 浪潮
-		41475: "Tencent",   // 腾讯
-		46045: "ByteDance", // 字节跳动
-		47488: "Supermicro",
-		49769: "Yadro",
+	// ipmitool puts these entries before the loaded IANA registry so they take
+	// precedence over registrations with the same numeric value.
+	switch oem {
+	case OEM_UNKNOWN:
+		return "Unknown"
+	case OEM_RESERVED:
+		return "Unspecified"
 	}
-	if s, ok := m[oem]; ok {
-		return s
+
+	names, err := cachedOEMNames()
+	if err != nil {
+		panic(fmt.Sprintf("types: invalid embedded IANA PEN registry: %v", err))
+	}
+	if name, ok := names[oem]; ok {
+		return name
+	}
+
+	// ipmitool puts DEBUG after the registry, so a real IANA assignment wins.
+	if oem == OEM_DEBUG {
+		return "A Debug Assisting Company, Ltd."
 	}
 	return "Unknown"
+}
+
+func cachedOEMNames() (map[OEM]string, error) {
+	oemNamesOnce.Do(func() {
+		oemNames, oemNamesErr = loadOEMNames()
+	})
+	return oemNames, oemNamesErr
+}
+
+func loadOEMNames() (map[OEM]string, error) {
+	r, err := gzip.NewReader(bytes.NewReader(oemNamesGZIP))
+	if err != nil {
+		return nil, err
+	}
+	names, parseErr := parseOEMNames(r)
+	closeErr := r.Close()
+	if parseErr != nil {
+		return nil, parseErr
+	}
+	if closeErr != nil {
+		return nil, closeErr
+	}
+	return names, nil
+}
+
+func parseOEMNames(r io.Reader) (map[OEM]string, error) {
+	names := make(map[OEM]string)
+	scanner := bufio.NewScanner(r)
+	for lineNumber := 1; scanner.Scan(); lineNumber++ {
+		idText, name, ok := strings.Cut(scanner.Text(), "\t")
+		if !ok || name == "" {
+			return nil, fmt.Errorf("invalid name record at line %d", lineNumber)
+		}
+		id, err := strconv.ParseUint(idText, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid PEN at line %d: %w", lineNumber, err)
+		}
+		oem := OEM(id)
+		if _, exists := names[oem]; exists {
+			return nil, fmt.Errorf("duplicate PEN %d at line %d", id, lineNumber)
+		}
+		names[oem] = name
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return names, nil
 }

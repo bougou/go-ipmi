@@ -1,0 +1,38 @@
+---
+name: Update IANA PEN Registry
+
+on:
+  schedule:
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Update IANA PEN registry
+        run: make update-iana-pen
+
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore(types): update IANA PEN registry"
+          branch: automation/iana-pen-update
+          title: "chore(types): update IANA PEN registry"
+          body: |
+            Update the IANA Private Enterprise Numbers snapshot and regenerate the embedded organization-name data.
+
+            Source: https://www.iana.org/assignments/enterprise-numbers.txt
+          add-paths: |
+            pkg/types/data/enterprise-numbers.txt
+            pkg/types/data/enterprise-names.tsv.gz

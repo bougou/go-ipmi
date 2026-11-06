@@ -60,6 +60,14 @@ dependencies:
 	GOBIN=$(BINDIR) go install github.com/onsi/ginkgo/ginkgo@v1.16.4
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(BINDIR) latest
 
+.PHONY: update-iana-pen
+update-iana-pen:
+	curl --fail --silent --show-error --location \
+		https://www.iana.org/assignments/enterprise-numbers.txt \
+		--output pkg/types/data/enterprise-numbers.txt
+	go generate ./pkg/types
+	go test ./pkg/types
+
 # ---------------------------------------------------------------------------
 # E2E tests
 # ---------------------------------------------------------------------------
