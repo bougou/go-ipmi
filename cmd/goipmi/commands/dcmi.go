@@ -337,7 +337,7 @@ func NewCmdDCMISensors() *cobra.Command {
 				}
 				fmt.Printf("Inlet: %d temperature sensors found\n", len(sdrs))
 				if len(sdrs) > 0 {
-					fmt.Println(types.FormatSDRs(sdrs))
+					fmt.Println(types.FormatSDRsWith(renderer, sdrs))
 				}
 			}
 
@@ -348,7 +348,7 @@ func NewCmdDCMISensors() *cobra.Command {
 				}
 				fmt.Printf("CPU: %d temperature sensors found\n", len(sdrs))
 				if len(sdrs) > 0 {
-					fmt.Println(types.FormatSDRs(sdrs))
+					fmt.Println(types.FormatSDRsWith(renderer, sdrs))
 				}
 			}
 
@@ -359,7 +359,7 @@ func NewCmdDCMISensors() *cobra.Command {
 				}
 				fmt.Printf("Baseboard: %d temperature sensors found\n", len(sdrs))
 				if len(sdrs) > 0 {
-					fmt.Println(types.FormatSDRs(sdrs))
+					fmt.Println(types.FormatSDRsWith(renderer, sdrs))
 				}
 			}
 

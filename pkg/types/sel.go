@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"iter"
 	"time"
+
+	"github.com/bougou/go-ipmi/pkg/render"
 )
 
 // 32. SEL Record Formats
@@ -288,6 +290,10 @@ loop:
 // it will also print sensor number, entity id and instance, and asserted discrete states.
 // The sdrMap can be fetched by GetSDRsMap method.
 func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
+	return FormatSELsWith(defaultRenderer, records, sdrMap)
+}
+
+func FormatSELsWith(r render.Renderer, records []*SEL, sdrMap SDRMapBySensorNumber) string {
 	var elistMode bool // extend list
 	if sdrMap != nil {
 		elistMode = true
@@ -299,7 +305,7 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 		rows = append(rows, row)
 	}
 
-	headers := []string{
+	columns := render.Columns(
 		"ID",
 		"RecordType",
 		"EvmRev",
@@ -313,38 +319,42 @@ func FormatSELs(records []*SEL, sdrMap SDRMapBySensorNumber) string {
 		"EventDirection",
 		"EventSeverity",
 		"EventData",
-	}
+	)
 	if elistMode {
-		headers = append(headers, "SensorName")
+		columns = append(columns, render.Column{Name: "SensorName"})
 	}
 
-	return RenderTable(headers, rows)
+	return r.Render(columns, rows)
 }
 
 func FormatSELsStream(seq iter.Seq[*Result[SEL]], sdrMap SDRMapBySensorNumber) error {
+	return FormatSELsStreamWith(defaultRenderer, seq, sdrMap)
+}
+
+func FormatSELsStreamWith(r render.Renderer, seq iter.Seq[*Result[SEL]], sdrMap SDRMapBySensorNumber) error {
 	var elistMode bool // extend list
 	if sdrMap != nil {
 		elistMode = true
 	}
 
-	headers := []string{
-		"ID",
-		"RecordType",
-		"EvmRev",
-		"-------- Timestamp --------",
-		"GID",
-		"SensorNumber",
-		"SensorTypeCode",
-		"-- SensorType --",
-		"EventReadingType",
-		"--------------- EventDescription --------------",
-		"EventDirection",
-		"EventSeverity",
-		"EventData",
+	columns := []render.Column{
+		{Name: "ID", Width: 6},
+		{Name: "RecordType"},
+		{Name: "EvmRev"},
+		{Name: "Timestamp", Width: 31},
+		{Name: "GID", Width: 7},
+		{Name: "SensorNumber"},
+		{Name: "SensorTypeCode"},
+		{Name: "SensorType", Width: 16},
+		{Name: "EventReadingType", Width: 22},
+		{Name: "EventDescription", Width: 48},
+		{Name: "EventDirection"},
+		{Name: "EventSeverity"},
+		{Name: "EventData"},
 	}
 	if elistMode {
-		headers = append(headers, "SensorName")
+		columns = append(columns, render.Column{Name: "SensorName"})
 	}
 
-	return formatStream(seq, headers, selToRow, sdrMap)
+	return formatStream(r, seq, columns, selToRow, sdrMap)
 }

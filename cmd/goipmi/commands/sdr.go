@@ -142,7 +142,7 @@ Sensor Types:
 						return
 					}
 
-					fmt.Println(types.FormatSensors(true, sensors...))
+					fmt.Println(types.FormatSensorsWith(renderer, true, sensors...))
 					return
 				}
 
@@ -158,7 +158,7 @@ Sensor Types:
 					return
 				}
 
-				fmt.Println(types.FormatSensors(true, sensors...))
+				fmt.Println(types.FormatSensorsWith(renderer, true, sensors...))
 			}
 		},
 	}
@@ -211,11 +211,11 @@ func NewCmdSDRList() *cobra.Command {
 			if streamMode {
 				sdrs := client.GetSDRsStream(ctx, recordTypes...)
 				if isFRU {
-					if err := types.FormatSDRsStream_FRU(sdrs); err != nil {
+					if err := types.FormatSDRsStream_FRUWith(renderer, sdrs); err != nil {
 						CheckErr(fmt.Errorf("FormatSDRsStream_FRU failed, err: %w", err))
 					}
 				} else {
-					if err := types.FormatSDRsStream(sdrs); err != nil {
+					if err := types.FormatSDRsStreamWith(renderer, sdrs); err != nil {
 						CheckErr(fmt.Errorf("FormatSDRsStream failed, err: %w", err))
 					}
 				}
@@ -225,9 +225,9 @@ func NewCmdSDRList() *cobra.Command {
 					CheckErr(fmt.Errorf("GetSDRs failed, err: %w", err))
 				}
 				if isFRU {
-					fmt.Println(types.FormatSDRs_FRU(sdrs))
+					fmt.Println(types.FormatSDRs_FRUWith(renderer, sdrs))
 				} else {
-					fmt.Println(types.FormatSDRs(sdrs))
+					fmt.Println(types.FormatSDRsWith(renderer, sdrs))
 				}
 			}
 		},

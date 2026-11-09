@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/bougou/go-ipmi/pkg/render"
 	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
@@ -145,7 +146,7 @@ func NewCmdPEFFilterList() *cobra.Command {
 				eventFilters[i] = param.Filter
 			}
 
-			fmt.Println(types.FormatEventFilters(eventFilters))
+			fmt.Println(types.FormatEventFiltersWith(renderer, eventFilters))
 		},
 	}
 	return cmd
@@ -270,7 +271,7 @@ func NewCmdPEFPolicyList() *cobra.Command {
 				rows[i] = row
 			}
 
-			headers := []string{
+			columns := render.Columns(
 				"Entry",
 				"PolicyNumber",
 				"PolicyState",
@@ -280,9 +281,9 @@ func NewCmdPEFPolicyList() *cobra.Command {
 				"Destination",
 				"IsEventSpecific",
 				"AlertStringKey",
-			}
+			)
 
-			fmt.Println(types.RenderTable(headers, rows))
+			fmt.Println(renderer.Render(columns, rows))
 
 		},
 	}

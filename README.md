@@ -58,6 +58,34 @@ func main() {
 Interfaces, options, and helpers: [docs/client.md](./docs/client.md).
 Import path changes since `v0.8.x`: [docs/migration.md](./docs/migration.md).
 
+### Table output
+
+SDRs, event log entries, and sensor readings use ASCII-bordered tables by
+default. To use another form, pass a `render.Renderer` to the `Format*With`
+functions.
+
+```go
+import (
+	"fmt"
+
+	"github.com/bougou/go-ipmi/pkg/render/tablewriter"
+	"github.com/bougou/go-ipmi/pkg/types"
+)
+
+func foo() {
+	fmt.Print(types.FormatSDRsWith(tablewriter.Renderer{}, sdrs))
+	fmt.Print(types.FormatSELsWith(tablewriter.Renderer{}, entries, nil))
+}
+```
+
+Each `Format*` function has a `Format*With(r render.Renderer, ...)` sibling that
+takes the renderer explicitly. The plain `FormatSDRs` / `FormatSELs` / `FormatSensors`
+functions use the ASCII-bordered default (`ascii.Renderer`). Built-in renderers
+live under `github.com/bougou/go-ipmi/pkg/render`: `ascii` (bordered, standard
+library only, the default), `plain` (borderless), `tablewriter` (bordered),
+`list` (one `Name : Value` block per record), and `json`. Provide a custom
+formatting scheme by implementing the `render.Renderer` interface.
+
 ## Server
 
 `goipmi-server` is a dual-stack reference BMC (RMCP+ and IPMI v1.5 on one UDP
