@@ -5,6 +5,8 @@ import (
 	"iter"
 	"math"
 	"strings"
+
+	"github.com/bougou/go-ipmi/pkg/render"
 )
 
 // 42.1
@@ -1043,6 +1045,10 @@ func sensorToRow(sensor *Sensor, options ...any) map[string]string {
 
 // FormatSensors return a string of table printed for sensors
 func FormatSensors(extended bool, sensors ...*Sensor) string {
+	return FormatSensorsWith(defaultRenderer, extended, sensors...)
+}
+
+func FormatSensorsWith(r render.Renderer, extended bool, sensors ...*Sensor) string {
 	rows := make([]map[string]string, len(sensors))
 
 	for i, sensor := range sensors {
@@ -1052,7 +1058,7 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 		}
 	}
 
-	headers := []string{
+	columns := render.Columns(
 		"SDRType",
 		"SensorNumber",
 		"SensorName",
@@ -1066,10 +1072,10 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 		"UNC",
 		"UCR",
 		"UNR",
-	}
+	)
 
 	if extended {
-		headers = append(headers, []string{
+		columns = append(columns, render.Columns(
 			"EntityID",
 			"EventReadingType",
 			"AnalogDataFormat",
@@ -1079,42 +1085,41 @@ func FormatSensors(extended bool, sensors ...*Sensor) string {
 			"HasAR",
 			"DiscreteEvents",
 			"HumanStr",
-		}...)
+		)...)
 	}
 
-	return RenderTable(headers, rows)
+	return r.Render(columns, rows)
 }
 
 func FormatSensorsStream(extended bool, seq iter.Seq[*Result[Sensor]]) error {
-	// Add extra "-" prefix and suffix to certain column headers to widen them
-	// for better readability in stream table output. This ensures columns with
-	// longer content (e.g., SensorName, SensorType, threshold values) have
-	// adequate width for proper alignment.
+	return FormatSensorsStreamWith(defaultRenderer, extended, seq)
+}
 
-	headers := []string{
-		"SDRType",
-		"SensorNumber",
-		"--- SensorName ---",
-		"---- SensorType ----",
-		"Reading",
-		"Unit",
-		"Status",
+func FormatSensorsStreamWith(r render.Renderer, extended bool, seq iter.Seq[*Result[Sensor]]) error {
+	columns := []render.Column{
+		{Name: "SDRType"},
+		{Name: "SensorNumber"},
+		{Name: "SensorName", Width: 18},
+		{Name: "SensorType", Width: 20},
+		{Name: "Reading"},
+		{Name: "Unit", Width: 14},
+		{Name: "Status"},
 	}
 	if extended {
-		headers = append(headers, []string{
-			"--- EntityID ---",
-			"--- EventReadingType ---",
-			"AnalogDataFormat",
-			"ReadV",
-			"ScanD",
-			"ReadU",
-			"HasAR",
-			"DiscreteEvents",
-			"--------- HumanStr ---------",
+		columns = append(columns, []render.Column{
+			{Name: "EntityID", Width: 16},
+			{Name: "EventReadingType", Width: 24},
+			{Name: "AnalogDataFormat"},
+			{Name: "ReadV"},
+			{Name: "ScanD"},
+			{Name: "ReadU"},
+			{Name: "HasAR"},
+			{Name: "DiscreteEvents"},
+			{Name: "HumanStr", Width: 28},
 		}...)
 	}
 
-	return formatStream(seq, headers, sensorToRow)
+	return formatStream(r, seq, columns, sensorToRow)
 }
 
 // IsThreshold returns whether the sensor is threshold sensor class or not.

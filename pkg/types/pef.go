@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/bougou/go-ipmi/pkg/render"
 )
 
 // 17.7 Event Filter Table
@@ -230,6 +232,10 @@ func (entry *PEFEventFilter) Format() string {
 }
 
 func FormatEventFilters(eventFilters []*PEFEventFilter) string {
+	return FormatEventFiltersWith(defaultRenderer, eventFilters)
+}
+
+func FormatEventFiltersWith(r render.Renderer, eventFilters []*PEFEventFilter) string {
 	rows := make([]map[string]string, len(eventFilters))
 
 	for i, f := range eventFilters {
@@ -257,7 +263,7 @@ func FormatEventFilters(eventFilters []*PEFEventFilter) string {
 		}
 	}
 
-	headers := []string{
+	columns := render.Columns(
 		"Filter State",
 		"Filter Type",
 		"Actions",
@@ -276,9 +282,9 @@ func FormatEventFilters(eventFilters []*PEFEventFilter) string {
 		// "ED2 Compare 1",
 		// "ED2 Compare 2",
 		// "ED3 AND Mask",
-	}
+	)
 
-	return RenderTable(headers, rows)
+	return r.Render(columns, rows)
 }
 
 // PEFEventFilterType:
@@ -419,6 +425,10 @@ func (entry *PEFAlertPolicy) Format() string {
 }
 
 func FormatPEFAlertPolicyTable(alertPolicies []*PEFAlertPolicy) string {
+	return FormatPEFAlertPolicyTableWith(defaultRenderer, alertPolicies)
+}
+
+func FormatPEFAlertPolicyTableWith(r render.Renderer, alertPolicies []*PEFAlertPolicy) string {
 
 	rows := make([]map[string]string, len(alertPolicies))
 	for i, alertPolicy := range alertPolicies {
@@ -434,7 +444,7 @@ func FormatPEFAlertPolicyTable(alertPolicies []*PEFAlertPolicy) string {
 		}
 	}
 
-	headers := []string{
+	columns := render.Columns(
 		"Entry",
 		"PolicyNumber",
 		"PolicyState",
@@ -443,9 +453,9 @@ func FormatPEFAlertPolicyTable(alertPolicies []*PEFAlertPolicy) string {
 		"Destination",
 		"IsEventSpecific",
 		"AlertStringKey",
-	}
+	)
 
-	return RenderTable(headers, rows)
+	return r.Render(columns, rows)
 }
 
 type PEFAlertPolicyAction uint8

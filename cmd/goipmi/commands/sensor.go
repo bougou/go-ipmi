@@ -75,7 +75,7 @@ func NewCmdSensorList() *cobra.Command {
 
 			if streamMode {
 				sensors := client.GetSensorsStream(ctx, filterOptions...)
-				if err := types.FormatSensorsStream(extended, sensors); err != nil {
+				if err := types.FormatSensorsStreamWith(renderer, extended, sensors); err != nil {
 					CheckErr(fmt.Errorf("FormatSensorsStream failed, err: %w", err))
 				}
 			} else {
@@ -83,7 +83,7 @@ func NewCmdSensorList() *cobra.Command {
 				if err != nil {
 					CheckErr(fmt.Errorf("GetSensors failed, err: %w", err))
 				}
-				fmt.Println(types.FormatSensors(extended, sensors...))
+				fmt.Println(types.FormatSensorsWith(renderer, extended, sensors...))
 			}
 
 		},

@@ -75,7 +75,7 @@ func NewCmdXGetSDRs() *cobra.Command {
 				}
 				fmt.Printf("GetSDRs succeeded, %d records\n", len(res))
 				if show {
-					fmt.Println(types.FormatSDRs(res))
+					fmt.Println(types.FormatSDRsWith(renderer, res))
 				}
 
 				if loop {
@@ -120,7 +120,7 @@ func NewCmdXGetSensors() *cobra.Command {
 				}
 				fmt.Printf("GetSensors succeeded, %d records\n", len(res))
 				if show {
-					fmt.Println(types.FormatSensors(true, res...))
+					fmt.Println(types.FormatSensorsWith(renderer, true, res...))
 				}
 				if loop {
 					goto WAIT
@@ -153,7 +153,7 @@ func NewCmdXGetSensorsFilterFans() *cobra.Command {
 				return
 			}
 			fmt.Printf("GetSensors succeeded, %d records\n", len(res))
-			fmt.Println(types.FormatSensors(true, res...))
+			fmt.Println(types.FormatSensorsWith(renderer, true, res...))
 		},
 	}
 	return cmd
@@ -177,7 +177,7 @@ func NewCmdXGetDeviceSDRs() *cobra.Command {
 
 			fmt.Printf("GetDeviceSDRs succeeded, %d records\n", len(res))
 			if show {
-				fmt.Println(types.FormatSDRs(res))
+				fmt.Println(types.FormatSDRsWith(renderer, res))
 			}
 		},
 	}

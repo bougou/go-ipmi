@@ -74,7 +74,7 @@ func NewCmdSELGet() *cobra.Command {
 			if err != nil {
 				CheckErr(fmt.Errorf("ParseSEL failed, err: %w", err))
 			}
-			fmt.Println(types.FormatSELs([]*types.SEL{sel}, nil))
+			fmt.Println(types.FormatSELsWith(renderer, []*types.SEL{sel}, nil))
 		},
 	}
 	return cmd
@@ -101,7 +101,7 @@ func NewCmdSELList() *cobra.Command {
 
 			if streamMode {
 				selEntries := client.GetSELEntriesStream(ctx, 0)
-				if err := types.FormatSELsStream(selEntries, sdrsMap); err != nil {
+				if err := types.FormatSELsStreamWith(renderer, selEntries, sdrsMap); err != nil {
 					CheckErr(fmt.Errorf("FormatSELsStream failed, err: %w", err))
 				}
 			} else {
@@ -109,7 +109,7 @@ func NewCmdSELList() *cobra.Command {
 				if err != nil {
 					CheckErr(fmt.Errorf("GetSELEntries failed, err: %w", err))
 				}
-				fmt.Println(types.FormatSELs(selEntries, sdrsMap))
+				fmt.Println(types.FormatSELsWith(renderer, selEntries, sdrsMap))
 			}
 		},
 	}

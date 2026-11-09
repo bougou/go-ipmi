@@ -8,6 +8,12 @@ import (
 	"time"
 
 	ipmiclient "github.com/bougou/go-ipmi/pkg/client"
+	"github.com/bougou/go-ipmi/pkg/render"
+	"github.com/bougou/go-ipmi/pkg/render/ascii"
+	jsonrender "github.com/bougou/go-ipmi/pkg/render/json"
+	"github.com/bougou/go-ipmi/pkg/render/list"
+	"github.com/bougou/go-ipmi/pkg/render/plain"
+	"github.com/bougou/go-ipmi/pkg/render/tablewriter"
 	"github.com/bougou/go-ipmi/pkg/types"
 	"github.com/spf13/cobra"
 )
@@ -29,14 +35,41 @@ var (
 	timeout int
 	retries int
 
-	openBackend string
+	openBackend  string
+	rendererName string
 
 	client *ipmiclient.Client
+
+	// renderer renders the output; selected once from the --renderer flag and
+	// read by the subcommands.
+	renderer render.Renderer
 
 	rootCommand *cobra.Command
 )
 
+func configureRenderer() error {
+	switch rendererName {
+	case "tablewriter":
+		renderer = tablewriter.Renderer{}
+	case "ascii":
+		renderer = ascii.Renderer{}
+	case "plain":
+		renderer = plain.Renderer{}
+	case "json":
+		renderer = jsonrender.Renderer{}
+	case "list":
+		renderer = list.Renderer{}
+	default:
+		return fmt.Errorf("invalid --renderer %q (choose ascii, tablewriter, plain, json, list)", rendererName)
+	}
+	return nil
+}
+
 func initClient() error {
+	// Subcommands with their own persistent pre-run hook skip the root hook.
+	if err := configureRenderer(); err != nil {
+		return err
+	}
 	resolved, err := resolveSessionPassword()
 	if err != nil {
 		return err
@@ -150,6 +183,9 @@ func NewRootCommand() *cobra.Command {
 		Short: "goipmi",
 		Long:  fmt.Sprintf("goipmi\n\nFind more information at: %s\n\n", homePage),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := configureRenderer(); err != nil {
+				return err
+			}
 			if showVersion {
 				fmt.Printf("Version: %s\n", Version)
 				fmt.Printf("Commit: %s\n", Commit)
@@ -161,6 +197,7 @@ func NewRootCommand() *cobra.Command {
 		},
 	}
 
+	rootCmd.PersistentFlags().StringVar(&rendererName, "renderer", "ascii", "Output renderer (ascii, tablewriter, plain, json, list)")
 	rootCmd.PersistentFlags().StringVarP(&host, "host", "H", "", "Remote host name for LAN interface")
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 623, "Remote RMCP port")
 	rootCmd.PersistentFlags().StringVarP(&username, "user", "U", "", "Remote session username")

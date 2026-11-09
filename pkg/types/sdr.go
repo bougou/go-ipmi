@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 	"iter"
+
+	"github.com/bougou/go-ipmi/pkg/render"
 )
 
 const SDRRecordHeaderSize int = 5
@@ -277,6 +279,10 @@ func sdrFRUToRow(sdr *SDR, options ...any) map[string]string {
 
 // Format SDRs of FRU record type
 func FormatSDRs_FRU(records []*SDR) string {
+	return FormatSDRs_FRUWith(defaultRenderer, records)
+}
+
+func FormatSDRs_FRUWith(r render.Renderer, records []*SDR) string {
 	rows := make([]map[string]string, 0)
 
 	for _, sdr := range records {
@@ -284,7 +290,7 @@ func FormatSDRs_FRU(records []*SDR) string {
 		rows = append(rows, row)
 	}
 
-	headers := []string{
+	columns := render.Columns(
 		"RecordID",
 		"RecordType",
 		"DeviceAccessAddr",
@@ -299,30 +305,34 @@ func FormatSDRs_FRU(records []*SDR) string {
 		"FRUEntityInstance",
 		"TypeLength",
 		"DeviceName",
-	}
+	)
 
-	return RenderTable(headers, rows)
+	return r.Render(columns, rows)
 }
 
 func FormatSDRsStream_FRU(seq iter.Seq[*Result[SDR]]) error {
-	headers := []string{
-		"RecordID",
-		"---- RecordType ----",
-		"DeviceAccessAddr",
-		"FRUDeviceID",
-		"IsLogicFRU",
-		"AccessLUN",
-		"PrivateBusID",
-		"ChannelNumber",
-		"---- DeviceType ----",
-		"Modifier",
-		"FRUEntityID",
-		"FRUEntityInstance",
-		"---------------------- TypeLength ----------------------",
-		"DeviceName",
+	return FormatSDRsStream_FRUWith(defaultRenderer, seq)
+}
+
+func FormatSDRsStream_FRUWith(r render.Renderer, seq iter.Seq[*Result[SDR]]) error {
+	columns := []render.Column{
+		{Name: "RecordID"},
+		{Name: "RecordType", Width: 20},
+		{Name: "DeviceAccessAddr"},
+		{Name: "FRUDeviceID"},
+		{Name: "IsLogicFRU"},
+		{Name: "AccessLUN"},
+		{Name: "PrivateBusID"},
+		{Name: "ChannelNumber"},
+		{Name: "DeviceType", Width: 20},
+		{Name: "Modifier"},
+		{Name: "FRUEntityID"},
+		{Name: "FRUEntityInstance"},
+		{Name: "TypeLength", Width: 56},
+		{Name: "DeviceName"},
 	}
 
-	return formatStream(seq, headers, sdrFRUToRow)
+	return formatStream(r, seq, columns, sdrFRUToRow)
 }
 
 func sdrToRow(sdr *SDR, options ...any) map[string]string {
@@ -381,6 +391,10 @@ func sdrToRow(sdr *SDR, options ...any) map[string]string {
 
 // FormatSDRs returns a table formatted string for print.
 func FormatSDRs(records []*SDR) string {
+	return FormatSDRsWith(defaultRenderer, records)
+}
+
+func FormatSDRsWith(r render.Renderer, records []*SDR) string {
 	rows := make([]map[string]string, 0)
 
 	for _, sdr := range records {
@@ -392,7 +406,7 @@ func FormatSDRs(records []*SDR) string {
 		rows = append(rows, row)
 	}
 
-	headers := []string{
+	columns := render.Columns(
 		"RecordID",
 		"RecordType",
 		"GeneratorID",
@@ -404,29 +418,31 @@ func FormatSDRs(records []*SDR) string {
 		"SensorValue",
 		"SensorUnit",
 		"SensorStatus",
-	}
+	)
 
-	return RenderTable(headers, rows)
+	return r.Render(columns, rows)
 }
 
 func FormatSDRsStream(seq iter.Seq[*Result[SDR]]) error {
-	fmt.Println("FormatSDRsStream2")
+	return FormatSDRsStreamWith(defaultRenderer, seq)
+}
 
-	headers := []string{
-		"RecordID",
-		"-- RecordType --",
-		"GeneratorID",
-		"SensorNumber",
-		"-- SensorName --",
-		"-------- Entity --------",
-		"--- SensorType ---",
-		"EventReadingType",
-		"SensorValue",
-		"SensorUnit",
-		"SensorStatus",
+func FormatSDRsStreamWith(r render.Renderer, seq iter.Seq[*Result[SDR]]) error {
+	columns := []render.Column{
+		{Name: "RecordID"},
+		{Name: "RecordType", Width: 16},
+		{Name: "GeneratorID"},
+		{Name: "SensorNumber"},
+		{Name: "SensorName", Width: 16},
+		{Name: "Entity", Width: 24},
+		{Name: "SensorType", Width: 18},
+		{Name: "EventReadingType"},
+		{Name: "SensorValue"},
+		{Name: "SensorUnit", Width: 14},
+		{Name: "SensorStatus"},
 	}
 
-	return formatStream(seq, headers, sdrToRow)
+	return formatStream(r, seq, columns, sdrToRow)
 }
 
 // Mask_Threshold holds masks for a specific threshold type.
