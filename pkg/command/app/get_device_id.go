@@ -51,6 +51,14 @@ type GetDeviceIDResponse struct {
 	// 000000h = unspecified. 0FFFFFh = reserved. This value is binary encoded.
 	// E.g. the ID for the IPMI forum is 7154 decimal, which is 1BF2h, which would
 	// be stored in this record as F2h, 1Bh, 00h for bytes 8 through 10, respectively
+	//
+	// The ID is an IANA Private Enterprise Number. For the registered
+	// organization name, import github.com/bougou/go-ipmi/pkg/oem/iana and
+	// call Lookup:
+	//
+	//	name, ok := iana.Lookup(res.ManufacturerID)
+	//
+	// ok is false when the snapshot has no entry.
 	ManufacturerID uint32 // only 3 bytes used
 
 	// Product ID, LS Byte first. This field can be used to provide a number that
@@ -187,7 +195,6 @@ func (res *GetDeviceIDResponse) Format() string {
 		fmt.Sprintf("Firmware Revision         : %d.%d\n", res.MajorFirmwareRevision, res.MinorFirmwareRevision) +
 		fmt.Sprintf("IPMI Version              : %d.%d\n", res.MajorIPMIVersion, res.MinorIPMIVersion) +
 		fmt.Sprintf("Manufacturer ID           : %d (%#02x)\n", res.ManufacturerID, res.ManufacturerID) +
-		fmt.Sprintf("Manufacturer Name         : %s\n", types.OEM(res.ManufacturerID)) +
 		fmt.Sprintf("Product ID                : %d (%#04x)\n", res.ProductID, res.ProductID) +
 		fmt.Sprintf("Product Name              : %#04x\n", res.ProductID) +
 		fmt.Sprintf("Device Available          : %s\n", types.FormatBool(res.DeviceAvailable, "yes", "no")) +

@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	"github.com/bougou/go-ipmi/pkg/oem/iana"
 )
 
 func NewCmdMC() *cobra.Command {
@@ -39,10 +41,27 @@ func NewCmdMCInfo() *cobra.Command {
 			if err != nil {
 				CheckErr(fmt.Errorf("GetDeviceID failed, err: %w", err))
 			}
-			fmt.Println(res.Format())
+			fmt.Print(res.Format())
+			fmt.Printf("Manufacturer Name         : %s\n", manufacturerName(res.ManufacturerID))
 		},
 	}
 	return cmd
+}
+
+func manufacturerName(id uint32) string {
+	switch id {
+	case 0:
+		return "Unknown"
+	case 0x0fffff:
+		return "Unspecified"
+	}
+	if name, ok := iana.Lookup(id); ok {
+		return name
+	}
+	if id == 0xfffffe {
+		return "A Debug Assisting Company, Ltd."
+	}
+	return "Unknown"
 }
 
 func NewCmdMCReset() *cobra.Command {

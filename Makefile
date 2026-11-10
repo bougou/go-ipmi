@@ -64,9 +64,9 @@ dependencies:
 update-iana-pen:
 	curl --fail --silent --show-error --location \
 		https://www.iana.org/assignments/enterprise-numbers.txt \
-		--output pkg/types/data/enterprise-numbers.txt
-	go generate ./pkg/types
-	go test ./pkg/types
+		--output pkg/oem/iana/data/enterprise-numbers.txt
+	go generate ./pkg/oem/iana
+	go test ./pkg/oem/iana/...
 
 # ---------------------------------------------------------------------------
 # E2E tests

@@ -26,13 +26,13 @@ jobs:
 
       - uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: "chore(types): update IANA PEN registry"
+          commit-message: "chore(iana): update IANA PEN registry"
           branch: automation/iana-pen-update
-          title: "chore(types): update IANA PEN registry"
+          title: "chore(iana): update IANA PEN registry"
           body: |
             Update the IANA Private Enterprise Numbers snapshot and regenerate the embedded organization-name data.
 
             Source: https://www.iana.org/assignments/enterprise-numbers.txt
           add-paths: |
-            pkg/types/data/enterprise-numbers.txt
-            pkg/types/data/enterprise-names.tsv.gz
+            pkg/oem/iana/data/enterprise-numbers.txt
+            pkg/oem/iana/data/enterprise-names.tsv.gz

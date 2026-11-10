@@ -1,5 +1,3 @@
-//go:build ignore
-
 package main
 
 import (
@@ -9,10 +7,15 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
 
+// The full IANA source file stays committed next to the generated extract:
+// it keeps the monthly update PRs reviewable (plain-text diff) and backs the
+// lookup_test.go integrity check. Only the compressed extract is linked into
+// binaries. Deleting it breaks `go test ./pkg/oem/iana/...`.
 const (
 	inputPath  = "data/enterprise-numbers.txt"
 	outputPath = "data/enterprise-names.tsv.gz"
@@ -31,22 +34,24 @@ func generate(input, output string) error {
 	}
 	defer src.Close()
 
-	tmp, err := os.Create(output + ".tmp")
+	tmp, err := os.CreateTemp(filepath.Dir(output), "iana-*.tmp")
 	if err != nil {
 		return err
 	}
-	defer tmp.Close()
 	defer os.Remove(tmp.Name())
+	defer tmp.Close()
 
-	zw, err := gzip.NewWriterLevel(tmp, gzip.BestCompression)
+	w, err := gzip.NewWriterLevel(tmp, gzip.BestCompression)
 	if err != nil {
 		return err
 	}
-	if err := writeNames(zw, src); err != nil {
-		zw.Close()
+	if err := writeNames(w, src); err != nil {
 		return err
 	}
-	if err := zw.Close(); err != nil {
+	if err := w.Close(); err != nil {
+		return err
+	}
+	if err := tmp.Chmod(0644); err != nil {
 		return err
 	}
 	if err := tmp.Close(); err != nil {
@@ -57,7 +62,7 @@ func generate(input, output string) error {
 
 func writeNames(dst io.Writer, src io.Reader) error {
 	scanner := bufio.NewScanner(src)
-	seen := make(map[uint32]struct{})
+	var previous uint32
 	var pending uint32
 	havePending := false
 	count := 0
@@ -67,19 +72,19 @@ func writeNames(dst io.Writer, src io.Reader) error {
 		if havePending {
 			havePending = false
 			if len(line) < 3 || line[0] != ' ' || line[1] != ' ' || line[2] == ' ' {
-				continue
+				return fmt.Errorf("missing organization for PEN %d", pending)
 			}
 			name := line[2:]
 			if strings.ContainsRune(name, '\t') {
 				return fmt.Errorf("PEN %d organization contains a tab", pending)
 			}
-			if _, exists := seen[pending]; exists {
-				return fmt.Errorf("duplicate PEN %d", pending)
+			if count > 0 && pending <= previous {
+				return fmt.Errorf("duplicate or out-of-order PEN %d", pending)
 			}
 			if _, err := fmt.Fprintf(dst, "%d\t%s\n", pending, name); err != nil {
 				return err
 			}
-			seen[pending] = struct{}{}
+			previous = pending
 			count++
 			continue
 		}
@@ -100,6 +105,9 @@ func writeNames(dst io.Writer, src io.Reader) error {
 	}
 	if err := scanner.Err(); err != nil {
 		return err
+	}
+	if havePending {
+		return fmt.Errorf("missing organization for PEN %d", pending)
 	}
 	if count == 0 {
 		return fmt.Errorf("no PEN entries found")
