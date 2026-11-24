@@ -131,8 +131,10 @@ func (c *Client) EnableUser(ctx context.Context, userID uint8) (err error) {
 	return err
 }
 
-func (c *Client) SetUserPayloadAccess(ctx context.Context, payloadType types.PayloadType, payloadInstance uint8) (response *app.SetUserPayloadAccessResponse, err error) {
-	request := &app.SetUserPayloadAccessRequest{}
+// SetUserPayloadAccess enables or disables payload types (SOL, OEM) for a
+// user on a channel (IPMI v2.0 section 24.6). The request carries the
+// channel, user ID, operation and payload bits.
+func (c *Client) SetUserPayloadAccess(ctx context.Context, request *app.SetUserPayloadAccessRequest) (response *app.SetUserPayloadAccessResponse, err error) {
 	response = &app.SetUserPayloadAccessResponse{}
 	err = c.Exchange(ctx, request, response)
 	return
