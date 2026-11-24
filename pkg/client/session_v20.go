@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/binary"
 	"fmt"
@@ -48,6 +49,12 @@ func (c *Client) generate_sik() ([]byte, error) {
 
 // see 13.32 Generating Additional Keying Material
 func (c *Client) generate_k1() ([]byte, error) {
+	// RAKP-none (cipher suite 0) has no SIK; ipmitool then sets K1 to the
+	// constant itself (lanplus_generate_k1). Suite 0 has no integrity or
+	// confidentiality algorithm, so K1 is not used.
+	if c.session.v20.authAlg == types.AuthAlg_None {
+		return bytes.Repeat([]byte{0x01}, 20), nil
+	}
 	if c.session.v20.sik == nil {
 		return nil, fmt.Errorf("sik not exists, generate sik first")
 	}
@@ -61,6 +68,10 @@ func (c *Client) generate_k1() ([]byte, error) {
 
 // see 13.32 Generating Additional Keying Material
 func (c *Client) generate_k2() ([]byte, error) {
+	// As for K1 (lanplus_generate_k2): the constant itself under RAKP-none.
+	if c.session.v20.authAlg == types.AuthAlg_None {
+		return bytes.Repeat([]byte{0x02}, 20), nil
+	}
 	if c.session.v20.sik == nil {
 		return nil, fmt.Errorf("sik not exists, generate sik first")
 	}
