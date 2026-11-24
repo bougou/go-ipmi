@@ -317,8 +317,17 @@ func (c *Client) sdrToSensor(ctx context.Context, sdr *types.SDR) (*types.Sensor
 	ctx = WithCommandContext(ctx, commandContext)
 	c.Debug("Set CommandContext:", commandContext)
 
+	// One sensor that cannot be read must not fail the whole list (as
+	// ipmitool's "sdr list" shows such a sensor as "no reading" and carries
+	// on): the sensor is returned with no valid reading, so its Status() is
+	// "N/A". A cancelled or expired context still stops the walk.
 	if err := c.fillSensorReading(ctx, sensor); err != nil {
-		return nil, fmt.Errorf("fillSensorReading failed, err: %w", err)
+		if ctx.Err() != nil {
+			return nil, fmt.Errorf("fillSensorReading failed, err: %w", err)
+		}
+		c.Debugf("GetSensorReading for sensor %#02x failed, sensor left without a reading, err: %s", sensor.Number, err)
+		sensor.ReadingAvailable = false
+		return sensor, nil
 	}
 
 	// NotPresent is filled/set by fillSensorReading
@@ -334,13 +343,20 @@ func (c *Client) sdrToSensor(ctx context.Context, sdr *types.SDR) (*types.Sensor
 		return sensor, nil
 	}
 
+	// Likewise, the reading stands if the extra details cannot be read.
 	if !sensor.EventReadingType.IsThreshold() || !sensor.SensorUnit.IsAnalog() {
 		if err := c.fillSensorDiscrete(ctx, sensor); err != nil {
-			return nil, fmt.Errorf("fillSensorDiscrete failed, err: %w", err)
+			if ctx.Err() != nil {
+				return nil, fmt.Errorf("fillSensorDiscrete failed, err: %w", err)
+			}
+			c.Debugf("GetSensorEventStatus for sensor %#02x failed, err: %s", sensor.Number, err)
 		}
 	} else {
 		if err := c.fillSensorThreshold(ctx, sensor); err != nil {
-			return nil, fmt.Errorf("fillSensorThreshold failed, err: %w", err)
+			if ctx.Err() != nil {
+				return nil, fmt.Errorf("fillSensorThreshold failed, err: %w", err)
+			}
+			c.Debugf("GetSensorThresholds for sensor %#02x failed, err: %s", sensor.Number, err)
 		}
 	}
 
