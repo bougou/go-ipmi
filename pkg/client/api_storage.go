@@ -258,7 +258,13 @@ func (c *Client) GetSELEntry(ctx context.Context, reservationID uint16, recordID
 	if _, err := c.GetSELInfo(ctx); err != nil {
 		return nil, fmt.Errorf("GetSELInfo failed, err: %w", err)
 	}
+	return c.getSELEntry(ctx, reservationID, recordID)
+}
 
+// getSELEntry is GetSELEntry without the Get SEL Info that precedes it, for
+// loops over the SEL that have already sent one: repeating it for every
+// record doubles the round trips of a full read.
+func (c *Client) getSELEntry(ctx context.Context, reservationID uint16, recordID uint16) (response *storage.GetSELEntryResponse, err error) {
 	request := &storage.GetSELEntryRequest{
 		ReservationID: reservationID,
 		RecordID:      recordID,
@@ -280,7 +286,7 @@ func (c *Client) GetSELEntries(ctx context.Context, startRecordID uint16) ([]*ty
 	var out = make([]*types.SEL, 0)
 	var recordID uint16 = startRecordID
 	for {
-		selEntry, err := c.GetSELEntry(ctx, 0, recordID)
+		selEntry, err := c.getSELEntry(ctx, 0, recordID)
 		if err != nil {
 			return nil, fmt.Errorf("GetSELEntry failed, err: %w", err)
 		}
@@ -305,18 +311,18 @@ func (c *Client) GetSELEntriesStream(ctx context.Context, startRecordID uint16) 
 	return func(yield func(*types.Result[types.SEL]) bool) {
 		var recordID uint16 = startRecordID
 
+		if _, err := c.GetSELInfo(ctx); err != nil {
+			yield(&types.Result[types.SEL]{Err: err})
+			return
+		}
+
 	loop:
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			default:
-				if _, err := c.GetSELInfo(ctx); err != nil {
-					yield(&types.Result[types.SEL]{Err: err})
-					return
-				}
-
-				selEntry, err := c.GetSELEntry(ctx, 0, recordID)
+				selEntry, err := c.getSELEntry(ctx, 0, recordID)
 				if err != nil {
 					yield(&types.Result[types.SEL]{Err: err})
 					return
