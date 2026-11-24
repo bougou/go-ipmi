@@ -64,6 +64,19 @@ func (c *Client) OpenSession(ctx context.Context) (response *rmcpplus.OpenSessio
 	return
 }
 
+// rakpAuthCodeMatches compares the auth code (RAKP 2) or integrity check
+// value (RAKP 4) the console computed with the one the BMC sent. With
+// RAKP-none (cipher suite 0) there is no code to compare: the console
+// computes none (nil), and isByteSliceEqual never matches nil, so every
+// suite 0 session failed at RAKP 2. ipmitool treats RAKP-none as a match
+// in both places (lanplus_rakp2_hmac_matches, lanplus_rakp4_hmac_matches).
+func rakpAuthCodeMatches(alg types.AuthAlg, computed, received []byte) bool {
+	if alg == types.AuthAlg_None {
+		return true
+	}
+	return isByteSliceEqual(computed, received)
+}
+
 // ValidateRAKP2 validates RAKP Message 2 returned by BMC.
 func (c *Client) ValidateRAKP2(ctx context.Context, rakp2 *rmcpplus.RAKPMessage2) (bool, error) {
 	if rakp2.RmcpStatusCode != types.RmcpStatusCodeNoErrors {
@@ -81,7 +94,7 @@ func (c *Client) ValidateRAKP2(ctx context.Context, rakp2 *rmcpplus.RAKPMessage2
 
 	c.DebugBytes("rakp2 returned auth code", rakp2.KeyExchangeAuthenticationCode, 16)
 
-	if !isByteSliceEqual(authcode, rakp2.KeyExchangeAuthenticationCode) {
+	if !rakpAuthCodeMatches(c.session.v20.authAlg, authcode, rakp2.KeyExchangeAuthenticationCode) {
 		return false, fmt.Errorf("RAKP2 authentication code mismatch: %w", ErrRAKPAuthentication)
 	}
 	return true, nil
@@ -199,7 +212,7 @@ func (c *Client) ValidateRAKP4(ctx context.Context, response *rmcpplus.RAKPMessa
 	c.DebugBytes("rakp4 console computed authcode", authCode, 16)
 	c.DebugBytes("rakp4 bmc returned authcode", response.IntegrityCheckValue, 16)
 
-	if !isByteSliceEqual(response.IntegrityCheckValue, authCode) {
+	if !rakpAuthCodeMatches(c.session.v20.authAlg, authCode, response.IntegrityCheckValue) {
 		return false, fmt.Errorf("RAKP4 integrity check value does not match: %w", ErrRAKPAuthentication)
 	}
 	return true, nil
