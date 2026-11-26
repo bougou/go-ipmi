@@ -28,7 +28,6 @@ func (c *Client) generate_sik() ([]byte, error) {
 	} else {
 		hmacKey = crypto.PadPassword20([]byte(c.Password))
 	}
-	c.DebugBytes("sik mac key", hmacKey, 16)
 
 	b, err := crypto.DeriveSIK(
 		c.session.v20.authAlg,

@@ -240,6 +240,27 @@ func (c *Client) WithBufferSize(bufferSize int) *Client {
 	return c
 }
 
+// WithBMCKey configures the local RMCP+ client with the channel's pre-shared
+// K_g for two-key login. Call it before Connect. The client copies the first
+// 20 bytes, padding shorter keys with trailing zeros and ignoring excess bytes.
+// An all-zero result selects one-key login using the user's password (v2.0§13.33).
+func (c *Client) WithBMCKey(key []byte) *Client {
+	// BMC key (K_g) is a 160-bit key (v2.0§22.25).
+	const bmcKeySize = 20 // bytes
+
+	if c.session == nil {
+		return c
+	}
+	var padded [bmcKeySize]byte
+	copy(padded[:], key)
+	if padded == ([bmcKeySize]byte{}) {
+		c.session.v20.bmcKey = nil
+	} else {
+		c.session.v20.bmcKey = padded[:]
+	}
+	return c
+}
+
 // WithCipherSuiteID sets one or more custom cipher suite which is used during OpenSession command.
 // It is only valid for client with IPMI lanplus interface.
 // For the custom cipherSuiteID to take effect, you must call WithCipherSuiteID before calling Connect method.
