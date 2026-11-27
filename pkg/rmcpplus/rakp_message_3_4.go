@@ -76,6 +76,10 @@ func (res *RAKPMessage4) Unpack(msg []byte) error {
 		return nil
 	}
 
+	if res.AuthAlg == types.AuthAlg_None && len(msg) > 8 {
+		return fmt.Errorf("unexpected RAKP 4 payload length for RAKP-none: got %d, want 8", len(msg))
+	}
+
 	authCodeLen := crypto.RAKP4ICVLen(res.AuthAlg)
 	if len(msg) < 8+authCodeLen {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 8+authCodeLen)

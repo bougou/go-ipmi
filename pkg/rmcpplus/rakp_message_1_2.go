@@ -112,6 +112,10 @@ func (res *RAKPMessage2) Unpack(msg []byte) error {
 		return types.ErrUnpackedDataTooShortWith(len(msg), 40)
 	}
 
+	if res.AuthAlg == types.AuthAlg_None && len(msg) > 40 {
+		return fmt.Errorf("unexpected RAKP 2 payload length for RAKP-none: got %d, want 40", len(msg))
+	}
+
 	res.ManagedSystemRandomNumber = types.Array16(msg[8:24])
 	res.ManagedSystemGUID = types.Array16(msg[24:40])
 

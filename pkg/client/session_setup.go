@@ -16,18 +16,11 @@ func (c *Client) OpenSession(ctx context.Context) (response *rmcpplus.OpenSessio
 	if !ok {
 		return nil, fmt.Errorf("not valid cipher suite id: %#02x", cipherSuiteID)
 	}
-	c.session.v20.requestedAuthAlg = authAlg
-	c.session.v20.requestedIntegrityAlg = integrityAlg
-	c.session.v20.requestedEncryptAlg = cryptAlg
 
 	// Choose our session ID for easy recognition in the packet dump
 	var remoteConsoleSessionID uint32 = 0xa0a1a2a3
 
-	authPayload, integPayload, cryptPayload := rmcpplus.NewAlgorithmPayloads(
-		c.session.v20.requestedAuthAlg,
-		c.session.v20.requestedIntegrityAlg,
-		c.session.v20.requestedEncryptAlg,
-	)
+	authPayload, integPayload, cryptPayload := rmcpplus.NewAlgorithmPayloads(authAlg, integrityAlg, cryptAlg)
 
 	request := &rmcpplus.OpenSessionRequest{
 		MessageTag:                     0x00,
@@ -53,26 +46,29 @@ func (c *Client) OpenSession(ctx context.Context) (response *rmcpplus.OpenSessio
 		return response, types.NewRmcpStatusError(response.RmcpStatusCode)
 	}
 
-	c.session.v20.state = types.SessionStateOpenSessionReceived
+	if types.AuthAlg(response.AuthAlg) != authAlg {
+		return response, fmt.Errorf("open session authentication algorithm mismatch: requested %#02x, received %#02x", uint8(authAlg), response.AuthAlg)
+	}
+	if types.IntegrityAlg(response.IntegrityAlg) != integrityAlg {
+		return response, fmt.Errorf("open session integrity algorithm mismatch: requested %#02x, received %#02x", uint8(integrityAlg), response.IntegrityAlg)
+	}
+	if types.CryptAlg(response.CryptAlg) != cryptAlg {
+		return response, fmt.Errorf("open session confidentiality algorithm mismatch: requested %#02x, received %#02x", uint8(cryptAlg), response.CryptAlg)
+	}
 
-	c.session.v20.authAlg = types.AuthAlg(response.AuthAlg)
-	c.session.v20.integrityAlg = types.IntegrityAlg(response.IntegrityAlg)
-	c.session.v20.cryptAlg = types.CryptAlg(response.CryptAlg)
+	c.session.v20.authAlg = authAlg
+	c.session.v20.integrityAlg = integrityAlg
+	c.session.v20.cryptAlg = cryptAlg
 	c.session.v20.consoleSessionID = response.RemoteConsoleSessionID
 	c.session.v20.bmcSessionID = response.ManagedSystemSessionID
+	c.session.v20.state = types.SessionStateOpenSessionReceived
 
-	return
+	return response, nil
 }
 
-// rakpAuthCodeMatches compares the auth code (RAKP 2) or integrity check
-// value (RAKP 4) the console computed with the one the BMC sent. With
-// RAKP-none (cipher suite 0) there is no code to compare: the console
-// computes none (nil), and isByteSliceEqual never matches nil, so every
-// suite 0 session failed at RAKP 2. ipmitool treats RAKP-none as a match
-// in both places (lanplus_rakp2_hmac_matches, lanplus_rakp4_hmac_matches).
 func rakpAuthCodeMatches(alg types.AuthAlg, computed, received []byte) bool {
 	if alg == types.AuthAlg_None {
-		return true
+		return len(computed) == 0 && len(received) == 0
 	}
 	return isByteSliceEqual(computed, received)
 }

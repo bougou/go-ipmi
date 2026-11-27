@@ -52,13 +52,7 @@ type v20 struct {
 
 	customSuiteIDs []types.CipherSuiteID
 
-	// filled by RmcpOpenSessionRequest
-	requestedAuthAlg      types.AuthAlg
-	requestedIntegrityAlg types.IntegrityAlg
-	requestedEncryptAlg   types.CryptAlg
-
-	// filled by RmcpOpenSessionResponse
-	// RMCP Open Session is used for exchanging session ids
+	// Algorithms accepted in the Open Session exchange.
 	authAlg      types.AuthAlg
 	integrityAlg types.IntegrityAlg
 	cryptAlg     types.CryptAlg
