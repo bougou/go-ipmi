@@ -3,9 +3,10 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/bougou/go-ipmi/pkg/types"
 	"iter"
 	"strings"
+
+	"github.com/bougou/go-ipmi/pkg/types"
 )
 
 type SensorFilterOption func(sensor *types.Sensor) bool
@@ -47,39 +48,21 @@ func SensorFilterOptionIsSensorType(sensorTypes ...types.SensorType) func(sensor
 //	    types.SensorFilterOptionIsSensorType(types.SensorTypeTemperature),
 //	    types.SensorFilterOptionIsReadingValid)
 func (c *Client) GetSensors(ctx context.Context, filterOptions ...SensorFilterOption) ([]*types.Sensor, error) {
-	var out = make([]*types.Sensor, 0)
-
-	sdrs, err := c.GetSDRs(ctx, types.SDRRecordTypeFullSensor, types.SDRRecordTypeCompactSensor)
+	sensors := make([]*types.Sensor, 0)
+	err := c.walkSensors(ctx, filterOptions, func(sensor *types.Sensor) bool {
+		sensors = append(sensors, sensor)
+		return true
+	})
 	if err != nil {
-		return nil, fmt.Errorf("GetSDRs failed, err: %w", err)
+		return nil, err
 	}
-
-	for _, sdr := range sdrs {
-		sensor, err := c.sdrToSensor(ctx, sdr)
-		if err != nil {
-			return nil, fmt.Errorf("sdrToSensor failed, err: %w", err)
-		}
-
-		var choose bool = true
-		for _, filterOption := range filterOptions {
-			if !filterOption(sensor) {
-				choose = false
-				break
-			}
-		}
-
-		if choose {
-			out = append(out, sensor)
-		}
-	}
-
-	return out, nil
+	return sensors, nil
 }
 
 // GetSensorsAny retrieves all sensors with their current readings and status.
 //
 // Filter behavior:
-//   - If no filter options are provided, returns all sensors
+//   - If no filter options are provided, returns no sensors
 //   - If filter options are provided, returns sensors that pass ANY of the filters (logical OR)
 //   - For logical AND filtering, use GetSensors instead
 //
@@ -90,128 +73,67 @@ func (c *Client) GetSensors(ctx context.Context, filterOptions ...SensorFilterOp
 //	    types.SensorFilterOptionIsSensorType(types.SensorTypeTemperature),
 //	    types.SensorFilterOptionIsSensorType(types.SensorTypeVoltage))
 func (c *Client) GetSensorsAny(ctx context.Context, filterOptions ...SensorFilterOption) ([]*types.Sensor, error) {
-	var out = make([]*types.Sensor, 0)
+	return c.GetSensors(ctx, matchesAnySensorFilter(filterOptions))
+}
 
-	sdrs, err := c.GetSDRs(ctx, types.SDRRecordTypeFullSensor, types.SDRRecordTypeCompactSensor)
-	if err != nil {
-		return nil, fmt.Errorf("GetSDRs failed, err: %w", err)
-	}
-
-	for _, sdr := range sdrs {
-		sensor, err := c.sdrToSensor(ctx, sdr)
-		if err != nil {
-			return nil, fmt.Errorf("sdrToSensor failed, err: %w", err)
-		}
-
-		var choose bool = false
-		for _, filterOption := range filterOptions {
-			if filterOption(sensor) {
-				choose = true
-				break
+func matchesAnySensorFilter(filters []SensorFilterOption) SensorFilterOption {
+	return func(sensor *types.Sensor) bool {
+		for _, filter := range filters {
+			if filter(sensor) {
+				return true
 			}
 		}
-
-		if choose {
-			out = append(out, sensor)
-		}
+		return false
 	}
-
-	return out, nil
 }
 
 // GetSensorsStream behaves like GetSensors, but returns an iterator of sensors instead of a slice.
 func (c *Client) GetSensorsStream(ctx context.Context, filterOptions ...SensorFilterOption) iter.Seq[*types.Result[types.Sensor]] {
 	return func(yield func(*types.Result[types.Sensor]) bool) {
-		sdrs := c.GetSDRsStream(ctx, types.SDRRecordTypeFullSensor, types.SDRRecordTypeCompactSensor)
-
-		for result := range sdrs {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				if result == nil {
-					continue
-				}
-
-				if result.Err != nil {
-					yield(&types.Result[types.Sensor]{Err: result.Err})
-					return
-				}
-
-				sdr := result.Ok
-				if sdr == nil {
-					continue
-				}
-
-				sensor, err := c.sdrToSensor(ctx, sdr)
-				if err != nil {
-					yield(&types.Result[types.Sensor]{Err: fmt.Errorf("sdrToSensor failed, err: %w", err)})
-					return
-				}
-
-				var choose bool = true
-				for _, filterOption := range filterOptions {
-					if !filterOption(sensor) {
-						choose = false
-						break
-					}
-				}
-
-				if choose {
-					if !yield(&types.Result[types.Sensor]{Ok: sensor}) {
-						return
-					}
-				}
-			}
+		err := c.walkSensors(ctx, filterOptions, func(sensor *types.Sensor) bool {
+			return yield(&types.Result[types.Sensor]{Ok: sensor})
+		})
+		if err != nil && ctx.Err() == nil {
+			yield(&types.Result[types.Sensor]{Err: err})
 		}
 	}
 }
 
-// GetSensorsAnyStream behaves like GetSensorsAny, but returns an iterator of sensors instead of a slice.
-func (c *Client) GetSensorsAnyStream(ctx context.Context, filterOptions ...SensorFilterOption) iter.Seq[*types.Result[types.Sensor]] {
-	return func(yield func(*types.Result[types.Sensor]) bool) {
-		sdrs := c.GetSDRsStream(ctx, types.SDRRecordTypeFullSensor, types.SDRRecordTypeCompactSensor)
-		for result := range sdrs {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				if result == nil {
-					continue
-				}
-
-				if result.Err != nil {
-					yield(&types.Result[types.Sensor]{Err: result.Err})
-					return
-				}
-
-				sdr := result.Ok
-				if sdr == nil {
-					continue
-				}
-
-				sensor, err := c.sdrToSensor(ctx, sdr)
-				if err != nil {
-					yield(&types.Result[types.Sensor]{Err: fmt.Errorf("sdrToSensor failed, err: %w", err)})
-					return
-				}
-
-				var choose bool = false
-				for _, filterOption := range filterOptions {
-					if filterOption(sensor) {
-						choose = true
-						break
-					}
-				}
-
-				if choose {
-					if !yield(&types.Result[types.Sensor]{Ok: sensor}) {
-						return
-					}
-				}
+// walkSensors reads SDR metadata first so each matching record needs only one live sample.
+func (c *Client) walkSensors(ctx context.Context, filters []SensorFilterOption, yield func(*types.Sensor) bool) error {
+records:
+	for recordID := uint16(0); recordID != 0xffff; {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		sdr, err := c.GetSDRParsed(ctx, recordID)
+		if err != nil {
+			return err
+		}
+		recordID = sdr.NextRecordID
+		recordType := sdr.RecordHeader.RecordType
+		if recordType != types.SDRRecordTypeFullSensor && recordType != types.SDRRecordTypeCompactSensor {
+			continue
+		}
+		sensor, err := c.sdrToSensor(ctx, sdr)
+		if err != nil {
+			return fmt.Errorf("sdrToSensor for record %#04x failed: %w", sdr.RecordHeader.RecordID, err)
+		}
+		for _, filter := range filters {
+			if !filter(sensor) {
+				continue records
 			}
 		}
+		if !yield(sensor) {
+			return nil
+		}
 	}
+	return nil
+}
+
+// GetSensorsAnyStream behaves like GetSensorsAny, but returns an iterator of sensors instead of a slice.
+func (c *Client) GetSensorsAnyStream(ctx context.Context, filterOptions ...SensorFilterOption) iter.Seq[*types.Result[types.Sensor]] {
+	return c.GetSensorsStream(ctx, matchesAnySensorFilter(filterOptions))
 }
 
 // GetSensorByID returns the sensor with current reading and status by specified sensor number.

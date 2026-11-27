@@ -1100,8 +1100,8 @@ func FormatSensorsStreamWith(r render.Renderer, extended bool, seq iter.Seq[*Res
 		{Name: "SDRType"},
 		{Name: "SensorNumber"},
 		{Name: "SensorName", Width: 18},
-		{Name: "SensorType", Width: 20},
-		{Name: "Reading"},
+		{Name: "SensorType", Width: 26},
+		{Name: "Reading", Width: 10},
 		{Name: "Unit", Width: 14},
 		{Name: "Status"},
 	}
