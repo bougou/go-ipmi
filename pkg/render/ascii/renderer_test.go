@@ -1,6 +1,7 @@
 package ascii_test
 
 import (
+	"encoding/hex"
 	"errors"
 	"io"
 	"iter"
@@ -78,6 +79,83 @@ func TestSELStreamKeepsSensorSpecificFieldsOnOneLine(t *testing.T) {
 		}
 	}
 	t.Fatalf("expected intact SEL fields on one line:\n%s", renderer.out.String())
+}
+
+func TestOEMSELListings(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		raw    string
+		fields []string
+	}{
+		{"timestamped", "c200c10100000000000006980a000af8",
+			[]string{"0x00c2", "OEM record c1", time.Unix(1, 0).String(), "Manufacturer ID 000000", "06980a000af8"}},
+		{"nonzero manufacturer", "c300df01000000341200000102030405",
+			[]string{"0x00c3", "OEM record df", "Manufacturer ID 001234", "000102030405"}},
+		{"non-timestamped", "c400e0000102030405060708090a00ff",
+			[]string{"0x00c4", "OEM record e0", "000102030405060708090a00ff"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			raw, err := hex.DecodeString(tc.raw)
+			if err != nil {
+				t.Fatal(err)
+			}
+			record, err := types.ParseSEL(raw)
+			if err != nil {
+				t.Fatal(err)
+			}
+			batch := types.FormatSELs([]*types.SEL{record}, nil)
+			stream := new(capturedStream)
+			rows := slices.Values([]*types.Result[types.SEL]{{Ok: record}})
+			if err := types.FormatSELsStreamWith(stream, rows, nil); err != nil {
+				t.Fatal(err)
+			}
+			for mode, output := range map[string]string{"batch": batch, "stream": stream.out.String()} {
+				lines := strings.Split(strings.TrimSuffix(output, "\n"), "\n")
+				if len(lines) != 5 {
+					t.Errorf("%s: expected one data row, got:\n%s", mode, output)
+					continue
+				}
+				cells := strings.Split(lines[3], "|")
+				for i := range cells {
+					cells[i] = strings.TrimSpace(cells[i])
+				}
+				for _, field := range tc.fields {
+					if !slices.Contains(cells, field) {
+						t.Errorf("%s: missing cell %q in %s", mode, field, lines[3])
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestSELListingColumnOrder(t *testing.T) {
+	const columns = "ID RecordType EvmRev Timestamp GID SensorNumber SensorTypeCode SensorType EventReadingType EventDescription EventDirection EventSeverity EventData"
+	for _, tc := range []struct {
+		name string
+		sdrs types.SDRMapBySensorNumber
+		want string
+	}{
+		{"normal", nil, columns},
+		{"extended", types.SDRMapBySensorNumber{}, columns + " SensorName"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			stream := new(capturedStream)
+			if err := types.FormatSELsStreamWith(stream, slices.Values([]*types.Result[types.SEL]{}), tc.sdrs); err != nil {
+				t.Fatal(err)
+			}
+			for mode, output := range map[string]string{"batch": types.FormatSELs(nil, tc.sdrs), "stream": stream.out.String()} {
+				lines := strings.Split(output, "\n")
+				if len(lines) < 2 {
+					t.Fatalf("%s: missing header in %q", mode, output)
+				}
+				got := strings.Fields(strings.ReplaceAll(lines[1], "|", " "))
+				if !slices.Equal(got, strings.Fields(tc.want)) {
+					t.Errorf("%s columns = %v, want %s", mode, got, tc.want)
+				}
+			}
+		})
+	}
 }
 
 func TestSensorStreamKeepsUnitsOnReadingLine(t *testing.T) {

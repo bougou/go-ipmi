@@ -197,11 +197,7 @@ func parseSELOEMTimestamped(msg []byte, sel *SEL) error {
 	id, _, _ := UnpackUint24L(msg, 7)
 	s.ManufacturerID = id
 
-	s.OEMDefined = [6]byte{}
-	b, _, _ := UnpackBytes(msg, 10, 6)
-	for i := 0; i < 6; i++ {
-		s.OEMDefined[i] = b[i]
-	}
+	copy(s.OEMDefined[:], msg[10:])
 
 	return nil
 }
@@ -214,16 +210,32 @@ func parseSELOEMNonTimestamped(msg []byte, sel *SEL) error {
 	var s = &SELOEMNonTimestamped{}
 	sel.OEMNonTimestamped = s
 
-	s.OEM = [13]byte{}
-	b, _, _ := UnpackBytes(msg, 3, 13)
-	for i := 0; i < 6; i++ {
-		s.OEM[i] = b[i]
-	}
+	copy(s.OEM[:], msg[3:])
 
 	return nil
 }
 
 func selToRow(sel *SEL, options ...any) map[string]string {
+	if recordType := sel.RecordType.Range(); recordType != SELRecordTypeRangeStandard {
+		row := map[string]string{
+			"ID":         fmt.Sprintf("%#04x", sel.RecordID),
+			"RecordType": fmt.Sprintf("OEM record %02x", uint8(sel.RecordType)),
+		}
+		switch recordType {
+		case SELRecordTypeRangeTimestampedOEM:
+			if s := sel.OEMTimestamped; s != nil {
+				row["Timestamp"] = s.Timestamp.String()
+				row["EventDescription"] = fmt.Sprintf("Manufacturer ID %06x", s.ManufacturerID)
+				row["EventData"] = fmt.Sprintf("%x", s.OEMDefined)
+			}
+		case SELRecordTypeRangeNonTimestampedOEM:
+			if s := sel.OEMNonTimestamped; s != nil {
+				row["EventData"] = fmt.Sprintf("%x", s.OEM)
+			}
+		}
+		return row
+	}
+
 	var sdrMap SDRMapBySensorNumber
 
 loop:
@@ -235,53 +247,34 @@ loop:
 		}
 	}
 
-	var row map[string]string
+	s := sel.Standard
 
-	var elistMode bool // extend list
+	row := map[string]string{
+		"ID":               fmt.Sprintf("%#04x", sel.RecordID),
+		"RecordType":       sel.RecordType.String(),
+		"EvmRev":           fmt.Sprintf("%#02x", s.EvMRev),
+		"Timestamp":        fmt.Sprintf("%v", s.Timestamp),
+		"GID":              fmt.Sprintf("%#04x", uint16(s.GeneratorID)),
+		"SensorNumber":     fmt.Sprintf("%#02x", s.SensorNumber),
+		"SensorTypeCode":   fmt.Sprintf("%#02x", uint8(s.SensorType)),
+		"SensorType":       s.SensorType.String(),
+		"EventReadingType": fmt.Sprintf("%#02x (%s)", uint8(s.EventReadingType), s.EventReadingType.String()),
+		"EventDescription": s.EventString(),
+		"EventDirection":   s.EventDir.String(),
+		"EventSeverity":    string(s.EventSeverity()),
+		"EventData":        s.EventData.String(),
+	}
+
 	if sdrMap != nil {
-		elistMode = true
-	}
-
-	recordTypeRange := sel.RecordType.Range()
-
-	switch recordTypeRange {
-	case SELRecordTypeRangeStandard:
-		s := sel.Standard
-
-		row = map[string]string{
-			"ID":               fmt.Sprintf("%#04x", sel.RecordID),
-			"RecordType":       sel.RecordType.String(),
-			"EvmRev":           fmt.Sprintf("%#02x", s.EvMRev),
-			"Timestamp":        fmt.Sprintf("%v", s.Timestamp),
-			"GID":              fmt.Sprintf("%#04x", uint16(s.GeneratorID)),
-			"SensorNumber":     fmt.Sprintf("%#02x", s.SensorNumber),
-			"SensorTypeCode":   fmt.Sprintf("%#02x", uint8(s.SensorType)),
-			"SensorType":       s.SensorType.String(),
-			"EventReadingType": fmt.Sprintf("%#02x (%s)", uint8(s.EventReadingType), s.EventReadingType.String()),
-			"EventDescription": s.EventString(),
-			"EventDirection":   s.EventDir.String(),
-			"EventSeverity":    string(s.EventSeverity()),
-			"EventData":        s.EventData.String(),
+		var sensorName string
+		sdr, ok := sdrMap[s.GeneratorID][s.SensorNumber]
+		if !ok {
+			sensorName = fmt.Sprintf("N/A %#04x, %#02x", uint16(s.GeneratorID), s.SensorNumber)
+		} else {
+			sensorName = sdr.SensorName()
 		}
-
-		if elistMode {
-			var sensorName string
-			sdr, ok := sdrMap[s.GeneratorID][s.SensorNumber]
-			if !ok {
-				sensorName = fmt.Sprintf("N/A %#04x, %#02x", uint16(s.GeneratorID), s.SensorNumber)
-			} else {
-				sensorName = sdr.SensorName()
-			}
-			row["SensorName"] = sensorName
-		}
-
-	case SELRecordTypeRangeTimestampedOEM:
-		// Todo
-	case SELRecordTypeRangeNonTimestampedOEM:
-		// Todo
-
+		row["SensorName"] = sensorName
 	}
-
 	return row
 }
 
@@ -339,7 +332,7 @@ func FormatSELsStreamWith(r render.Renderer, seq iter.Seq[*Result[SEL]], sdrMap 
 
 	columns := []render.Column{
 		{Name: "ID", Width: 6},
-		{Name: "RecordType"},
+		{Name: "RecordType", Width: 13},
 		{Name: "EvmRev"},
 		{Name: "Timestamp", Width: 31},
 		{Name: "GID", Width: 7},
@@ -350,7 +343,7 @@ func FormatSELsStreamWith(r render.Renderer, seq iter.Seq[*Result[SEL]], sdrMap 
 		{Name: "EventDescription", Width: 48},
 		{Name: "EventDirection"},
 		{Name: "EventSeverity"},
-		{Name: "EventData"},
+		{Name: "EventData", Width: 26},
 	}
 	if elistMode {
 		columns = append(columns, render.Column{Name: "SensorName"})
